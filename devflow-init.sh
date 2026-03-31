@@ -48,6 +48,28 @@ if [ -d "$DEVFLOW_STORE/instructions" ]; then
   done
 fi
 
+# ── Copy prompts → .github/prompts/ ────────────────────────────────────────
+if [ -d "$DEVFLOW_STORE/prompts" ]; then
+  mkdir -p "$WORKSPACE_DIR/.github/prompts"
+  for prompt_file in "$DEVFLOW_STORE/prompts"/devflow*.prompt.md; do
+    if [ -f "$prompt_file" ]; then
+      cp "$prompt_file" "$WORKSPACE_DIR/.github/prompts/"
+      echo "  ✓ $(basename "$prompt_file")"
+    fi
+  done
+fi
+
+# ── Exclude DevFlow files from git (local, never committed) ─────────────────
+if [ -d "$WORKSPACE_DIR/.git" ]; then
+  EXCLUDE_FILE="$WORKSPACE_DIR/.git/info/exclude"
+  mkdir -p "$(dirname "$EXCLUDE_FILE")"
+  for entry in ".agents/" ".github/instructions/devflow-*.instructions.md" ".github/prompts/devflow*.prompt.md"; do
+    if ! grep -qxF "$entry" "$EXCLUDE_FILE" 2>/dev/null; then
+      echo "$entry" >> "$EXCLUDE_FILE"
+    fi
+  done
+  echo "  ✓ .git/info/exclude updated"
+fi
 echo ""
 echo "✅ DevFlow skills configured for this workspace."
 echo "   Reload VS Code (Ctrl+Shift+P → Developer: Reload Window)"

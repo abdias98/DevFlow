@@ -37,6 +37,7 @@ echo ""
 mkdir -p "$USER_DIR/prompts"
 mkdir -p "$DEVFLOW_STORE/skills"
 mkdir -p "$DEVFLOW_STORE/instructions"
+mkdir -p "$DEVFLOW_STORE/prompts"
 mkdir -p "$BIN_DIR"
 
 echo "📦 Downloading DevFlow repository..."
@@ -74,6 +75,15 @@ for prompt_file in "$SOURCE_DIR"/.github/prompts/devflow*.prompt.md; do
     filename=$(basename "$prompt_file")
     cp "$prompt_file" "$USER_DIR/prompts/$filename"
     echo "  ✓ Installed prompt (global): $filename"
+  fi
+done
+
+# ── DevFlow store: prompts (used by devflow-init per workspace) ─────────────
+for prompt_file in "$SOURCE_DIR"/.github/prompts/devflow*.prompt.md; do
+  if [ -f "$prompt_file" ]; then
+    filename=$(basename "$prompt_file")
+    cp "$prompt_file" "$DEVFLOW_STORE/prompts/$filename"
+    echo "  ✓ Stored prompt: $filename"
   fi
 done
 
@@ -119,6 +129,16 @@ if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
 fi
 
 echo ""
+# ── Configure global gitignore (Opción A: zero impact on projects) ──────────
+GLOBAL_GITIGNORE="$HOME/.gitignore_global"
+git config --global core.excludesFile "$GLOBAL_GITIGNORE" 2>/dev/null || true
+for entry in ".agents/" ".github/instructions/devflow-*.instructions.md" ".github/prompts/devflow*.prompt.md"; do
+  if ! grep -qxF "$entry" "$GLOBAL_GITIGNORE" 2>/dev/null; then
+    echo "$entry" >> "$GLOBAL_GITIGNORE"
+  fi
+done
+echo "🔒 Global gitignore configured: $GLOBAL_GITIGNORE"
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📌 How to Use DevFlow"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
