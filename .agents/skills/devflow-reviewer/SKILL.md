@@ -74,6 +74,29 @@ You are the **Reviewer** sub-agent of the DevFlow framework. Your responsibility
 - [ ] No unnecessary database calls
 - [ ] Caching used where specified
 - [ ] No blocking operations on hot paths
+- [ ] Performance budget targets from spec are met *(if defined)*
+
+### API Contract *(if backend feature)*
+- [ ] HTTP method matches spec contract
+- [ ] Route path matches spec contract
+- [ ] Request body shape matches spec contract
+- [ ] Response shape (200) matches spec contract
+- [ ] All error status codes from spec are handled
+- [ ] No undocumented endpoints introduced
+
+### Accessibility *(if frontend feature — WCAG 2.1 AA)*
+- [ ] All interactive elements have `aria-label` or visible label
+- [ ] Keyboard navigation works (Tab, Enter, Escape)
+- [ ] No keyboard traps
+- [ ] Images have `alt` text
+- [ ] Color contrast ≥ 4.5:1 for normal text, 3:1 for large text
+- [ ] Form inputs have associated `<label>` elements
+- [ ] Error messages are announced to screen readers
+
+### Dependencies
+- [ ] No unnecessary packages added (check `package.json`, `*.csproj`, `requirements.txt`)
+- [ ] No unused imports left behind
+- [ ] No packages with known vulnerabilities introduced
 
 ---
 
@@ -125,9 +148,18 @@ Save to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`:
 ## Findings
 
 ### 🔴 BLOCK (must fix before proceeding)
-| # | File | Line | Issue | Suggestion |
-|---|------|------|-------|------------|
-| 1 | `path/file` | L42 | Description | How to fix |
+For each BLOCK finding, include a **copy-pasteable fix snippet**:
+
+```
+**Finding #N** — `path/to/file` L{line}
+**Issue:** {description of the problem}
+**Why it's a blocker:** {brief reason}
+**Fix:**
+```diff
+- {current code}
++ {corrected code}
+```
+```
 
 ### 🟡 WARN (should fix)
 | # | File | Line | Issue | Suggestion |
@@ -147,7 +179,7 @@ Save to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`:
 |----------|--------|
 | No BLOCK findings | ✅ APPROVED → Continue to Phase 7 (Finalization) |
 | BLOCK findings exist | 🔄 CHANGES REQUESTED → Route back to Implementer with specific fixes |
-| Architecture flaw found | 🔄 Route back to Architect (Phase 1) for redesign |
+| Architecture flaw found | 🔄 Route back to Architect (Phase 2) for redesign |
 
 If routing back to Implementer:
 - List ONLY the BLOCK findings that must be fixed

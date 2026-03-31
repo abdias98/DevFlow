@@ -81,6 +81,18 @@ Systematic analysis — work through these in order:
 | Async issue | Missing await? Race condition? |
 | Type mismatch | String vs number? Nullable vs non-nullable? |
 
+**Also check tech-stack-specific patterns** (load `/memories/repo/debug-patterns.md` if it exists, then check by detected stack):
+
+| Stack | Common pitfalls |
+|-------|-----------------|
+| **React** | Missing dependency array in `useEffect`; calling hooks conditionally; stale closure in event handler; state mutation instead of new reference |
+| **Next.js** | Using browser APIs in SSR context; missing `"use client"` directive; incorrect dynamic import |
+| **Node/Express** | Missing `next()` call in middleware; unhandled promise rejection; blocking the event loop |
+| **.NET** | Service not registered in DI container; `async void` instead of `async Task`; EF tracking vs no-tracking mismatch; missing `await` |
+| **Python** | Missing `await` in async context; mutable default argument; circular imports; `pytest` fixture scope issues |
+| **Go** | Nil pointer dereference; goroutine leak; unclosed file/response body |
+| **SQL/ORM** | N+1 queries; missing index; transaction not committed/rolled back; wrong isolation level |
+
 ### Step 4 — Apply Fix
 
 1. State the root cause clearly in one sentence
@@ -145,6 +157,17 @@ Add to iteration log:
 |---|------|----|--------|
 | N | Debugger | Implementer | Fixed: {brief description} |
 ```
+
+**Persist lessons learned** to `/memories/repo/debug-patterns.md` (create if not exists, append if exists):
+```markdown
+## {YYYY-MM-DD} — {slug}: {short title}
+- **Stack:** {tech stack}
+- **Pattern:** {what caused the bug — short}
+- **Root Cause:** {one sentence}
+- **Fix:** {one sentence}
+- **Prevent with:** {convention or check to avoid this in future}
+```
+This file accumulates knowledge across all DevFlow cycles in this project.
 
 ---
 

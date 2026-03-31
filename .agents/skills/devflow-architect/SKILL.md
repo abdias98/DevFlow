@@ -75,6 +75,102 @@ Based on requirements + codebase exploration:
 4. **Identify integration points** — APIs, databases, external services
 5. **Consider alternatives** for key decisions and document why the chosen approach wins
 
+#### 3a — UI Mockups (if `Feature Type: frontend`)
+
+If the feature has any frontend/UI component, generate **ASCII wireframes** for each significant screen or state. Annotate every component with its name, props, and events emitted.
+
+```
+┌────────────────────────────────────────┐
+│  [ComponentName]                       │  ← <ComponentName prop="x" />
+│  Label: [__________________________]  │  ← state: {field}
+│  Label: [__________________________]  │
+│  [ Button Text ]                       │  ← onClick → onSubmit(data)
+└────────────────────────────────────────┘
+                                            ↓ POST /api/endpoint
+```
+
+Include mockups for: default state, loading state, error state, empty state (as applicable). Include responsive notes if the feature varies by device.
+
+#### 3b — API Contract (if feature involves backend endpoints)
+
+For every endpoint introduced or modified, define the contract explicitly **before** any code:
+
+```markdown
+### API Contract
+
+| Field | Value |
+|-------|-------|
+| Method | POST |
+| Path | /api/v1/{resource} |
+| Auth | Bearer token required |
+
+**Request body:**
+```json
+{
+  "field": "type",
+  "field2": "type"
+}
+```
+
+**Response 200:**
+```json
+{ "id": "string", "field": "value" }
+```
+
+**Error responses:**
+| Status | Condition |
+|--------|-----------|
+| 400 | Validation error |
+| 401 | Not authenticated |
+| 404 | Resource not found |
+| 409 | Conflict (e.g. duplicate) |
+| 500 | Internal error |
+```
+The Reviewer will validate the implementation against this contract.
+
+#### 3c — Risk Assessment
+
+For each significant design decision or change, rate the risk:
+
+```markdown
+### Risk Assessment
+| Risk | Level | Mitigation |
+|------|-------|------------|
+| {description} | 🔴 HIGH / 🟡 MEDIUM / 🟢 LOW | {how to reduce it} |
+```
+
+- **HIGH**: Breaking changes, shared utilities, auth flows, migrations, payments
+- **MEDIUM**: New integrations, complex state, multi-step flows
+- **LOW**: Isolated new features, display-only changes
+
+The Planner will convert HIGH/MEDIUM risks into task-level flags.
+
+#### 3d — Rollback Strategy (for HIGH-risk changes)
+
+If the feature involves database migrations, breaking API changes, or irreversible data mutations:
+
+```markdown
+### Rollback Strategy
+1. {Step to undo migration or revert API}
+2. {Step to restore previous behavior}
+3. {Verification: how to confirm rollback succeeded}
+```
+
+#### 3e — Performance Budget (optional)
+
+If the feature has performance-sensitive requirements (from context.md Constraints):
+
+```markdown
+### Performance Budget
+| Metric | Target | Current Baseline |
+|--------|--------|------------------|
+| API response time | < {N}ms | {measured or N/A} |
+| Bundle size delta | < {N}KB | {measured or N/A} |
+| DB queries per request | ≤ {N} | {measured or N/A} |
+```
+
+The Reviewer will check the implementation against these targets.
+
 ### Step 4 — Generate Spec Document
 
 Create the spec document using the template from `devflow-conventions.instructions.md`:
@@ -84,9 +180,14 @@ Create the spec document using the template from `devflow-conventions.instructio
 The spec MUST include:
 - **Context** — business problem and why the feature exists
 - **Architecture** — high-level system design with data flow
+- **UI Mockups** — ASCII wireframes with component annotations *(if frontend feature)*
+- **API Contract** — complete endpoint definitions *(if backend/API feature)*
 - **Components table** — what to create/modify, where, and purpose
 - **Data structures** — complete definitions with code snippets
 - **Design decisions table** — each decision with alternatives and reasoning
+- **Risk Assessment** — risks per decision with mitigation strategies
+- **Rollback Strategy** — how to revert *(if HIGH-risk changes)*
+- **Performance Budget** — measurable targets *(if performance-sensitive)*
 - **Constraints** — technical or business limitations
 
 ### Step 5 — Preview and Confirm
@@ -104,21 +205,18 @@ The spec MUST include:
 
 ### Step 6 — Update Memory
 
-Save to `/memories/session/devflow/context.md`:
+**Merge** (do NOT overwrite) `/memories/session/devflow/context.md`. Preserve all existing fields from the Brainstormer and add/update:
 ```markdown
-# DevFlow Context
-**Request:** {original user request}
-**Date:** {today}
-**Slug:** {feature-slug}
-**Tech Stack:** {detected}
-**Constraints:** {identified}
-**Assumptions:** {made}
+**Tech Stack:** {detected from workspace files}
+**Constraints:** {update or confirm from Brainstormer}
+**Slug:** {feature-slug — kebab-case, max 5 words}
 ```
+> ⚠️ Keep existing fields: Request, Date, Goal, Edge Cases, Assumptions, Problem Restatement, Definition of Done, Feature Type, Impact.
 
-Save/update `/memories/session/devflow/phase-state.md`:
+Update `/memories/session/devflow/phase-state.md`:
 ```markdown
 # DevFlow Phase State
-**Current Phase:** 1 (Architect) — COMPLETED
+**Current Phase:** 2 (Architect) — COMPLETED
 **Feature:** {slug}
 
 ## Completed Phases
@@ -139,8 +237,8 @@ Save/update `/memories/session/devflow/phase-state.md`:
 {Link to spec document or inline spec content}
 
 ### Memory Updates
-- Phase completed: Architect (Phase 1)
+- Phase completed: Architect (Phase 2)
 - Artifacts: `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`
-- Next phase: Planner (Phase 2)
+- Next phase: Planner (Phase 3)
 - Blockers: {none or description}
 ```

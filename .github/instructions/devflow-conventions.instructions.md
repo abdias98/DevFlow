@@ -40,8 +40,17 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 **Date:** YYYY-MM-DD
 **Slug:** {feature-slug}
 **Tech Stack:** {auto-detected from workspace}
+**Goal:** {one-sentence goal}
 **Constraints:** {any limitations}
+**Edge Cases:** {list}
 **Assumptions:** {inferred requirements}
+**Problem Restatement:** {2-3 sentences}
+**Feature Type:** {frontend | backend | fullstack}
+**Frontend:** {target device, responsive, accessibility} *(omit if not frontend)*
+**Impact:** {modifies existing: yes/no; affected features: list}
+**Definition of Done:**
+- {verifiable criterion 1}
+- {verifiable criterion 2}
 ```
 
 ### phase-state.md format
@@ -53,12 +62,11 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 ## Completed Phases
 - [x] Phase 1: Brainstormer — Problem Statement saved
 - [x] Phase 2: Architect — `docs/devflow/specs/{file}`
-- [x] Phase 3: Planner — `docs/devflow/plans/{file}`
-- [ ] Phase 4: Tester
-- [ ] Phase 5: Implementer
-- [ ] Phase 6: Reviewer
-- [ ] Phase 7: Debugger (conditional)
-- [ ] Phase 8: Finalizer
+- [x] Phase 3: Planner — `docs/devflow/plans/{file}` (includes test code per task)
+- [ ] Phase 4: Implementer (Red→Green TDD cycle per task)
+- [ ] Phase 5: Reviewer
+- [ ] Phase 6: Debugger (conditional)
+- [ ] Phase 7: Finalizer
 
 ## Iteration Log
 | # | From | To | Reason |

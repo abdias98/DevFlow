@@ -1,27 +1,23 @@
 ---
-description: "Write failing test cases before implementation (TDD red phase). Covers happy paths, edge cases, and failures. Phase 3 of the DevFlow lifecycle."
+description: "Manually trigger the red phase of a specific task: create the failing test from the plan and verify it FAILs. Use only when resuming mid-implementation or debugging a specific test."
 agent: agent
 ---
 
-# DevFlow — Test Phase (TDD)
+# DevFlow — Test Phase (Red Phase Only)
 
-Run ONLY the Tester phase of the DevFlow lifecycle.
+> ⚠️ Normally the red→green cycle runs automatically inside the Implementer. Use this prompt only to manually create and verify a failing test for a specific task.
 
 ## Instructions
 
-Invoke the `devflow-tester` skill to:
+1. Read the plan from `docs/devflow/plans/` or session memory
+2. Locate the task's `🧪 Tests for this Task` section
+3. Copy the complete test code exactly as written in the plan — do NOT redesign it
+4. Create the test file using `create_file` or add to existing with `replace_string_in_file`
+5. Run the exact command from the plan's test section and verify the test **FAILs**
+6. Register the test in `/memories/session/devflow/test-registry.md` (status: FAIL)
 
-1. Locate and read the plan document (from session memory or `docs/devflow/plans/`)
-2. Explore test conventions in the workspace (framework, structure, helpers)
-3. Design test cases: happy path, edge cases, failure scenarios
-4. Create test files in the workspace
-5. Execute tests and verify they **all FAIL** (red phase)
-6. Register tests in session memory (`/memories/session/devflow/test-registry.md`)
+**Critical:** NEVER write production code here — only the test file.
 
-**Critical:** NEVER write production code — only test files.
-
-Read session memory first if prior context exists (`/memories/session/devflow/`).
-
-## Plan or Feature to Test
+## Task to Test
 
 ${input}
