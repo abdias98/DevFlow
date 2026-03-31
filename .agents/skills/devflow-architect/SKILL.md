@@ -50,12 +50,18 @@ If the request is clear, skip to Step 2.
 
 ### Step 2 — Explore the Codebase
 
-Use the `Explore` subagent (thorough mode) to understand:
+Use the `Explore` subagent in **thorough mode** to perform a deep, comprehensive exploration of the entire project. The goal is to fully understand the existing structure so that architectural suggestions follow established patterns and do not introduce inconsistencies.
 
-1. **Project structure** — directories, naming conventions, patterns used
-2. **Existing components** relevant to the feature — similar services, controllers, hooks, components
-3. **Tech stack details** — frameworks, test runners, build tools, database access patterns
-4. **Conventions** — how similar features are structured (file organization, naming, patterns)
+The exploration MUST cover:
+
+1. **Full project structure** — map every significant directory and file. Understand the folder hierarchy, module boundaries, and how the project is organized at every layer (e.g., src/, features/, domain/, infrastructure/, tests/).
+2. **Naming conventions** — identify how files, classes, functions, variables, and routes are named across the codebase. New components must follow the same conventions.
+3. **Existing components** relevant to the feature — locate similar services, controllers, repositories, hooks, components, or modules already present. Understand their structure before proposing new ones.
+4. **Tech stack details** — auto-detect frameworks, test runners, build tools, ORM/database access patterns, dependency injection setup, state management, and any custom abstractions from config files (`package.json`, `*.csproj`, `pyproject.toml`, `go.mod`, etc.).
+5. **Architecture patterns in use** — identify patterns like layered architecture, clean architecture, feature-based folders, MVC, CQRS, repository pattern, etc. Proposed design must align with what already exists.
+6. **Conventions for similar features** — find at least one existing feature most similar to what will be built. Study its file structure, interfaces, and flow as a reference template.
+
+> ⚠️ **Do NOT make design decisions before the exploration is complete.** Any component, interface, or pattern proposed in the spec must be grounded in what was found during this step.
 
 Store key findings in session memory.
 
