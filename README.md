@@ -8,20 +8,30 @@ Designed for **any tech stack**, integrated directly into **VS Code Copilot** (n
 
 ## 🚀 Quick Start
 
-Install globally (works in any VS Code workspace):
+### Step 1: Install globally (one-time)
 
 ```bash
-# One-liner (macOS/Linux/Windows Git Bash)
 bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/install.sh)
 ```
 
-Then in any Copilot chat:
+Installs the `@devflow` agent globally — available in **every VS Code workspace** without extra setup.
+
+### Step 2: Reload VS Code
+
+`Ctrl+Shift+P` → **Developer: Reload Window**
+
+### Step 3: Use DevFlow in any workspace
 
 ```
-/devflow Implement user authentication with JWT tokens
+@devflow Implement user authentication with JWT tokens
 ```
 
-DevFlow will automatically orchestrate 6 specialized AI sub-agents to design, plan, test, implement, review, and debug your feature.
+✅ Done. DevFlow orchestrates 6 sub-agents: Architect → Planner → Tester → Implementer → Reviewer → Debugger.
+
+> **Need skills in a specific project?** Run once inside that workspace:
+> ```bash
+> cd ~/your/project && devflow-init
+> ```
 
 ---
 
@@ -42,29 +52,23 @@ Each agent has **clear responsibilities**, **strict role separation**, and **per
 
 ---
 
-## 💻 Commands Available
+## 💻 Usage in Copilot Chat
 
-### Full Lifecycle
+### Full lifecycle (recommended)
 ```
-/devflow Build a REST API for managing users
+@devflow Build a REST API for managing users
 ```
-Executes all 7 phases automatically: Architect → Plan → Test → Implement → Review → Debug → Finalize.
+Runs all phases: Architect → Plan → Test (TDD) → Implement → Review → Debug
 
-### Individual Phases
+### Individual phases via slash commands
 ```
-/devflow-architect   # Phase 1: Design
-/devflow-plan        # Phase 2: Planning
-/devflow-test        # Phase 3: TDD
-/devflow-implement   # Phase 4: Implementation
-/devflow-review      # Phase 5: Review
-/devflow-debug       # Phase 6: Debug
+/devflow-architect   Design a component
+/devflow-plan        Break down a feature
+/devflow-test        Write failing tests
+/devflow-implement   Implement code
+/devflow-review      Review code quality & security
+/devflow-debug       Debug a failing test
 ```
-
-### Agent Mode
-```
-@devflow Build a caching layer for product listings
-```
-Interacts with the full orchestrator agent.
 
 ---
 
