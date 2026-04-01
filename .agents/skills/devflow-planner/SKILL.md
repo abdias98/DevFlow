@@ -1,6 +1,6 @@
 ---
 name: devflow-planner
-description: "Reads a design spec and breaks it down into atomic implementation tasks with checkboxes, file maps, complete code snippets, and pre-written commit messages. Produces a plan document in docs/devflow/plans/. USE WHEN: create implementation plan, break down tasks, task planning, devflow plan phase, create checklist from spec."
+description: "Reads a design spec and breaks it down into atomic implementation tasks with checkboxes, file maps, complete code snippets, and pre-written commit messages. For UI features, generates an HTML wireframe mockup before writing the plan. Produces a plan document in docs/devflow/plans/. USE WHEN: create implementation plan, break down tasks, task planning, devflow plan phase, create checklist from spec."
 argument-hint: "Path to a spec document, or describe the feature to plan. If a spec exists in docs/devflow/specs/, it will be auto-detected."
 ---
 
@@ -71,7 +71,35 @@ For each file to modify or create, explore the codebase to understand:
 
 This ensures code snippets in the plan (both implementation and test code) follow the project's actual conventions.
 
-### Step 4 — Write the Plan
+### Step 4 — Generate HTML Mockup *(UI features only)*
+
+> **Skip this step entirely** if `Feature Type` in `/memories/session/devflow/context.md` is **not** `web frontend`, `fullstack`, or `mobile`.
+
+Read the spec's screen/view list and generate a standalone HTML wireframe so the user can visualize what will be built **before** the detailed plan is written.
+
+**Rules for the mockup:**
+- Pure HTML + inline CSS — **no external CDN links, no JS frameworks, no images** (fully self-contained)
+- Wireframe aesthetic: system font, `#f5f5f5` background, `#333` text, `#ccc` borders, `#ddd` fill for placeholders
+- One `<section>` per screen or view identified in the spec (e.g., List screen, Detail screen, Form, Modal, Dashboard)
+- Each section must include:
+  - A visible heading with the screen name
+  - Structural placeholders: header bar, navigation, content areas, sidebars
+  - Interactive elements: buttons (labeled), input fields, dropdowns, checkboxes, tables, lists — all styled but static
+  - Annotation labels in `<small style="color:#999">` describing what each area does
+- Add a simple tab/link nav at the top of the page so the user can jump between sections
+- No actual application logic — placeholders only
+
+**Procedure:**
+1. From the spec, extract every screen, view, dialog, or route that will be created or modified
+2. Map each to a `<section id="screen-name">` block
+3. Write the complete HTML file
+4. Save it using `create_file` to `docs/devflow/mockups/YYYY-MM-DD-{slug}-mockup.html`
+5. Announce the path to the user and instruct them to open it in a browser
+6. **Continue automatically** to Step 5 — do NOT wait for confirmation
+
+---
+
+### Step 5 — Write the Plan
 
 Create the plan document at `docs/devflow/plans/YYYY-MM-DD-{slug}.md` following this structure:
 
@@ -82,6 +110,7 @@ Create the plan document at `docs/devflow/plans/YYYY-MM-DD-{slug}.md` following 
 
 **Goal:** {One-sentence summary}
 **Architecture:** {Brief reference to spec document path}
+**Mockup:** `docs/devflow/mockups/YYYY-MM-DD-{slug}-mockup.html` *(UI features only — omit for backend/CLI/library)*
 **Tech Stack:** {Detected from workspace}
 
 ---
@@ -188,9 +217,10 @@ Example structure varies by stack:
 - [ ] Test code uses the detected test framework and follows project conventions
 - [ ] Dependencies between tasks are respected
 - [ ] No orphan files (everything referenced exists)
+- [ ] HTML wireframe mockup generated (UI features only) — saved to `docs/devflow/mockups/`
 ```
 
-### Step 5 — Confirmation Gate
+### Step 6 — Confirmation Gate
 
 1. Save the plan document to `docs/devflow/plans/YYYY-MM-DD-{slug}.md`
 2. Present the complete plan (including test cases) to the user
@@ -206,7 +236,7 @@ Example structure varies by stack:
 
 **Do NOT invoke the Implementer or write any code until the user explicitly confirms.**
 
-### Step 6 — Update Memory
+### Step 7 — Update Memory
 
 Update `/memories/session/devflow/phase-state.md`:
 ```markdown
@@ -228,7 +258,7 @@ Update `/memories/session/devflow/phase-state.md`:
 
 ### Memory Updates
 - Phase completed: Planner (Phase 3)
-- Artifacts: `docs/devflow/plans/YYYY-MM-DD-{slug}.md`
+- Artifacts: `docs/devflow/plans/YYYY-MM-DD-{slug}.md` | `docs/devflow/mockups/YYYY-MM-DD-{slug}-mockup.html` *(UI features only)*
 - Next phase: awaiting user confirmation → invoke `devflow-implementer` on approval
 - Blockers: {none or description}
 ```

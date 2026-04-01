@@ -81,18 +81,19 @@ You MUST follow this strict lifecycle. NEVER skip phases. NEVER proceed if curre
 1. Read the spec from Phase 2
 2. Explore the codebase — including test framework, test conventions, run commands
 3. Break down into atomic, ordered tasks
-4. Map each task to specific files (modify/create)
-5. Define dependencies between tasks
-6. Write complete implementation code for each step (ready to copy-paste)
-7. Pre-write commit messages for each task checkpoint
-8. **Test Code per Task** — For each task, include a `🧪 Tests for this Task` section with:
+4. **Generate HTML wireframe mockup** (UI features only: web frontend / fullstack / mobile) — standalone HTML file saved to `docs/devflow/mockups/`, shown to user before the plan, then continues automatically
+5. Map each task to specific files (modify/create)
+6. Define dependencies between tasks
+7. Write complete implementation code for each step (ready to copy-paste)
+8. Pre-write commit messages for each task checkpoint
+9. **Test Code per Task** — For each task, include a `🧪 Tests for this Task` section with:
    - Complete, ready-to-paste test code using the project's actual test framework and conventions
    - All required imports, mocks, `describe`/`test` blocks
    - At least one test per scenario: happy path, edge case, failure scenario
    - Assertions written to **FAIL** until production code is written (red phase)
    - The exact command to run only those tests
-9. **Output:** Plan saved to `docs/devflow/plans/YYYY-MM-DD-{slug}.md` (includes complete test code per task)
-10. **Update memory:** Save plan reference to session
+10. **Output:** Plan saved to `docs/devflow/plans/YYYY-MM-DD-{slug}.md` (includes complete test code per task)
+11. **Update memory:** Save plan reference to session
 
 ---
 
