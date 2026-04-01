@@ -40,12 +40,17 @@ You are the **Implementer** sub-agent of the DevFlow framework. Your responsibil
 ### Step 1 — Load Context
 
 1. Read session memory:
-   - `/memories/session/devflow/context.md` — tech stack, constraints
+   - `/memories/session/devflow/context.md` — tech stack, constraints, **Stack Mode**
    - `/memories/session/devflow/phase-state.md` — plan path, completed phases
 2. Read the plan document from `docs/devflow/plans/`
-3. Identify where to start (first unchecked step or resume from last checkpoint)
+3. Note the **Stack Mode** from `context.md`:
+   - `Stack Mode: no` → proceed as a flat task list (Step 2 — standard flow)
+   - `Stack Mode: yes` → the plan contains a `## Stack Plan` table; iterate by Stack (Step 2 — stacked flow)
+4. Identify where to start (first unchecked step or resume from last checkpoint)
 
-### Step 2 — Execute Plan Step-by-Step (Red → Green per Task)
+### Step 2 — Execute Plan (Standard flow — Stack Mode = no)
+
+> If Stack Mode = yes, skip this section and follow **Step 2S — Stacked flow** below.
 
 For each task in the plan:
 
@@ -73,7 +78,54 @@ For each task in the plan:
    git commit -m "{message from plan}"
    ```
 
-### Step 3 — Verify All Tests Pass
+---
+
+### Step 2S — Execute Plan (Stacked flow — Stack Mode = yes)
+
+> Only used when Stack Mode = yes. The plan contains a `## Stack Plan` table with N Stacks.
+
+For each Stack in the Stack Plan table (in order):
+
+**🌿 Branch setup:**
+1. Create and switch to the Stack branch:
+   ```bash
+   git checkout -b feat/{slug}/stack-{N}  # from Stack's base branch
+   ```
+
+**🔴 Red → 🟢 Green per Task (same cycle as standard flow):**
+2. For each task inside this Stack:
+   - Execute the full Red Phase (create test file, verify FAIL)
+   - Execute the full Green Phase (write production code, verify PASS, commit)
+   - Register tests in `/memories/session/devflow/test-registry.md`
+
+**📤 Create Stack PR immediately after all tasks in the Stack are complete:**
+3. Push the branch and open the PR:
+   ```bash
+   git push -u origin feat/{slug}/stack-{N}
+
+   # Preferred: gh CLI
+   gh pr create \
+     --base "{stack-base-branch}" \
+     --title "[{N}/{M}] feat({scope}): {stack title}" \
+     --body "## Stack {N}/{M}: {stack title}
+
+   Part of feature: {feature title}
+   Plan: \`docs/devflow/plans/YYYY-MM-DD-{slug}.md\`
+
+   ### Tasks in this Stack
+   {list of task titles in this Stack}
+
+   > The team reviews and merges stacked PRs in order: Stack 1 → Stack 2 → ... → Stack M."
+   ```
+4. If `gh` is not available, print the manual fallback:
+   ```
+   # Push and open a PR manually at:
+   # https://github.com/{owner}/{repo}/compare/{base}...feat/{slug}/stack-{N}
+   ```
+5. Display the PR URL
+6. **Continue immediately to the next Stack — do NOT wait for PR review or approval**
+
+**After all Stacks are complete:** proceed to Step 3 (verify full test suite).
 
 After completing all tasks:
 

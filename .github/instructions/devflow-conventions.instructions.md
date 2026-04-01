@@ -14,6 +14,7 @@ All generated artifacts follow: `YYYY-MM-DD-{slug}-{type}.md`
 | Implementation plan | `docs/devflow/plans/` | `2026-03-28-user-auth.md` |
 | Code review | `docs/devflow/reviews/` | `2026-03-28-user-auth-review.md` |
 | Debug log | `docs/devflow/debug-logs/` | `2026-03-28-user-auth-debug.md` |
+| HTML mockup | `docs/devflow/mockups/` | `2026-03-28-user-auth-mockup.html` |
 
 ### Slug rules
 - Lowercase, kebab-case
@@ -48,6 +49,7 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 **Feature Type:** {frontend | backend | fullstack}
 **Frontend:** {target device, responsive, accessibility} *(omit if not frontend)*
 **Impact:** {modifies existing: yes/no; affected features: list}
+**Stack Mode:** yes | no  *(yes = stacked PRs per layer; no = single PR for full feature)*
 **Definition of Done:**
 - {verifiable criterion 1}
 - {verifiable criterion 2}
@@ -130,6 +132,17 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 **Goal:** {One-sentence summary}
 **Architecture:** {Brief reference to spec}
 **Tech Stack:** {Detected from workspace}
+
+---
+
+<!-- Include the Stack Plan section ONLY when Stack Mode = yes -->
+## Stack Plan *(Stack Mode = yes only)*
+
+| Stack | Title | Branch | Base | PR Title |
+|-------|-------|--------|------|----------|
+| 1/N | {Data layer title} | `feat/{slug}/stack-1` | `main` | `[1/N] feat({scope}): {title}` |
+| 2/N | {API layer title} | `feat/{slug}/stack-2` | `feat/{slug}/stack-1` | `[2/N] feat({scope}): {title}` |
+| N/N | {Frontend title} | `feat/{slug}/stack-N` | `feat/{slug}/stack-{N-1}` | `[N/N] feat({scope}): {title}` |
 
 ---
 
@@ -258,4 +271,30 @@ The agent reads these files to determine:
 - Language and framework conventions
 - Test runner and assertion library
 - Build and run commands
+
+---
+
+## PR Stacking Conventions
+
+### Branch naming
+| Purpose | Pattern | Example |
+|---------|---------|---------|
+| Spec review | `feat/{slug}/spec-review` | `feat/user-auth/spec-review` |
+| Stack N | `feat/{slug}/stack-{N}` | `feat/user-auth/stack-1` |
+
+### PR title format
+| Type | Format | Example |
+|------|--------|---------|
+| Spec PR | `spec: {feature title}` | `spec: user authentication` |
+| Stack PR | `[N/M] feat({scope}): {stack title}` | `[1/3] feat(auth): data layer + migrations` |
+
+### Sizing guidelines (soft limits)
+- ~400 lines of diff per Stack
+- ~8 files modified per Stack
+- Cohesion takes priority over size — never split a logical layer just to hit the limit
+
+### Stack base branches
+- Stack 1 → base: `main` / `develop`
+- Stack N (N > 1) → base: `feat/{slug}/stack-{N-1}`
+- Spec PR → base: `main` / `develop`
 - Project structure patterns
