@@ -178,8 +178,24 @@ This file accumulates knowledge across all DevFlow cycles in this project.
 | Fix is trivial (typo, missing import) | Fix directly and document |
 | Fix requires code restructuring | Route to Implementer with analysis |
 | Fix reveals architecture flaw | Route to Architect for redesign |
-| 3 attempts failed | Stop, present full analysis to user |
+| 3 attempts failed | Stop and present structured triage to user (see below) |
 | Error is in external dependency | Document workaround or inform user |
+
+**Structured triage after 3 failed attempts:**
+
+Present the following options to the user:
+
+> ❌ After 3 attempts, the issue could not be resolved automatically. Here is the full analysis:
+> {root cause chain and all attempted fixes}
+>
+> Please choose how to proceed:
+> - **A) Architectural change** — The root cause requires redesigning this component. I will route back to the Architect (Phase 2).
+> - **B) Plan revision** — The plan needs to be adjusted to avoid this approach. I will route back to the Planner (Phase 3).
+> - **C) Simplify scope** — Remove or defer this specific behavior. I will update the plan and skip this test.
+> - **D) Manual fix** — You will fix this manually. Describe the change and I will continue from the next task.
+> - **E) Abandon cycle** — Stop the current cycle and address this separately.
+>
+> Reply with the letter of your choice.
 
 ---
 

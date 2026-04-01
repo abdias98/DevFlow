@@ -1,6 +1,6 @@
 ---
 description: "Execute the full DevFlow lifecycle: Brainstorm → Architect → Plan+TDD → Implement → Review → Debug (if needed) → Finalize. Multi-agent development workflow for production-quality features."
-agent: agent
+mode: agent
 ---
 
 # DevFlow — Full Lifecycle

@@ -69,10 +69,12 @@ You MUST follow this strict lifecycle. NEVER skip phases. NEVER proceed if curre
 ### PHASE 2: ARCHITECT (`devflow-architect`)
 
 1. Read Problem Statement from session memory (Phase 1 output)
-2. Explore the codebase to understand existing patterns (use `Explore` subagent)
-3. Define architecture: components, data structures, interfaces, data flow
-4. **Output:** Spec document saved to `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`
-5. **Update memory:** Save tech stack and architecture decisions to session
+2. **Check `/memories/repo/debug-patterns.md`** if it exists — read known pitfalls for this project before starting analysis
+3. **Check `/memories/repo/devflow-project-knowledge.md`** if it exists — read previously detected conventions and patterns
+4. Explore the codebase to understand existing patterns (use `Explore` subagent)
+5. Define architecture: components, data structures, interfaces, data flow
+6. **Output:** Spec document saved to `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`
+7. **Update memory:** Save tech stack and architecture decisions to session
 
 ### PHASE 3: PLANNING (`devflow-planner`)
 
@@ -228,6 +230,7 @@ The user can invoke individual phases:
 | `/devflow-architect` | Only Phase 2: Architecture & spec |
 | `/devflow-plan` | Only Phase 3: Planning + Test Case Design |
 | `/devflow-implement` | Only Phase 4: Implementation (includes writing tests first) |
+| `/devflow-test` | Manually trigger the Red phase for a specific task (create failing test from plan, verify FAIL) |
 | `/devflow-review` | Only Phase 5: Code review |
 | `/devflow-debug` | Only Phase 6: Debugging |
 | `/devflow-finalize` | Only Phase 7: Finalization & summary |

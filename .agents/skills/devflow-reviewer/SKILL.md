@@ -44,11 +44,11 @@ You are the **Reviewer** sub-agent of the DevFlow framework. Your responsibility
 
 ### Security (OWASP Top 10)
 - [ ] No SQL injection (parameterized queries / ORM used correctly)
-- [ ] No XSS vectors (output encoding, React auto-escaping)
+- [ ] No XSS vectors (output encoding; framework auto-escaping where applicable)
 - [ ] No sensitive data in logs or error messages
 - [ ] Authentication/authorization checks present where needed
 - [ ] No hardcoded secrets or credentials
-- [ ] Input validation at API boundaries
+- [ ] Input validation at API/system boundaries
 
 ### Architecture Alignment
 - [ ] Implementation matches the spec design
@@ -84,7 +84,9 @@ You are the **Reviewer** sub-agent of the DevFlow framework. Your responsibility
 - [ ] All error status codes from spec are handled
 - [ ] No undocumented endpoints introduced
 
-### Accessibility *(if frontend feature — WCAG 2.1 AA)*
+### Accessibility *(if UI feature — adapt checks to the platform)*
+
+**Web (WCAG 2.1 AA):**
 - [ ] All interactive elements have `aria-label` or visible label
 - [ ] Keyboard navigation works (Tab, Enter, Escape)
 - [ ] No keyboard traps
@@ -93,8 +95,16 @@ You are the **Reviewer** sub-agent of the DevFlow framework. Your responsibility
 - [ ] Form inputs have associated `<label>` elements
 - [ ] Error messages are announced to screen readers
 
+**Android (Material Accessibility):**
+- [ ] All interactive views have `contentDescription`
+- [ ] TalkBack navigation order is logical
+- [ ] Touch target size ≥ 48dp
+- [ ] No color as the only differentiator
+
+**Other platforms (CLI, library, desktop):** Accessibility is N/A unless the spec defines requirements.
+
 ### Dependencies
-- [ ] No unnecessary packages added (check `package.json`, `*.csproj`, `requirements.txt`)
+- [ ] No unnecessary packages added (check `package.json`, `*.csproj`, `requirements.txt`, `composer.json`, `Gemfile`, `go.mod`, `Cargo.toml`, `build.gradle`, `Podfile` — whichever applies)
 - [ ] No unused imports left behind
 - [ ] No packages with known vulnerabilities introduced
 
@@ -107,6 +117,7 @@ You are the **Reviewer** sub-agent of the DevFlow framework. Your responsibility
 1. Read session memory for spec path, plan path, and test results
 2. Read the spec document (`docs/devflow/specs/`)
 3. Read the plan document (`docs/devflow/plans/`)
+4. Read `context.md` Definition of Done criteria — cross-reference each DoD criterion against the implementation. Flag any criterion that cannot be verified as a **WARN** finding.
 
 ### Step 2 — Get the Diff
 
@@ -179,6 +190,7 @@ For each BLOCK finding, include a **copy-pasteable fix snippet**:
 |----------|--------|
 | No BLOCK findings | ✅ APPROVED → Continue to Phase 7 (Finalization) |
 | BLOCK findings exist | 🔄 CHANGES REQUESTED → Route back to Implementer with specific fixes |
+| Plan gap or missing task | 🔄 Route back to Planner (Phase 3) for plan revision |
 | Architecture flaw found | 🔄 Route back to Architect (Phase 2) for redesign |
 
 If routing back to Implementer:

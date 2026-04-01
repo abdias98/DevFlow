@@ -125,7 +125,7 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 ```markdown
 # {Feature Title} Implementation Plan
 
-> **For agentic workers:** Use devflow-tester → devflow-implementer → devflow-reviewer to execute this plan task-by-task.
+> **For agentic workers:** Use devflow-implementer (Red→Green per task) → devflow-reviewer to execute this plan task-by-task.
 
 **Goal:** {One-sentence summary}
 **Architecture:** {Brief reference to spec}
@@ -239,7 +239,15 @@ DevFlow is **portable** — it detects the workspace's tech stack dynamically:
 | `requirements.txt` / `pyproject.toml` | Python |
 | `go.mod` | Go |
 | `Cargo.toml` | Rust |
-| `pom.xml` / `build.gradle` | Java |
+| `pom.xml` / `build.gradle` | Java / Android |
+| `AndroidManifest.xml` | Android (native) |
+| `gradle/libs.versions.toml` | Android (version catalog) |
+| `composer.json` | PHP |
+| `artisan` | Laravel (PHP framework) |
+| `phpunit.xml` / `phpunit.xml.dist` | PHP unit tests (PHPUnit) |
+| `Gemfile` | Ruby / Rails |
+| `pubspec.yaml` | Dart / Flutter |
+| `Package.swift` | Swift / iOS |
 | `vite.config.*` | Vite frontend |
 | `tsconfig.json` | TypeScript |
 | `vitest.config.*` | Vitest test runner |

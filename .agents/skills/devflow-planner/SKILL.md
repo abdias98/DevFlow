@@ -62,12 +62,12 @@ For each file to modify or create, explore the codebase to understand:
 3. Import patterns, naming conventions, test structure
 4. Build/run/test commands
 5. **Test framework and conventions** — required to write complete test code in the plan:
-   - What testing library is used? (search `vitest.config`, `jest.config`, `*.Tests.csproj`, `pytest.ini`, etc.)
-   - Where do test files live? (`__tests__/`, `*.test.ts`, `*.spec.ts`, `*.Tests/`)
-   - Are there test utilities, factories, or helpers? (`testUtils.jsx`, `Factories/`, `setupTests.js`)
-   - What is the assertion style? (`expect`, `Assert`, `assert`)
-   - What naming convention for test names? (`should_X_when_Y`, descriptive strings, etc.)
-   - What is the exact command to run tests?
+   - What testing library is used? (search `vitest.config`, `jest.config`, `phpunit.xml`, `pytest.ini`, `build.gradle` test dependencies, `*.Tests.csproj`, etc.)
+   - Where do test files live? (`__tests__/`, `*.test.ts`, `*.spec.ts`, `tests/`, `*Test.php`, `*Test.java`, `*.Tests/`)
+   - Are there test utilities, factories, or helpers? (`testUtils.jsx`, `Factories/`, `setupTests.js`, `TestCase.php`, `BaseTestCase.java`)
+   - What is the assertion style? (`expect`, `Assert`, `assert`, `$this->assert*`)
+   - What naming convention for test names? (`should_X_when_Y`, descriptive strings, `test_method_condition`, etc.)
+   - What is the exact command to run tests? (e.g., `pnpm test`, `./vendor/bin/phpunit`, `pytest`, `./gradlew test`, `dotnet test`)
 
 This ensures code snippets in the plan (both implementation and test code) follow the project's actual conventions.
 
@@ -88,17 +88,15 @@ Create the plan document at `docs/devflow/plans/YYYY-MM-DD-{slug}.md` following 
 
 ## File Map
 
-**Backend — modify:**
-- `path/to/file` — description
+> Adapt section headings to the project's actual architecture. Examples below — use only the layers that exist in the detected stack.
 
-**Backend — create:**
+**Modify:**
+- `path/to/file` — description of change
+
+**Create:**
 - `path/to/new-file` — purpose
 
-**Frontend — modify:**
-- `path/to/file` — description
-
-**Frontend — create:**
-- `path/to/new-file` — purpose
+*(For web projects, group by Backend / Frontend. For Android, group by layer: Data / Domain / Presentation. For PHP/Laravel, group by: Controllers / Models / Views / Migrations. For CLI, group by: Commands / Services / Config. Adapt as needed.)*
 
 ---
 
@@ -139,37 +137,41 @@ git commit -m "{conventional commit message}"
 
 #### 🧪 Tests for this Task
 
-**Test file:** `{path/to/feature.test.ts}` *(create new / add to existing)*
+**Test file:** `{path/to/feature.test.ext}` *(create new / add to existing)*
 
 ```{language}
-{Complete, ready-to-paste test code using the detected test framework and conventions.
+{Complete, ready-to-paste test code using the detected test framework and conventions for this project.
 Must include:
-  - All required imports and mocks
-  - describe / test block structure following project conventions
+  - All required imports, use statements, annotations, or setup methods following the project's conventions
+  - Test class/function/block structure matching the project's existing test patterns
   - At least one test per scenario below
-  - Assertions that will FAIL because the production code doesn't exist yet}
+  - Assertions that will FAIL because the production code doesn't exist yet
+
+Example structure varies by stack:
+  - JS/TS (Jest/Vitest): describe + test/it blocks, expect assertions
+  - PHP (PHPUnit): class extending TestCase, public test methods, $this->assert* assertions
+  - Python (pytest): functions prefixed test_, assert statements
+  - Java/Android (JUnit): @Test annotated methods, assertEquals/assertTrue
+  - .NET (xUnit/NUnit): [Fact]/[Test] annotated methods, Assert class}
 
 // ✅ Happy path
-test('{description}', () => {
-  // arrange
-  // act
-  // assert - this will fail until production code is written
-});
+{test for normal expected behavior}
 
 // ⚠️ Edge case
-test('{description}', () => {
-  ...
-});
+{test for boundary or unexpected input}
 
 // ❌ Failure / error scenario
-test('{description}', () => {
-  ...
-});
+{test that verifies correct error handling}
 ```
 
 **Run command:**
 ```bash
-{exact command to execute only these tests, e.g.: pnpm test -- --filter "TaskName" | dotnet test --filter "TaskName" | pytest -k "test_name"}
+{exact command to execute only these tests, adapted to the detected stack:
+  e.g.: pnpm test -- --filter "TaskName"
+        ./vendor/bin/phpunit --filter "TestClassName"
+        pytest -k "test_name"
+        ./gradlew test --tests "com.example.TestClass"
+        dotnet test --filter "TestName"}
 ```
 
 > ⚠️ All tests above MUST fail on first run (red phase). They will pass after the production code is implemented.

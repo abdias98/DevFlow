@@ -60,6 +60,8 @@ For each task, use the **run command from the plan's test section** to execute t
 # JavaScript/TypeScript: pnpm test -- --filter "TaskName"
 # .NET: dotnet test --filter "TaskName" -v normal
 # Python: pytest -k "test_name" -v
+# PHP: ./vendor/bin/phpunit --filter "TestName"
+# Java/Android: ./gradlew test --tests "TestName"
 ```
 
 **Expected result:** All new tests should be RED (failing) — proving the production code doesn't exist yet.
@@ -68,37 +70,7 @@ If any test passes immediately:
 - The feature already exists → Remove that test or adjust it to test NEW behavior
 - The test is wrong → Flag it to the Planner for correction
 
-### Step 4 — Write Test Files
-
-For each test file:
-
-1. Follow the EXACT conventions found in Step 2 (imports, structure, naming)
-2. Write complete, runnable test code
-3. Include all necessary imports, mocks, setup/teardown
-4. Use existing factories/helpers when available
-5. Each test must assert specific expected behavior
-
-**Create test files** in the workspace using `create_file` or `replace_string_in_file`.
-
-### Step 5 — Execute Tests and Verify FAIL
-
-Run the test suite to verify all new tests **fail**:
-
-```bash
-# The exact command depends on the detected tech stack
-# Examples:
-# JavaScript/TypeScript: pnpm test -- --filter "TestName"
-# .NET: dotnet test --filter "TestClassName" -v normal
-# Python: pytest -k "test_name" -v
-```
-
-**Expected result:** All new tests should be RED (failing).
-
-If any test passes immediately:
-- The feature already exists → Remove that test or adjust it to test NEW behavior
-- The test is wrong → Fix the assertion
-
-### Step 6 — Register Tests in Session Memory
+### Step 4 — Register Tests in Session Memory
 
 Create or update `/memories/session/devflow/test-registry.md`:
 
@@ -115,7 +87,7 @@ Create or update `/memories/session/devflow/test-registry.md`:
 
 Update `/memories/session/devflow/phase-state.md`:
 ```markdown
-- [x] Phase 3: Tester — {N} tests created, all FAILING ✅
+- [x] Phase 4 start: Tester (Red phase) — {N} tests created, all FAILING ✅
 - Current phase: Implementation (Phase 4) — make tests pass
 ```
 

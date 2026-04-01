@@ -55,7 +55,7 @@ For each task in the plan:
 3. Create the test file using `create_file` or add to existing file with `replace_string_in_file`
 4. Run the test command from the plan → verify tests **FAIL** (production code doesn't exist yet)
    - If a test passes immediately → the feature already exists; flag to the user
-   - Register tests in `/memories/session/devflow/test-registry.md` (status: FAIL)
+   - Register tests in `/memories/session/devflow/test-registry.md` — **create the file if it doesn't exist yet**, then append rows for each new test (status: FAIL)
 
 **🟢 Green Phase (production code):**
 5. **Read the target file** (if modifying an existing one)

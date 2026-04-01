@@ -1,6 +1,6 @@
 ---
-description: "Analyze requirements, explore the codebase, and produce an architecture design spec. Phase 1 of the DevFlow lifecycle."
-agent: agent
+description: "Analyze requirements, explore the codebase, and produce an architecture design spec. Phase 2 of the DevFlow lifecycle."
+mode: agent
 ---
 
 # DevFlow — Architect Phase
