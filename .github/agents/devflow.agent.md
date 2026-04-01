@@ -98,19 +98,17 @@ You MUST follow this strict lifecycle. NEVER skip phases. NEVER proceed if curre
 
 ### ⏸️ CONFIRMATION GATE — After Phase 3
 
-After completing Planning, you MUST stop and wait for user confirmation before proceeding.
+After completing Planning, you MUST ask for confirmation before proceeding. Use `vscode_askQuestions`:
 
-Present the following message to the user:
+| header | question | type |
+|--------|----------|------|
+| `plan_confirmation` | Plan + Test Cases complete. Review the plan above — do you want to proceed to Implementation? | options: ✅ Yes, start Implementation, ✏️ Request changes, ❌ Cancel |
 
-> ✅ **Plan + Test Cases complete.**
->
-> Review the plan above. When you are ready to start implementation, run:
->
-> **`@devflow implement`**
->
-> ⚠️ Do NOT proceed to implementation until the user explicitly confirms.
+- **✅ Yes, start Implementation** → Immediately invoke `devflow-implementer` in the same chat session
+- **✏️ Request changes** → Revise the plan, then re-ask
+- **❌ Cancel** → Stop
 
-**Do NOT invoke `devflow-implementer` or write any code until confirmation is received.**
+**Do NOT invoke `devflow-implementer` or write any code until the user explicitly confirms.**
 
 ### PHASE 4: IMPLEMENTER (`devflow-implementer`)
 

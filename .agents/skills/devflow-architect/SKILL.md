@@ -418,7 +418,7 @@ The spec MUST include:
 |--------|----------|------|
 | `spec_confirmation` | Review the architecture spec above. Approve or request changes? | options: ✅ Approve (recommended), ✏️ Request changes, ❌ Cancel |
 
-- **✅ Approve** → Save spec to `docs/devflow/specs/`, update session memory, proceed
+- **✅ Approve** → Save spec to `docs/devflow/specs/`, update session memory, then **immediately invoke `devflow-planner`** with the spec context (do NOT stop — continue in the same chat)
 - **✏️ Request changes** → Ask what to change, loop back to Step 3
 - **❌ Cancel** → Discard without saving
 

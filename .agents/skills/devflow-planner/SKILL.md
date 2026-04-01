@@ -194,19 +194,17 @@ Example structure varies by stack:
 
 1. Save the plan document to `docs/devflow/plans/YYYY-MM-DD-{slug}.md`
 2. Present the complete plan (including test cases) to the user
-3. Display the following message:
+3. Ask for confirmation using `vscode_askQuestions`:
 
-> ✅ **Plan + Test Cases complete.**
->
-> Review the plan above. When you are ready to start implementation, run:
->
-> **`@devflow implement`**
->
-> ⚠️ The implementation phase will NOT start until you confirm.
+| header | question | type |
+|--------|----------|------|
+| `plan_confirmation` | Plan + Test Cases complete. Review the plan above — do you want to proceed to Implementation? | options: ✅ Yes, start Implementation, ✏️ Request changes, ❌ Cancel |
 
-**Do NOT invoke the Implementer. Do NOT write any code or test files yet. Wait for the user to confirm.**
+- **✅ Yes, start Implementation** → Immediately invoke `devflow-implementer` with the plan context (do NOT stop — continue in the same chat)
+- **✏️ Request changes** → Ask what to adjust, revise the plan, re-present it
+- **❌ Cancel** → Discard the plan and stop
 
-If the user requests adjustments, revise the plan and re-present it. If the user cancels, discard the plan.
+**Do NOT invoke the Implementer or write any code until the user explicitly confirms.**
 
 ### Step 6 — Update Memory
 
@@ -231,6 +229,6 @@ Update `/memories/session/devflow/phase-state.md`:
 ### Memory Updates
 - Phase completed: Planner (Phase 3)
 - Artifacts: `docs/devflow/plans/YYYY-MM-DD-{slug}.md`
-- Next phase: awaiting user confirmation → `@devflow implement`
+- Next phase: awaiting user confirmation → invoke `devflow-implementer` on approval
 - Blockers: {none or description}
 ```
