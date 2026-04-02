@@ -53,7 +53,7 @@ If the request is clear, skip to Step 1.5.
 
 Before exploring the codebase, check whether the project already documents its stack and conventions in an `AGENTS.md` file.
 
-1. Use `file_search` with pattern `**/AGENTS.md` to locate the file — it may live in the project root or a subdirectory (e.g., `docs/AGENTS.md`).
+1. Use `grep_search` or `semantic_search` to search for `AGENTS.md` anywhere in the workspace — it may live in the project root or a subdirectory (e.g., `docs/AGENTS.md`).
 
 2. **If found:**
    - Read the file with `read_file`.

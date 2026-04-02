@@ -192,7 +192,7 @@ Works with **any** language and framework.
 
 ---
 
-## � AGENTS.md — Skip the Stack Discovery
+## AGENTS.md — Skip the Stack Discovery
 
 DevFlow can read an `AGENTS.md` file from your project to skip the exhaustive general codebase exploration during the Architect phase. When the file is found, the Architect agent reads it and uses its contents in place of automatically mapping your folder structure, naming conventions, tech stack, and architecture patterns.
 
@@ -264,7 +264,7 @@ tests/          # Integration and e2e tests
 
 ---
 
-## �📚 Key Features
+## 📚 Key Features
 
 ✅ **TDD by Default** — Plan includes complete test code per task; Implementer runs Red→Green cycle per task  
 ✅ **UI Mockups** — Architect generates ASCII wireframes with component annotations for every frontend feature  
