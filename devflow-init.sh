@@ -52,7 +52,7 @@ fi
 if [ -d "$WORKSPACE_DIR/.git" ]; then
   EXCLUDE_FILE="$WORKSPACE_DIR/.git/info/exclude"
   mkdir -p "$(dirname "$EXCLUDE_FILE")"
-  for entry in ".agents/" ".github/instructions/devflow-*.instructions.md" ".github/prompts/devflow*.prompt.md"; do
+  for entry in ".agents/" ".github/instructions/devflow-*.instructions.md"; do
     if ! grep -qxF "$entry" "$EXCLUDE_FILE" 2>/dev/null; then
       echo "$entry" >> "$EXCLUDE_FILE"
     fi
