@@ -87,9 +87,11 @@ For each task in the plan:
 For each Stack in the Stack Plan table (in order):
 
 **🌿 Branch setup:**
-1. Create and switch to the Stack branch:
+1. Create and switch to the Stack branch from the up-to-date base:
    ```bash
-   git checkout -b feat/{slug}/stack-{N}  # from Stack's base branch
+   git checkout {stack-base-branch}          # e.g. main for Stack 1, feat/{slug}/stack-{N-1} for Stack N
+   git pull origin {stack-base-branch}       # ensure it's up to date before branching
+   git checkout -b feat/{slug}/stack-{N}     # branch off the correct base
    ```
 
 **🔴 Red → 🟢 Green per Task (same cycle as standard flow):**
@@ -120,7 +122,7 @@ For each Stack in the Stack Plan table (in order):
 4. If `gh` is not available, print the manual fallback:
    ```
    # Push and open a PR manually at:
-   # https://github.com/{owner}/{repo}/compare/{base}...feat/{slug}/stack-{N}
+   # https://github.com/{owner}/{repo}/compare/{stack-base-branch}...feat/{slug}/stack-{N}
    ```
 5. Display the PR URL
 6. **Continue immediately to the next Stack — do NOT wait for PR review or approval**
