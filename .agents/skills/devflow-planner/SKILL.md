@@ -352,6 +352,6 @@ Update `/memories/session/devflow/phase-state.md`:
 ### Memory Updates
 - Phase completed: Planner (Phase 3)
 - Artifacts: `docs/devflow/plans/YYYY-MM-DD-{slug}.md` | `docs/devflow/mockups/YYYY-MM-DD-{slug}-mockup.html` *(UI features only)*
-- Next phase: awaiting user confirmation → invoke `devflow-implementer` on approval
+- Next phase: run `/devflow-implement` to begin implementation (the act of running it is the confirmation)
 - Blockers: {none or description}
 ```
