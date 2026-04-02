@@ -192,7 +192,79 @@ Works with **any** language and framework.
 
 ---
 
-## 📚 Key Features
+## � AGENTS.md — Skip the Stack Discovery
+
+DevFlow can read an `AGENTS.md` file from your project to skip the exhaustive general codebase exploration during the Architect phase. When the file is found, the Architect agent reads it and uses its contents in place of automatically mapping your folder structure, naming conventions, tech stack, and architecture patterns.
+
+**Valid locations** (searched automatically): project root (`AGENTS.md`) or any subdirectory (e.g., `docs/AGENTS.md`).
+
+### What steps are skipped when AGENTS.md is present
+
+| Step skipped | What it covers |
+|---|---|
+| Sub-step 1 — Full project structure | Folder hierarchy, module boundaries |
+| Sub-step 2 — Naming conventions | File, class, function, route naming |
+| Sub-step 4 — Tech stack details | Frameworks, ORMs, build tools, test runners |
+| Sub-step 5 — Architecture patterns | MVC, CQRS, layered, feature-based, etc. |
+| Sub-step 6 — Conventions for similar features | Reference templates from existing features |
+
+Sub-steps 3 (reference implementation), 7 (reusability inventory), and 8 (test architecture analysis) are still run — scoped to the feature being built using the context from `AGENTS.md`.
+
+### Suggested AGENTS.md format
+
+```markdown
+# AGENTS.md — Project metadata for AI agents
+
+## Tech Stack
+- Runtime / Language: {e.g., Node.js 20 / TypeScript 5}
+- Framework: {e.g., Next.js 14 App Router}
+- Styling: {e.g., Tailwind CSS + shadcn/ui}
+- Database + ORM: {e.g., PostgreSQL + Prisma}
+- Auth: {e.g., next-auth v5 with JWT}
+- Test runner: {e.g., Vitest + React Testing Library}
+- Package manager: {e.g., pnpm}
+
+## Folder Structure
+```
+src/
+  app/          # Next.js App Router pages and layouts
+  components/   # Shared UI components
+  lib/          # Utilities and helpers
+  server/       # Server-side logic (services, repositories)
+  types/        # Shared TypeScript types
+prisma/         # Schema and migrations
+tests/          # Integration and e2e tests
+```
+
+## Naming Conventions
+- Components: PascalCase (`UserCard.tsx`)
+- Server actions: camelCase (`createUser.ts`)
+- API routes: kebab-case (`/api/user-profiles`)
+- DB models: PascalCase singular (`User`, `OrderItem`)
+
+## Architecture Patterns
+- App Router with server components by default; `use client` only when needed
+- Server actions in `src/server/actions/` for mutations
+- Repository layer in `src/server/repositories/` for data access
+- Zod for all input validation (server and client)
+
+## Test Conventions
+- Unit tests alongside source files: `{name}.test.ts`
+- Integration tests in `tests/integration/`
+- Factories in `tests/factories/`
+- Run: `pnpm test` (watch: `pnpm test:watch`, coverage: `pnpm test:coverage`)
+
+## Key Third-Party Abstractions
+- `useSession()` from next-auth — do NOT build custom auth  
+- `prisma` client from `src/lib/prisma.ts` — single shared instance  
+- `cn()` from `src/lib/utils.ts` — class name merging  
+```
+
+> Adapt the sections to your actual stack. Include only what you have. The more complete the file, the more exploration DevFlow can skip.
+
+---
+
+## �📚 Key Features
 
 ✅ **TDD by Default** — Plan includes complete test code per task; Implementer runs Red→Green cycle per task  
 ✅ **UI Mockups** — Architect generates ASCII wireframes with component annotations for every frontend feature  
@@ -205,6 +277,7 @@ Works with **any** language and framework.
 ✅ **Accessibility Built-in** — Planner adds a11y checklist (WCAG 2.1 AA) to every UI task; Reviewer validates it  
 ✅ **No External Tools** — Pure VS Code + Copilot (no npm packages, no docker, nothing)  
 ✅ **Portable** — Tech-stack agnostic, detects your framework automatically  
+✅ **AGENTS.md Support** — Place an `AGENTS.md` in your project root (or `docs/`) describing your stack, structure, and conventions. DevFlow reads it automatically at the start of every Architect phase and skips general codebase exploration, significantly speeding up the analysis.  
 ✅ **Auto-Review** — Every implementation is automatically code-reviewed (includes API contract, accessibility, dependency audit)  
 ✅ **Documented Decisions** — Specs, plans, reviews, and debug logs saved to `docs/devflow/`  
 ✅ **Actionable Next Steps** — Finalizer outputs follow-up features as user stories, not vague suggestions  
