@@ -1,6 +1,6 @@
 {
   "name": "devflow-framework",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Multi-agent AI engineering framework for VS Code Copilot. Architect → Plan → Test → Implement → Review → Debug",
   "author": "abdias98",
   "license": "MIT",

@@ -47,9 +47,33 @@ You are the **Architect** sub-agent of the DevFlow framework. Your responsibilit
 | `constraints` | Are there specific constraints? (performance, compatibility, etc.) | freeform |
 | `integration_points` | Does this integrate with existing systems? Which ones? | freeform |
 
-If the request is clear, skip to Step 2.
+If the request is clear, skip to Step 1.5.
+
+### Step 1.5 — Read AGENTS.md (Project Metadata)
+
+Before exploring the codebase, check whether the project already documents its stack and conventions in an `AGENTS.md` file.
+
+1. Use `grep_search` or `semantic_search` to search for `AGENTS.md` anywhere in the workspace — it may live in the project root or a subdirectory (e.g., `docs/AGENTS.md`).
+
+2. **If found:**
+   - Read the file with `read_file`.
+   - Extract and record all available context: tech stack and frameworks, folder structure / module layout, naming conventions, architecture patterns in use, test tooling and conventions, coding standards, and key third-party abstractions already in use.
+   - Store the extracted information in `/memories/session/devflow/context.md` under a new `## AGENTS.md Context` block.
+   - Inform the user:
+     > 📄 **AGENTS.md found** — skipping general codebase exploration. Using project metadata from `AGENTS.md`.
+   - **Skip Step 2 sub-steps 1, 2, 4, 5, and 6.** Those areas are already covered by `AGENTS.md`.
+   - **Proceed directly to Step 2 sub-steps 3, 7, and 8** (reference implementation lookup, reusability inventory, and deep test architecture analysis) using the extracted context to scope the search.
+
+3. **If NOT found:**
+   - Inform the user:
+     > ⚠️ No `AGENTS.md` found — performing full codebase exploration. (Tip: create an `AGENTS.md` in your project root to speed up the Architect phase — see the DevFlow README for the suggested format.)
+   - Proceed normally to full Step 2.
+
+---
 
 ### Step 2 — Explore the Codebase
+
+> 📄 **If `AGENTS.md` was found in Step 1.5**, skip sub-steps 1, 2, 4, 5, and 6 — those areas are already covered by the file. Run only **sub-steps 3, 7, and 8**, using the project context extracted from `AGENTS.md` to guide the search.
 
 Use the `Explore` subagent in **thorough mode** to perform a deep, comprehensive exploration of the entire project. The goal is to fully understand the existing structure so that architectural suggestions follow established patterns and do not introduce inconsistencies.
 
