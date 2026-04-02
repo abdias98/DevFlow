@@ -51,7 +51,7 @@ After reading the spec, ask the user whether to use stacked PRs:
 
 | header | question | type |
 |--------|----------|------|
-| `stack_mode` | ¿Deseas trabajar por Stacks? (PRs separados por capa/segmento para facilitar la revisión de código) | options: ✅ Sí, trabajar por Stacks, ❌ No, un solo PR |
+| `stack_mode` | Work with stacked PRs? / ¿Deseas trabajar por Stacks? (PRs separated by layer/segment to make code review easier / PRs separados por capa/segmento para facilitar la revisión de código) | options: ✅ Yes – work with Stacks / Sí, trabajar por Stacks, ❌ No – single PR / No, un solo PR |
 
 2. Save the answer to `/memories/session/devflow/context.md`:
    ```markdown
