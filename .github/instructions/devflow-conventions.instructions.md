@@ -6,7 +6,7 @@ applyTo: "docs/devflow/**"
 
 ## Artifact Naming
 
-All generated artifacts follow: `YYYY-MM-DD-{slug}-{type}.md`
+All generated artifacts follow: `YYYY-MM-DD-{slug}-{type}.{ext}` where `{ext}` is `md` for text documents and `html` for mockups.
 
 | Type | Directory | Example |
 |------|-----------|---------|
