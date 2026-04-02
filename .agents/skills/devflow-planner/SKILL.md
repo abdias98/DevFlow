@@ -324,8 +324,8 @@ Review and leave comments before implementation begins.
 6. Show the PR URL to the user
 7. **STOP — do NOT invoke the Implementer**. Output the final message:
 
-> ✅ Spec PR creado en `feat/{slug}/spec-review`. El equipo puede revisarlo y dejar comentarios.
-> Cuando estés listo para implementar, ejecuta `/devflow-implement`.
+> ✅ Spec PR created at `feat/{slug}/spec-review`. The team can review it and leave comments. / Spec PR creado en `feat/{slug}/spec-review`. El equipo puede revisarlo y dejar comentarios.
+> When you are ready to implement, run `/devflow-implement`. / Cuando estés listo para implementar, ejecuta `/devflow-implement`.
 
 **Do NOT ask for confirmation — the act of running `/devflow-implement` is the confirmation.**
 
