@@ -37,7 +37,6 @@ echo ""
 mkdir -p "$USER_DIR/prompts"
 mkdir -p "$DEVFLOW_STORE/skills"
 mkdir -p "$DEVFLOW_STORE/instructions"
-mkdir -p "$DEVFLOW_STORE/prompts"
 mkdir -p "$BIN_DIR"
 
 echo "📦 Downloading DevFlow repository..."
@@ -75,15 +74,6 @@ for prompt_file in "$SOURCE_DIR"/.github/prompts/devflow*.prompt.md; do
     filename=$(basename "$prompt_file")
     cp "$prompt_file" "$USER_DIR/prompts/$filename"
     echo "  ✓ Installed prompt (global): $filename"
-  fi
-done
-
-# ── DevFlow store: prompts (used by devflow-init per workspace) ─────────────
-for prompt_file in "$SOURCE_DIR"/.github/prompts/devflow*.prompt.md; do
-  if [ -f "$prompt_file" ]; then
-    filename=$(basename "$prompt_file")
-    cp "$prompt_file" "$DEVFLOW_STORE/prompts/$filename"
-    echo "  ✓ Stored prompt: $filename"
   fi
 done
 
