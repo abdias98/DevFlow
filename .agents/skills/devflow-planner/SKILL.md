@@ -270,12 +270,31 @@ Example structure varies by stack:
 
 1. Save the plan document to `docs/devflow/plans/YYYY-MM-DD-{slug}.md`
 2. Present the plan summary to the user (file path + Stack Plan table if Stack Mode = yes)
-3. Create the spec review PR:
+3. Detect and confirm the base branch with the user:
+
+   a. Run in terminal to get the candidate:
+      ```bash
+      git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|.*/||' || echo "main"
+      ```
+   b. Show the detected branch to the user, then ask via `vscode_askQuestions`:
+
+      | header | question | type |
+      |--------|----------|------|
+      | `base_branch` | Se detectó la rama base: **`{detected-branch}`**. ¿Es correcta? / Base branch detected: **`{detected-branch}`**. Is this correct? | options: ✅ Sí, usar esa rama / Yes, use it · ✍️ Escribir otra rama / Enter a different branch |
+
+   c. If the user selects **"Escribir otra rama"**, ask a second question:
+
+      | header | question | type |
+      |--------|----------|------|
+      | `base_branch_custom` | Escribe el nombre exacto de la rama base / Enter the exact base branch name | text |
+
+   d. Assign `BASE`:
+      - User confirmed → `BASE="{detected-branch}"`
+      - User entered custom → `BASE="{custom-branch}"`
+
+4. Create the spec review PR:
 
 ```bash
-# Detect default base branch (main or develop)
-BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|.*/||' || echo "main")
-
 git checkout -b feat/{slug}/spec-review
 git add docs/devflow/specs/{slug}-design.md
 git commit -m "docs: add spec for {slug}"
@@ -296,14 +315,14 @@ Review and leave comments before implementation begins.
 > Implementation will start once the team has reviewed this spec."
 ```
 
-4. If `gh` is not available, print the manual fallback:
+5. If `gh` is not available, print the manual fallback:
    ```
    git push -u origin feat/{slug}/spec-review
    # Then open a PR manually at:
-   # https://github.com/{owner}/{repo}/compare/feat/{slug}/spec-review
+   # https://github.com/{owner}/{repo}/compare/{BASE}...feat/{slug}/spec-review
    ```
-5. Show the PR URL to the user
-6. **STOP — do NOT invoke the Implementer**. Output the final message:
+6. Show the PR URL to the user
+7. **STOP — do NOT invoke the Implementer**. Output the final message:
 
 > ✅ Spec PR creado en `feat/{slug}/spec-review`. El equipo puede revisarlo y dejar comentarios.
 > Cuando estés listo para implementar, ejecuta `/devflow-implement`.

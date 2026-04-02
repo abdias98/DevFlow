@@ -131,15 +131,14 @@ git diff HEAD~{N}..HEAD           # Full diff
 
 **If Stack Mode = yes (stacked PRs):**
 ```bash
-# Determine current Stack branch and its base
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)   # e.g. feat/{slug}/stack-2
-STACK_BASE=$(git show-branch --merge-base origin/{stack-base} HEAD | head -1)
+# Set base branch directly from the Stack Plan table
+STACK_BASE="{stack-base}"   # e.g. feat/{slug}/stack-1 for Stack 2, or main for Stack 1
 
 # Diff only this Stack against its base branch
-git diff --stat {stack-base}..HEAD    # Summary
-git diff {stack-base}..HEAD           # Full diff
+git diff --stat "$STACK_BASE"..HEAD    # Summary
+git diff "$STACK_BASE"..HEAD           # Full diff
 ```
-> Where `{stack-base}` is the Stack's base branch from the Stack Plan table (e.g. `feat/{slug}/stack-1` for Stack 2, or `main` for Stack 1).
+> `{stack-base}` is the **Base branch** column from the Stack Plan table — assign it directly; do not derive it from git.
 
 If invoked automatically after Implementer, the current branch is the Stack branch just completed.
 
