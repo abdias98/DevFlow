@@ -26,16 +26,31 @@ Installs the `@devflow` agent globally — available in **every VS Code workspac
 @devflow Implement user authentication with JWT tokens
 ```
 
-✅ Done. DevFlow orchestrates 6 specialized sub-agents across 6 phases: Brainstormer → Architect → Planner → Implementer (with built-in TDD Red→Green cycle) → Reviewer → Debugger → Finalizer.
-
-> **Need skills in a specific project?** Run once inside that workspace:
-> ```bash
-> cd ~/your/project && devflow-init
-> ```
+✅ Done. DevFlow orchestrates 7 specialized sub-agents across 7 phases: Brainstormer → Architect → Planner → Implementer (with built-in TDD Red→Green cycle) → Reviewer → Debugger → Finalizer.
 
 ---
 
-## 📋 What Is DevFlow?
+## � Upgrading from v1.2.x
+
+If you have an older version installed, the installer automatically detects and cleans up:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/install.sh)
+```
+
+**What's new in v2.0.0:**
+- ✅ Single global installation (no per-workspace setup)
+- ✅ Automatic cleanup of old files and `devflow-init` command
+- ✅ Skills + instructions now globally managed
+- ❌ `devflow-init` command removed (no longer needed)
+
+Reload VS Code and you're done!
+
+See [CHANGELOG.md](CHANGELOG.md#breaking-changes) for detailed migration notes.
+
+---
+
+## �📋 What Is DevFlow?
 
 DevFlow is a **multi-agent framework** that simulates a professional engineering team:
 

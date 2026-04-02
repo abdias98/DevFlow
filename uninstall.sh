@@ -19,8 +19,6 @@ else
   exit 1
 fi
 
-DEVFLOW_STORE="$HOME/.devflow"
-
 # Remove global agent
 for agent_file in "$USER_DIR"/devflow*.agent.md; do
   if [ -f "$agent_file" ]; then
@@ -37,19 +35,17 @@ for prompt_file in "$USER_DIR"/prompts/devflow*.prompt.md; do
   fi
 done
 
-# Remove DevFlow store (skills + instructions)
-if [ -d "$DEVFLOW_STORE" ]; then
-  rm -rf "$DEVFLOW_STORE"
-  echo "  ✓ Removed DevFlow store: $DEVFLOW_STORE"
+# Remove global skills
+if [ -d "$USER_DIR/.agents/skills" ]; then
+  rm -rf "$USER_DIR/.agents/skills"
+  echo "  ✓ Removed global skills directory"
 fi
 
-# Remove devflow-init command
-for bin_dir in "$HOME/.local/bin" "/usr/local/bin"; do
-  if [ -f "$bin_dir/devflow-init" ]; then
-    rm -f "$bin_dir/devflow-init"
-    echo "  ✓ Removed command: $bin_dir/devflow-init"
-  fi
-done
+# Remove global instructions
+if [ -d "$USER_DIR/.github/instructions" ]; then
+  rm -rf "$USER_DIR/.github/instructions"
+  echo "  ✓ Removed global instructions directory"
+fi
 
 echo ""
 echo "✅ DevFlow Framework uninstalled successfully!"
