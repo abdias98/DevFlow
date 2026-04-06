@@ -1,6 +1,6 @@
 ---
 description: "Manually trigger the red phase of a specific task: create the failing test from the plan and verify it FAILs. Use only when resuming mid-implementation or debugging a specific test."
-mode: agent
+agent: devflow
 ---
 
 # DevFlow — Test Phase (Red Phase Only)

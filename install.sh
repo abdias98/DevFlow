@@ -72,7 +72,7 @@ if [ -d "$SCRIPT_DIR/.agents/skills" ]; then
 else
   echo "📥 Downloading from GitHub..."
   TEMP_DIR=$(mktemp -d)
-  trap "rm -rf $TEMP_DIR" EXIT
+  trap "rm -rf '$TEMP_DIR'" EXIT
   if ! git clone --depth 1 https://github.com/abdias98/DevFlow.git "$TEMP_DIR" 2>/dev/null; then
     echo "❌ Failed to clone repository. Check your internet connection or GitHub access."
     exit 1
@@ -103,7 +103,7 @@ for skill_dir in "$SOURCE_DIR"/.agents/skills/devflow-*/; do
   if [ -d "$skill_dir" ]; then
     skill_name=$(basename "$skill_dir")
     mkdir -p "$USER_DIR/.agents/skills/$skill_name"
-    cp -r "$skill_dir". "$USER_DIR/.agents/skills/$skill_name/"
+    cp -r "$skill_dir"/. "$USER_DIR/.agents/skills/$skill_name/"
     echo "  ✓ Installed skill (global): $skill_name"
   fi
 done

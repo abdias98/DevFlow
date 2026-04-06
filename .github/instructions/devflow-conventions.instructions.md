@@ -65,10 +65,17 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 - [x] Phase 1: Brainstormer — Problem Statement saved
 - [x] Phase 2: Architect — `docs/devflow/specs/{file}`
 - [x] Phase 3: Planner — `docs/devflow/plans/{file}` (includes test code per task)
-- [ ] Phase 4: Implementer (Red→Green TDD cycle per task)
+- [ ] Phase 4: Implementer (Red→Green TDD cycle per task: create failing test → write code → pass)
 - [ ] Phase 5: Reviewer
 - [ ] Phase 6: Debugger (conditional)
 - [ ] Phase 7: Finalizer
+
+## Iteration Counter
+| Phase | Count | Max |
+|-------|-------|-----|
+| Phase 4 (Implementer) | 0 | 3 |
+| Phase 5 (Reviewer) | 0 | 3 |
+| Phase 6 (Debugger) | 0 | 3 |
 
 ## Iteration Log
 | # | From | To | Reason |
