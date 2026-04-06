@@ -83,7 +83,7 @@ Create or update `/memories/session/devflow/test-registry.md`:
 | `path/to/test-file` | another test | FAIL ✅ | FAIL | Task 1 |
 ```
 
-### Step 7 — Update Phase State
+### Step 5 — Update Phase State
 
 Update `/memories/session/devflow/phase-state.md`:
 ```markdown

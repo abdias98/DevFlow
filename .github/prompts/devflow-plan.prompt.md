@@ -1,6 +1,6 @@
 ---
 description: "Break down a spec into atomic implementation tasks with checkboxes, file maps, code snippets, commit messages, and complete test code per task. Phase 3 of the DevFlow lifecycle."
-mode: agent
+agent: devflow
 ---
 
 # DevFlow — Plan Phase

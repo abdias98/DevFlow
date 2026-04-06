@@ -1,6 +1,6 @@
 ---
 description: "Understanding phase — ask clarifying questions, identify goals, constraints, edge cases and assumptions BEFORE any design or code. Phase 1 of the DevFlow lifecycle."
-mode: agent 
+agent: devflow
 ---
 
 # DevFlow — Brainstorm Phase

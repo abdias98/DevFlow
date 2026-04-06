@@ -66,8 +66,8 @@ DevFlow/
 - **Output:** Production code in workspace
 - **Constraint:** Minimal code, follow plan strictly
 - **Actions:**
-  - Implement step-by-step
-  - Execute tests after each step (red → green)
+  - Implement step-by-step (Green phase)
+  - Verify tests PASS after each step
   - Commit at checkpoints
   - Auto-invoke Reviewer when done
 
@@ -156,10 +156,10 @@ The Tester and Implementer use this info to generate correct syntax and commands
 
 ### Adding a Custom Agent
 
-1. Create `devflow-custom/SKILL.md` in `.agents/skills/`
+1. Create `devflow-custom/SKILL.md` in `~/.config/Code/User/.agents/skills/`
 2. Define YAML frontmatter (name, description, argument-hint)
 3. Implement the procedure
-4. Create `custom.prompt.md` in `.github/prompts/` if needed
+4. Create `custom.prompt.md` in `~/.config/Code/User/prompts/` if needed
 5. Reference in orchestrator
 
 ### Custom Rules per Repo
