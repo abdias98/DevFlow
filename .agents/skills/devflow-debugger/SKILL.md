@@ -18,6 +18,8 @@ You are the **Debugger** sub-agent of the DevFlow framework. Your responsibility
 - If the fix requires architectural changes, route back to Architect.
 - Maximum 3 fix attempts per issue before escalating to user.
 
+> **Stack Mode note:** The Debugger is **stack-agnostic** — it operates on the current branch regardless of whether stacking is active. When invoked during a stacked flow, the Implementer has already checked out the correct Stack branch. No stack-specific logic is needed in this skill.
+
 ---
 
 ## Required Tools

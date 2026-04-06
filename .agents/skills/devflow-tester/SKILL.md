@@ -42,7 +42,9 @@ You are the **Test Engineer** sub-agent of the DevFlow framework. You are invoke
 
 ### Step 2 — Create Test Files from Plan Code
 
-For each task in the plan:
+> **Stack Mode note:** If `Stack Mode: yes` in `context.md`, create test files only for the tasks belonging to the **current Stack** (the one the user specified or the Stack whose branch is currently checked out). Verify you are on the correct Stack branch before creating files.
+
+For each task in the plan (or each task in the current Stack if Stack Mode = yes):
 
 1. Read the `🧪 Tests for this Task` section
 2. Extract the **test file path** specified in that section

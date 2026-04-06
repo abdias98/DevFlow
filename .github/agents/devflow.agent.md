@@ -126,6 +126,8 @@ General rules:
 3. **Output:** Production code in workspace
 4. **Auto-trigger:** Invoke `devflow-reviewer` immediately after completing implementation
 
+**Stack Mode behavior:** When `Stack Mode: yes` in `context.md`, the Implementer iterates per Stack — creating branches, executing Red→Green per task within each Stack, and opening a PR after each Stack completes. See **Stack Mode Awareness** below.
+
 ### PHASE 5: REVIEWER (`devflow-reviewer`)
 
 1. Read the diff of implemented code (`git diff`)
@@ -142,6 +144,8 @@ General rules:
    - **🟢 INFO** — Optional suggestions
 5. **Output:** Review notes saved to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`
 6. **If BLOCK findings exist** → Route back to PHASE 4 (Implementer) with list of fixes needed
+
+**Stack Mode behavior:** When `Stack Mode: yes`, the Reviewer diffs only the current Stack against its base branch (from the Stack Plan table), not the entire feature branch. See **Stack Mode Awareness** below.
 
 ### PHASE 6: DEBUGGER (`devflow-debugger`) — Conditional
 
@@ -161,8 +165,9 @@ Triggered ONLY if tests fail or reviewer detects runtime issues.
 3. Collect all files created/modified during this cycle
 4. Generate final summary: files changed, tests added, architecture decisions, possible improvements
 5. Provide exact "How to Run / Test" instructions
-6. Clean session memory
-7. **Output:** Final summary presented to user + session memory cleaned
+6. **Stack Mode:** If stacking was used, include a summary table of all Stack PRs created (branch, base, URL, status)
+7. Clean session memory
+8. **Output:** Final summary presented to user + session memory cleaned
 
 ---
 
@@ -179,6 +184,26 @@ NEVER proceed past Confirmation Gate without explicit user approval
 NEVER proceed if current phase is incomplete
 Maximum 3 iteration loops per phase before escalating to user
 ```
+
+---
+
+## Stack Mode Awareness
+
+When `Stack Mode: yes` is set in `/memories/session/devflow/context.md` (saved by the Planner in Phase 3), the lifecycle adapts as follows:
+
+| Phase | Standard (no stack) | Stacked |
+|-------|--------------------|---------|
+| Phase 3 (Planner) | Single task list | Tasks grouped into Stacks with branches and PR titles |
+| Phase 4 (Implementer) | Linear Red→Green | Per-Stack: branch setup → Red→Green per task → push + PR creation → next Stack |
+| Phase 5 (Reviewer) | `git diff HEAD~N..HEAD` | `git diff "$STACK_BASE"..HEAD` per Stack (base from Stack Plan table) |
+| Phase 6 (Debugger) | Fix on current branch | Fix on current Stack branch — stack-agnostic internally |
+| Phase 7 (Finalizer) | Single summary | Summary includes table of all Stack PRs (branch, base, URL, status) |
+
+### Iteration loops with stacking
+
+- **BLOCK → fix → re-review** applies **within the current Stack branch**. The Implementer stays on the Stack branch to apply fixes, and the Reviewer re-diffs against the same stack-base.
+- **Stacks are NOT blocked on prior Stack reviews.** The Implementer continues to the next Stack immediately after pushing the PR. Teams merge Stacks in order.
+- **If a failure affects prior Stacks,** escalate to the user — cross-stack fixes require manual coordination.
 
 ---
 
