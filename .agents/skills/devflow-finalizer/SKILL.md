@@ -34,9 +34,10 @@ You are the **Finalizer** sub-agent of the DevFlow framework. Your responsibilit
 
 ### Step 1 — Read Session State
 
-1. Read `/memories/session/devflow/context.md` — feature goal, slug, constraints.
+1. Read `/memories/session/devflow/context.md` — feature goal, slug, constraints, **Stack Mode**.
 2. Read `/memories/session/devflow/phase-state.md` — completed phases and artifact paths.
 3. Read `/memories/session/devflow/test-registry.md` — all tests and current status.
+4. Note `Stack Mode` from `context.md` — if `yes`, read the plan's `## Stack Plan` table to know expected Stacks, branches, and PR titles.
 
 ### Step 2 — Verify Completion
 
@@ -57,6 +58,15 @@ You are the **Finalizer** sub-agent of the DevFlow framework. Your responsibilit
 
 - For each criterion, verify it is met (manually describe expected evidence or test result).
 - If any DoD criterion cannot be verified → flag to the user before finalizing.
+
+**Stack PRs** *(Stack Mode = yes only):*
+
+- Verify the number of Stack PRs created matches the Stack Plan table
+- For each Stack, confirm the branch exists and the PR was pushed:
+  ```bash
+  git branch -r | grep "feat/{slug}/stack-"
+  ```
+- If any expected Stack PR is missing → flag to the user before finalizing
 
 ### Step 3 — Collect Artifacts
 
@@ -116,6 +126,14 @@ Present the final summary to the user:
 - Spec:   `docs/devflow/specs/{file}`
 - Plan:   `docs/devflow/plans/{file}` ✔️ *(checkboxes updated)*
 - Review: `docs/devflow/reviews/{file}`
+
+### 📤 Stack PRs *(Stack Mode = yes only — omit if Stack Mode = no)*
+| Stack | Branch | Base | PR Title | Status |
+|-------|--------|------|----------|--------|
+| 1/{M} | `feat/{slug}/stack-1` | `main` | `[1/{M}] feat({scope}): {title}` | Created ✅ |
+| 2/{M} | `feat/{slug}/stack-2` | `feat/{slug}/stack-1` | `[2/{M}] feat({scope}): {title}` | Created ✅ |
+
+> The team reviews and merges stacked PRs in order: Stack 1 → Stack 2 → ... → Stack M.
 ```
 
 ### Step 5 — Persist Knowledge to Repo Memory
@@ -151,6 +169,7 @@ Delete all session files for this cycle:
 | ALWAYS update plan checkboxes | Leaves a clean, auditable record |
 | ALWAYS include "How to Run" section | User must be able to verify independently |
 | ALWAYS format Next Steps to project type | Story/improvement/action format depends on whether it's an app, library, or CLI |
+| ALWAYS include Stack PR summary if Stack Mode = yes | User needs the complete PR list to coordinate team reviews |
 
 ---
 

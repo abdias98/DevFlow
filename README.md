@@ -299,6 +299,7 @@ tests/          # Integration and e2e tests
 ✅ **No External Tools** — Pure VS Code + Copilot (no npm packages, no docker, nothing)  
 ✅ **Portable** — Tech-stack agnostic, detects your framework automatically  
 ✅ **AGENTS.md Support** — Place an `AGENTS.md` in your project root (or `docs/`) describing your stack, structure, and conventions. DevFlow reads it automatically at the start of every Architect phase and skips general codebase exploration, significantly speeding up the analysis.  
+✅ **Stacked PRs** — Optional Stack Mode splits large features into layered PRs (~400 LOC each) for easier code review. Automatic branch management and PR creation via `gh` CLI  
 ✅ **Auto-Review** — Every implementation is automatically code-reviewed (includes API contract, accessibility, dependency audit)  
 ✅ **Documented Decisions** — Specs, plans, reviews, and debug logs saved to `docs/devflow/`  
 ✅ **Actionable Next Steps** — Finalizer outputs follow-up features as user stories, not vague suggestions  

@@ -127,6 +127,17 @@ Versioned with git, survive across conversations:
       Fix + Retry
 ```
 
+### Stack Mode
+
+When `Stack Mode: yes` is set (by the Planner), the iteration logic applies **within each Stack**:
+
+- The Implementer creates a branch per Stack (`feat/{slug}/stack-{N}`), executes Red→Green per task, then pushes and creates a PR before moving to the next Stack.
+- The Reviewer diffs each Stack against its base branch (from the Stack Plan table).
+- BLOCK → fix → re-review loops apply within the current Stack branch.
+- The Finalizer includes a summary table of all Stack PRs.
+
+See `devflow-conventions.instructions.md` § PR Stacking Conventions for naming and sizing rules.
+
 ## Naming Conventions
 
 All artifacts use: `YYYY-MM-DD-{slug}-{type}.md`

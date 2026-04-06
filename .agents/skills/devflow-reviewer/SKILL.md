@@ -115,19 +115,32 @@ You are the **Reviewer** sub-agent of the DevFlow framework. Your responsibility
 ### Step 1 — Gather Context
 
 1. Read session memory for spec path, plan path, and test results
-2. Read the spec document (`docs/devflow/specs/`)
-3. Read the plan document (`docs/devflow/plans/`)
-4. Read `context.md` Definition of Done criteria — cross-reference each DoD criterion against the implementation. Flag any criterion that cannot be verified as a **WARN** finding.
+2. Read **Stack Mode** from `/memories/session/devflow/context.md`
+3. Read the spec document (`docs/devflow/specs/`)
+4. Read the plan document (`docs/devflow/plans/`)
+5. Read `context.md` Definition of Done criteria — cross-reference each DoD criterion against the implementation. Flag any criterion that cannot be verified as a **WARN** finding.
 
 ### Step 2 — Get the Diff
 
+**If Stack Mode = no (single PR):**
 ```bash
 # Get changes since the feature started
 git diff --stat HEAD~{N}..HEAD    # Summary
 git diff HEAD~{N}..HEAD           # Full diff
 ```
 
-If invoked automatically after Implementer, use the diff from the implementation commits.
+**If Stack Mode = yes (stacked PRs):**
+```bash
+# Set base branch directly from the Stack Plan table
+STACK_BASE="{stack-base}"   # e.g. feat/{slug}/stack-1 for Stack 2, or main for Stack 1
+
+# Diff only this Stack against its base branch
+git diff --stat "$STACK_BASE"..HEAD    # Summary
+git diff "$STACK_BASE"..HEAD           # Full diff
+```
+> `{stack-base}` is the **Base branch** column from the Stack Plan table — assign it directly; do not derive it from git.
+
+If invoked automatically after Implementer, the current branch is the Stack branch just completed.
 
 ### Step 3 — Review Each Changed File
 
@@ -152,6 +165,7 @@ Save to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`:
 **Reviewer:** DevFlow Reviewer (automated)
 **Spec:** `docs/devflow/specs/{file}`
 **Plan:** `docs/devflow/plans/{file}`
+**Stack:** {N}/{M} — `feat/{slug}/stack-{N}` vs `{stack-base}` *(omit if Stack Mode = no)*
 
 ## Summary
 {1-2 sentence overall assessment}
