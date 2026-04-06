@@ -26,7 +26,7 @@ Installs the `@devflow` agent globally — available in **every VS Code workspac
 @devflow Implement user authentication with JWT tokens
 ```
 
-✅ Done. DevFlow orchestrates 7 specialized sub-agents across 7 phases: Brainstormer → Architect → Planner → Implementer (with built-in TDD Red→Green cycle) → Reviewer → Debugger → Finalizer.
+✅ Done. DevFlow orchestrates 8 specialized roles across 8 phases: Brainstormer → Architect → Planner → Tester (Red Phase) → Implementer (Green Phase) → Reviewer → Debugger → Finalizer.
 
 ---
 
@@ -50,22 +50,23 @@ See [CHANGELOG.md](CHANGELOG.md#breaking-changes) for detailed migration notes.
 
 ---
 
-## �📋 What Is DevFlow?
+## 📋 What Is DevFlow?
 
 DevFlow is a **multi-agent framework** that simulates a professional engineering team:
 
-| Phase | Agent | Responsibility | Output |
-|-------|-------|----------------|--------|
+| Phase | Agent / Role | Responsibility | Output |
+|-------|--------------|----------------|--------|
 | 1 | 🧠 **Brainstormer** | Clarifying questions, goals, constraints, edge cases | Problem Statement |
 | 2 | 🧩 **Architect** | Requirements analysis, system design | Architecture spec |
 | 3 | 📋 **Planner** | Task breakdown + **complete test code per task** | Plan with ready-to-paste tests |
 | ⏸️ | — | **Confirmation Gate** — waits for `@devflow implement` | — |
-| 4 | ⚙️ **Implementer** | 🔴 Red phase: create failing tests from plan → 🟢 Green phase: write code to pass them | Production code + passing tests |
+| 4a | 🧪 **Tester** | 🔴 Red phase: create failing tests from plan and verify they fail | Failing test files |
+| 4b | ⚙️ **Implementer** | 🟢 Green phase: write minimal production code to make tests pass | Production code + passing tests |
 | 5 | 🔍 **Reviewer** | Code quality, security (OWASP), architecture validation | Code review findings |
 | 6 | 🐞 **Debugger** | Root cause analysis (never guesses) | Debug logs + fixes |
 | 7 | 🚀 **Finalizer** | Verify tests pass, generate summary, clean memory | Final report |
 
-Each agent has **clear responsibilities**, **strict role separation**, and **persistent memory** between phases.
+Each role has **clear responsibilities**, **strict role separation**, and **persistent memory** between phases.
 
 ---
 
@@ -75,14 +76,15 @@ Each agent has **clear responsibilities**, **strict role separation**, and **per
 ```
 @devflow Build a REST API for managing users
 ```
-Runs all phases: Brainstorm → Architect → Plan+TDD → ⏸️ Confirm → Implement (Red→Green) → Review → Debug → Finalize
+Runs all phases: Brainstorm → Architect → Plan+TDD → ⏸️ Confirm → Tester (Red Phase) → Implementer (Green Phase) → Review → Debug → Finalize
 
 ### Individual phases via slash commands
 ```
 /devflow-brainstorm   Clarify requirements and define scope
 /devflow-architect    Design a component or system
 /devflow-plan         Break down a feature (includes test code)
-@devflow implement    Start implementation (red→green TDD per task)
+/devflow-tester       Start the TDD Red Phase (create failing tests)
+@devflow implement    Start implementation (Green Phase - make tests pass)
 /devflow-review       Review code quality & security
 /devflow-debug        Debug a failing test
 /devflow-finalize     Generate final summary and verify all tests pass
@@ -119,9 +121,13 @@ Your Request
        │
        ▼
 ┌──────────────────────────────────────────┐
-│ ⚙️ Implementer                            │
-│  🔴 Red Phase:  create test files from   │
+│ 🧪 Tester                                │
+│  🔴 Red Phase: create test files from    │
 │     plan code → run → verify ALL FAIL    │
+└──────┬───────────────────────────────────┘
+       ▼
+┌──────────────────────────────────────────┐
+│ ⚙️ Implementer                            │
 │  🟢 Green Phase: write production code   │
 │     → run → verify tests PASS            │
 └──────┬─────────────────────┬─────────────┘
@@ -178,14 +184,14 @@ DevFlow is installed **globally** in VS Code, available in **all workspaces**:
 
 | OS | Location |
 |----|----------|
-| macOS | `~/Library/Application Support/Code/User/globalStorage/github.copilot-dev/` |
-| Linux | `~/.config/Code/User/globalStorage/github.copilot-dev/` |
-| Windows | `%APPDATA%\Code\User\globalStorage\github.copilot-dev\` |
+| macOS | `~/Library/Application Support/Code/User/` |
+| Linux | `~/.config/Code/User/` |
+| Windows | `%APPDATA%\Code\User\` |
 
 **Installed items:**
-- 6 sub-agent skills (Brainstormer, Architect, Planner, Implementer, Reviewer, Debugger, Finalizer)
+- 8 specialized sub-agent skills (Brainstormer, Architect, Planner, Tester, Implementer, Reviewer, Debugger, Finalizer)
 - 7 prompts (1 for full lifecycle + 6 for individual phases)
-- ~180 KB total (lightweight)
+- ~200 KB total (lightweight)
 
 ---
 
@@ -281,7 +287,7 @@ tests/          # Integration and e2e tests
 
 ## 📚 Key Features
 
-✅ **TDD by Default** — Plan includes complete test code per task; Implementer runs Red→Green cycle per task  
+✅ **TDD by Default** — Plan includes complete test code per task; Tester executes Red phase, Implementer executes Green phase.
 ✅ **UI Mockups** — Architect generates ASCII wireframes with component annotations for every frontend feature  
 ✅ **API Contracts** — Every endpoint defined explicitly (method, path, request/response shapes, error codes) before any code is written; Reviewer validates the implementation against the contract  
 ✅ **Risk Assessment** — Architect rates risk per design decision (HIGH/MEDIUM/LOW); Planner converts HIGH risks into task-level flags with rollback steps  
@@ -349,13 +355,13 @@ MIT License — See [LICENSE](./LICENSE)
 
 ### Commands not showing up?
 1. Reload VS Code: `Ctrl+Shift+P` → Developer: Reload Window
-2. Verify installation: `~/.config/Code/User/globalStorage/github.copilot-dev/skills/`
+2. Verify installation: `~/.config/Code/User/.agents/skills/`
 3. Restart VS Code completely
 
 ### "garbled" or "permission denied" on install?
 Check that the path is writable:
 ```bash
-ls -la ~/.config/Code/User/globalStorage/github.copilot-dev/
+ls -la ~/.config/Code/User/.agents/skills/
 ```
 
 ### Want to update?

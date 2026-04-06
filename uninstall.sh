@@ -35,17 +35,21 @@ for prompt_file in "$USER_DIR"/prompts/devflow*.prompt.md; do
   fi
 done
 
-# Remove global skills
-if [ -d "$USER_DIR/.agents/skills" ]; then
-  rm -rf "$USER_DIR/.agents/skills"
-  echo "  ✓ Removed global skills directory"
-fi
+# Remove global skills (only devflow-*)
+for skill_dir in "$USER_DIR"/.agents/skills/devflow-*/; do
+  if [ -d "$skill_dir" ]; then
+    rm -rf "$skill_dir"
+    echo "  ✓ Removed skill: $(basename "$skill_dir")"
+  fi
+done
 
-# Remove global instructions
-if [ -d "$USER_DIR/.github/instructions" ]; then
-  rm -rf "$USER_DIR/.github/instructions"
-  echo "  ✓ Removed global instructions directory"
-fi
+# Remove global instructions (only devflow-*)
+for instr_file in "$USER_DIR"/.github/instructions/devflow-*.instructions.md; do
+  if [ -f "$instr_file" ]; then
+    rm -f "$instr_file"
+    echo "  ✓ Removed instructions: $(basename "$instr_file")"
+  fi
+done
 
 echo ""
 echo "✅ DevFlow Framework uninstalled successfully!"

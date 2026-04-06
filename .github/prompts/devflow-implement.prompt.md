@@ -1,6 +1,6 @@
 ---
 description: "Write minimal production code to make failing tests pass, following the plan step-by-step. Auto-invokes Reviewer when done. Phase 4 of the DevFlow lifecycle."
-mode: agent
+agent: devflow
 ---
 
 # DevFlow — Implement Phase
@@ -14,7 +14,7 @@ Invoke the `devflow-implementer` skill to:
 1. Load context from session memory (plan path, test registry, phase state)
 2. Read the plan document
 3. Execute each step in order: modify/create files as specified
-4. Run tests after each step to track red → green progress
+4. Run the associated failing tests and verify your changes make them PASS
 5. Commit at each task checkpoint with the pre-written message
 6. After ALL steps complete, **auto-invoke devflow-reviewer**
 
