@@ -1,6 +1,6 @@
 ---
 description: "Finalization phase — verify all tests pass, produce clean final summary, explain how to run/test, list possible improvements, and clean session memory. Phase 7 of the DevFlow lifecycle."
-agent: devflow
+agent: workspace
 ---
 
 # DevFlow — Finalize Phase

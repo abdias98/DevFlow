@@ -1,6 +1,6 @@
 ---
 description: "Systematic debugging with root cause analysis. Reproduces errors, isolates causes, applies fixes, and documents everything. Phase 6 of the DevFlow lifecycle."
-agent: devflow
+agent: workspace
 ---
 
 # DevFlow — Debug Phase

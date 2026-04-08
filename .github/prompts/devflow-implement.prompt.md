@@ -1,6 +1,6 @@
 ---
 description: "Write minimal production code to make failing tests pass, following the plan step-by-step. Auto-invokes Reviewer when done. Phase 4 of the DevFlow lifecycle."
-agent: devflow
+agent: workspace
 ---
 
 # DevFlow — Implement Phase

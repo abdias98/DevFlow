@@ -130,14 +130,16 @@ copy_devflow_file() {
   local src="$1"
   local dst="$2"
 
+  local base_sed_expr="-e 's|{{AGENTS_DIR}}|${AGENTS_DIR}|g'"
+
   if [[ "$TOOL_SUBSTITUTION" != "true" ]]; then
-    cp "$src" "$dst"
+    eval "sed $base_sed_expr \"$src\"" > "$dst"
     return
   fi
 
   # Build a combined sed expression from both tool_mappings and path_mappings.
   # This avoids multiple passes over the file.
-  local sed_expr=""
+  local sed_expr="$base_sed_expr"
 
   # Tool mappings: from_tool -> to_tool (or REMOVE)
   # Match the exact markdown token format (`tool`) instead of using \b,
@@ -290,7 +292,7 @@ if [ -d "$DEVFLOW_STORE" ] || [ -d "$VSCODE_USER_DIR/.agents/skills" ] 2>/dev/nu
     fi
   done
   
-  echo "✅ Cleanup complete. Installing v2.2.0..."
+  echo "✅ Cleanup complete. Installing v2.3.0..."
   echo ""
 fi
 
@@ -306,14 +308,6 @@ if [ "$SOURCE_DIR" = "$SCRIPT_DIR" ]; then
   echo "📂 Installing from local repository..."
 fi
 
-# ── Global: agent file → editor agents dir (with tool/path substitutions) ─────
-  for agent_file in "$SOURCE_DIR"/.github/agents/*.agent.md; do
-    if [ -f "$agent_file" ]; then
-      filename=$(basename "$agent_file")
-      copy_devflow_file "$agent_file" "$AGENTS_DIR/$filename"
-    echo "  ✓ Installed agent (global): $filename"
-  fi
-done
 
 # ── Global: prompts → editor prompts dir (with tool-name substitutions) ──────
 for prompt_file in "$SOURCE_DIR"/.github/prompts/devflow*.prompt.md; do
