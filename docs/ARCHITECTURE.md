@@ -7,6 +7,7 @@ Internal design documentation for contributors and advanced users.
 ```
 DevFlow/
 ├── .agents/skills/              # AI Sub-agents (Copilot skills)
+│   ├── devflow-orchestrator/    # Main orchestrator agent
 │   ├── devflow-brainstormer/
 │   ├── devflow-architect/
 │   ├── devflow-planner/
@@ -16,8 +17,6 @@ DevFlow/
 │   ├── devflow-debugger/
 │   └── devflow-finalizer/
 ├── .github/
-│   ├── agents/
-│   │   └── devflow.agent.md     # Main orchestrator agent
 │   ├── prompts/                  # Slash command prompts
 │   │   ├── devflow.prompt.md    # Full lifecycle
 │   │   └── devflow-*.prompt.md  # Phase-specific
@@ -30,7 +29,7 @@ DevFlow/
 
 ## Agent Responsibilities
 
-### Orchestrator (`devflow.agent.md`)
+### Orchestrator (`devflow-orchestrator` skill)
 - Entry point for full lifecycle
 - Manages state and iteration logic
 - Coordinates sub-agents
