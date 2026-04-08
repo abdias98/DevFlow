@@ -45,20 +45,21 @@ You are the **Planner** sub-agent of the DevFlow framework. Your responsibility 
 
 ### Step 1.5 — Stack Mode Gate
 
-After reading the spec, ask the user whether to use stacked PRs:
+After reading the spec, you MUST ask the user whether to use stacked PRs before proceeding.
 
-1. Use `vscode_askQuestions`:
+1. Present the following question to the user (use `vscode_askQuestions` format):
 
 | header | question | type |
 |--------|----------|------|
 | `stack_mode` | Work with stacked PRs? / ¿Deseas trabajar por Stacks? (PRs separated by layer/segment to make code review easier / PRs separados por capa/segmento para facilitar la revisión de código) | options: ✅ Yes – work with Stacks / Sí, trabajar por Stacks, ❌ No – single PR / No, un solo PR |
 
-2. Save the answer to `/memories/session/devflow/context.md`:
+2. **STOP EXECUTION.** Do NOT proceed to Step 2 or generate any part of the plan until the user answers this question.
+3. Once the user answers, save the answer to `/memories/session/devflow/context.md`:
    ```markdown
    **Stack Mode:** yes   <!-- or: no -->
    ```
-3. If **No** → skip Step 2.5 entirely; proceed normally through Steps 2 → 3 → ...
-4. If **Yes** → execute Step 2.5 after Step 2
+4. If **No** → skip Step 2.5 entirely; proceed normally through Steps 2 → 3 → ...
+5. If **Yes** → execute Step 2.5 after Step 2
 
 ---
 
