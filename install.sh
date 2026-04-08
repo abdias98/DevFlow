@@ -37,19 +37,34 @@ echo ""
 
 # parse_yaml_value <file> <section> <key>
 # Returns the value of <key> under <section> in a flat YAML file.
+# If section is empty, reads top-level keys. If section is set, reads indented keys under that section.
 # Strips surrounding quotes and leading/trailing whitespace.
 parse_yaml_value() {
   local file="$1" section="$2" key="$3"
-  awk "
-    /^${section}:/ { in_section=1; next }
-    in_section && /^[^ ]/ && !/^  / { in_section=0 }
-    in_section && /^  ${key}:/ {
-      sub(/^  ${key}: */, \"\")
-      gsub(/^['\"]|['\"]$/, \"\")
-      print
-      exit
-    }
-  " "$file"
+  
+  if [[ -z "$section" ]]; then
+    # Top-level key: just look for "key: value"
+    awk "
+      /^${key}:/ {
+        sub(/^${key}: */, \"\")
+        gsub(/^['\"]|['\"]$/, \"\")
+        print
+        exit
+      }
+    " "$file"
+  else
+    # Sectioned key: look for "section:" then indented "  key: value"
+    awk "
+      /^${section}:/ { in_section=1; next }
+      in_section && /^[^ ]/ && !/^  / { in_section=0 }
+      in_section && /^  ${key}:/ {
+        sub(/^  ${key}: */, \"\")
+        gsub(/^['\"]|['\"]$/, \"\")
+        print
+        exit
+      }
+    " "$file"
+  fi
 }
 
 # parse_yaml_section <file> <section>
