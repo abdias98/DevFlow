@@ -5,10 +5,10 @@
 #   - No inline comments after values
 #   - One key: value per line, indented with 2 spaces under section header
 #   - String values may be quoted or unquoted
-#   - Env vars ($VSCODE_USER_DIR) are resolved by install.sh via eval
+#   - Env vars ($VSCODE_USER_DIR) are resolved by install.sh via explicit substitution
 #
-# SOLID Open/Closed: Adding a new editor = new yaml file + detection block in install.sh.
-# Zero changes needed in skill or prompt files.
+# SOLID Open/Closed: Adding a new editor = new YAML file in editor-profiles/.
+# install.sh discovers profiles automatically and uses paths.base existence for status.
 
 id: vscode
 display_name: "Visual Studio Code"
@@ -41,7 +41,7 @@ tool_mappings:
 # Maps hardcoded paths in skills/prompts to editor-specific equivalents.
 # Used in install-time substitutions just like tool_mappings.
 path_mappings:
-  memory_root: /memories
+  /memories: /memories
 # ── Install behavior ──────────────────────────────────────────────────────────
 install:
   tool_substitution: false

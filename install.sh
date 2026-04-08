@@ -68,8 +68,8 @@ parse_yaml_value() {
 }
 
 # parse_yaml_section <file> <section>
-# Prints all key: value lines under <section> as "key=value" pairs.
-# Used to iterate tool_mappings dynamically.
+# Prints all key: value lines under <section> as "key=value" pairs (with = replacing :).
+# Used to iterate tool_mappings and path_mappings dynamically.
 parse_yaml_section() {
   local file="$1" section="$2"
   awk "
@@ -78,6 +78,7 @@ parse_yaml_section() {
     in_section && /^  [a-zA-Z]/ {
       sub(/^  /, \"\")
       gsub(/['\"]/, \"\")
+      sub(/:/, \"=\")
       print
     }
   " "$file"
@@ -87,6 +88,7 @@ parse_yaml_section() {
 # Reads an editor profile YAML and sets global variables:
 #   EDITOR_ID, EDITOR_NAME, SKILLS_DIR, PROMPTS_DIR, INSTR_DIR, AGENTS_DIR,
 #   TOOL_SUBSTITUTION, RELOAD_MSG, USAGE_CMD, PROFILE_FILE
+# Resolves paths by substituting known variables ($HOME, $VSCODE_USER_DIR) only.
 load_editor_profile() {
   local yaml="$1"
   PROFILE_FILE="$yaml"
@@ -94,18 +96,26 @@ load_editor_profile() {
   EDITOR_ID="$(parse_yaml_value "$yaml" "" "id")"
   EDITOR_NAME="$(parse_yaml_value "$yaml" "" "display_name")"
 
-  # Read raw paths (may contain $VSCODE_USER_DIR or $HOME — resolve via eval)
+  # Read raw paths and substitute only known variables for security.
   local raw_skills raw_prompts raw_instr raw_agents
   raw_skills="$(parse_yaml_value "$yaml" "paths" "skills")"
   raw_prompts="$(parse_yaml_value "$yaml" "paths" "prompts")"
   raw_instr="$(parse_yaml_value "$yaml" "paths" "instructions")"
   raw_agents="$(parse_yaml_value "$yaml" "paths" "agents")"
 
-  # eval is safe here: YAML files are part of the DevFlow repo, not user input
-  eval "SKILLS_DIR=\"$raw_skills\""
-  eval "PROMPTS_DIR=\"$raw_prompts\""
-  eval "INSTR_DIR=\"$raw_instr\""
-  eval "AGENTS_DIR=\"$raw_agents\""
+  # Explicit substitution of known variables (no eval to prevent RCE).
+  # Only $HOME and $VSCODE_USER_DIR are expanded.
+  SKILLS_DIR="${raw_skills//\$HOME/$HOME}"
+  SKILLS_DIR="${SKILLS_DIR//\$VSCODE_USER_DIR/$VSCODE_USER_DIR}"
+  
+  PROMPTS_DIR="${raw_prompts//\$HOME/$HOME}"
+  PROMPTS_DIR="${PROMPTS_DIR//\$VSCODE_USER_DIR/$VSCODE_USER_DIR}"
+  
+  INSTR_DIR="${raw_instr//\$HOME/$HOME}"
+  INSTR_DIR="${INSTR_DIR//\$VSCODE_USER_DIR/$VSCODE_USER_DIR}"
+  
+  AGENTS_DIR="${raw_agents//\$HOME/$HOME}"
+  AGENTS_DIR="${AGENTS_DIR//\$VSCODE_USER_DIR/$VSCODE_USER_DIR}"
 
   TOOL_SUBSTITUTION="$(parse_yaml_value "$yaml" "install" "tool_substitution")"
   RELOAD_MSG="$(parse_yaml_value "$yaml" "post_install" "reload_message")"
@@ -130,12 +140,16 @@ copy_devflow_file() {
   local sed_expr=""
 
   # Tool mappings: from_tool -> to_tool (or REMOVE)
+  # Match the exact markdown token format (`tool`) instead of using \b,
+  # which is not a portable word-boundary operator in sed.
   while IFS=": " read -r from to; do
     [[ -z "$from" || -z "$to" ]] && continue
+    from_esc=$(sed 's/[&|/\]/\\&/g' <<<"$from")
+    to_esc=$(sed 's/[&|/\]/\\&/g' <<<"$to")
     if [[ "$to" == "REMOVE" ]]; then
-      sed_expr="${sed_expr} -e '/\\b${from}\\b/d'"
+      sed_expr="${sed_expr} -e '/\`${from_esc}\`/d'"
     elif [[ "$from" != "$to" ]]; then
-      sed_expr="${sed_expr} -e 's/\\b${from}\\b/${to}/g'"
+      sed_expr="${sed_expr} -e 's|\`${from_esc}\`|\`${to_esc}\`|g'"
     fi
   done < <(parse_yaml_section "$PROFILE_FILE" "tool_mappings")
 

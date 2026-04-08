@@ -5,15 +5,15 @@
 # FORMAT RULES (required for bash parsing):
 #   - No inline comments after values
 #   - One key: value per line, indented with 2 spaces under section header
-#   - REMOVE as value = install.sh will strip that tool name from installed files
+#   - REMOVE as value = install.sh will strip that tool/path from installed files
 #
-# To activate: add detection logic in the AVAILABLE_EDITORS block of install.sh.
+# Profiles are discovered from editor-profiles/*.yaml at install time.
+# The generic profile is always available as the fallback option.
 #
 # When adding support for a new editor (e.g., Antigravity, Cursor, JetBrains):
 # 1. Copy this file → editor-profiles/{editor-id}.yaml
 # 2. Fill in paths, tool_mappings, and post_install for that editor
-# 3. In install.sh: add one detection block to AVAILABLE_EDITORS
-# 4. Zero skill/prompt files need to be modified — SOLID Open/Closed
+# 3. Zero skill/prompt files need to be modified — SOLID Open/Closed
 
 id: generic
 display_name: "Generic (CLI / Headless)"
@@ -44,7 +44,7 @@ tool_mappings:
 # ── Path mappings ────────────────────────────────────────────────────────────
 # REMOVE = those lines will be stripped from installed files.
 path_mappings:
-  memory_root: REMOVE
+  /memories: REMOVE
 # ── Install behavior ──────────────────────────────────────────────────────────
 install:
   tool_substitution: true

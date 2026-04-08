@@ -68,7 +68,7 @@ The installer:
 - **Always prompts**, even if only one editor is available
 - **Allows installation** for undetected editors (in case you install later)
 
-Reload VS Code and you're done!
+Reload or restart your selected editor if needed, then follow the installer's post-install message.
 
 See [CHANGELOG.md](CHANGELOG.md#breaking-changes) for detailed migration notes.
 
