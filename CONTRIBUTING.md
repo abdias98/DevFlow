@@ -1,5 +1,7 @@
 # Contributing to DevFlow
 
+**DevFlow v2.2.0** — Multi-agent AI framework with multi-editor support via YAML profiles.
+
 Thanks for your interest in contributing to DevFlow! 🎉
 
 ## How to Contribute
@@ -26,6 +28,7 @@ Found a bug or have a suggestion? Open an issue with:
 - **Prompts:** Keep `.prompt.md` files focused on a single phase
 - **Scripts:** Bash for install scripts (cross-platform compatible)
 - **Documentation:** Markdown, clear language, include examples
+- **AGENTS.md:** For complex projects where you develop or test DevFlow skills, create an `AGENTS.md` in the project root documenting your stack, folder structure, and test conventions. This lets DevFlow skip general codebase exploration and produce more accurate plans. See the README for the suggested format.
 
 ### Extension Ideas
 
@@ -38,7 +41,36 @@ We're looking for contributions in these areas:
 - 🐳 **DevOps Helper** — Docker, K8s, CI/CD setup
 - 📈 **Data Science** — ML model training and evaluation
 
-#### Integrations
+#### Editor Support
+
+Adding support for a new editor requires **zero** changes to skills, agents, or instructions. DevFlow uses a declarative profile system:
+
+1. **Create `editor-profiles/{editor-id}.yaml`** with:
+   - `id`: Unique identifier (e.g., `neovim`, `emacs`)
+   - `display_name`: Human-readable name for the installer menu
+   - `paths.base`: Directory path where the editor config lives (checked to detect installation)
+   - `paths.skills`, `paths.prompts`, etc.: Full paths where artifacts are installed
+   - `tool_mappings`: Map tool names (e.g., `vscode_askQuestions` → `fzf` for CLI)
+   - `path_mappings`: Editor-specific memory paths (e.g., `memory_root: ~/.config/editor/devflow/session`)
+   - `install.tool_substitution`: `true` if sed should transform artifact content, `false` to copy as-is
+   
+   See [editor-profiles/vscode.yaml](editor-profiles/vscode.yaml) and [editor-profiles/generic.yaml](editor-profiles/generic.yaml) as templates.
+
+2. **(Optional) Add detection in `install.sh`** — The installer automatically:
+   - Scans `editor-profiles/*.yaml` at install time
+   - Checks if `paths.base` directory exists to detect installed editors
+   - Shows installation status in the menu (`[installed]` or `[not detected]`)
+   
+   For custom detection logic (e.g., registry checks, version constraints), add a function in `install.sh` and invoke it during profile scanning.
+
+3. **Test locally:**
+   ```bash
+   ./install.sh  # Should list your new editor in the menu
+   ```
+
+4. **No other changes needed** — Skills automatically receive the correct tool names and paths at install time via sed substitution.
+
+---
 - GitHub Issues / Discussions
 - Jira / Linear / Azure DevOps
 - Slack notifications

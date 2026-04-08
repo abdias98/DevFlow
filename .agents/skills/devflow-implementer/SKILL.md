@@ -27,11 +27,10 @@ You are the **Implementer** sub-agent of the DevFlow framework. Your responsibil
 | Tool | Purpose |
 |------|---------|
 | `read_file` | Read plan, test files, existing code |
-| `replace_string_in_file` / `multi_replace_string_in_file` | Edit existing files |
+| `replace_string_in_file` | Edit existing files |
 | `create_file` | Create new files specified in plan |
 | `run_in_terminal` | Execute tests, run build, commit |
 | `memory` | Read/write session memory |
-| `manage_todo_list` | Track step completion |
 
 ---
 

@@ -7,12 +7,14 @@ Internal design documentation for contributors and advanced users.
 ```
 DevFlow/
 ├── .agents/skills/              # AI Sub-agents (Copilot skills)
+│   ├── devflow-brainstormer/
 │   ├── devflow-architect/
 │   ├── devflow-planner/
-│   ├── devflow-tester/
+│   ├── devflow-tester/          # Manual helper only (not an automatic phase)
 │   ├── devflow-implementer/
 │   ├── devflow-reviewer/
-│   └── devflow-debugger/
+│   ├── devflow-debugger/
+│   └── devflow-finalizer/
 ├── .github/
 │   ├── agents/
 │   │   └── devflow.agent.md     # Main orchestrator agent
@@ -34,6 +36,16 @@ DevFlow/
 - Coordinates sub-agents
 - Enforces strict phase ordering
 
+### Brainstormer (`devflow-brainstormer`)
+- **Input:** User request
+- **Output:** Problem Statement saved to `/memories/session/devflow/context.md`
+- **Actions:**
+  - Clarifying questions (`vscode_askQuestions`)
+  - Goal/constraints/edge cases identification
+  - Problem restatement
+  - Hand-off to Architect
+- **Restriction:** NEVER writes code, schema, or architecture
+
 ### Architect (`devflow-architect` skill)
 - **Input:** User requirements + workspace files
 - **Output:**  `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`
@@ -52,24 +64,22 @@ DevFlow/
   - Generate complete code snippets
   - Pre-write commit messages
 
-### Tester (`devflow-tester`)
-- **Input:** Plan document
-- **Output:** Test files in workspace
+### Tester (`devflow-tester`) — Manual Helper Only
+- **NOT an automatic phase** — the Implementer handles Red→Green TDD internally
+- **Input:** Plan document (specific task)
+- **Output:** A specific failing test file
+- **Trigger:** Manual only via `/devflow-tester` (e.g., resume after context loss, recreate lost test)
 - **Constraint:** NEVER writes production code
-- **Actions:**
-  - Write failing tests (TDD red phase)
-  - Execute tests to verify FAIL
-  - Register in session memory
 
 ### Implementer (`devflow-implementer`)
-- **Input:** Plan + failing tests
-- **Output:** Production code in workspace
+- **Input:** Plan document
+- **Output:** Production code + passing tests in workspace
 - **Constraint:** Minimal code, follow plan strictly
 - **Actions:**
-  - Implement step-by-step (Green phase)
-  - Verify tests PASS after each step
-  - Commit at checkpoints
-  - Auto-invoke Reviewer when done
+  - **🔴 Red Phase per task:** Create test file from plan's `🧪 Tests for this Task` section, run and verify FAIL
+  - **🟢 Green Phase per task:** Write minimal production code, run and verify PASS
+  - Commit at task checkpoints with pre-written messages
+  - Auto-invoke Reviewer when all tasks complete
 
 ### Reviewer (`devflow-reviewer`)
 - **Input:** Git diff + spec + plan
@@ -90,6 +100,17 @@ DevFlow/
   - Isolate root cause
   - Apply fix
   - Re-verify
+
+### Finalizer (`devflow-finalizer`)
+- **Input:** Completed cycle (all tests passing, no BLOCK findings)
+- **Output:** Final summary presented to user + session memory cleaned
+- **Actions:**
+  - Run full test suite and verify GREEN
+  - Verify all BLOCK review findings resolved
+  - Collect all files created/modified
+  - Generate summary (files changed, tests added, architecture decisions, next steps)
+  - Provide exact How to Run / Test instructions
+  - Clean `/memories/session/devflow/`
 
 ## Memory System
 
@@ -147,6 +168,26 @@ Examples:
 - `2026-03-28-user-auth.md` (plan)
 - `2026-03-28-user-auth-review.md` (review)
 - `2026-03-28-user-auth-debug.md` (debug log)
+
+## AGENTS.md Skip Optimization
+
+When a project has an `AGENTS.md` file (in the project root or a subdirectory such as `docs/AGENTS.md`), the Architect reads it at the start of Phase 2 (Step 1.5) and skips the following general exploration sub-steps:
+
+| Skipped sub-step | What it covers |
+|---|---|
+| 1 — Full project structure | Folder hierarchy, module boundaries |
+| 2 — Naming conventions | File, class, function, route naming |
+| 4 — Tech stack details | Frameworks, ORMs, build tools, test runners |
+| 5 — Architecture patterns | MVC, CQRS, layered, feature-based, etc. |
+| 6 — Conventions for similar features | Reference templates from existing features |
+
+Sub-steps 3 (reference implementation), 7 (reusability inventory), and 8 (deep test architecture analysis) still run — scoped to the feature using the AGENTS.md context.
+
+The Architect stores the extracted AGENTS.md data in `/memories/session/devflow/context.md` under a `## AGENTS.md Context` block so the Planner can read it in Phase 3 without re-discovering test conventions.
+
+> **Tip for project maintainers:** Creating an `AGENTS.md` in your project root is the single most effective way to speed up every DevFlow cycle. See the README for the suggested format.
+
+---
 
 ## Tech Stack Detection
 

@@ -72,7 +72,7 @@ You MUST follow this strict lifecycle. NEVER skip phases. NEVER proceed if curre
 1. Read Problem Statement from session memory (Phase 1 output)
 2. **Check `/memories/repo/debug-patterns.md`** if it exists — read known pitfalls for this project before starting analysis
 3. **Check `/memories/repo/devflow-project-knowledge.md`** if it exists — read previously detected conventions and patterns
-4. Explore the codebase to understand existing patterns (use `Explore` subagent)
+4. **Check for `AGENTS.md`** in the project root or subdirectories — if present, the Architect reads it to extract tech stack, folder structure, naming conventions, architecture patterns, and test tooling, then skips general codebase exploration. The extracted data is stored in session memory under `## AGENTS.md Context` for the Planner to reuse in Phase 3. If not found, full codebase exploration is performed.
 5. Define architecture: components, data structures, interfaces, data flow
 6. **Output:** Spec document saved to `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`
 7. **Update memory:** Save tech stack and architecture decisions to session
@@ -241,6 +241,7 @@ Every response MUST be structured as:
 8. **ACT like a senior engineering team**, not a single model
 9. **Detect tech stack dynamically** — read workspace config files (package.json, *.csproj, etc.) to determine languages, frameworks, test runners
 10. **Portable** — never hardcode paths, tech stack names, or repo-specific conventions
+11. **USE AGENTS.md when present** — if the project has an `AGENTS.md` file (root or `docs/`), the Architect reads it at the start of Phase 2 and skips general codebase exploration. Its extracted data (stack, conventions, test tooling) is stored in session memory for Phases 3+ to consume. Never re-discover what AGENTS.md already documents.
 
 ---
 
