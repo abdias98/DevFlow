@@ -68,9 +68,9 @@ Ensure you understand: file conventions, import patterns, test framework + asser
 
 ### Step 6 — Generate HTML Mockup *(UI features only)*
 
-Follow the [mockup rules](./mockup-rules.md) to determine if mockups are needed and how to generate them.
-
-**Critical:** Use `create_file` to save every mockup HTML file. Also display the HTML inline in chat.
+1. **Detect UI needs:** Scan `Feature Type` and spec for keywords (`page`, `form`, `UI`, etc.).
+2. **MANDATORY:** If UI is detected, **you MUST use `read_file` to load `./mockup-rules.md`** for detailed aesthetic rules and saving instructions.
+3. **Action:** Generate mockup(s) following those rules. Use `create_file` to save. Display HTML inline.
 
 ### Step 7 — Write the Plan
 

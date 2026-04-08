@@ -42,7 +42,10 @@ See [lifecycle details](./lifecycle.md) for the complete phase-by-phase procedur
 1. **Phase 1: Brainstormer** → Ask questions, identify goal/constraints → save Problem Statement
 2. **Phase 2: Architect** → Explore codebase, define architecture → save Spec
 3. **Phase 3: Planner** → Stack Mode gate, create mockups (UI), write plan → save Plan
-4. **⏸️ Confirmation Gate** → Ask user approval (include mockup selection if applicable)
+4. **⏸️ Confirmation Gate — STOP HERE**
+   - Present the plan summary and mockup paths.
+   - If multiple mockups exist → ask the user to select one.
+   - Ask for explicit approval. **Do NOT proceed to Phase 4 until the user says "Approve" or "Execute".**
 5. **Phase 4: Implementer** → Red→Green TDD per task → commit at each checkpoint
 6. **Phase 5: Reviewer** → Diff against spec+plan → BLOCK/WARN/INFO → fix if BLOCK
 7. **Phase 6: Debugger** → Only if tests fail → reproduce, isolate, fix

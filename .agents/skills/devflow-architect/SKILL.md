@@ -61,11 +61,11 @@ Based on requirements + exploration:
 4. Identify integration points
 5. Consider alternatives for key decisions
 
-Generate ASCII wireframes for UI features. Define API contracts for backend features. See the [spec template](./spec-template.md) for all required sections.
+### Step 4 — Write the Architecture Spec
 
-### Step 4 — Generate Spec Document
-
-**Use `create_file` to save** the spec to `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`.
+1. **MANDATORY:** You **MUST use `read_file` to load `./spec-template.md`** to ensure all required sections are included.
+2. **Action:** Write the spec using that structure.
+3. **Save:** **Use `create_file` to save** to `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`.
 
 The spec MUST include all sections from the [spec template](./spec-template.md): Context, Architecture, Data Structures, Reusability Decisions, Test Architecture, UI Mockups, API Contracts, Risk Assessment, Design Decisions, Constraints.
 
