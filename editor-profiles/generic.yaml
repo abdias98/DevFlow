@@ -1,0 +1,55 @@
+# DevFlow Editor Profile — Generic (CLI / Headless)
+# Fallback profile for environments without a GUI editor.
+# Source of truth for install.sh — parsed at install time via grep/awk.
+#
+# FORMAT RULES (required for bash parsing):
+#   - No inline comments after values
+#   - One key: value per line, indented with 2 spaces under section header
+#   - REMOVE as value = install.sh will strip that tool name from installed files
+#
+# To activate: add detection logic in the AVAILABLE_EDITORS block of install.sh.
+#
+# When adding support for a new editor (e.g., Antigravity, Cursor, JetBrains):
+# 1. Copy this file → editor-profiles/{editor-id}.yaml
+# 2. Fill in paths, tool_mappings, and post_install for that editor
+# 3. In install.sh: add one detection block to AVAILABLE_EDITORS
+# 4. Zero skill/prompt files need to be modified — SOLID Open/Closed
+
+id: generic
+display_name: "Generic (CLI / Headless)"
+
+# ── Installation paths ────────────────────────────────────────────────────────
+paths:
+  base: "$HOME/.devflow"
+  skills: "$HOME/.devflow/skills"
+  prompts: "$HOME/.devflow/prompts"
+  instructions: "$HOME/.devflow/instructions"
+  agents: "$HOME/.devflow/agents"
+
+# ── Tool name mappings ────────────────────────────────────────────────────────
+# Maps FROM (tool name in skill/prompt source files) TO (equivalent for this editor).
+# REMOVE = that tool reference will be stripped from the installed file.
+# install.sh reads these pairs and applies sed substitutions at install time.
+tool_mappings:
+  vscode_askQuestions: REMOVE
+  semantic_search: grep_search
+  grep_search: grep_search
+  file_search: file_search
+  read_file: read_file
+  create_file: create_file
+  replace_string_in_file: replace_string_in_file
+  run_in_terminal: run_in_terminal
+  memory: memory
+  list_dir: list_dir
+# ── Path mappings ────────────────────────────────────────────────────────────
+# REMOVE = those lines will be stripped from installed files.
+path_mappings:
+  memory_root: REMOVE
+# ── Install behavior ──────────────────────────────────────────────────────────
+install:
+  tool_substitution: true
+
+# ── Post-install message ─────────────────────────────────────────────────────
+post_install:
+  reload_message: "Restart your AI editor/tool to pick up the new agent files"
+  usage_command: "@devflow <feature request>"

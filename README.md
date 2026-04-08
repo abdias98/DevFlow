@@ -26,7 +26,7 @@ Installs the `@devflow` agent globally — available in **every VS Code workspac
 @devflow Implement user authentication with JWT tokens
 ```
 
-✅ Done. DevFlow orchestrates 8 specialized roles across 8 phases: Brainstormer → Architect → Planner → Tester (Red Phase) → Implementer (Green Phase) → Reviewer → Debugger → Finalizer.
+✅ Done. DevFlow orchestrates 8 specialized roles across **7 phases**: Brainstormer → Architect → Planner → Implementer (Red→Green TDD per task) → Reviewer → Debugger → Finalizer. A manual Tester helper is available on-demand for mid-implementation resume.
 
 ---
 
@@ -38,11 +38,35 @@ If you have an older version installed, the installer automatically detects and 
 bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/install.sh)
 ```
 
-**What's new in v2.0.0:**
+**What's new in v2.2.0:**
+- ✅ Interactive editor selection with installation status
+- ✅ Support for multiple editors (VS Code, CLI/generic, easily extensible)
+- ✅ Always-prompt workflow (no auto-detection)
+- ✅ YAML-driven editor profiles for zero-config new editor support
 - ✅ Single global installation (no per-workspace setup)
 - ✅ Automatic cleanup of old files and `devflow-init` command
 - ✅ Skills + instructions now globally managed
 - ❌ `devflow-init` command removed (no longer needed)
+
+### Interactive Editor Selection
+
+When you run the installer, you'll see a prompt listing all available editor profiles:
+
+```
+📍 Select installation target:
+
+  1) Visual Studio Code      [installed]
+  2) CLI (Headless)          [always available]
+
+Enter number [1-2]: 1
+📍 Selected: Visual Studio Code
+```
+
+The installer:
+- **Lists all editors** (regardless of installation status)
+- **Shows installation status** for each (if detected on your system)
+- **Always prompts**, even if only one editor is available
+- **Allows installation** for undetected editors (in case you install later)
 
 Reload VS Code and you're done!
 
@@ -59,12 +83,12 @@ DevFlow is a **multi-agent framework** that simulates a professional engineering
 | 1 | 🧠 **Brainstormer** | Clarifying questions, goals, constraints, edge cases | Problem Statement |
 | 2 | 🧩 **Architect** | Requirements analysis, system design | Architecture spec |
 | 3 | 📋 **Planner** | Task breakdown + **complete test code per task** | Plan with ready-to-paste tests |
-| ⏸️ | — | **Confirmation Gate** — waits for `@devflow implement` | — |
-| 4a | 🧪 **Tester** | 🔴 Red phase: create failing tests from plan and verify they fail | Failing test files |
-| 4b | ⚙️ **Implementer** | 🟢 Green phase: write minimal production code to make tests pass | Production code + passing tests |
+| ⏸️ | — | **Confirmation Gate** — waits for `/devflow-implement` | — |
+| 4 | ⚙️ **Implementer** | 🔴→🟢 Red→Green TDD cycle per task (create failing tests from plan → write production code → pass) | Production code + passing tests |
 | 5 | 🔍 **Reviewer** | Code quality, security (OWASP), architecture validation | Code review findings |
 | 6 | 🐞 **Debugger** | Root cause analysis (never guesses) | Debug logs + fixes |
 | 7 | 🚀 **Finalizer** | Verify tests pass, generate summary, clean memory | Final report |
+| — | 🧪 **Tester** *(manual helper)* | Creates a specific failing test from the plan on demand | Failing test file |
 
 Each role has **clear responsibilities**, **strict role separation**, and **persistent memory** between phases.
 
@@ -83,8 +107,8 @@ Runs all phases: Brainstorm → Architect → Plan+TDD → ⏸️ Confirm → Te
 /devflow-brainstorm   Clarify requirements and define scope
 /devflow-architect    Design a component or system
 /devflow-plan         Break down a feature (includes test code)
-/devflow-tester       Start the TDD Red Phase (create failing tests)
-@devflow implement    Start implementation (Green Phase - make tests pass)
+/devflow-implement    Start implementation (Red→Green TDD cycle per task)
+/devflow-tester       Manual helper: create a specific failing test from the plan
 /devflow-review       Review code quality & security
 /devflow-debug        Debug a failing test
 /devflow-finalize     Generate final summary and verify all tests pass
@@ -121,15 +145,11 @@ Your Request
        │
        ▼
 ┌──────────────────────────────────────────┐
-│ 🧪 Tester                                │
-│  🔴 Red Phase: create test files from    │
-│     plan code → run → verify ALL FAIL    │
-└──────┬───────────────────────────────────┘
-       ▼
-┌──────────────────────────────────────────┐
-│ ⚙️ Implementer                            │
-│  🟢 Green Phase: write production code   │
-│     → run → verify tests PASS            │
+│ ⚙️ Implementer (per task)                 │
+│  🔴 Red: create test file from plan →   │
+│          run → verify FAIL               │
+│  🟢 Green: write production code →       │
+│            run → verify PASS             │
 └──────┬─────────────────────┬─────────────┘
        │                     │
        ▼                     ▼
@@ -281,7 +301,7 @@ tests/          # Integration and e2e tests
 - `cn()` from `src/lib/utils.ts` — class name merging  
 ```
 
-> Adapt the sections to your actual stack. Include only what you have. The more complete the file, the more exploration DevFlow can skip.
+> **Strongly recommended:** Create an `AGENTS.md` file in your project root describing your stack, folder structure, naming conventions, and test tooling. DevFlow reads it automatically at the start of every Architect phase and skips general codebase exploration — significantly speeding up analysis and improving output accuracy. The more complete it is, the better DevFlow performs. See the format below.
 
 ---
 

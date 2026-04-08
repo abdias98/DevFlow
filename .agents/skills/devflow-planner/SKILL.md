@@ -101,6 +101,8 @@ Group all tasks from Step 2 into **Stacks** — coherent segments each producing
 
 ### Step 3 — Explore Existing Patterns
 
+> **Before exploring directly:** Check `/memories/session/devflow/context.md` for a `## AGENTS.md Context` block. If the Architect already extracted tech stack, test framework, and conventions from the project's `AGENTS.md`, read those values and use them directly for sub-items 1–5 below. Skip any sub-item that is fully covered by the session memory context. Only explore directly if the context is missing or incomplete.
+
 For each file to modify or create, explore the codebase to understand:
 
 1. The existing file structure and conventions

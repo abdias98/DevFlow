@@ -305,3 +305,58 @@ The agent reads these files to determine:
 - Stack N (N > 1) → base: `feat/{slug}/stack-{N-1}`
 - Spec PR → base: `main` / `develop`
 - Project structure patterns
+
+---
+
+## AGENTS.md Structure
+
+An `AGENTS.md` file in the project root (or `docs/AGENTS.md`) is the primary source of project metadata for DevFlow. When present, the Architect reads it at the start of Phase 2 and skips general codebase exploration. The Planner reads the extracted data from session memory in Phase 3 to avoid re-discovering test conventions.
+
+### Valid locations (searched automatically)
+- `AGENTS.md` — project root (preferred)
+- `docs/AGENTS.md`
+- Any subdirectory discoverable via `grep_search`
+
+### Recommended sections
+
+```markdown
+# AGENTS.md — Project metadata for AI agents
+
+## Tech Stack
+- Runtime / Language: {e.g., Node.js 20 / TypeScript 5}
+- Framework: {e.g., Next.js 14 App Router}
+- Database + ORM: {e.g., PostgreSQL + Prisma}
+- Test runner: {e.g., Vitest + React Testing Library}
+- Package manager: {e.g., pnpm}
+
+## Folder Structure
+{Brief directory tree with purpose annotations}
+
+## Naming Conventions
+- Components: {e.g., PascalCase}
+- Services: {e.g., camelCase with .service.ts suffix}
+- DB models: {e.g., PascalCase singular}
+
+## Architecture Patterns
+{Key patterns in use — MVC, CQRS, layered, feature-based, etc.}
+
+## Test Conventions
+- Test file location: {e.g., alongside source as *.test.ts}
+- Test utilities: {e.g., factories in tests/factories/}
+- Run commands: {e.g., pnpm test | pnpm test:coverage}
+
+## Key Third-Party Abstractions
+{Critical shared utilities that agents must NOT reinvent}
+```
+
+### What DevFlow skips when AGENTS.md is present
+
+| Architect sub-step skipped | What it covers |
+|---|---|
+| 1 — Full project structure | Folder hierarchy, module boundaries |
+| 2 — Naming conventions | File, class, function, route naming |
+| 4 — Tech stack details | Frameworks, ORMs, build tools, test runners |
+| 5 — Architecture patterns | MVC, CQRS, layered, feature-based, etc. |
+| 6 — Conventions for similar features | Reference templates |
+
+Sub-steps 3, 7, and 8 still run — scoped to the feature using AGENTS.md context.

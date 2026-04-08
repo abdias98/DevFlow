@@ -1,0 +1,52 @@
+# DevFlow Editor Profile — Visual Studio Code
+# Source of truth for install.sh — parsed at install time via grep/awk.
+#
+# FORMAT RULES (required for bash parsing):
+#   - No inline comments after values
+#   - One key: value per line, indented with 2 spaces under section header
+#   - String values may be quoted or unquoted
+#   - Env vars ($VSCODE_USER_DIR) are resolved by install.sh via eval
+#
+# SOLID Open/Closed: Adding a new editor = new yaml file + detection block in install.sh.
+# Zero changes needed in skill or prompt files.
+
+id: vscode
+display_name: "Visual Studio Code"
+
+# ── Installation paths ────────────────────────────────────────────────────────
+# $VSCODE_USER_DIR is set by install.sh based on OS before this file is read.
+paths:
+  base: "$VSCODE_USER_DIR"
+  skills: "$VSCODE_USER_DIR/.agents/skills"
+  prompts: "$VSCODE_USER_DIR/prompts"
+  instructions: "$VSCODE_USER_DIR/.github/instructions"
+  agents: "$VSCODE_USER_DIR"
+
+# ── Tool name mappings ────────────────────────────────────────────────────────
+# Maps FROM (tool name used in skill/prompt source files) TO (tool name for this editor).
+# For VS Code, all tool names are used as-is — no substitution needed.
+# install.sh reads these pairs and applies sed when tool_substitution is true.
+tool_mappings:
+  vscode_askQuestions: vscode_askQuestions
+  semantic_search: semantic_search
+  grep_search: grep_search
+  file_search: file_search
+  read_file: read_file
+  create_file: create_file
+  replace_string_in_file: replace_string_in_file
+  run_in_terminal: run_in_terminal
+  memory: memory
+  list_dir: list_dir
+# ── Path mappings ────────────────────────────────────────────────────────────
+# Maps hardcoded paths in skills/prompts to editor-specific equivalents.
+# Used in install-time substitutions just like tool_mappings.
+path_mappings:
+  memory_root: /memories
+# ── Install behavior ──────────────────────────────────────────────────────────
+install:
+  tool_substitution: false
+
+# ── Post-install message ─────────────────────────────────────────────────────
+post_install:
+  reload_message: "Reload VS Code (Ctrl+Shift+P > Developer: Reload Window)"
+  usage_command: "@devflow <feature request>"
