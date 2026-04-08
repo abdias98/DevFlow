@@ -292,7 +292,7 @@ if [ -d "$DEVFLOW_STORE" ] || [ -d "$VSCODE_USER_DIR/.agents/skills" ] 2>/dev/nu
     fi
   done
   
-  echo "✅ Cleanup complete. Installing v2.4.0..."
+  echo "✅ Cleanup complete. Installing v2.5.0..."
   echo ""
 fi
 
@@ -331,6 +331,17 @@ for skill_dir in "$SOURCE_DIR"/.agents/skills/devflow-*/; do
     echo "  ✓ Installed skill (global): $skill_name"
   fi
 done
+
+# ── Global: shared rules → editor skills dir (referenced by ../shared/ from skills) ──
+if [ -d "$SOURCE_DIR/.agents/skills/shared" ]; then
+  mkdir -p "$SKILLS_DIR/shared"
+  for shared_file in "$SOURCE_DIR"/.agents/skills/shared/*; do
+    if [ -f "$shared_file" ]; then
+      copy_devflow_file "$shared_file" "$SKILLS_DIR/shared/$(basename "$shared_file")"
+    fi
+  done
+  echo "  ✓ Installed shared rules (global): shared/"
+fi
 
 # ── Global: instructions → editor instructions dir (with tool/path substitutions) ──
   for instr_file in "$SOURCE_DIR"/.github/instructions/*.instructions.md; do

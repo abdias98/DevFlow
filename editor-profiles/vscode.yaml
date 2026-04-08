@@ -9,6 +9,10 @@
 #
 # SOLID Open/Closed: Adding a new editor = new YAML file in editor-profiles/.
 # install.sh discovers profiles automatically and uses paths.base existence for status.
+#
+# SHARED DIRECTORY: install.sh automatically copies .agents/skills/shared/ to
+# skills_dir/shared/ for every editor profile. Skills reference shared rules via
+# relative paths (../shared/rules.md) which resolve correctly at any install target.
 
 id: vscode
 display_name: "Visual Studio Code"

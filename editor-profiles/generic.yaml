@@ -10,10 +10,15 @@
 # Profiles are discovered from editor-profiles/*.yaml at install time.
 # The generic profile is always available as the fallback option.
 #
-# When adding support for a new editor (e.g., Antigravity, Cursor, JetBrains):
+# When adding support for a new editor (e.g., Cursor, JetBrains, Windsurf):
 # 1. Copy this file → editor-profiles/{editor-id}.yaml
-# 2. Fill in paths, tool_mappings, and post_install for that editor
+# 2. Fill in id, display_name, paths, tool_mappings, and post_install
 # 3. Zero skill/prompt files need to be modified — SOLID Open/Closed
+#
+# SHARED DIRECTORY: install.sh automatically copies .agents/skills/shared/ to
+# skills_dir/shared/ for every editor profile. Skills reference shared rules via
+# relative paths (../shared/rules.md) which resolve correctly regardless of the
+# install target directory defined in paths.skills.
 
 id: generic
 display_name: "Generic (CLI / Headless)"
