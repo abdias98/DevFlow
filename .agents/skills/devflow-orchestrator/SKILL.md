@@ -1,5 +1,5 @@
 ---
-name: devflow
+name: devflow-orchestrator
 description: "Multi-agent engineering framework that simulates a professional software team. Orchestrates specialized sub-agents (Brainstormer, Architect, Planner, Tester, Implementer, Reviewer, Debugger, Finalizer) through a strict phase-based lifecycle with persistent memory. USE WHEN: full development lifecycle, build feature end-to-end, multi-agent development, structured implementation, TDD workflow, architecture-first development."
 ---
 
@@ -50,6 +50,13 @@ Versioned with git, survive across conversations:
    - Artifacts produced (file paths)
 3. **At cycle end**, clean session memory and ensure persistent artifacts are saved
 4. All sub-agents read from and write to the SAME memory — this is how they communicate
+5. **Fallback:** If `/memories/` is not available (different editor/environment), use `docs/devflow/session/` as the session memory path. Create regular files there instead.
+
+### Tool Compatibility
+
+- If `vscode_askQuestions` is available → use it for interactive questions and confirmation gates.
+- If `vscode_askQuestions` is NOT available → **ask the questions directly in your chat response and STOP. Wait for the user to answer before continuing.**
+- **NEVER skip a question, gate, or confirmation because a tool is unavailable.** Always find the alternative way to ask.
 
 ---
 
