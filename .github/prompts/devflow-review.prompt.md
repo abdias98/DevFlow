@@ -1,6 +1,6 @@
 ---
 description: "Perform automated code review against the spec and plan. Check quality, security, performance. Classify findings as BLOCK/WARN/INFO. Phase 5 of the DevFlow lifecycle."
-agent: devflow
+agent: workspace
 ---
 
 # DevFlow — Review Phase
