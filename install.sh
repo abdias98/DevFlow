@@ -292,7 +292,7 @@ if [ -d "$DEVFLOW_STORE" ] || [ -d "$VSCODE_USER_DIR/.agents/skills" ] 2>/dev/nu
     fi
   done
   
-  echo "✅ Cleanup complete. Installing v2.5.0..."
+  echo "✅ Cleanup complete. Installing v2.3.0..."
   echo ""
 fi
 

@@ -38,7 +38,7 @@ If you have an older version installed, the installer automatically detects and 
 bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/install.sh)
 ```
 
-**What's new in v2.5.0:**
+**What's new in v2.3.0:**
 - ✅ Interactive editor selection with installation status
 - ✅ Support for multiple editors (VS Code, CLI/generic, easily extensible)
 - ✅ Always-prompt workflow (no auto-detection)
