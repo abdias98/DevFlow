@@ -88,7 +88,7 @@ Save to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`:
 ## Findings
 
 ### 🔴 BLOCK (must fix)
-Include copy-pasteable fix snippets with diff format.
+Include concrete, actionable fix guidance (affected file/line, required change, and rationale), but do not provide full patch/diff snippets.
 
 ### 🟡 WARN (should fix)
 | # | File | Line | Issue | Suggestion |

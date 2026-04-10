@@ -334,12 +334,12 @@ done
 
 # ── Global: shared rules → editor skills dir (referenced by ../shared/ from skills) ──
 if [ -d "$SOURCE_DIR/.agents/skills/shared" ]; then
-  mkdir -p "$SKILLS_DIR/shared"
-  for shared_file in "$SOURCE_DIR"/.agents/skills/shared/*; do
-    if [ -f "$shared_file" ]; then
-      copy_devflow_file "$shared_file" "$SKILLS_DIR/shared/$(basename "$shared_file")"
-    fi
-  done
+  while IFS= read -r -d '' shared_file; do
+    rel_path="${shared_file#"$SOURCE_DIR/.agents/skills/shared/"}"
+    dest="$SKILLS_DIR/shared/$rel_path"
+    mkdir -p "$(dirname "$dest")"
+    copy_devflow_file "$shared_file" "$dest"
+  done < <(find "$SOURCE_DIR/.agents/skills/shared" -type f -print0)
   echo "  ✓ Installed shared rules (global): shared/"
 fi
 
