@@ -1,0 +1,31 @@
+# DevFlow repository .gitignore
+#
+# The global gitignore (~/.gitignore_global) installed by DevFlow ignores
+# .agents/ and .github/instructions/devflow-* in ALL repositories, so that
+# DevFlow files don't accidentally pollute user projects.
+#
+# This .gitignore overrides those global rules for THIS repository (the
+# DevFlow source itself), so that all skill files, shared rules, auxiliary
+# files, and prompt files are properly version-controlled.
+
+# ── Override global DevFlow ignores for this repo ────────────────────────────
+
+# Include ALL .agents/ content (skills, shared/, auxiliary files)
+!.agents/
+!.agents/**
+
+# Include all DevFlow prompt files
+!.github/
+!.github/prompts/
+!.github/prompts/devflow*.prompt.md
+
+# Include all DevFlow instruction files
+!.github/instructions/
+!.github/instructions/devflow-*.instructions.md
+
+# ── Standard ignores for this repo ───────────────────────────────────────────
+node_modules/
+.DS_Store
+*.log
+dist/
+.env

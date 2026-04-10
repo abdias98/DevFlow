@@ -332,6 +332,17 @@ for skill_dir in "$SOURCE_DIR"/.agents/skills/devflow-*/; do
   fi
 done
 
+# ── Global: shared rules → editor skills dir (referenced by ../shared/ from skills) ──
+if [ -d "$SOURCE_DIR/.agents/skills/shared" ]; then
+  while IFS= read -r -d '' shared_file; do
+    rel_path="${shared_file#"$SOURCE_DIR/.agents/skills/shared/"}"
+    dest="$SKILLS_DIR/shared/$rel_path"
+    mkdir -p "$(dirname "$dest")"
+    copy_devflow_file "$shared_file" "$dest"
+  done < <(find "$SOURCE_DIR/.agents/skills/shared" -type f -print0)
+  echo "  ✓ Installed shared rules (global): shared/"
+fi
+
 # ── Global: instructions → editor instructions dir (with tool/path substitutions) ──
   for instr_file in "$SOURCE_DIR"/.github/instructions/*.instructions.md; do
     if [ -f "$instr_file" ]; then

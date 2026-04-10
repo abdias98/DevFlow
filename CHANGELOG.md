@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0] — 2026-04-09
+
+### ✨ Features
+
+- **Multi-Editor Support** — Unified framework across VS Code and CLI via YAML-driven profiles.
+- **Improved Installation Flow** — Interactive editor selection with installation status.
+- **Global Management** — Skills and instructions are now managed globally for all workspaces.
+- **Unified Release** — Consolidated recent framework improvements into a single stable release.
+
+---
+
+
 ## [2.0.0] — 2026-04-02
 
 ### 🚨 BREAKING CHANGES
