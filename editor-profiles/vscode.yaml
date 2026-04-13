@@ -5,7 +5,7 @@
 #   - No inline comments after values
 #   - One key: value per line, indented with 2 spaces under section header
 #   - String values may be quoted or unquoted
-#   - Env vars ($VSCODE_USER_DIR) are resolved by install.sh via explicit substitution
+#   - Env vars ($USER_DIR) are resolved by install.sh after reading user_dir.<OS_NAME> from this file
 #
 # SOLID Open/Closed: Adding a new editor = new YAML file in editor-profiles/.
 # install.sh discovers profiles automatically and uses paths.base existence for status.
@@ -17,14 +17,22 @@
 id: vscode
 display_name: "Visual Studio Code"
 
+# ── User directory per OS ─────────────────────────────────────────────────────
+# install.sh reads user_dir.<OS_NAME> and exposes it as $USER_DIR for path resolution.
+# This is the single source of truth for where VS Code stores its user config.
+user_dir:
+  macOS: "$HOME/Library/Application Support/Code/User"
+  Linux: "$HOME/.config/Code/User"
+  Windows: "$APPDATA/Code/User"
+
 # ── Installation paths ────────────────────────────────────────────────────────
-# $VSCODE_USER_DIR is set by install.sh based on OS before this file is read.
+# $USER_DIR is resolved by install.sh from user_dir.<OS_NAME> above.
 paths:
-  base: "$VSCODE_USER_DIR"
-  skills: "$VSCODE_USER_DIR/.agents/skills"
-  prompts: "$VSCODE_USER_DIR/prompts"
-  instructions: "$VSCODE_USER_DIR/.github/instructions"
-  agents: "$VSCODE_USER_DIR"
+  base: "$USER_DIR"
+  skills: "$USER_DIR/.agents/skills"
+  prompts: "$USER_DIR/prompts"
+  instructions: "$USER_DIR/.github/instructions"
+  agents: "$USER_DIR"
 
 # ── Tool name mappings ────────────────────────────────────────────────────────
 # Maps FROM (tool name used in skill/prompt source files) TO (tool name for this editor).
