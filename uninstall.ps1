@@ -71,8 +71,9 @@ Write-Host "  Found Git Bash: $bashPath" -ForegroundColor DarkGray
 Write-Host ""
 
 # ── Execute uninstall.sh via Git Bash ────────────────────────────────────────
+$tempFilePosix = $tempFile -replace '\\', '/'
 try {
-    & $bashPath --noprofile --norc $tempFile
+    & $bashPath --noprofile --norc $tempFilePosix
 } finally {
     Remove-Item $tempFile -ErrorAction SilentlyContinue
 }
