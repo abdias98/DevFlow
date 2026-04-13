@@ -43,8 +43,11 @@ if ($bashCmd) {
 if (-not $bashPath) {
     $candidates = @(
         "$env:ProgramFiles\Git\bin\bash.exe",
+        "$env:ProgramFiles\Git\usr\bin\bash.exe",
         "${env:ProgramFiles(x86)}\Git\bin\bash.exe",
-        "$env:LOCALAPPDATA\Programs\Git\bin\bash.exe"
+        "${env:ProgramFiles(x86)}\Git\usr\bin\bash.exe",
+        "$env:LOCALAPPDATA\Programs\Git\bin\bash.exe",
+        "$env:LOCALAPPDATA\Programs\Git\usr\bin\bash.exe"
     )
     foreach ($c in $candidates) {
         if (Test-Path $c) {
