@@ -64,12 +64,9 @@ Based on requirements + exploration:
 ### Step 4 — Write the Architecture Spec
 
 1. **MANDATORY:** You **MUST use `read_file` to load `./spec-template.md`** to ensure all required sections are included.
-2. **Action:** Write the spec using that structure.
-3. **Save:** **Use `create_file` to save** to `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`.
+2. **Action:** Write the spec content using that structure.
 
 The spec MUST include all sections from the [spec template](./spec-template.md): Context, Architecture, Data Structures, Reusability Decisions, Test Architecture, UI Mockups, API Contracts, Risk Assessment, Design Decisions, Constraints.
-
-**⚠️ CRITICAL: Use `create_file` to write the spec file. Do NOT only show it in chat without saving.**
 
 ### Step 5 — Preview and Confirm
 
@@ -79,9 +76,9 @@ Show the spec summary and ask:
 |--------|----------|------|
 | `spec_confirmation` | Review the architecture spec above. Approve or request changes? | options: ✅ Approve, ✏️ Request changes, ❌ Cancel |
 
-- **✅ Approve** → Save spec, update memory, **immediately invoke `devflow-planner`**
-- **✏️ Request changes** → Loop back to Step 3
-- **❌ Cancel** → Discard
+- **✅ Approve** → **Execute `create_file`** to persist the spec at `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`, then update memory and **immediately invoke `devflow-planner`**
+- **✏️ Request changes** → Loop back to Step 3 (do NOT call `create_file`)
+- **❌ Cancel** → Discard (do NOT call `create_file`)
 
 ### Step 6 — Update Memory
 
@@ -89,5 +86,17 @@ Merge (do NOT overwrite) session memory with: Tech Stack, Constraints, Slug.
 Update phase-state: `- [x] Phase 2: Architect — docs/devflow/specs/{filename}`
 
 ---
+
+## ⚠️ Completion Protocol (ALL MODELS)
+
+Before transitioning to the next phase, you MUST confirm in your response:
+
+```markdown
+✅ File saved: docs/devflow/specs/YYYY-MM-DD-{slug}-design.md
+📏 Size: ~{N} lines
+🔗 Available for Planner in Phase 3.
+```
+
+If you cannot confirm this because `create_file` was not called → **call it NOW** before proceeding.
 
 Follow the [output format](../shared/output-format.md) for your response structure.

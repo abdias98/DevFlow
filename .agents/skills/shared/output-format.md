@@ -13,9 +13,12 @@ Every DevFlow agent response MUST be structured as follows:
 
 ### Memory Updates
 - Phase completed: {phase name}
-- Artifacts: {file paths created/modified}
+- Artifacts saved (verify EACH file was created with `create_file`):
+  - [ ] `docs/devflow/{type}/{filename}` — created ✅ / NOT created ❌
 - Next phase: {what comes next}
 - Blockers: {none or description}
+
+> ⚠️ If any artifact shows ❌, you MUST call `create_file` before responding.
 ```
 
 ## Agent Identifiers
