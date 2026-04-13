@@ -61,6 +61,10 @@ else
   echo "📥 Downloading profiles from GitHub: $DEVFLOW_REPO"
   TEMP_DIR=$(mktemp -d)
   trap "rm -rf '$TEMP_DIR'" EXIT
+  if ! command -v git >/dev/null 2>&1; then
+    echo "❌ Git is required to download editor profiles, but it is not installed or not in PATH."
+    exit 1
+  fi
   if ! git clone --depth 1 "$DEVFLOW_REPO" "$TEMP_DIR" 2>/dev/null; then
     echo "❌ Failed to clone repository. Check your internet connection or GitHub access."
     exit 1
