@@ -20,14 +20,22 @@ Write-Host ""
 Write-Host "  DevFlow Framework — Windows Uninstaller" -ForegroundColor Cyan
 Write-Host ""
 
-# ── Download uninstall.sh ────────────────────────────────────────────────────
-Write-Host "  Downloading uninstaller..." -ForegroundColor DarkGray
-try {
-    Invoke-WebRequest -Uri $uninstallUrl -OutFile $tempFile -UseBasicParsing
-} catch {
-    Write-Host "  [ERROR] Failed to download uninstall.sh" -ForegroundColor Red
-    Write-Host "  Check your internet connection and try again." -ForegroundColor Yellow
-    exit 1
+# ── Locate uninstall.sh (local repo first, then download) ───────────────────
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$localSh   = Join-Path $scriptDir "uninstall.sh"
+
+if ($scriptDir -and (Test-Path $localSh)) {
+    Write-Host "  Using local uninstall.sh from repo..." -ForegroundColor DarkGray
+    Copy-Item $localSh $tempFile -Force
+} else {
+    Write-Host "  Downloading uninstaller..." -ForegroundColor DarkGray
+    try {
+        Invoke-WebRequest -Uri $uninstallUrl -OutFile $tempFile -UseBasicParsing
+    } catch {
+        Write-Host "  [ERROR] Failed to download uninstall.sh" -ForegroundColor Red
+        Write-Host "  Check your internet connection and try again." -ForegroundColor Yellow
+        exit 1
+    }
 }
 
 # ── Locate Git Bash ──────────────────────────────────────────────────────────
