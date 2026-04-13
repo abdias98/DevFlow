@@ -72,7 +72,7 @@ Write-Host ""
 
 # ── Execute install.sh via Git Bash ──────────────────────────────────────────
 try {
-    & $bashPath --login -i $tempFile
+    & $bashPath --noprofile --norc $tempFile
 } finally {
     Remove-Item $tempFile -ErrorAction SilentlyContinue
 }
