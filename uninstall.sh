@@ -105,6 +105,10 @@ done
 # ── Resolve USER_DIR from the selected profile YAML ──────────────────────────
 EDITOR_NAME="$(parse_yaml_value "$SELECTED_PROFILE" "" "display_name")"
 raw_user_dir="$(parse_yaml_value "$SELECTED_PROFILE" "user_dir" "$OS_NAME")"
+if [[ -z "$raw_user_dir" ]]; then
+  echo "❌ Profile '$(basename "$SELECTED_PROFILE")' does not define user_dir for OS '$OS_NAME'."
+  exit 1
+fi
 USER_DIR="${raw_user_dir//\$HOME/$HOME}"
 USER_DIR="${USER_DIR//\$APPDATA/${APPDATA:-}}"
 
@@ -128,6 +132,15 @@ INSTR_DIR="${INSTR_DIR//\$USER_DIR/$USER_DIR}"
 AGENTS_DIR="${raw_agents//\$HOME/$HOME}"
 AGENTS_DIR="${AGENTS_DIR//\$APPDATA/${APPDATA:-}}"
 AGENTS_DIR="${AGENTS_DIR//\$USER_DIR/$USER_DIR}"
+
+# Safety: abort if any resolved path is empty or is a filesystem root.
+for _var in USER_DIR SKILLS_DIR PROMPTS_DIR INSTR_DIR AGENTS_DIR; do
+  _val="${!_var}"
+  if [[ -z "$_val" || "$_val" == "/" || "$_val" == "//" ]]; then
+    echo "❌ Resolved path for $_var is empty or unsafe ('$_val'). Aborting."
+    exit 1
+  fi
+done
 
 echo "📍 Uninstalling from: $EDITOR_NAME"
 echo "📍 Skills    → $SKILLS_DIR"

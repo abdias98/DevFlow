@@ -306,7 +306,25 @@ echo ""
 DEVFLOW_STORE="$HOME/.devflow"
 
 # ── Detect and cleanup previous installation (v1.2.x) ──────────────────────
-if [ -d "$DEVFLOW_STORE" ] || [ -d "${USER_DIR:-}/.agents/skills" ] 2>/dev/null || [ -d "${USER_DIR:-}/.github/prompts" ] 2>/dev/null; then
+# Check all profiles' user_dir for legacy paths so that a prior VS Code
+# installation is detected even when a different profile is selected now.
+_legacy_found=0
+if [ -d "$DEVFLOW_STORE" ]; then
+  _legacy_found=1
+else
+  for _p in "$SOURCE_DIR"/editor-profiles/*.yaml; do
+    [ -f "$_p" ] || continue
+    _raw_ud="$(parse_yaml_value "$_p" "user_dir" "$OS_NAME")"
+    [[ -z "$_raw_ud" ]] && continue
+    _ud="${_raw_ud//\$HOME/$HOME}"
+    _ud="${_ud//\$APPDATA/${APPDATA:-}}"
+    if [ -d "${_ud}/.agents/skills" ] || [ -d "${_ud}/.github/prompts" ]; then
+      _legacy_found=1
+      break
+    fi
+  done
+fi
+if [ "$_legacy_found" -eq 1 ]; then
   echo "📦 Previous DevFlow installation detected (v1.2.x or earlier)"
   echo "🧹 Cleaning up old files..."
   
