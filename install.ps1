@@ -31,15 +31,21 @@ try {
 }
 
 # ── Locate Git Bash ──────────────────────────────────────────────────────────
+# IMPORTANT: WindowsApps\bash.exe is WSL, NOT Git Bash.
+# WSL bash cannot understand Windows paths (C:/...) — it needs /mnt/c/...
+# We must find Git for Windows' bash.exe specifically.
 $bashPath = $null
 
-# 1) Check PATH first
+# 1) Check PATH — but EXCLUDE WSL bash (WindowsApps) and System32
 $bashCmd = Get-Command bash.exe -ErrorAction SilentlyContinue
 if ($bashCmd) {
-    $bashPath = $bashCmd.Source
+    $candidate = $bashCmd.Source
+    if ($candidate -notmatch 'WindowsApps|System32') {
+        $bashPath = $candidate
+    }
 }
 
-# 2) Fallback: common Git for Windows install locations
+# 2) Search common Git for Windows install locations
 if (-not $bashPath) {
     $candidates = @(
         "$env:ProgramFiles\Git\bin\bash.exe",
@@ -60,7 +66,7 @@ if (-not $bashPath) {
 if (-not $bashPath) {
     Write-Host "  [ERROR] Git Bash not found." -ForegroundColor Red
     Write-Host ""
-    Write-Host "  DevFlow requires Git for Windows." -ForegroundColor Yellow
+    Write-Host "  DevFlow requires Git for Windows (not WSL)." -ForegroundColor Yellow
     Write-Host "  Download it from: https://gitforwindows.org/" -ForegroundColor Yellow
     Write-Host ""
     Remove-Item $tempFile -ErrorAction SilentlyContinue
@@ -71,9 +77,11 @@ Write-Host "  Found Git Bash: $bashPath" -ForegroundColor DarkGray
 Write-Host ""
 
 # ── Execute install.sh via Git Bash ──────────────────────────────────────────
+# Convert Windows backslash path to forward slashes so bash can find the file.
+# Git Bash translates C:/Users/... to /c/Users/... internally.
 $tempFilePosix = $tempFile -replace '\\', '/'
 try {
-    & $bashPath --noprofile --norc $tempFilePosix
+    & $bashPath --noprofile --norc "$tempFilePosix"
 } finally {
     Remove-Item $tempFile -ErrorAction SilentlyContinue
 }
