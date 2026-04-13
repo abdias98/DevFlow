@@ -10,11 +10,17 @@ Designed for **any tech stack**, integrated directly into **VS Code Copilot** (n
 
 ### Step 1: Install globally (one-time)
 
+**macOS / Linux**
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/install.sh)
 ```
 
-Installs the `@devflow` agent globally — available in **every VS Code workspace** without extra setup.
+**Windows (PowerShell)**
+```powershell
+irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
+```
+
+Installs the `@devflow` agent globally — available in **every workspace** without extra setup.
 
 ### Step 2: Reload VS Code
 
@@ -34,8 +40,14 @@ Installs the `@devflow` agent globally — available in **every VS Code workspac
 
 If you have an older version installed, the installer automatically detects and cleans up:
 
+**macOS / Linux**
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/install.sh)
+```
+
+**Windows (PowerShell)**
+```powershell
+irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
 ```
 
 **What's new in v2.3.1:**
@@ -180,8 +192,15 @@ Your Request
 ## 📦 Installation Methods
 
 ### Method 1: Quick Install (Recommended)
+
+**macOS / Linux**
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/install.sh)
+```
+
+**Windows (PowerShell)**
+```powershell
+irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
 ```
 
 ### Method 2: From Cloned Repo
@@ -192,8 +211,15 @@ bash install.sh
 ```
 
 ### Method 3: Uninstall
+
+**macOS / Linux**
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/uninstall.sh)
+```
+
+**Windows (PowerShell)**
+```powershell
+irm https://raw.githubusercontent.com/abdias98/DevFlow/main/uninstall.ps1 | iex
 ```
 
 ---
