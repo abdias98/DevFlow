@@ -103,6 +103,10 @@ load_editor_profile() {
   # This replaces the old VSCODE_USER_DIR that was hardcoded in the OS block.
   local raw_user_dir
   raw_user_dir="$(parse_yaml_value "$yaml" "user_dir" "$OS_NAME")"
+  if [[ -z "$raw_user_dir" ]]; then
+    echo "❌ Profile '$(basename "$yaml")' does not define user_dir for OS '$OS_NAME'."
+    exit 1
+  fi
   USER_DIR="${raw_user_dir//\$HOME/$HOME}"
   USER_DIR="${USER_DIR//\$APPDATA/${APPDATA:-}}"
 
