@@ -376,13 +376,13 @@ MIT License — See [LICENSE](./LICENSE)
 
 ### Commands not showing up?
 1. Reload VS Code: `Ctrl+Shift+P` → Developer: Reload Window
-2. Verify installation: `~/.config/Code/User/.agents/skills/`
+2. Verify installation: `~/.config/Code/User/agents/skills/`
 3. Restart VS Code completely
 
 ### "garbled" or "permission denied" on install?
 Check that the path is writable:
 ```bash
-ls -la ~/.config/Code/User/.agents/skills/
+ls -la ~/.config/Code/User/agents/skills/
 ```
 
 ### Want to update?

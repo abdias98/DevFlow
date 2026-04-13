@@ -64,12 +64,16 @@ Based on requirements + exploration:
 ### Step 4 — Write the Architecture Spec
 
 1. **MANDATORY:** You **MUST use `read_file` to load `./spec-template.md`** to ensure all required sections are included.
-2. **Action:** Write the spec using that structure.
-3. **Save:** **Use `create_file` to save** to `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`.
+2. **Action:** Write the spec content using that structure.
+
+### Step 4a — ⚠️ PERSIST SPEC FILE (MANDATORY — DO NOT SKIP)
+
+**You MUST execute `create_file` now. This is not optional.**
+- **Target path:** `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`
+- **Input:** the complete spec content from Step 4.
+- **Rule:** A spec that only exists in chat is NOT saved. You MUST call `create_file`.
 
 The spec MUST include all sections from the [spec template](./spec-template.md): Context, Architecture, Data Structures, Reusability Decisions, Test Architecture, UI Mockups, API Contracts, Risk Assessment, Design Decisions, Constraints.
-
-**⚠️ CRITICAL: Use `create_file` to write the spec file. Do NOT only show it in chat without saving.**
 
 ### Step 5 — Preview and Confirm
 
@@ -89,5 +93,17 @@ Merge (do NOT overwrite) session memory with: Tech Stack, Constraints, Slug.
 Update phase-state: `- [x] Phase 2: Architect — docs/devflow/specs/{filename}`
 
 ---
+
+## ⚠️ Completion Protocol (ALL MODELS)
+
+Before transitioning to the next phase, you MUST confirm in your response:
+
+```markdown
+✅ File saved: docs/devflow/specs/YYYY-MM-DD-{slug}-design.md
+📏 Size: ~{N} lines
+🔗 Available for Planner in Phase 3.
+```
+
+If you cannot confirm this because `create_file` was not called → **call it NOW** before proceeding.
 
 Follow the [output format](../shared/output-format.md) for your response structure.
