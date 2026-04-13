@@ -80,14 +80,14 @@ Ensure you understand: file conventions, import patterns, test framework + asser
 2. **MANDATORY:** If UI is detected, **you MUST use `read_file` to load `./mockup-rules.md`** for detailed aesthetic rules and saving instructions.
 3. **Action:** Generate mockup(s) following those rules. Use `create_file` to save. Display HTML inline.
 
-### Step 8 — Write the Plan
+### Step 7 — Write the Plan
 Using the [plan template](./plan-template.md), write the complete plan document.
 
-### Step 8a — ⚠️ PERSIST PLAN FILE (MANDATORY — DO NOT SKIP)
+### Step 7a — ⚠️ PERSIST PLAN FILE (MANDATORY — DO NOT SKIP)
 
 **You MUST execute `create_file` now. This is not optional.**
 - **Target path:** `docs/devflow/plans/YYYY-MM-DD-{slug}.md`
-- **Input:** the complete plan from Step 8.
+- **Input:** the complete plan from Step 7.
 - **Rule:** A plan that only exists in chat is NOT saved. You MUST call `create_file`.
 - **Mockups:** Use `create_file` to save every mockup file.
 
@@ -106,7 +106,7 @@ Present the plan summary to the user: file path, Stack Plan table (if applicable
 - If `gh` not available, provide manual PR instructions
 - STOP — do NOT invoke the Implementer
 
-### Step 9 — Update Memory
+### Step 8 — Update Memory
 
 Update session memory: `- [x] Phase 3: Planner — docs/devflow/plans/{filename}`
 
