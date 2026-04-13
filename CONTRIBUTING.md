@@ -1,6 +1,6 @@
 # Contributing to DevFlow
 
-**DevFlow v2.3.0** — Multi-agent AI framework with multi-editor support via YAML profiles.
+**DevFlow v2.3.1** — Multi-agent AI framework with multi-editor support via YAML profiles.
 
 Thanks for your interest in contributing to DevFlow! 🎉
 

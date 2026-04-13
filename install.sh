@@ -2,7 +2,9 @@
 # DevFlow Installation Script
 # Installs the DevFlow multi-agent framework globally.
 # Editor-specific paths, tool mappings, and messages are driven by
-# editor-profiles/*.yaml — zero hardcoded editor logic beyond OS detection.
+# editor-profiles/*.yaml — zero hardcoded editor logic in this script.
+# Each profile defines user_dir.<OS_NAME> so install.sh never needs
+# to know which directory a given editor uses.
 
 set -e
 
@@ -12,17 +14,16 @@ DEVFLOW_REPO="${DEVFLOW_REPO:-https://github.com/abdias98/DevFlow.git}"
 echo "🚀 Installing DevFlow Framework..."
 echo ""
 
-# ── Detect OS and resolve env vars used by editor profiles ───────────────────
+# ── Detect OS ────────────────────────────────────────────────────────────────
+# Only OS_NAME and BIN_DIR are set here. USER_DIR for each editor is read from
+# the profile YAML via user_dir.<OS_NAME> inside load_editor_profile().
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  VSCODE_USER_DIR="$HOME/Library/Application Support/Code/User"
   OS_NAME="macOS"
   BIN_DIR="/usr/local/bin"
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-  VSCODE_USER_DIR="$HOME/.config/Code/User"
   OS_NAME="Linux"
   BIN_DIR="$HOME/.local/bin"
 elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
-  VSCODE_USER_DIR="$APPDATA/Code/User"
   OS_NAME="Windows"
   BIN_DIR="/usr/local/bin"
 else
@@ -86,15 +87,28 @@ parse_yaml_section() {
 
 # load_editor_profile <yaml_file>
 # Reads an editor profile YAML and sets global variables:
-#   EDITOR_ID, EDITOR_NAME, SKILLS_DIR, PROMPTS_DIR, INSTR_DIR, AGENTS_DIR,
+#   EDITOR_ID, EDITOR_NAME, USER_DIR,
+#   SKILLS_DIR, PROMPTS_DIR, INSTR_DIR, AGENTS_DIR,
 #   TOOL_SUBSTITUTION, RELOAD_MSG, USAGE_CMD, PROFILE_FILE
-# Resolves paths by substituting known variables ($HOME, $VSCODE_USER_DIR) only.
+# USER_DIR is resolved from user_dir.<OS_NAME> in the YAML.
+# All other paths are expanded by substituting $HOME, $APPDATA, and $USER_DIR.
 load_editor_profile() {
   local yaml="$1"
   PROFILE_FILE="$yaml"
 
   EDITOR_ID="$(parse_yaml_value "$yaml" "" "id")"
   EDITOR_NAME="$(parse_yaml_value "$yaml" "" "display_name")"
+
+  # Resolve USER_DIR for the current OS from the profile YAML.
+  # This replaces the old VSCODE_USER_DIR that was hardcoded in the OS block.
+  local raw_user_dir
+  raw_user_dir="$(parse_yaml_value "$yaml" "user_dir" "$OS_NAME")"
+  if [[ -z "$raw_user_dir" ]]; then
+    echo "❌ Profile '$(basename "$yaml")' does not define user_dir for OS '$OS_NAME'."
+    exit 1
+  fi
+  USER_DIR="${raw_user_dir//\$HOME/$HOME}"
+  USER_DIR="${USER_DIR//\$APPDATA/${APPDATA:-}}"
 
   # Read raw paths and substitute only known variables for security.
   local raw_skills raw_prompts raw_instr raw_agents
@@ -104,18 +118,22 @@ load_editor_profile() {
   raw_agents="$(parse_yaml_value "$yaml" "paths" "agents")"
 
   # Explicit substitution of known variables (no eval to prevent RCE).
-  # Only $HOME and $VSCODE_USER_DIR are expanded.
+  # $HOME, $APPDATA, and $USER_DIR are the only expanded variables.
   SKILLS_DIR="${raw_skills//\$HOME/$HOME}"
-  SKILLS_DIR="${SKILLS_DIR//\$VSCODE_USER_DIR/$VSCODE_USER_DIR}"
-  
+  SKILLS_DIR="${SKILLS_DIR//\$APPDATA/${APPDATA:-}}"
+  SKILLS_DIR="${SKILLS_DIR//\$USER_DIR/$USER_DIR}"
+
   PROMPTS_DIR="${raw_prompts//\$HOME/$HOME}"
-  PROMPTS_DIR="${PROMPTS_DIR//\$VSCODE_USER_DIR/$VSCODE_USER_DIR}"
-  
+  PROMPTS_DIR="${PROMPTS_DIR//\$APPDATA/${APPDATA:-}}"
+  PROMPTS_DIR="${PROMPTS_DIR//\$USER_DIR/$USER_DIR}"
+
   INSTR_DIR="${raw_instr//\$HOME/$HOME}"
-  INSTR_DIR="${INSTR_DIR//\$VSCODE_USER_DIR/$VSCODE_USER_DIR}"
-  
+  INSTR_DIR="${INSTR_DIR//\$APPDATA/${APPDATA:-}}"
+  INSTR_DIR="${INSTR_DIR//\$USER_DIR/$USER_DIR}"
+
   AGENTS_DIR="${raw_agents//\$HOME/$HOME}"
-  AGENTS_DIR="${AGENTS_DIR//\$VSCODE_USER_DIR/$VSCODE_USER_DIR}"
+  AGENTS_DIR="${AGENTS_DIR//\$APPDATA/${APPDATA:-}}"
+  AGENTS_DIR="${AGENTS_DIR//\$USER_DIR/$USER_DIR}"
 
   TOOL_SUBSTITUTION="$(parse_yaml_value "$yaml" "install" "tool_substitution")"
   RELOAD_MSG="$(parse_yaml_value "$yaml" "post_install" "reload_message")"
@@ -204,9 +222,17 @@ for profile_yaml in "$SOURCE_DIR"/editor-profiles/*.yaml; do
   profile_id="$(parse_yaml_value "$profile_yaml" "" "id")"
   [[ -z "$profile_id" ]] && continue
 
-  # Resolve paths.base to check if the editor is installed on this machine
+  # Resolve USER_DIR for this profile from user_dir.<OS_NAME> in the YAML.
+  # This avoids any hardcoded editor-specific path in install.sh.
+  local_raw_ud="$(parse_yaml_value "$profile_yaml" "user_dir" "$OS_NAME")"
+  local_ud="${local_raw_ud//\$HOME/$HOME}"
+  local_ud="${local_ud//\$APPDATA/${APPDATA:-}}"
+
+  # Resolve paths.base using the profile's USER_DIR to check if the editor is present
   raw_base="$(parse_yaml_value "$profile_yaml" "paths" "base")"
-  eval "resolved_base=\"$raw_base\""
+  resolved_base="${raw_base//\$HOME/$HOME}"
+  resolved_base="${resolved_base//\$APPDATA/${APPDATA:-}}"
+  resolved_base="${resolved_base//\$USER_DIR/$local_ud}"
 
   ALL_PROFILES+=("$profile_yaml")
   
@@ -231,7 +257,12 @@ for p in "${ALL_PROFILES[@]}"; do
   profile_id="$(parse_yaml_value "$p" "" "id")"
   name="$(parse_yaml_value "$p" "" "display_name")"
   raw_base="$(parse_yaml_value "$p" "paths" "base")"
-  eval "resolved_base=\"$raw_base\""
+  local_raw_ud="$(parse_yaml_value "$p" "user_dir" "$OS_NAME")"
+  local_ud="${local_raw_ud//\$HOME/$HOME}"
+  local_ud="${local_ud//\$APPDATA/${APPDATA:-}}"
+  resolved_base="${raw_base//\$HOME/$HOME}"
+  resolved_base="${resolved_base//\$APPDATA/${APPDATA:-}}"
+  resolved_base="${resolved_base//\$USER_DIR/$local_ud}"
   
   # Determine status
   if [[ "$profile_id" == "generic" ]]; then
@@ -275,7 +306,25 @@ echo ""
 DEVFLOW_STORE="$HOME/.devflow"
 
 # ── Detect and cleanup previous installation (v1.2.x) ──────────────────────
-if [ -d "$DEVFLOW_STORE" ] || [ -d "$VSCODE_USER_DIR/.agents/skills" ] 2>/dev/null || [ -d "$VSCODE_USER_DIR/.github/prompts" ] 2>/dev/null; then
+# Check all profiles' user_dir for legacy paths so that a prior VS Code
+# installation is detected even when a different profile is selected now.
+_legacy_found=0
+if [ -d "$DEVFLOW_STORE" ]; then
+  _legacy_found=1
+else
+  for _p in "$SOURCE_DIR"/editor-profiles/*.yaml; do
+    [ -f "$_p" ] || continue
+    _raw_ud="$(parse_yaml_value "$_p" "user_dir" "$OS_NAME")"
+    [[ -z "$_raw_ud" ]] && continue
+    _ud="${_raw_ud//\$HOME/$HOME}"
+    _ud="${_ud//\$APPDATA/${APPDATA:-}}"
+    if [ -d "${_ud}/.agents/skills" ] || [ -d "${_ud}/.github/prompts" ]; then
+      _legacy_found=1
+      break
+    fi
+  done
+fi
+if [ "$_legacy_found" -eq 1 ]; then
   echo "📦 Previous DevFlow installation detected (v1.2.x or earlier)"
   echo "🧹 Cleaning up old files..."
   
@@ -292,7 +341,7 @@ if [ -d "$DEVFLOW_STORE" ] || [ -d "$VSCODE_USER_DIR/.agents/skills" ] 2>/dev/nu
     fi
   done
   
-  echo "✅ Cleanup complete. Installing v2.3.0..."
+  echo "✅ Cleanup complete. Installing v2.3.1..."
   echo ""
 fi
 

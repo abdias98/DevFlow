@@ -23,6 +23,14 @@
 id: generic
 display_name: "Generic (CLI / Headless)"
 
+# ── User directory per OS ─────────────────────────────────────────────────────
+# install.sh reads user_dir.<OS_NAME> and exposes it as $USER_DIR for path resolution.
+# For CLI/headless use, the same directory is used on every platform.
+user_dir:
+  macOS: "$HOME/.devflow"
+  Linux: "$HOME/.devflow"
+  Windows: "$HOME/.devflow"
+
 # ── Installation paths ────────────────────────────────────────────────────────
 paths:
   base: "$HOME/.devflow"

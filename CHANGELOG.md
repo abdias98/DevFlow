@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.1] — 2026-04-12
+
+### ✨ Features
+
+- **Version Bump** — Updated version to 2.3.1.
+- **Profile-Based User Directory Resolution** — Installation now resolves `user_dir` from the selected editor profile instead of relying on a single shared location.
+- **Updated Uninstall Behavior** — `uninstall.sh` now follows the same profile-specific path resolution so installed files are removed from the correct editor user directory.
+
+---
+
 ## [2.3.0] — 2026-04-09
 
 ### ✨ Features
