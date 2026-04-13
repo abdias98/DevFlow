@@ -319,7 +319,7 @@ if [ -d "$DEVFLOW_STORE" ] || [ -d "${USER_DIR:-}/.agents/skills" ] 2>/dev/null 
     fi
   done
   
-  echo "✅ Cleanup complete. Installing v2.3.0..."
+  echo "✅ Cleanup complete. Installing v2.3.1..."
   echo ""
 fi
 
