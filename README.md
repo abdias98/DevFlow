@@ -16,6 +16,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/instal
 ```
 
 **Windows (PowerShell)**
+> **Prerequisite:** [Git for Windows](https://gitforwindows.org/) must be installed — the script uses Git Bash to run the installer. If you see "Git Bash not found", install Git for Windows first.
 ```powershell
 irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
 ```
@@ -46,6 +47,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/instal
 ```
 
 **Windows (PowerShell)**
+> **Prerequisite:** [Git for Windows](https://gitforwindows.org/) must be installed — the script uses Git Bash to run the installer. If you see "Git Bash not found", install Git for Windows first.
 ```powershell
 irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
 ```
@@ -199,6 +201,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/instal
 ```
 
 **Windows (PowerShell)**
+> **Prerequisite:** [Git for Windows](https://gitforwindows.org/) must be installed — the script uses Git Bash to run the installer. If you see "Git Bash not found", install Git for Windows first.
 ```powershell
 irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
 ```
@@ -218,6 +221,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/uninst
 ```
 
 **Windows (PowerShell)**
+> **Prerequisite:** [Git for Windows](https://gitforwindows.org/) must be installed — the script uses Git Bash to run the uninstaller. If you see "Git Bash not found", install Git for Windows first.
 ```powershell
 irm https://raw.githubusercontent.com/abdias98/DevFlow/main/uninstall.ps1 | iex
 ```
