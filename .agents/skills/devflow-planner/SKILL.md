@@ -82,19 +82,17 @@ Ensure you understand: file conventions, import patterns, test framework + asser
 
 ### Step 7 — Write the Plan
 
-Using the [plan template](./plan-template.md), write the complete plan document with:
-- File map (modify/create grouped by architecture layer)
-- One Task per logical unit, each with: files, steps, code snippets, commit checkpoint
-- 🧪 Tests section per task with complete test code that will FAIL on first run
-- Self-Review Checklist
+Using the [plan template](./plan-template.md), write the complete plan document.
 
-### Step 8 — Save Plan + Deliver
+### Step 7a — ⚠️ PERSIST PLAN FILE (MANDATORY — DO NOT SKIP)
 
-1. **Use `create_file` to save** the plan document to `docs/devflow/plans/YYYY-MM-DD-{slug}.md`
-2. **Use `create_file` to save** every mockup file (if not already saved in Step 6)
-3. Present the plan summary to the user: file path, Stack Plan table (if applicable), mockup paths
+**You MUST execute `create_file` now. This is not optional.**
+- **Target path:** `docs/devflow/plans/YYYY-MM-DD-{slug}.md`
+- **Input:** the complete plan from Step 7.
+- **Rule:** A plan that only exists in chat is NOT saved. You MUST call `create_file`.
+- **Mockups:** Use `create_file` to save every mockup file.
 
-**⚠️ CRITICAL: You MUST use `create_file` to write the plan file. Do NOT only show the plan in chat without saving it.**
+Present the plan summary to the user: file path, Stack Plan table (if applicable), mockup paths.
 
 **The next action depends on invocation context:**
 
@@ -109,10 +107,22 @@ Using the [plan template](./plan-template.md), write the complete plan document 
 - If `gh` not available, provide manual PR instructions
 - STOP — do NOT invoke the Implementer
 
-### Step 9 — Update Memory
+### Step 8 — Update Memory
 
 Update session memory: `- [x] Phase 3: Planner — docs/devflow/plans/{filename}`
 
 ---
+
+## ⚠️ Completion Protocol (ALL MODELS)
+
+Before transitioning to the next phase, you MUST confirm in your response:
+
+```markdown
+✅ File saved: docs/devflow/plans/YYYY-MM-DD-{slug}.md
+📏 Size: ~{N} lines
+🛠️ Tasks: {count}
+```
+
+If you cannot confirm this because `create_file` was not called → **call it NOW** before proceeding.
 
 Follow the [output format](../shared/output-format.md) for your response structure.
