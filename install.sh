@@ -25,7 +25,7 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   BIN_DIR="$HOME/.local/bin"
 elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
   OS_NAME="Windows"
-  BIN_DIR="/usr/local/bin"
+  BIN_DIR="$HOME/.local/bin"
 else
   echo "❌ Unsupported OS: $OSTYPE"
   exit 1
