@@ -1,0 +1,65 @@
+# DevFlow Editor Profile — Antigravity
+# Source of truth for install.sh — parsed at install time via grep/awk.
+#
+# FORMAT RULES (required for bash parsing):
+#   - No inline comments after values
+#   - One key: value per line, indented with 2 spaces under section header
+#   - String values may be quoted or unquoted
+#   - Env vars ($USER_DIR) are resolved by install.sh after reading user_dir.<OS_NAME> from this file
+#
+# SOLID Open/Closed: Adding a new editor = new YAML file in editor-profiles/.
+# install.sh discovers profiles automatically and uses paths.base existence for status.
+#
+# SHARED DIRECTORY: install.sh automatically copies .agents/skills/shared/ to
+# skills_dir/shared/ for every editor profile. Skills reference shared rules via
+# relative paths (../shared/rules.md) which resolve correctly at any install target.
+
+id: antigravity
+display_name: "Antigravity"
+
+# ── User directory per OS ─────────────────────────────────────────────────────
+# Antigravity stores all config under ~/.gemini/antigravity/ on every platform.
+# install.sh reads user_dir.<OS_NAME> and exposes it as $USER_DIR for path resolution.
+user_dir:
+  macOS: "$HOME/.gemini/antigravity"
+  Linux: "$HOME/.gemini/antigravity"
+  Windows: "$HOME/.gemini/antigravity"
+
+# ── Installation paths ────────────────────────────────────────────────────────
+# $USER_DIR is resolved by install.sh from user_dir.<OS_NAME> above.
+paths:
+  base: "$USER_DIR"
+  skills: "$USER_DIR/skills"
+  prompts: "$USER_DIR/prompts"
+  instructions: "$USER_DIR/instructions"
+  agents: "$USER_DIR"
+
+# ── Tool name mappings ────────────────────────────────────────────────────────
+# Maps FROM (tool name used in skill/prompt source files) TO (tool name for this editor).
+# Antigravity supports vscode_askQuestions natively — all tool names are used as-is.
+# install.sh reads these pairs and applies sed when tool_substitution is true.
+tool_mappings:
+  vscode_askQuestions: vscode_askQuestions
+  semantic_search: semantic_search
+  grep_search: grep_search
+  file_search: file_search
+  read_file: read_file
+  create_file: create_file
+  replace_string_in_file: replace_string_in_file
+  run_in_terminal: run_in_terminal
+  memory: memory
+  list_dir: list_dir
+
+# ── Path mappings ────────────────────────────────────────────────────────────
+# /memories is available natively in Antigravity — keep as-is.
+path_mappings:
+  /memories: /memories
+
+# ── Install behavior ──────────────────────────────────────────────────────────
+install:
+  tool_substitution: false
+
+# ── Post-install message ─────────────────────────────────────────────────────
+post_install:
+  reload_message: "Restart Antigravity to pick up the new agent files"
+  usage_command: "@devflow <feature request>"
