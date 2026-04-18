@@ -1,5 +1,5 @@
 ---
-name: devflow-orchestrator
+name: devflow
 description: "Multi-agent engineering framework that simulates a professional software team. Orchestrates specialized sub-agents (Brainstormer, Architect, Planner, Tester, Implementer, Reviewer, Debugger, Finalizer) through a strict phase-based lifecycle with persistent memory. USE WHEN: full development lifecycle, build feature end-to-end, multi-agent development, structured implementation, TDD workflow, architecture-first development."
 ---
 
@@ -15,14 +15,14 @@ Read [common rules](../shared/rules.md) for language detection, tool fallback, a
 
 | Agent | Role | Skill | Phase |
 |-------|------|-------|-------|
-| 🧠 Brainstormer | Problem understanding, clarifying questions | `devflow-brainstormer` | 1 |
+| 🧠 Brainstormer | Problem understanding, clarifying questions | `devflow-brainstorm` | 1 |
 | 🧩 Architect | Requirements analysis, system design | `devflow-architect` | 2 |
-| 📋 Planner | Task breakdown, test code design, mockups | `devflow-planner` | 3 |
-| ⚙️ Implementer | Red→Green TDD cycle per task | `devflow-implementer` | 4 |
-| 🧪 Tester | Manual: create specific failing test | `devflow-tester` | Manual |
-| 🔍 Reviewer | Code quality, architecture alignment | `devflow-reviewer` | 5 |
-| 🐞 Debugger | Root cause analysis, systematic debugging | `devflow-debugger` | 6 |
-| 🚀 Finalizer | Final summary, test verification, cleanup | `devflow-finalizer` | 7 |
+| 📋 Planner | Task breakdown, test code design, mockups | `devflow-plan` | 3 |
+| ⚙️ Implementer | Red→Green TDD cycle per task | `devflow-implement` | 4 |
+| 🧪 Tester | Manual: create specific failing test | `devflow-test` | Manual |
+| 🔍 Reviewer | Code quality, architecture alignment | `devflow-review` | 5 |
+| 🐞 Debugger | Root cause analysis, systematic debugging | `devflow-debug` | 6 |
+| 🚀 Finalizer | Final summary, test verification, cleanup | `devflow-finalize` | 7 |
 
 ---
 
@@ -79,7 +79,7 @@ See [stack mode](./stack-mode.md) for stacked PR behavior.
 | `/devflow-architect` | Only Phase 2 |
 | `/devflow-plan` | Only Phase 3 |
 | `/devflow-implement` | Only Phase 4 |
-| `/devflow-tester` | Manual: create specific failing test |
+| `/devflow-test` | Manual: create specific failing test |
 | `/devflow-review` | Only Phase 5 |
 | `/devflow-debug` | Only Phase 6 |
 | `/devflow-finalize` | Only Phase 7 |

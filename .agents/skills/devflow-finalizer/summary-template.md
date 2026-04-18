@@ -39,9 +39,9 @@
 > - **General:** *[HIGH/MED/LOW] {action}*
 
 ### 📄 Artifacts
-- Spec:   `docs/devflow/specs/{file}`
-- Plan:   `docs/devflow/plans/{file}` ✔️ *(checkboxes updated)*
-- Review: `docs/devflow/reviews/{file}`
+- Spec:   `docs/devflow/specs/{filename}`
+- Plan:   `docs/devflow/plans/{filename}` ✔️ *(checkboxes updated)*
+- Review: `docs/devflow/reviews/{filename}`
 
 ### 📤 Stack PRs *(Stack Mode = yes only)*
 | Stack | Branch | Base | PR Title | Status |

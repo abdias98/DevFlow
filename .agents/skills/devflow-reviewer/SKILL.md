@@ -1,5 +1,5 @@
 ---
-name: devflow-reviewer
+name: devflow-review
 description: "Performs automated code review by analyzing diffs against the architecture spec and plan. Checks code quality, security (OWASP), performance, and test coverage. Classifies findings as BLOCK/WARN/INFO. Routes back to Implementer on blockers. USE WHEN: code review, review implementation, check code quality, devflow review phase, validate changes."
 argument-hint: "Optional: path to specific files to review, or 'auto' to review all changes."
 ---

@@ -1,5 +1,5 @@
 ---
-name: devflow-finalizer
+name: devflow-finalize
 description: "Produces the final clean solution summary, verifies all tests pass and BLOCK review findings are resolved, explains how to run/test, lists possible improvements, and cleans session memory. USE WHEN: completing a feature, wrapping up implementation, final summary, devflow finalize phase."
 argument-hint: "Feature slug or description. Auto-reads session memory."
 ---

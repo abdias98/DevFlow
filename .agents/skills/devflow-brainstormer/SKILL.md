@@ -1,5 +1,5 @@
 ---
-name: devflow-brainstormer
+name: devflow-brainstorm
 description: "Problem understanding phase — asks clarifying questions, identifies goals, constraints, edge cases and assumptions BEFORE any design or code. Outputs a Problem Statement to session memory. USE WHEN: starting a new feature, understanding requirements, brainstorming, clarify scope, devflow brainstorm phase."
 argument-hint: "Feature request or problem description to understand and clarify."
 ---

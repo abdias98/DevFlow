@@ -83,7 +83,7 @@ Show the spec summary and ask:
 ### Step 6 — Update Memory
 
 Merge (do NOT overwrite) session memory with: Tech Stack, Constraints, Slug.
-Update phase-state: `- [x] Phase 2: Architect — docs/devflow/specs/{filename}`
+Update phase-state: `- [x] Phase 2: Architect — \`docs/devflow/specs/{filename}\``
 
 ---
 

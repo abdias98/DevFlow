@@ -1,6 +1,6 @@
 # Lifecycle Phase Details
 
-## PHASE 1: BRAINSTORMER (`devflow-brainstormer`)
+## PHASE 1: BRAINSTORMER (`devflow-brainstorm`)
 
 1. Read user's request carefully
 2. Ask clarifying questions (Feature Type, scope, constraints, Definition of Done)
@@ -20,7 +20,7 @@
 6. **Output:** Spec document saved to `docs/devflow/specs/`
 7. **Update memory:** Save tech stack and architecture decisions
 
-## PHASE 3: PLANNING (`devflow-planner`)
+## PHASE 3: PLANNING (`devflow-plan`)
 
 1. Read the spec from Phase 2
 2. Ask Stack Mode question (FIRST ACTION — STOP and wait)
@@ -43,20 +43,20 @@ If multiple mockups were generated, include mockup selection:
 |--------|----------|------|
 | `mockup_selection` | Multiple mockup proposals generated. Which one to use? | options: {list each mockup file} |
 
-- **✅ Yes** → Invoke `devflow-implementer`
+- **✅ Yes** → Invoke `devflow-implement`
 - **✏️ Request changes** → Revise plan, re-ask
 - **❌ Cancel** → Stop
 
 **Do NOT invoke Implementer or write code until user confirms.**
 
-## PHASE 4: IMPLEMENTER (`devflow-implementer`)
+## PHASE 4: IMPLEMENTER (`devflow-implement`)
 
 For each task: **🔴 Red** (create failing test) → **🟢 Green** (write minimal code to pass).
 1. Follow the plan strictly — no speculative refactoring
 2. Commit after each task
-3. **Auto-trigger:** Invoke `devflow-reviewer` after completing implementation
+3. **Auto-trigger:** Invoke `devflow-review` after completing implementation
 
-## PHASE 5: REVIEWER (`devflow-reviewer`)
+## PHASE 5: REVIEWER (`devflow-review`)
 
 1. Read the diff of implemented code
 2. Compare against spec and plan
@@ -65,13 +65,13 @@ For each task: **🔴 Red** (create failing test) → **🟢 Green** (write mini
 5. **Output:** Review saved to `docs/devflow/reviews/`
 6. **If BLOCK findings** → Route back to PHASE 4
 
-## PHASE 6: DEBUGGER (`devflow-debugger`) — Conditional
+## PHASE 6: DEBUGGER (`devflow-debug`) — Conditional
 
 Only if tests fail or reviewer detects runtime issues.
 1. Reproduce → Isolate → Explain → Fix → Verify
 2. **Output:** Debug log saved to `docs/devflow/debug-logs/`
 
-## PHASE 7: FINALIZER (`devflow-finalizer`)
+## PHASE 7: FINALIZER (`devflow-finalize`)
 
 1. Run full test suite — route to Debugger if failures
 2. Verify all BLOCK findings are resolved

@@ -1,5 +1,5 @@
 ---
-name: devflow-planner
+name: devflow-plan
 description: "Reads a design spec and breaks it down into atomic implementation tasks with checkboxes, file maps, complete code snippets, and pre-written commit messages. For UI features, generates an HTML wireframe mockup before writing the plan. Produces a plan document in docs/devflow/plans/. USE WHEN: create implementation plan, break down tasks, task planning, devflow plan phase, create checklist from spec."
 argument-hint: "Path to a spec document, or describe the feature to plan. If a spec exists in docs/devflow/specs/, it will be auto-detected."
 ---
@@ -108,7 +108,7 @@ Present the plan summary to the user: file path, Stack Plan table (if applicable
 
 ### Step 8 — Update Memory
 
-Update session memory: `- [x] Phase 3: Planner — docs/devflow/plans/{filename}`
+Update session memory: `- [x] Phase 3: Planner — \`docs/devflow/plans/{filename}\``
 
 ---
 

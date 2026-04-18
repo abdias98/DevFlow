@@ -1,5 +1,5 @@
 ---
-name: devflow-debugger
+name: devflow-debug
 description: "Systematic debugger that performs root cause analysis on test failures, runtime errors, and reviewer findings. Never guesses — always reproduces, isolates, explains, and documents fixes. USE WHEN: test failing, debug error, root cause analysis, fix bug systematically, devflow debug phase."
 argument-hint: "Error message, failing test name, or stack trace."
 ---
@@ -55,7 +55,7 @@ State root cause in one sentence. Apply **minimal fix** — change only what's n
 
 ### Step 6 — Document
 
-**Use `create_file` to save** debug log following the [debug template](./debug-template.md).
+**Use `create_file` to save** debug log to `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md` following the [debug template](./debug-template.md).
 
 Persist lessons to `/memories/repo/debug-patterns.md` (append).
 

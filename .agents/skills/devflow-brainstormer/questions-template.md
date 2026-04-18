@@ -70,21 +70,32 @@ These questions MUST always be asked — never skip even if the request seems cl
 
 ```markdown
 # DevFlow Context
+
 **Request:** {original request}
-**Date:** YYYY-MM-DD
 **Slug:** {feature-slug}
 **Tech Stack:** {to be detected by Architect}
-**Goal:** {goal}
-**Constraints:** {list}
-**Edge Cases:** {list}
-**Assumptions:** {list}
-**Problem Restatement:** {restatement}
 **Feature Type:** {type}
-**Platform/Environment:** {details}
-**Accessibility:** {requirements}
-**Impact:** {modifies existing: yes/no; affected: list}
-**Definition of Done:**
-- {criterion 1}
+**Stack Mode:** {yes | no}
+**Selected Mockup:** {filename, if applicable}
+
+## Goal
+{One-sentence summary}
+
+## Definition of Done
+- {verifiable criterion 1}
+
+## Constraints
+- {constraint 1}
+
+## Edge Cases
+- {edge case 1}
+
+## Assumptions
+- {assumption 1}
+
+## Impact
+- **Modifies existing behavior:** {yes | no}
+- **Affected features:** {list}
 ```
 
 ## Strict Prohibitions
