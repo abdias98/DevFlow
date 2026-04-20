@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+---
+
+## [2.5.0] — 2026-04-20
+
+### ✨ Features
+
+- **Private Standards Library** — Migrated from global editor instructions to a private agent library (`.agents/skills/shared/standards/`) to enforce architecture-grade output exclusively during DevFlow agent runs.
+- **7 Core Engineering Standards** — Added and formalized SOLID, Clean Architecture, Security, Performance, REST API, Project Design, and UI Design using a strict `DO/DON'T` format.
+- **Dynamic Tech Stack Detection** — Removed hardcoded configuration mappings. Agents now dynamically analyze workspace config files to determine the full technology profile (frameworks, ORMs, test runners).
+- **Smart Design Approaches** — Project Design and UI Design standards now intelligently adapt to existing patterns and recommend approaches based on `Feature Type` and detected stack.
+
+---
+
 ## [2.3.1] — 2026-04-12
 
 ### ✨ Features

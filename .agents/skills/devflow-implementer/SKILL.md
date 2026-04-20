@@ -11,6 +11,12 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 ## Rules
 
 - Read [common rules](../shared/rules.md) — language detection, tool fallback, file persistence.
+- Read [SOLID Principles](../shared/standards/solid.md)
+- Read [Clean Architecture](../shared/standards/clean-architecture.md)
+- Read [Security](../shared/standards/security.md)
+- Read [Performance](../shared/standards/performance.md)
+- Read [REST API Design](../shared/standards/rest-api.md)
+- Read [UI Design](../shared/standards/ui-design.md)
 - Write **minimal code** to pass tests — nothing more, nothing less.
 - Follow the plan **step by step** — do not skip or reorder.
 - For each task: Red phase (create test) → Green phase (write code to pass).
