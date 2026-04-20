@@ -6,15 +6,15 @@ applyTo: "docs/devflow/**"
 
 ## Artifact Naming
 
-All generated artifacts follow: `YYYY-MM-DD-{slug}-{type}.{ext}` where `{ext}` is `md` for text documents and `html` for mockups.
+All generated artifacts follow the conventions defined in [../../.agents/skills/shared/memory-conventions.md](../../.agents/skills/shared/memory-conventions.md).
 
-| Type | Directory | Example |
-|------|-----------|---------|
-| Design spec | `docs/devflow/specs/` | `2026-03-28-user-auth-design.md` |
-| Implementation plan | `docs/devflow/plans/` | `2026-03-28-user-auth.md` |
-| Code review | `docs/devflow/reviews/` | `2026-03-28-user-auth-review.md` |
-| Debug log | `docs/devflow/debug-logs/` | `2026-03-28-user-auth-debug.md` |
-| HTML mockup | `docs/devflow/mockups/` | `2026-03-28-user-auth-mockup.html` |
+| Type | Directory | Naming Pattern |
+|------|-----------|----------------|
+| Design spec | `docs/devflow/specs/` | `YYYY-MM-DD-{slug}-design.md` |
+| Implementation plan | `docs/devflow/plans/` | `YYYY-MM-DD-{slug}.md` |
+| Code review | `docs/devflow/reviews/` | `YYYY-MM-DD-{slug}-review.md` |
+| Debug log | `docs/devflow/debug-logs/` | `YYYY-MM-DD-{slug}-debug.md` |
+| HTML mockup | `docs/devflow/mockups/` | `YYYY-MM-DD-{slug}-mockup[-A\|-B\|-C].html` |
 
 ### Slug rules
 - Lowercase, kebab-case
@@ -25,47 +25,58 @@ All generated artifacts follow: `YYYY-MM-DD-{slug}-{type}.{ext}` where `{ext}` i
 
 ## Session Memory Structure
 
-During an active DevFlow cycle, session memory lives in `/memories/session/devflow/`:
-
-```
-/memories/session/devflow/
-├── context.md        ← Original request, constraints, assumptions, tech stack detected
-├── phase-state.md    ← Current phase, completed phases, artifact paths, blockers
-└── test-registry.md  ← Test files created, test names, status (FAIL→PASS tracking)
-```
+During an active DevFlow cycle, session memory lives in `/memories/session/devflow/` (fallback: `docs/devflow/session/`).
 
 ### context.md format
 ```markdown
 # DevFlow Context
-**Request:** {original user request}
-**Date:** YYYY-MM-DD
+
+**Request:** {user's original request}
 **Slug:** {feature-slug}
-**Tech Stack:** {auto-detected from workspace}
-**Goal:** {one-sentence goal}
-**Constraints:** {any limitations}
-**Edge Cases:** {list}
-**Assumptions:** {inferred requirements}
-**Problem Restatement:** {2-3 sentences}
-**Feature Type:** {frontend | backend | fullstack}
-**Frontend:** {target device, responsive, accessibility} *(omit if not frontend)*
-**Impact:** {modifies existing: yes/no; affected features: list}
-**Stack Mode:** yes | no  *(yes = stacked PRs per layer; no = single PR for full feature)*
-**Definition of Done:**
+**Tech Stack:** {detected by Architect}
+**Feature Type:** {web frontend | backend | fullstack | mobile | CLI | library}
+**Stack Mode:** {yes | no}
+**Selected Mockup:** {filename, if applicable}
+
+## Goal
+{One-sentence summary}
+
+## Definition of Done
 - {verifiable criterion 1}
 - {verifiable criterion 2}
+
+## Constraints
+- {constraint 1}
+
+## Edge Cases
+- {edge case 1}
+
+## Assumptions
+- {assumption 1}
+
+## Impact
+- **Modifies existing behavior:** {yes | no}
+- **Affected features:** {list}
+
+## AGENTS.md Context
+{Extracted data from AGENTS.md, if found}
+
+## Architect Findings
+{Key discoveries from codebase exploration}
 ```
 
 ### phase-state.md format
 ```markdown
 # DevFlow Phase State
+
 **Current Phase:** {1-7}
 **Feature:** {slug}
 
 ## Completed Phases
-- [x] Phase 1: Brainstormer — Problem Statement saved
-- [x] Phase 2: Architect — `docs/devflow/specs/{file}`
-- [x] Phase 3: Planner — `docs/devflow/plans/{file}` (includes test code per task)
-- [ ] Phase 4: Implementer (Red→Green TDD cycle per task: create failing test → write code → pass)
+- [x] Phase 1: Brainstormer — context saved
+- [x] Phase 2: Architect — `docs/devflow/specs/{filename}`
+- [x] Phase 3: Planner — `docs/devflow/plans/{filename}`
+- [ ] Phase 4: Implementer
 - [ ] Phase 5: Reviewer
 - [ ] Phase 6: Debugger (conditional)
 - [ ] Phase 7: Finalizer
@@ -80,7 +91,7 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 ## Iteration Log
 | # | From | To | Reason |
 |---|------|----|--------|
-| 1 | Reviewer | Implementer | BLOCK: missing null check in service layer |
+| 1 | Reviewer | Implementer | BLOCK: {reason} |
 ```
 
 ### test-registry.md format
@@ -89,8 +100,7 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 
 | Test File | Test Name | Initial | Current | Notes |
 |-----------|-----------|---------|---------|-------|
-| `src/__tests__/auth.test.ts` | should validate token | FAIL | PASS | Fixed in Phase 4 Step 2 |
-| `src/__tests__/auth.test.ts` | should reject expired | FAIL | FAIL | Pending implementation |
+| `path/to/test.ts` | should {behavior} | FAIL | PASS | {note} |
 ```
 
 ---
@@ -134,7 +144,7 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 ```markdown
 # {Feature Title} Implementation Plan
 
-> **For agentic workers:** Use devflow-implementer (Red→Green per task) → devflow-reviewer to execute this plan task-by-task.
+> **For agentic workers:** Use devflow-implement (Red→Green per task) → devflow-review to execute this plan task-by-task.
 
 **Goal:** {One-sentence summary}
 **Architecture:** {Brief reference to spec}

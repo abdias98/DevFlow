@@ -29,13 +29,13 @@ DevFlow/
 
 ## Agent Responsibilities
 
-### Orchestrator (`devflow-orchestrator` skill)
+### Orchestrator (`devflow` skill)
 - Entry point for full lifecycle
 - Manages state and iteration logic
 - Coordinates sub-agents
 - Enforces strict phase ordering
 
-### Brainstormer (`devflow-brainstormer`)
+### Brainstormer (`devflow-brainstorm`)
 - **Input:** User request
 - **Output:** Problem Statement saved to `/memories/session/devflow/context.md`
 - **Actions:**
@@ -54,7 +54,7 @@ DevFlow/
   - Design document generation
   - Preview + confirmation loop
 
-### Planner (`devflow-planner`)
+### Planner (`devflow-plan`)
 - **Input:** Spec document
 - **Output:** `docs/devflow/plans/YYYY-MM-DD-{slug}.md`
 - **Actions:**
@@ -63,14 +63,14 @@ DevFlow/
   - Generate complete code snippets
   - Pre-write commit messages
 
-### Tester (`devflow-tester`) — Manual Helper Only
+### Tester (`devflow-test`) — Manual Helper Only
 - **NOT an automatic phase** — the Implementer handles Red→Green TDD internally
 - **Input:** Plan document (specific task)
 - **Output:** A specific failing test file
-- **Trigger:** Manual only via `/devflow-tester` (e.g., resume after context loss, recreate lost test)
+- **Trigger:** Manual only via `/devflow-test` (e.g., resume after context loss, recreate lost test)
 - **Constraint:** NEVER writes production code
 
-### Implementer (`devflow-implementer`)
+### Implementer (`devflow-implement`)
 - **Input:** Plan document
 - **Output:** Production code + passing tests in workspace
 - **Constraint:** Minimal code, follow plan strictly
@@ -80,7 +80,7 @@ DevFlow/
   - Commit at task checkpoints with pre-written messages
   - Auto-invoke Reviewer when all tasks complete
 
-### Reviewer (`devflow-reviewer`)
+### Reviewer (`devflow-review`)
 - **Input:** Git diff + spec + plan
 - **Output:** `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`
 - **Actions:**
@@ -90,7 +90,7 @@ DevFlow/
   - Classify findings (BLOCK/WARN/INFO)
   - Route back to Implementer if blockers
 
-### Debugger (`devflow-debugger`)
+### Debugger (`devflow-debug`)
 - **Input:** Error / failing test / reviewer finding
 - **Output:** `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md`
 - **Constraint:** Never guess, always root cause
@@ -100,7 +100,7 @@ DevFlow/
   - Apply fix
   - Re-verify
 
-### Finalizer (`devflow-finalizer`)
+### Finalizer (`devflow-finalize`)
 - **Input:** Completed cycle (all tests passing, no BLOCK findings)
 - **Output:** Final summary presented to user + session memory cleaned
 - **Actions:**

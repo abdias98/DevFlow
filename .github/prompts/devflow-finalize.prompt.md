@@ -9,7 +9,7 @@ Run ONLY the Finalizer phase of the DevFlow lifecycle.
 
 ## Instructions
 
-Invoke the `devflow-finalizer` skill to:
+Invoke the `devflow-finalize` skill to:
 
 1. Run the full test suite — STOP and route to Debugger if any test fails
 2. Check the review document — STOP and route to Implementer if BLOCK findings remain

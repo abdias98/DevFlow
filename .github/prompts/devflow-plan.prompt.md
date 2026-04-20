@@ -9,7 +9,7 @@ Run ONLY the Planner phase of the DevFlow lifecycle.
 
 ## Instructions
 
-Invoke the `devflow-planner` skill to:
+Invoke the `devflow-plan` skill to:
 
 1. Locate and read the spec document (from session memory or `docs/devflow/specs/`)
 2. Explore the codebase — including test framework, test conventions, and run commands

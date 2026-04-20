@@ -122,7 +122,7 @@ Runs all phases: Brainstorm → Architect → Plan+TDD → ⏸️ Confirm → Te
 /devflow-architect    Design a component or system
 /devflow-plan         Break down a feature (includes test code)
 /devflow-implement    Start implementation (Red→Green TDD cycle per task)
-/devflow-tester       Manual helper: create a specific failing test from the plan
+/devflow-test         Manual helper: create a specific failing test from the plan
 /devflow-review       Review code quality & security
 /devflow-debug        Debug a failing test
 /devflow-finalize     Generate final summary and verify all tests pass

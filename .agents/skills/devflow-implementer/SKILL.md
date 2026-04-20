@@ -1,5 +1,5 @@
 ---
-name: devflow-implementer
+name: devflow-implement
 description: "Writes minimal production code to make failing tests pass, following the plan strictly. Executes tests after each step. Auto-invokes the Reviewer after completion. USE WHEN: implement code, make tests pass, write production code, devflow implement phase, execute plan."
 argument-hint: "Path to a plan document, or 'continue' to resume from last checkpoint."
 ---
@@ -16,7 +16,7 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 - For each task: Red phase (create test) → Green phase (write code to pass).
 - **NEVER refactor** beyond what the plan specifies.
 - **NEVER add features** not in the plan.
-- After ALL steps complete, **auto-invoke the Reviewer** (`devflow-reviewer`).
+- After ALL steps complete, **auto-invoke the Reviewer** (`devflow-review`).
 - Commit at each task checkpoint with the pre-written message from the plan.
 
 ---
@@ -58,7 +58,7 @@ Update test-registry and phase-state: `- [x] Phase 4: Implementer — all {N} te
 ### Step 4 — Auto-Invoke Reviewer
 
 Inform user: "Implementation complete. All tests pass. Invoking code review..."
-Invoke `devflow-reviewer`.
+Invoke `devflow-review`.
 
 ---
 

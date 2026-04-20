@@ -22,7 +22,7 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
 
 - **ALWAYS use `create_file` to save artifacts** (specs, plans, mockups, reviews, debug logs). NEVER only show content in chat without saving the file.
 - After saving a file, show a summary in chat with the file path.
-- Artifact paths follow the convention: `docs/devflow/{type}/YYYY-MM-DD-{slug}-{name}.{ext}`
+- Artifact paths MUST strictly follow the individual conventions defined in [Memory Conventions](./memory-conventions.md) and their specific SKILL instructions.
 
 ## General
 

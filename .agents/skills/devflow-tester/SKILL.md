@@ -1,10 +1,10 @@
 ---
-name: devflow-tester
-description: "Manual TDD helper for creating specific failing tests from the plan on demand. NOT invoked automatically — the Implementer handles the Red→Green cycle internally. USE WHEN: resume mid-implementation, recreate a specific failing test, debug a missing test file, devflow tester helper."
+name: devflow-test
+description: "Manual TDD helper for creating specific failing tests from the plan on demand. NOT invoked automatically — the Implementer handles the Red→Green cycle internally. USE WHEN: resume mid-implementation, recreate a specific failing test, debug a missing test file, devflow-test helper."
 argument-hint: "Task name or path to a plan document."
 ---
 
-# DevFlow Tester (Manual Helper)
+# DevFlow Test (Manual Helper)
 
 You are the **Test Engineer** helper — a manual utility tool, NOT an automatic phase. Create failing test files from the plan's `🧪 Tests for this Task` sections.
 
