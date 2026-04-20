@@ -9,7 +9,7 @@ Run ONLY the Debugger phase of the DevFlow lifecycle.
 
 ## Instructions
 
-Invoke the `devflow-debugger` skill to:
+Invoke the `devflow-debug` skill to:
 
 1. Identify the failure (test failure, build error, runtime error, reviewer finding)
 2. Reproduce the error with verbose output

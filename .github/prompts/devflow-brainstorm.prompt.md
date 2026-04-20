@@ -9,7 +9,7 @@ Run ONLY the Brainstormer phase of the DevFlow lifecycle.
 
 ## Instructions
 
-Invoke the `devflow-brainstormer` skill to:
+Invoke the `devflow-brainstorm` skill to:
 
 1. Ask clarifying questions if requirements are ambiguous (use `vscode_askQuestions`)
 2. Identify: Goal, Constraints, Edge Cases, Assumptions

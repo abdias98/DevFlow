@@ -108,7 +108,10 @@ Present the plan summary to the user: file path, Stack Plan table (if applicable
 
 ### Step 8 — Update Memory
 
-Update session memory: `- [x] Phase 3: Planner — \`docs/devflow/plans/{filename}\``
+Update session memory:
+```markdown
+- [x] Phase 3: Planner — `docs/devflow/plans/{filename}`
+```
 
 ---
 

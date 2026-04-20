@@ -76,14 +76,17 @@ Show the spec summary and ask:
 |--------|----------|------|
 | `spec_confirmation` | Review the architecture spec above. Approve or request changes? | options: ✅ Approve, ✏️ Request changes, ❌ Cancel |
 
-- **✅ Approve** → **Execute `create_file`** to persist the spec at `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`, then update memory and **immediately invoke `devflow-planner`**
+- **✅ Approve** → **Execute `create_file`** to persist the spec at `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`, then update memory and **immediately invoke `devflow-plan`**
 - **✏️ Request changes** → Loop back to Step 3 (do NOT call `create_file`)
 - **❌ Cancel** → Discard (do NOT call `create_file`)
 
 ### Step 6 — Update Memory
 
 Merge (do NOT overwrite) session memory with: Tech Stack, Constraints, Slug.
-Update phase-state: `- [x] Phase 2: Architect — \`docs/devflow/specs/{filename}\``
+Update phase-state:
+```markdown
+- [x] Phase 2: Architect — `docs/devflow/specs/{filename}`
+```
 
 ---
 

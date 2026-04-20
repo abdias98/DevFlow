@@ -9,7 +9,7 @@ Run ONLY the Reviewer phase of the DevFlow lifecycle.
 
 ## Instructions
 
-Invoke the `devflow-reviewer` skill to:
+Invoke the `devflow-review` skill to:
 
 1. Load context from session memory (spec path, plan path, test results)
 2. Get the git diff of implemented changes

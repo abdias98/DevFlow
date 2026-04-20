@@ -144,7 +144,7 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 ```markdown
 # {Feature Title} Implementation Plan
 
-> **For agentic workers:** Use devflow-implementer (Red→Green per task) → devflow-reviewer to execute this plan task-by-task.
+> **For agentic workers:** Use devflow-implement (Red→Green per task) → devflow-review to execute this plan task-by-task.
 
 **Goal:** {One-sentence summary}
 **Architecture:** {Brief reference to spec}
