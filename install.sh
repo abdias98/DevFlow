@@ -341,7 +341,7 @@ if [ "$_legacy_found" -eq 1 ]; then
     fi
   done
   
-  echo "✅ Cleanup complete. Installing v2.3.1..."
+  echo "✅ Cleanup complete. Installing v2.5.0..."
   echo ""
 fi
 

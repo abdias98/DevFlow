@@ -15,15 +15,29 @@ DevFlow/
 │   ├── devflow-implementer/
 │   ├── devflow-reviewer/
 │   ├── devflow-debugger/
-│   └── devflow-finalizer/
+│   ├── devflow-finalizer/
+│   └── shared/                  # Common rules, conventions, and standards
+│       ├── rules.md
+│       ├── memory-conventions.md
+│       ├── output-format.md
+│       └── standards/           # Engineering standards (Private Library)
+│           ├── solid.md
+│           └── clean-architecture.md
 ├── .github/
-│   ├── prompts/                  # Slash command prompts
-│   │   ├── devflow.prompt.md    # Full lifecycle
-│   │   └── devflow-*.prompt.md  # Phase-specific
+│   ├── prompts/                 # Slash command prompts
+│   │   ├── devflow.prompt.md   # Full lifecycle
+│   │   └── devflow-*.prompt.md # Phase-specific
 │   └── instructions/
 │       └── devflow-conventions.instructions.md
-├── install.sh                    # Installation script
-├── uninstall.sh                  # Uninstallation script
+├── docs/
+│   └── ARCHITECTURE.md          # This file
+├── editor-profiles/             # Editor-specific installation configs
+│   └── vscode.yaml
+├── install.sh / install.ps1     # Installation scripts (Linux/macOS and Windows)
+├── uninstall.sh / uninstall.ps1 # Uninstallation scripts
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
 └── README.md
 ```
 
@@ -45,11 +59,11 @@ DevFlow/
   - Hand-off to Architect
 - **Restriction:** NEVER writes code, schema, or architecture
 
-### Architect (`devflow-architect` skill)
+### Architect (`devflow-architect`)
 - **Input:** User requirements + workspace files
-- **Output:**  `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`
+- **Output:** `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`
 - **Actions:**
-  - Clarifying questions (vscode_askQuestions)
+  - Clarifying questions (`vscode_askQuestions`)
   - Codebase exploration (Explore subagent)
   - Design document generation
   - Preview + confirmation loop
@@ -114,15 +128,20 @@ DevFlow/
 ## Memory System
 
 ### Session Memory (`/memories/session/devflow/`)
+**Fallback:** `docs/devflow/session/` (when `/memories/` is unavailable)
+
 Transient state for active development cycle:
 - `context.md` — Request, tech stack, constraints
 - `phase-state.md` — Completion tracking, iteration log
 - `test-registry.md` — Test names, FAIL/PASS status
 
+See [Memory Conventions](../.agents/skills/shared/memory-conventions.md) for file formats and rules.
+
 ### Persistent Artifacts (`docs/devflow/`)
 Versioned with git, survive across conversations:
 - `specs/` — Architecture specifications
 - `plans/` — Implementation plans
+- `mockups/` — HTML wireframe mockups
 - `reviews/` — Code review findings
 - `debug-logs/` — Debug sessions
 
@@ -168,6 +187,32 @@ Examples:
 - `2026-03-28-user-auth-review.md` (review)
 - `2026-03-28-user-auth-debug.md` (debug log)
 
+## Standard Engineering System
+
+DevFlow uses a **Private Library** approach to enforce engineering standards exclusively through its agents. This ensures the framework provides measurable added value over standard AI chat.
+
+### Architecture
+Standards live in `.agents/skills/shared/standards/` and are read directly by each agent via explicit rules in their `SKILL.md`. This makes the standards a core competency of DevFlow — not a global editor preference.
+
+### Standards Available (Phase 1)
+
+| File | Standard | Applied by |
+|------|----------|------------|
+| `standards/solid.md` | SOLID Principles | Architect, Planner, Implementer, Reviewer, Debugger |
+| `standards/clean-architecture.md` | Clean Architecture | Architect, Planner, Implementer, Reviewer, Debugger |
+| `standards/security.md` | Security | Architect, Planner, Implementer, Reviewer, Debugger |
+| `standards/performance.md` | Performance | Architect, Planner, Implementer, Reviewer, Debugger |
+| `standards/rest-api.md` | REST API Design *(conditional — skipped for non-API projects)* | Architect, Planner, Implementer, Reviewer |
+| `standards/project-design.md` | Project Design Patterns | Architect, Planner, Reviewer |
+| `standards/ui-design.md` | UI Design *(conditional — skipped for non-UI projects)* | Architect, Planner, Implementer, Reviewer |
+
+> **Why not global editor instructions?** Standards are intentionally kept private to DevFlow. When a user invokes a DevFlow agent, they receive architecture-grade output guided by these standards. This creates a clear quality gap versus plain AI chat, demonstrating the framework's value.
+
+### Adding a New Standard
+1. Create `standards/{name}.md` following the `DO/DON'T` format used by existing standards.
+2. Add `- Read [{Name}](../shared/standards/{name}.md)` to the `## Rules` of agents that benefit from it (typically Architect, Planner, Implementer, Reviewer, Debugger).
+3. Document the new standard in this table.
+
 ## AGENTS.md Skip Optimization
 
 When a project has an `AGENTS.md` file (in the project root or a subdirectory such as `docs/AGENTS.md`), the Architect reads it at the start of Phase 2 (Step 1.5) and skips the following general exploration sub-steps:
@@ -190,32 +235,47 @@ The Architect stores the extracted AGENTS.md data in `/memories/session/devflow/
 
 ## Tech Stack Detection
 
-DevFlow reads workspace config files to detect:
+DevFlow agents detect the project's technology stack **dynamically** by reading the **content** of workspace configuration files — not through a hardcoded lookup table. This allows the framework to work with any language, framework, or toolchain without requiring updates.
 
-| File | Stack |
-|------|-------|
-| `package.json` | Node.js / JS / TS |
-| `*.csproj` | .NET / C# |
-| `requirements.txt` | Python |
-| `go.mod` | Go |
-| `vitest.config.*` | Vitest |
-| `jest.config.*` | Jest |
+### Detection Strategy
 
-The Tester and Implementer use this info to generate correct syntax and commands.
+1. **Scan** the workspace root for known config files.
+2. **Read** their contents to extract: language, framework, ORM, test runner, linter, and build tools.
+3. **Store** findings in session memory so all downstream agents reuse them without re-discovering.
+
+### Common Config Files (non-exhaustive)
+
+| File | What it reveals |
+|------|-----------------|
+| `package.json` | Node.js ecosystem — framework, test runner, linter, build tools (from `dependencies` and `scripts`) |
+| `*.csproj` / `*.sln` | .NET ecosystem — target framework, NuGet packages, test SDK |
+| `pyproject.toml` / `requirements.txt` | Python ecosystem — framework (Django, FastAPI), test runner (pytest), linter |
+| `go.mod` | Go ecosystem — module path, dependencies |
+| `composer.json` | PHP ecosystem — framework (Laravel, Symfony), test runner (PHPUnit) |
+| `Cargo.toml` | Rust ecosystem — crate dependencies, edition |
+| `build.gradle` / `pom.xml` | Java/Kotlin ecosystem — framework (Spring), build tool, test runner |
+| `Gemfile` | Ruby ecosystem — framework (Rails), test runner (RSpec) |
+| `pubspec.yaml` | Dart/Flutter ecosystem |
+
+> **Note:** This list is a starting point, not a constraint. Agents should read any config file they encounter and extract the full technology profile from its contents.
+
+All agents use this information to generate stack-appropriate designs, code, tests, and commands.
 
 ## Extensibility
 
 ### Adding a Custom Agent
 
-1. Create `devflow-custom/SKILL.md` in `~/.config/Code/User/.agents/skills/`
-2. Define YAML frontmatter (name, description, argument-hint)
-3. Implement the procedure
-4. Create `custom.prompt.md` in `~/.config/Code/User/prompts/` if needed
-5. Reference in orchestrator
+1. Create `devflow-custom/SKILL.md` in the editor's skills directory
+   (path resolved dynamically by `editor-profiles/vscode.yaml` — varies by OS)
+2. Define YAML frontmatter (`name`, `description`, `argument-hint`)
+3. Implement the procedure following the pattern of existing agents
+4. Create `custom.prompt.md` in the editor's prompts directory if needed
+5. Reference the new skill in the orchestrator
 
-### Custom Rules per Repo
+### Custom Rules per Repo *(Planned — Not Yet Implemented)*
 
-Create `.devflowrc.json` in project root:
+> ⚠️ This feature is planned for a future release. The configuration format below is a design proposal and is not currently supported.
+
 ```json
 {
   "testFramework": "vitest",
@@ -226,8 +286,6 @@ Create `.devflowrc.json` in project root:
   }
 }
 ```
-
-(Future feature: config file support)
 
 ---
 

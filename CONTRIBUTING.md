@@ -1,6 +1,6 @@
 # Contributing to DevFlow
 
-**DevFlow v2.3.1** — Multi-agent AI framework with multi-editor support via YAML profiles.
+**DevFlow v2.5.0** — Multi-agent AI framework with multi-editor support via YAML profiles.
 
 Thanks for your interest in contributing to DevFlow! 🎉
 
@@ -26,6 +26,7 @@ Found a bug or have a suggestion? Open an issue with:
 
 - **Skills:** Follow existing SKILL.md format (YAML frontmatter + markdown workflow)
 - **Prompts:** Keep `.prompt.md` files focused on a single phase
+- **Standards:** Engineering standards live in `.agents/skills/shared/standards/` using a strict `DO/DON'T` format with clear reasoning principles. Do not use global editor instructions.
 - **Scripts:** Bash for install scripts (cross-platform compatible)
 - **Documentation:** Markdown, clear language, include examples
 - **AGENTS.md:** For complex projects where you develop or test DevFlow skills, create an `AGENTS.md` in the project root documenting your stack, folder structure, and test conventions. This lets DevFlow skip general codebase exploration and produce more accurate plans. See the README for the suggested format.

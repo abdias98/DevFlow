@@ -52,7 +52,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/instal
 irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
 ```
 
-**What's new in v2.3.1:**
+**What's new in v2.5.0:**
 - ✅ Interactive editor selection with installation status
 - ✅ Support for multiple editors (VS Code, CLI/generic, easily extensible)
 - ✅ Always-prompt workflow (no auto-detection)
@@ -247,19 +247,11 @@ DevFlow is installed **globally** in VS Code, available in **all workspaces**:
 
 ## 🔧 Tech Stack Compatibility
 
-DevFlow **detects your workspace's tech stack automatically**:
+DevFlow **detects your workspace's tech stack dynamically** by analyzing the content of your configuration files.
 
-| Stack | Detection |
-|-------|-----------|
-| Node.js / TypeScript | `package.json`, `tsconfig.json` |
-| .NET / C# | `*.csproj`, `*.sln` |
-| Python | `requirements.txt`, `pyproject.toml` |
-| Go | `go.mod` |
-| Rust | `Cargo.toml` |
-| Java | `pom.xml`, `build.gradle` |
-| React | `vite.config.*`, `jest.config.*`, `vitest.config.*` |
+Rather than relying on hardcoded lists, agents read files like `package.json`, `*.csproj`, `pyproject.toml`, `go.mod`, or `build.gradle` to extract the full technology profile—including frameworks, ORMs, linters, and test runners.
 
-Works with **any** language and framework.
+Works with **any** language and framework out of the box.
 
 ---
 
@@ -346,8 +338,9 @@ tests/          # Integration and e2e tests
 ✅ **Architecture First** — No code without a design spec  
 ✅ **Never Guesses** — Debugger performs systematic root cause analysis; patterns are persisted across cycles in `/memories/repo/debug-patterns.md`  
 ✅ **Accessibility Built-in** — Planner adds a11y checklist (WCAG 2.1 AA) to every UI task; Reviewer validates it  
+✅ **Private Engineering Standards** — Operates as a Senior Engineering team applying 7 core standards (SOLID, Clean Architecture, Security, Performance, REST API, Project Design, UI Design) strictly during agent execution to guarantee high-quality output.  
 ✅ **No External Tools** — Pure VS Code + Copilot (no npm packages, no docker, nothing)  
-✅ **Portable** — Tech-stack agnostic, detects your framework automatically  
+✅ **Dynamic Stack Detection** — Tech-stack agnostic. Agents dynamically analyze your config files (package.json, pyproject.toml, go.mod, etc.) to extract the exact framework, ORM, and testing tools without relying on hardcoded mappings.  
 ✅ **AGENTS.md Support** — Place an `AGENTS.md` in your project root (or `docs/`) describing your stack, structure, and conventions. DevFlow reads it automatically at the start of every Architect phase and skips general codebase exploration, significantly speeding up the analysis.  
 ✅ **Stacked PRs** — Optional Stack Mode splits large features into layered PRs (~400 LOC each) for easier code review. Automatic branch management and PR creation via `gh` CLI  
 ✅ **Auto-Review** — Every implementation is automatically code-reviewed (includes API contract, accessibility, dependency audit)  
