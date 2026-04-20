@@ -22,7 +22,12 @@ DevFlow/
 │       ├── output-format.md
 │       └── standards/           # Engineering standards (Private Library)
 │           ├── solid.md
-│           └── clean-architecture.md
+│           ├── clean-architecture.md
+│           ├── security.md
+│           ├── performance.md
+│           ├── rest-api.md
+│           ├── project-design.md
+│           └── ui-design.md
 ├── .github/
 │   ├── prompts/                 # Slash command prompts
 │   │   ├── devflow.prompt.md   # Full lifecycle
