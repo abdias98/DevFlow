@@ -247,8 +247,8 @@ DevFlow is installed **globally** in VS Code, available in **all workspaces**:
 | Windows | `%APPDATA%\Code\User\` |
 
 **Installed items:**
-- 12 specialized sub-agent skills (Orchestrator, Brainstormer, Architect, Planner, Tester, Implementer, Reviewer, Debugger, Finalizer, Refactorer, Bug-Fixer, Feature Agent)
-- Prompts for full lifecycle and individual standalone workflows
+- 12 specialized sub-agent skills total: 9 lifecycle roles (Orchestrator, Brainstormer, Architect, Planner, Tester, Implementer, Reviewer, Debugger, Finalizer) + 3 standalone agents (Refactorer, Bug-Fixer, Feature Agent)
+- Prompts for the full lifecycle and for individual standalone agent workflows
 - ~200 KB total (lightweight)
 
 ---

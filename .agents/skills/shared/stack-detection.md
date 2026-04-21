@@ -13,7 +13,7 @@ Use this procedure when `## Stack Profile` is absent from session memory (`conte
 Search for `AGENTS.md` in the workspace root and `docs/AGENTS.md`. If found:
 - Extract: Tech Stack, Test runner, Test run commands, folder structure, and any tooling info.
 - Use these values to fill the Stack Profile.
-- Skip steps 2–4 for any field already covered.
+- Skip detection for any field already covered.
 
 ### Step 2 — Detect Language and Package Manager
 
