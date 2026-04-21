@@ -89,3 +89,35 @@ Finalizer finds failing tests    → PHASE 6 (Debugger)
 NEVER proceed past Confirmation Gate without explicit user approval
 Maximum 3 iteration loops per phase before escalating to user
 ```
+
+---
+
+## Standalone Agents (Outside Lifecycle)
+
+The following agents operate **independently** of the Phase 1–7 lifecycle. They are invoked directly by the user for targeted tasks on existing code.
+
+| Agent | Command | When to use |
+|-------|---------|-------------|
+| 🔧 Refactorer | `/devflow-refactor` | Improve code structure/readability without changing behavior |
+| 🩹 Bug-Fixer | `/devflow-bug-fix` | Fix a reported bug (error message, stack trace, unexpected behavior) |
+| ⚡ Feature Agent | `/devflow-feature` | Implement a small-medium feature without full planning overhead |
+
+### Standalone vs Full Lifecycle
+
+| Criterion | Standalone Agent | Full `/devflow` Lifecycle |
+|-----------|-----------------|--------------------------|
+| Scope | Narrow and known | Broad or exploratory |
+| Files affected | ≤5 | >5 or unknown |
+| Architectural impact | None / minimal | Significant |
+| Requires spec/plan | No | Yes |
+| Speed | Fast | Thorough |
+
+### Stack Profile Dependency
+
+All standalone agents require the **Stack Profile** (`## Stack Profile` in `context.md`) to know:
+- What test command to use for the project
+- Where source and test files live
+- What framework and package manager are in use
+
+If no Stack Profile exists (no prior Architect cycle), each standalone agent performs [Quick Stack Detection](../shared/stack-detection.md) at startup and writes the result to session memory.
+

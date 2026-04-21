@@ -33,3 +33,6 @@ Every DevFlow agent response MUST be structured as follows:
 | Debugger | 🐞 | Phase 6 |
 | Finalizer | 🚀 | Phase 7 |
 | Tester | 🧪 | Manual |
+| Refactorer | 🔧 | Standalone |
+| Bug-Fixer | 🩹 | Standalone |
+| Feature Agent | ⚡ | Standalone |

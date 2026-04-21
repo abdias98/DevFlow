@@ -52,16 +52,14 @@ bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/instal
 irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
 ```
 
-**What's new in v2.5.0:**
+**What's new in v2.6.0:**
 - ✅ Interactive editor selection with installation status
 - ✅ Support for multiple editors (VS Code, CLI/generic, easily extensible)
 - ✅ Always-prompt workflow (no auto-detection)
 - ✅ YAML-driven editor profiles for zero-config new editor support
 - ✅ Single global installation (no per-workspace setup)
-- ✅ Automatic cleanup of old files and `devflow-init` command
+- ✅ Automatic cleanup of old files
 - ✅ Skills + instructions now globally managed
-- ❌ `devflow-init` command removed (no longer needed)
-
 ### Interactive Editor Selection
 
 When you run the installer, you'll see a prompt listing all available editor profiles:
@@ -95,7 +93,7 @@ DevFlow is a **multi-agent framework** that simulates a professional engineering
 | Phase | Agent / Role | Responsibility | Output |
 |-------|--------------|----------------|--------|
 | 1 | 🧠 **Brainstormer** | Clarifying questions, goals, constraints, edge cases | Problem Statement |
-| 2 | 🧩 **Architect** | Requirements analysis, system design | Architecture spec |
+| 2 | 🧩 **Architect** | Requirements analysis, system design, **Stack Profile** | Architecture spec |
 | 3 | 📋 **Planner** | Task breakdown + **complete test code per task** | Plan with ready-to-paste tests |
 | ⏸️ | — | **Confirmation Gate** — waits for `/devflow-implement` | — |
 | 4 | ⚙️ **Implementer** | 🔴→🟢 Red→Green TDD cycle per task (create failing tests from plan → write production code → pass) | Production code + passing tests |
@@ -103,6 +101,9 @@ DevFlow is a **multi-agent framework** that simulates a professional engineering
 | 6 | 🐞 **Debugger** | Root cause analysis (never guesses) | Debug logs + fixes |
 | 7 | 🚀 **Finalizer** | Verify tests pass, generate summary, clean memory | Final report |
 | — | 🧪 **Tester** *(manual helper)* | Creates a specific failing test from the plan on demand | Failing test file |
+| — | 🔧 **Refactorer** *(standalone)* | Scope-locked code improvement without behavior change | Refactor report |
+| — | 🩹 **Bug-Fixer** *(standalone)* | Reproduce → Isolate → Fix reported bugs | Bug-fix report |
+| — | ⚡ **Feature Agent** *(standalone)* | Lightweight TDD cycle for small-medium features | Feature report |
 
 Each role has **clear responsibilities**, **strict role separation**, and **persistent memory** between phases.
 
@@ -126,6 +127,13 @@ Runs all phases: Brainstorm → Architect → Plan+TDD → ⏸️ Confirm → Te
 /devflow-review       Review code quality & security
 /devflow-debug        Debug a failing test
 /devflow-finalize     Generate final summary and verify all tests pass
+```
+
+### Standalone agents (no full lifecycle needed)
+```
+/devflow-refactor     Scope-locked refactoring of existing code
+/devflow-bug-fix      Reproduce → Isolate → Fix a reported bug
+/devflow-feature      Implement a small-medium feature (lightweight TDD)
 ```
 
 ---
@@ -239,8 +247,8 @@ DevFlow is installed **globally** in VS Code, available in **all workspaces**:
 | Windows | `%APPDATA%\Code\User\` |
 
 **Installed items:**
-- 8 specialized sub-agent skills (Brainstormer, Architect, Planner, Tester, Implementer, Reviewer, Debugger, Finalizer)
-- 7 prompts (1 for full lifecycle + 6 for individual phases)
+- 12 specialized sub-agent skills (Orchestrator, Brainstormer, Architect, Planner, Tester, Implementer, Reviewer, Debugger, Finalizer, Refactorer, Bug-Fixer, Feature Agent)
+- Prompts for full lifecycle and individual standalone workflows
 - ~200 KB total (lightweight)
 
 ---

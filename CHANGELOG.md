@@ -11,16 +11,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2.5.0] — 2026-04-20
+## [2.6.0] — 2026-04-20
 
 ### ✨ Features
 
 - **Private Standards Library** — Migrated from global editor instructions to a private agent library (`.agents/skills/shared/standards/`) to enforce architecture-grade output exclusively during DevFlow agent runs.
 - **7 Core Engineering Standards** — Added and formalized SOLID, Clean Architecture, Security, Performance, REST API, Project Design, and UI Design using a strict `DO/DON'T` format.
-- **Dynamic Tech Stack Detection** — Removed hardcoded configuration mappings. Agents now dynamically analyze workspace config files to determine the full technology profile (frameworks, ORMs, test runners).
+- **Dynamic Tech Stack Detection** — Agents now dynamically analyze workspace config files to determine the full technology profile (frameworks, ORMs, test runners).
 - **Smart Design Approaches** — Project Design and UI Design standards now intelligently adapt to existing patterns and recommend approaches based on `Feature Type` and detected stack.
+- **Stack Profile in Session Memory** — The Architect now persists a structured `## Stack Profile` table in `context.md` (language, runtime, framework, package manager, test runner, test command, source/test roots, utilities). All downstream agents read this instead of re-exploring the codebase.
+- **Quick Stack Detection** — New `shared/stack-detection.md` reference for standalone agents to detect the stack from workspace config files without a prior Architect cycle.
+- **Scope-Locking Rule** — New shared rule enforcing that agents ONLY touch files explicitly requested, with a mandatory "Out of Scope" declaration.
+- **Test Execution Policy** — New shared rule: agents NEVER auto-run tests. They create test files and provide the detected command for the user to run.
+
+### 🆕 New Standalone Agents
+
+- **🔧 Refactorer** (`/devflow-refactor`) — Scope-locked code improvement without changing external behavior. Requires user approval before applying any change. Creates regression tests when none exist.
+- **🩹 Bug-Fixer** (`/devflow-bug-fix`) — Resolves reported bugs following Reproduce → Isolate → Fix. Creates a failing reproduction test before any fix is applied. Persists root cause patterns to `debug-patterns.md`.
+- **⚡ Feature Agent** (`/devflow-feature`) — Lightweight TDD cycle for small-to-medium features. Includes a complexity gate that recommends the full `/devflow` cycle for large features.
 
 ---
+
 
 ## [2.3.1] — 2026-04-12
 
@@ -48,7 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🚨 BREAKING CHANGES
 
-- **Removed `devflow-init` command** — No longer needed. DevFlow is now fully global.
 - **Workspace-local `.agents/` and `.github/prompts/` directories are no longer used**
   - All skills, prompts, and instructions are now installed globally
   - Existing projects should remove `.agents/` and `.github/prompts/` directories (optional, they won't be used)
@@ -61,7 +71,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Prompts: `~/.config/Code/User/prompts/`
 - **Automatic Cleanup** — Installer automatically detects and removes v1.2.x installation
 - **Simpler Installation Flow**
-  - v1.2.x: `install.sh` + `devflow-init` (per workspace)
   - v2.0.0: `install.sh` only (one time)
 
 ### 📝 Migration Guide
@@ -93,9 +102,6 @@ If upgrading from **v1.2.x**:
   - Now copies skills to global `~/.config/Code/User/.agents/skills/`
   - Now copies instructions to global `~/.config/Code/User/.github/instructions/`
   - Auto-detects and removes DEVFLOW_STORE (`~/.devflow/`)
-  - Auto-removes `devflow-init` command from PATH
-
-- `devflow-init.sh`: **Removed entirely** (no longer needed)
 
 - `uninstall.sh`:
   - Updated to remove global skills and instructions
@@ -176,7 +182,6 @@ None reported yet. Please [file an issue](https://github.com/abdias98/DevFlow/is
 ### 📦 Installation
 
 - Global VS Code installation via `install.sh`
-- Per-workspace setup via `devflow-init`
 - Automated `/devflow` command in Copilot Chat
 
 ---

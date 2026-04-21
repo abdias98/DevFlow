@@ -16,13 +16,16 @@ Read [common rules](../shared/rules.md) for language detection, tool fallback, a
 | Agent | Role | Skill | Phase |
 |-------|------|-------|-------|
 | 🧠 Brainstormer | Problem understanding, clarifying questions | `devflow-brainstorm` | 1 |
-| 🧩 Architect | Requirements analysis, system design | `devflow-architect` | 2 |
+| 🧩 Architect | Requirements analysis, system design, **Stack Profile** | `devflow-architect` | 2 |
 | 📋 Planner | Task breakdown, test code design, mockups | `devflow-plan` | 3 |
 | ⚙️ Implementer | Red→Green TDD cycle per task | `devflow-implement` | 4 |
 | 🧪 Tester | Manual: create specific failing test | `devflow-test` | Manual |
 | 🔍 Reviewer | Code quality, architecture alignment | `devflow-review` | 5 |
 | 🐞 Debugger | Root cause analysis, systematic debugging | `devflow-debug` | 6 |
 | 🚀 Finalizer | Final summary, test verification, cleanup | `devflow-finalize` | 7 |
+| 🔧 Refactorer | Scope-locked code improvement without behavior change | `devflow-refactor` | Standalone |
+| 🩹 Bug-Fixer | Reproduce → Isolate → Fix reported bugs | `devflow-bug-fix` | Standalone |
+| ⚡ Feature Agent | Lightweight TDD cycle for small-medium features | `devflow-feature` | Standalone |
 
 ---
 
@@ -83,6 +86,9 @@ See [stack mode](./stack-mode.md) for stacked PR behavior.
 | `/devflow-review` | Only Phase 5 |
 | `/devflow-debug` | Only Phase 6 |
 | `/devflow-finalize` | Only Phase 7 |
+| `/devflow-refactor` | **Standalone:** Scope-locked refactoring of existing code |
+| `/devflow-bug-fix` | **Standalone:** Reproduce → Isolate → Fix a reported bug |
+| `/devflow-feature` | **Standalone:** Lightweight TDD cycle for small-medium features |
 
 When a single phase is invoked, the agent still reads session memory for prior context.
 

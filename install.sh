@@ -333,15 +333,8 @@ if [ "$_legacy_found" -eq 1 ]; then
     echo "  ✓ Removed DevFlow store: $DEVFLOW_STORE"
   fi
   
-  # Remove old devflow-init command
-  for bin_dir in "$HOME/.local/bin" "/usr/local/bin"; do
-    if [ -f "$bin_dir/devflow-init" ]; then
-      rm -f "$bin_dir/devflow-init"
-      echo "  ✓ Removed command: $bin_dir/devflow-init"
-    fi
-  done
-  
-  echo "✅ Cleanup complete. Installing v2.5.0..."
+
+  echo "✅ Cleanup complete. Installing v2.6.0..."
   echo ""
 fi
 
