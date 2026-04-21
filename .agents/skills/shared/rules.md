@@ -46,6 +46,6 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
   2. Read the `## Stack Profile` from `context.md` to obtain `Test Command` and `Test Command (single file)`.
   3. If Stack Profile is not in session memory, perform [Quick Stack Detection](./stack-detection.md).
   4. Inform the user with the exact command to run, but **do not run it**:
-     > "Test created at `{path}`. To verify, use `Test Command (single file)` with `{file}` replaced by `{path}`."
+     > "Test created at `{path}`. To verify, use `Test Command (single file)` and replace `{file}` with that same `{path}` value."
      > Example: if `Test Command (single file)` is `npx jest {file}`, run `npx jest {path}`.
 - The test command is **always derived from the project's own configuration** — NEVER hardcoded.
