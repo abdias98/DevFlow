@@ -89,11 +89,15 @@ Show the spec summary and ask:
 
 ### Step 6 — Update Memory
 
-Merge (do NOT overwrite) session memory with: Tech Stack, Constraints, Slug.
-Update phase-state:
+Merge (do NOT overwrite) session memory with the following:
+
+1. **Stack Profile** — ensure `## Stack Profile` table is complete in `context.md`. Every row must have a value (use `unknown` if undetectable). This is the authoritative source for all downstream agents.
+2. **Tech context** — Constraints, Slug, Feature Type.
+3. **Phase state:**
 ```markdown
 - [x] Phase 2: Architect — `docs/devflow/specs/{filename}`
 ```
+
 
 ---
 

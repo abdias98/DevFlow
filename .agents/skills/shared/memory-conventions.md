@@ -18,10 +18,26 @@
 
 **Request:** {user's original request}
 **Slug:** {feature-slug}
-**Tech Stack:** {detected by Architect}
 **Feature Type:** {web frontend | backend | fullstack | mobile | CLI | library}
 **Stack Mode:** {yes | no}
 **Selected Mockup:** {filename, if applicable}
+
+## Stack Profile
+
+| Key | Value |
+|-----|-------|
+| **Language** | {TypeScript \| Python \| Go \| C# \| Java \| PHP \| Ruby \| Kotlin \| ...} |
+| **Runtime** | {Node.js 20 \| Python 3.12 \| .NET 8 \| Go 1.22 \| ...} |
+| **Framework** | {Next.js 14 \| Django 5 \| ASP.NET Core \| Spring Boot 3 \| Laravel 11 \| ...} |
+| **Package Manager** | {npm \| pnpm \| yarn \| pip \| poetry \| go mod \| nuget \| composer \| bundler \| ...} |
+| **Test Runner** | {Jest \| Vitest \| pytest \| go test \| xUnit \| JUnit \| PHPUnit \| RSpec \| ...} |
+| **Test Command** | {npm test \| pnpm test \| pytest \| go test ./... \| dotnet test \| mvn test \| ...} |
+| **Test Command (single file)** | {npx jest {file} \| pytest {file} \| go test {package} \| dotnet test --filter {name} \| ...} |
+| **Build Command** | {npm run build \| go build \| dotnet build \| mvn package \| ...} |
+| **Lint Command** | {npm run lint \| eslint . \| flake8 \| golangci-lint run \| ...} |
+| **Source Root** | {src/ \| app/ \| lib/ \| cmd/ \| ...} |
+| **Test Root** | {tests/ \| __tests__/ \| test/ \| spec/ \| ...} |
+| **Test Utilities** | {e.g., factories in tests/factories/, fixtures in tests/fixtures/} |
 
 ## Goal
 {One-sentence summary}
@@ -101,6 +117,9 @@
 | `mockups/` | HTML wireframe mockups | `YYYY-MM-DD-{slug}-mockup[-A\|-B\|-C].html` |
 | `reviews/` | Code review findings | `YYYY-MM-DD-{slug}-review.md` |
 | `debug-logs/` | Root cause analysis | `YYYY-MM-DD-{slug}-debug.md` |
+| `refactors/` | Refactoring summaries | `YYYY-MM-DD-{slug}-refactor.md` |
+| `bug-fixes/` | Bug fix reports | `YYYY-MM-DD-{slug}-bugfix.md` |
+| `features/` | Lightweight feature docs | `YYYY-MM-DD-{slug}-feature.md` |
 
 ## Memory Rules
 

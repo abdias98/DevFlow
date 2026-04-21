@@ -79,8 +79,9 @@ Save to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`:
 
 **Date:** YYYY-MM-DD
 **Reviewer:** DevFlow Reviewer (automated)
-**Spec:** `docs/devflow/specs/{file}`
-**Plan:** `docs/devflow/plans/{file}`
+**Review Mode:** {Cycle | Standalone}
+**Invoking Agent:** {Implementer | Feature Agent | Refactorer | Bug-Fixer}
+**Reference:** `docs/devflow/{specs|plans|features|refactors|bug-fixes}/{file}`
 
 ## Summary
 {1-2 sentence overall assessment}
@@ -99,3 +100,69 @@ Include concrete, actionable fix guidance (affected file/line, required change, 
 ## Verdict
 ✅ APPROVED — no blockers | 🔄 CHANGES REQUESTED — {N} blockers
 ```
+
+---
+
+## Standalone Standards Checklist
+
+Used in **Standalone Mode** (Feature Agent, Refactorer, Bug-Fixer). Apply these checks to every changed file.
+
+### SOLID Principles
+
+#### S — Single Responsibility
+- [ ] Each class/component has exactly ONE reason to change.
+- [ ] 🔴 **BLOCK:** A UI component that BOTH renders AND manages dialog/modal open state inline.
+- [ ] 🔴 **BLOCK:** A function that performs two or more distinct operations (e.g., validates AND persists AND notifies).
+- [ ] 🔴 **BLOCK:** A component that mixes presentation logic with business/domain logic.
+
+#### O — Open/Closed
+- [ ] New behavior is added by creating new classes/functions, not by adding `if/else` to existing ones.
+- [ ] 🟡 **WARN:** Adding a new `case` to an existing large `switch` that should be extensible.
+
+#### L — Liskov Substitution
+- [ ] Subclasses/implementations honor the full contract of their base type.
+- [ ] 🔴 **BLOCK:** `NotImplementedException` thrown in a subclass method.
+
+#### I — Interface Segregation
+- [ ] Interfaces/props are small and focused — no "god interfaces".
+- [ ] 🟡 **WARN:** Component receiving 10+ props when decomposition would reduce coupling.
+
+#### D — Dependency Inversion
+- [ ] High-level modules depend on abstractions, not concrete implementations.
+- [ ] 🟡 **WARN:** Business logic directly instantiating infrastructure classes.
+
+### Clean Architecture
+
+#### Layer Separation
+- [ ] 🔴 **BLOCK:** Business/domain logic inside a UI component (rule, calculation, validation that doesn't belong in the view layer).
+- [ ] 🔴 **BLOCK:** Presentation/formatting logic inside a service or repository.
+- [ ] 🔴 **BLOCK:** Direct database/API call from a UI component without going through a service layer.
+
+#### Component Decomposition (UI features)
+- [ ] 🔴 **BLOCK:** A modal, dialog, drawer, or overlay defined inline inside the component that opens it — it MUST be a separate component.
+- [ ] 🔴 **BLOCK:** A form with complex validation logic inlined in the page/view component.
+- [ ] 🟡 **WARN:** Repeated UI pattern (button+icon, label+value) not extracted into a shared component when used 3+ times.
+
+#### Reusability
+- [ ] 🟡 **WARN:** New component created that duplicates an existing one — should reuse or extend.
+- [ ] 🟢 **INFO:** Component could be generalized for reuse in the future.
+
+### Security
+
+- [ ] 🔴 **BLOCK:** User input used without validation at system boundaries.
+- [ ] 🔴 **BLOCK:** Hardcoded secret, token, password, or API key.
+- [ ] 🔴 **BLOCK:** Missing authentication/authorization check where required.
+- [ ] 🟡 **WARN:** Sensitive data (email, ID) logged to console or error messages.
+
+### Performance
+
+- [ ] 🔴 **BLOCK:** N+1 query pattern introduced.
+- [ ] 🟡 **WARN:** Unnecessary re-render trigger (missing memoization, missing dependency array).
+- [ ] 🟡 **WARN:** Synchronous blocking operation on a hot path.
+
+### Test Quality (Standalone)
+
+- [ ] 🔴 **BLOCK:** Test created but it tests implementation details instead of behavior.
+- [ ] 🔴 **BLOCK:** Test always passes regardless of behavior (false positive).
+- [ ] 🟡 **WARN:** Missing edge case coverage for the fixed/added behavior.
+

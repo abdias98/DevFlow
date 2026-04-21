@@ -16,6 +16,9 @@ DevFlow/
 │   ├── devflow-reviewer/
 │   ├── devflow-debugger/
 │   ├── devflow-finalizer/
+│   ├── devflow-bug-fixer/       # Standalone bug fixing agent
+│   ├── devflow-feature/         # Standalone feature agent
+│   ├── devflow-refactor/        # Standalone refactoring agent
 │   └── shared/                  # Common rules, conventions, and standards
 │       ├── rules.md
 │       ├── memory-conventions.md
