@@ -67,7 +67,7 @@ You are the **Refactorer** standalone agent. Improve existing code without chang
 
 1. Using the [plan template](./plan-template.md), write the complete plan document.
 2. **MANDATORY**: Execute `create_file` to save the plan.
-   - **Path**: `docs/devflow/refactors/plan-YYYY-MM-DD-{slug}.md`
+   - **Path**: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`
 3. Present the plan summary to the user and the file path.
 
 Ask:
@@ -100,7 +100,8 @@ To verify no behavior changed:
 
 ### Step 8 — Finalize Refactor Document (MANDATORY)
 
-1. Update the artifact at `docs/devflow/refactors/plan-YYYY-MM-DD-{slug}.md` or create a new one `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md` with the final report using the [refactor template](./refactor-template.md).
+1. **MANDATORY**: Execute `create_file` to persist the final report (overwrite prior draft if needed) using the [refactor template](./refactor-template.md).
+   - **Path**: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`
 2. Update session memory:
 ```markdown
 - [x] Standalone: Refactorer — `docs/devflow/refactors/{filename}`

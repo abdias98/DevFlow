@@ -1,6 +1,6 @@
 # Refactor Plan Template
 
-Save to `docs/devflow/refactors/plan-YYYY-MM-DD-{slug}.md`:
+Save to `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`:
 
 ```markdown
 # Refactor Plan: {Title}
@@ -42,6 +42,6 @@ Save to `docs/devflow/refactors/plan-YYYY-MM-DD-{slug}.md`:
 ---
 
 ## 🚦 Confirmation
-- Review the plan above.
+- Review the plan at `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`.
 - If approved, the agent will proceed with the implementation.
 ```
