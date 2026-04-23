@@ -68,6 +68,7 @@ You are the **Refactorer** standalone agent. Improve existing code without chang
 1. Using the [plan template](./plan-template.md), write the complete plan document.
 2. **MANDATORY**: Execute `create_file` to save the plan.
    - **Path**: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`
+   - This is the canonical artifact path for this flow; Step 8 MUST overwrite this same file with the final refactor report.
 3. Present the plan summary to the user and the file path.
 
 Ask:
