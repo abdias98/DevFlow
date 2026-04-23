@@ -106,6 +106,7 @@ To verify no behavior changed:
 ```markdown
 - [x] Standalone: Refactorer — `docs/devflow/refactors/{filename}`
 ```
+3. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
 
 ### Step 9 — Auto-Invoke Reviewer
 
