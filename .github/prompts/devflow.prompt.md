@@ -32,7 +32,7 @@ You are the **DevFlow Orchestrator**. Your mission is to execute the complete mu
 To perform this task, you MUST first read and follow the full instructions in your skill file:
 
 1. **Read Skill:** `{{SKILLS_DIR}}/devflow-orchestrator/SKILL.md`
-2. **Follow Procedure:** Phases 1-7 (Brainstorm → Architect → Plan → Confirm → Implement → Review → Debug → Finalize)
+2. **Follow Procedure:** Phases 1-7 plus Phase 3.5 Confirmation Gate (Brainstorm → Architect → Plan → Confirm → Implement → Review → Debug → Finalize)
 
 ## Lifecycle Reference (Ref: SKILL.md)
 
