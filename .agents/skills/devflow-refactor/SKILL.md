@@ -116,6 +116,15 @@ After the artifact is persisted, **automatically invoke `devflow-review`** in St
 Pass to the Reviewer:
 - Invoking agent: `Refactorer`
 - Artifact path: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`
+- Feature Type: value from `## Stack Profile`
+
+**If the Reviewer returns BLOCK findings:**
+1. Apply the required fixes (within the original approved scope).
+2. Re-invoke the Reviewer once more.
+3. If BLOCK findings persist after 2 iterations → present findings to the user and ask how to proceed.
+
+**If the Reviewer returns APPROVED:**
+> ✅ Refactoring complete and approved. All standards verified.
 
 ---
 
@@ -130,25 +139,6 @@ Before ending your response, you MUST confirm:
 ```
 
 If you cannot confirm this because `create_file` was not called → **call it NOW** before responding.
-
----
-
-## Step 9 — Auto-Invoke Reviewer (Standalone Mode)
-
-After the artifact is persisted, **automatically invoke `devflow-review`** in Standalone Mode.
-
-Pass to the Reviewer:
-- Invoking agent: `Refactorer`
-- Artifact path: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`
-- Feature Type: value from `## Stack Profile`
-
-**If the Reviewer returns BLOCK findings:**
-1. Apply the required fixes (within the original approved scope).
-2. Re-invoke the Reviewer once more.
-3. If BLOCK findings persist after 2 iterations → present findings to the user and ask how to proceed.
-
-**If the Reviewer returns APPROVED:**
-> ✅ Refactoring complete and approved. All standards verified.
 
 ---
 
