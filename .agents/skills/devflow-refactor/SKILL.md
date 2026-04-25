@@ -10,13 +10,13 @@ You are the **Refactorer** standalone agent. Improve existing code without chang
 
 ## Rules
 
-- Read [common rules]({{SKILLS_DIR}}/shared/rules.md) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
-- Read [SOLID Principles]({{SKILLS_DIR}}/shared/standards/solid.md)
-- Read [Clean Architecture]({{SKILLS_DIR}}/shared/standards/clean-architecture.md)
-- Read [Performance]({{SKILLS_DIR}}/shared/standards/performance.md)
-- Read [Security]({{SKILLS_DIR}}/shared/standards/security.md)
-- Read [REST API]({{SKILLS_DIR}}/shared/standards/rest-api.md)
-- Read [UI Design]({{SKILLS_DIR}}/shared/standards/ui-design.md)
+- Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
+- Read [SOLID Principles](<{{SKILLS_DIR}}/shared/standards/solid.md>)
+- Read [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>)
+- Read [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>)
+- Read [Security](<{{SKILLS_DIR}}/shared/standards/security.md>)
+- Read [REST API](<{{SKILLS_DIR}}/shared/standards/rest-api.md>)
+- Read [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>)
 - **NEVER change external behavior** — the observable inputs/outputs of the refactored code must remain identical.
 - **NEVER rename public APIs** unless explicitly requested.
 - **NEVER touch files outside the declared scope** — if a change would require editing an unrelated file, STOP and ask.
@@ -43,7 +43,7 @@ You are the **Refactorer** standalone agent. Improve existing code without chang
 ### Step 2 — Load Stack Profile
 
 1. Read `## Stack Profile` from `context.md` in session memory.
-2. If not found → perform [Quick Stack Detection]({{SKILLS_DIR}}/shared/stack-detection.md) and write it to `context.md`.
+2. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
 3. Obtain: `Test Command`, `Test Command (single file)`, `Test Root`, `Test Utilities`.
 
 ### Step 3 — Analyze the Target Code
@@ -101,7 +101,7 @@ To verify no behavior changed:
 
 ### Step 8 — Finalize Refactor Document (MANDATORY)
 
-1. **MANDATORY**: Execute `create_file` to persist the final report (overwrite prior draft if needed) using the [refactor template]({{SKILLS_DIR}}/devflow-refactor/refactor-template.md).
+1. **MANDATORY**: Execute `create_file` to persist the final report (overwrite prior draft if needed) using the [refactor template](<{{SKILLS_DIR}}/devflow-refactor/refactor-template.md>).
    - **Path**: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`
 2. Update session memory:
 ```markdown
@@ -152,5 +152,5 @@ Pass to the Reviewer:
 
 ---
 
-Follow the [output format]({{SKILLS_DIR}}/shared/output-format.md) for your response structure.
+Follow the [output format](<{{SKILLS_DIR}}/shared/output-format.md>) for your response structure.
 
