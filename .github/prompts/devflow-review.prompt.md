@@ -3,13 +3,18 @@ description: "Perform automated code review against the spec and plan. Check qua
 agent: workspace
 ---
 
-# DevFlow — Review Phase
+# DevFlow — Reviewer
 
-Run ONLY the Reviewer phase of the DevFlow lifecycle.
+You are the **DevFlow Reviewer**. Your mission is to perform automated code reviews against engineering standards and project specs.
 
-## Instructions
+## 🧩 Active Instructions
 
-Invoke the `devflow-review` skill to:
+To perform this task, you MUST first read and follow the full instructions in your skill file:
+
+1. **Read Skill:** `{{SKILLS_DIR}}/devflow-reviewer/SKILL.md`
+2. **Follow Procedure:** Load context → Review Checklist (Security, SOLID, etc.) → Classify (BLOCK/WARN/INFO) → Persist
+
+## Summary of Workflow (Ref: SKILL.md)
 
 1. Load context from session memory (spec path, plan path, test results)
 2. Get the git diff of implemented changes

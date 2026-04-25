@@ -7,9 +7,14 @@ agent: workspace
 
 Run ONLY the Finalizer phase of the DevFlow lifecycle.
 
-## Instructions
+## 🧩 Active Instructions
 
-Invoke the `devflow-finalize` skill to:
+To perform this task, you MUST first read and follow the full instructions in your skill file:
+
+1. **Read Skill:** `{{SKILLS_DIR}}/devflow-finalizer/SKILL.md`
+2. **Follow Procedure:** Full Test Suite → Cleanup Memory → Summary → Improvements
+
+## Summary of Workflow (Ref: SKILL.md)
 
 1. Run the full test suite — STOP and route to Debugger if any test fails
 2. Check the review document — STOP and route to Implementer if BLOCK findings remain

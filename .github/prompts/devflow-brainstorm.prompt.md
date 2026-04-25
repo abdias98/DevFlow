@@ -7,9 +7,14 @@ agent: workspace
 
 Run ONLY the Brainstormer phase of the DevFlow lifecycle.
 
-## Instructions
+## 🧩 Active Instructions
 
-Invoke the `devflow-brainstorm` skill to:
+To perform this task, you MUST first read and follow the full instructions in your skill file:
+
+1. **Read Skill:** `{{SKILLS_DIR}}/devflow-brainstormer/SKILL.md`
+2. **Follow Procedure:** Goal ID → Constraints → Edge Cases → Clarify → Problem Statement
+
+## Summary of Workflow (Ref: SKILL.md)
 
 1. Ask clarifying questions if requirements are ambiguous (use `vscode_askQuestions`)
 2. Identify: Goal, Constraints, Edge Cases, Assumptions

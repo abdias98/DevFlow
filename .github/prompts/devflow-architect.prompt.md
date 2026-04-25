@@ -7,9 +7,14 @@ agent: workspace
 
 Run ONLY the Architect phase of the DevFlow lifecycle.
 
-## Instructions
+## 🧩 Active Instructions
 
-Invoke the `devflow-architect` skill to:
+To perform this task, you MUST first read and follow the full instructions in your skill file:
+
+1. **Read Skill:** `{{SKILLS_DIR}}/devflow-architect/SKILL.md`
+2. **Follow Procedure:** Analysis → Design → ASCII Mockups → Stack Profile → Spec Persist
+
+## Summary of Workflow (Ref: SKILL.md)
 
 1. Understand the requirements from the user's input
 2. Explore the codebase to understand existing patterns and conventions

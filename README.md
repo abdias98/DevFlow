@@ -52,7 +52,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/instal
 irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
 ```
 
-**What's new in v2.6.0:**
+**What's new in v2.6.2:**
 - ✅ Interactive editor selection with installation status
 - ✅ Support for multiple editors (VS Code, CLI/generic, easily extensible)
 - ✅ Always-prompt workflow (no auto-detection)
@@ -248,8 +248,23 @@ DevFlow is installed **globally** in VS Code, available in **all workspaces**:
 
 **Installed items:**
 - 12 specialized sub-agent skills total: 8 phase-based lifecycle roles (Brainstormer, Architect, Planner, Tester, Implementer, Reviewer, Debugger, Finalizer) + 1 orchestration role (Orchestrator) + 3 standalone agents (Refactorer, Bug-Fixer, Feature Agent)
-- Prompts for the full lifecycle and for individual standalone agent workflows
-- ~200 KB total (lightweight)
+- Prompt templates for all lifecycle phases and standalone workflows
+- ~200 KB total (highly optimized)
+
+---
+
+## 📂 Project Structure
+
+| Directory | Description |
+|-----------|-------------|
+| [`.agents/skills/`](.agents/skills/) | Core logic and workflows for each agent. Each agent has its own `SKILL.md`. |
+| [`.agents/skills/shared/`](.agents/skills/shared/) | Shared rules, memory conventions, and stack detection logic. |
+| [`.agents/skills/shared/standards/`](.agents/skills/shared/standards/) | Private engineering standards library (SOLID, Security, UI, etc.). |
+| [`.github/prompts/`](.github/prompts/) | Prompt templates for the agents, used by the editor to trigger specific behaviors. |
+| [`editor-profiles/`](editor-profiles/) | YAML definitions for supported editors, including path and tool mappings. |
+| [`docs/`](docs/) | Architecture diagrams, flow definitions, and internal documentation. |
+| [`install.sh` / `.ps1`](install.sh) | Cross-platform installation scripts. |
+| [`uninstall.sh` / `.ps1`](uninstall.sh) | Cross-platform uninstallation scripts. |
 
 ---
 
