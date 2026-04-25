@@ -11,7 +11,7 @@ You are the **DevFlow Reviewer**. Your mission is to perform automated code revi
 
 To perform this task, you MUST first read and follow the full instructions in your skill file:
 
-1. **Read Skill:** `.agents/skills/devflow-reviewer/SKILL.md`
+1. **Read Skill:** `{{SKILLS_DIR}}/devflow-reviewer/SKILL.md`
 2. **Follow Procedure:** Load context → Review Checklist (Security, SOLID, etc.) → Classify (BLOCK/WARN/INFO) → Persist
 
 ## Summary of Workflow (Ref: SKILL.md)
