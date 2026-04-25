@@ -7,9 +7,14 @@ agent: workspace
 
 Run ONLY the Planner phase of the DevFlow lifecycle.
 
-## Instructions
+## 🧩 Active Instructions
 
-Invoke the `devflow-plan` skill to:
+To perform this task, you MUST first read and follow the full instructions in your skill file:
+
+1. **Read Skill:** `{{SKILLS_DIR}}/devflow-planner/SKILL.md`
+2. **Follow Procedure:** Task Breakdown → File Map → Commits → Plan Persist
+
+## Summary of Workflow (Ref: SKILL.md)
 
 1. Locate and read the spec document (from session memory or `docs/devflow/specs/`)
 2. Explore the codebase — including test framework, test conventions, and run commands

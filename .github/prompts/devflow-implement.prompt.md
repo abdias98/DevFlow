@@ -7,9 +7,14 @@ agent: workspace
 
 Run ONLY the Implementer phase of the DevFlow lifecycle.
 
-## Instructions
+## 🧩 Active Instructions
 
-Invoke the `devflow-implement` skill to:
+To perform this task, you MUST first read and follow the full instructions in your skill file:
+
+1. **Read Skill:** `{{SKILLS_DIR}}/devflow-implementer/SKILL.md`
+2. **Follow Procedure:** Red-Green-Refactor → Mini-Review → Commit
+
+## Summary of Workflow (Ref: SKILL.md)
 
 1. Load context from session memory (plan path, test registry, phase state)
 2. Read the plan document

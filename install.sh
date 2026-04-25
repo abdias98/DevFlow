@@ -148,7 +148,7 @@ copy_devflow_file() {
   local src="$1"
   local dst="$2"
 
-  local base_sed_expr="-e 's|{{AGENTS_DIR}}|${AGENTS_DIR}|g'"
+  local base_sed_expr="-e 's|{{AGENTS_DIR}}|${AGENTS_DIR}|g' -e 's|{{SKILLS_DIR}}|${SKILLS_DIR}|g' -e 's|{{PROMPTS_DIR}}|${PROMPTS_DIR}|g' -e 's|{{INSTR_DIR}}|${INSTR_DIR}|g'"
 
   if [[ "$TOOL_SUBSTITUTION" != "true" ]]; then
     eval "sed $base_sed_expr \"$src\"" > "$dst"
@@ -334,7 +334,7 @@ if [ "$_legacy_found" -eq 1 ]; then
   fi
   
 
-  echo "✅ Cleanup complete. Installing v2.6.0..."
+  echo "✅ Cleanup complete. Installing v2.6.2..."
   echo ""
 fi
 

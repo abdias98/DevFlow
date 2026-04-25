@@ -36,7 +36,7 @@ paths:
 
 # ── Tool name mappings ────────────────────────────────────────────────────────
 # Maps FROM (tool name used in skill/prompt source files) TO (tool name for this editor).
-# Antigravity supports vscode_askQuestions natively — all tool names are used as-is.
+# Antigravity uses specific names for file and command tools.
 # install.sh reads these pairs and applies sed when tool_substitution is true.
 tool_mappings:
   vscode_askQuestions: vscode_askQuestions
@@ -44,7 +44,7 @@ tool_mappings:
   grep_search: grep_search
   file_search: file_search
   read_file: read_file
-  create_file: create_file
+  create_file: write_file
   replace_string_in_file: replace_string_in_file
   run_in_terminal: run_in_terminal
   memory: memory
@@ -58,7 +58,7 @@ tool_mappings:
 
 # ── Install behavior ──────────────────────────────────────────────────────────
 install:
-  tool_substitution: false
+  tool_substitution: true
 
 # ── Post-install message ─────────────────────────────────────────────────────
 post_install:

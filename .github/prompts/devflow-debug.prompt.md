@@ -7,9 +7,14 @@ agent: workspace
 
 Run ONLY the Debugger phase of the DevFlow lifecycle.
 
-## Instructions
+## 🧩 Active Instructions
 
-Invoke the `devflow-debug` skill to:
+To perform this task, you MUST first read and follow the full instructions in your skill file:
+
+1. **Read Skill:** `{{SKILLS_DIR}}/devflow-debugger/SKILL.md`
+2. **Follow Procedure:** Analyze Failure → Hypothesize → Isolate → Fix → Verify
+
+## Summary of Workflow (Ref: SKILL.md)
 
 1. Identify the failure (test failure, build error, runtime error, reviewer finding)
 2. Reproduce the error with verbose output

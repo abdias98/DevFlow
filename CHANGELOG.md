@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [2.6.2] — 2026-04-25
+
+### ✨ Features
+
+- **Version Bump** — Updated project version to 2.6.2.
+- **Documentation Overhaul** — Updated README.md, CONTRIBUTING.md, and CHANGELOG.md to reflect the current project structure, including the private standards library and multi-editor profiles.
 
 ---
 

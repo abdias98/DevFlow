@@ -7,6 +7,13 @@ agent: workspace
 
 > ⚠️ Normally the red→green cycle runs automatically inside the Implementer. Use this prompt only to manually create and verify a failing test for a specific task.
 
+## 🧩 Active Instructions
+
+To perform this task, you MUST first read and follow the full instructions in your skill file:
+
+1. **Read Skill:** `{{SKILLS_DIR}}/devflow-tester/SKILL.md`
+2. **Follow Procedure:** Load Plan → Create Failing Test → Instruct User
+
 ## Instructions
 
 1. Read the plan from `docs/devflow/plans/` or session memory
