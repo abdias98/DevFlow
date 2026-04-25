@@ -148,16 +148,20 @@ copy_devflow_file() {
   local src="$1"
   local dst="$2"
 
-  local base_sed_expr="-e 's|{{AGENTS_DIR}}|${AGENTS_DIR}|g' -e 's|{{SKILLS_DIR}}|${SKILLS_DIR}|g' -e 's|{{PROMPTS_DIR}}|${PROMPTS_DIR}|g' -e 's|{{INSTR_DIR}}|${INSTR_DIR}|g'"
+  local -a sed_args=(
+    -e "s|{{AGENTS_DIR}}|${AGENTS_DIR}|g"
+    -e "s|{{SKILLS_DIR}}|${SKILLS_DIR}|g"
+    -e "s|{{PROMPTS_DIR}}|${PROMPTS_DIR}|g"
+    -e "s|{{INSTR_DIR}}|${INSTR_DIR}|g"
+  )
 
   if [[ "$TOOL_SUBSTITUTION" != "true" ]]; then
-    eval "sed $base_sed_expr \"$src\"" > "$dst"
+    sed "${sed_args[@]}" "$src" > "$dst"
     return
   fi
 
   # Build a combined sed expression from both tool_mappings and path_mappings.
   # This avoids multiple passes over the file.
-  local sed_expr="$base_sed_expr"
 
   # Tool mappings: from_tool -> to_tool (or REMOVE)
   # Match the exact markdown token format (`tool`) instead of using \b,
@@ -167,9 +171,9 @@ copy_devflow_file() {
     from_esc=$(sed 's/[&|/\]/\\&/g' <<<"$from")
     to_esc=$(sed 's/[&|/\]/\\&/g' <<<"$to")
     if [[ "$to" == "REMOVE" ]]; then
-      sed_expr="${sed_expr} -e '/\`${from_esc}\`/d'"
+      sed_args+=(-e "/\`${from_esc}\`/d")
     elif [[ "$from" != "$to" ]]; then
-      sed_expr="${sed_expr} -e 's|\`${from_esc}\`|\`${to_esc}\`|g'"
+      sed_args+=(-e "s|\`${from_esc}\`|\`${to_esc}\`|g")
     fi
   done < <(parse_yaml_section "$PROFILE_FILE" "tool_mappings")
 
@@ -181,17 +185,13 @@ copy_devflow_file() {
     to_esc=$(sed 's/[&/\]/\\&/g' <<<"$to")
     if [[ "$to" == "REMOVE" ]]; then
       # Remove any line that contains this path
-      sed_expr="${sed_expr} -e '/${from_esc}/d'"
+      sed_args+=(-e "/${from_esc}/d")
     elif [[ "$from" != "$to" ]]; then
-      sed_expr="${sed_expr} -e 's|${from_esc}|${to_esc}|g'"
+      sed_args+=(-e "s|${from_esc}|${to_esc}|g")
     fi
   done < <(parse_yaml_section "$PROFILE_FILE" "path_mappings")
 
-  if [[ -z "$sed_expr" ]]; then
-    cp "$src" "$dst"
-  else
-    eval "sed $sed_expr \"$src\"" > "$dst"
-  fi
+  sed "${sed_args[@]}" "$src" > "$dst"
 }
 
 # ── Discover supported editors from editor-profiles/*.yaml ──────────────────
