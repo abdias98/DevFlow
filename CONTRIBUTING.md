@@ -1,6 +1,6 @@
 # Contributing to DevFlow
 
-**DevFlow v2.6.2** — Multi-agent AI framework with multi-editor support via YAML profiles.
+**DevFlow v2.7.0** — Multi-agent AI framework with multi-editor support via YAML profiles.
 
 Thanks for your interest in contributing to DevFlow! 🎉
 
@@ -11,7 +11,7 @@ Found a bug or have a suggestion? Open an issue with:
 - Clear description of the problem
 - Steps to reproduce
 - Expected vs. actual behavior
-- Your OS and VS Code version
+- Your OS and editor/CLI version
 
 ### Submit Pull Requests
 
@@ -24,20 +24,63 @@ Found a bug or have a suggestion? Open an issue with:
 
 ### Code Style
 
-- **Skills:** Follow existing SKILL.md format (YAML frontmatter + markdown workflow)
-- **Prompts:** Keep `.prompt.md` files focused on a single phase
-- **Standards:** Engineering standards live in `.agents/skills/shared/standards/` using a strict `DO/DON'T` format with clear reasoning principles. Do not use global editor instructions.
-- **Scripts:** Bash for install scripts (cross-platform compatible)
-- **Documentation:** Markdown, clear language, include examples
+- **Skills:** Follow existing `SKILL.md` format (YAML frontmatter + markdown workflow). Use `{{SKILLS_DIR}}` for all internal path references. Reference `rules.md` as the canonical source for shared rules.
+- **Prompts:** Keep `.prompt.md` files focused on a single phase or standalone agent. Avoid duplicating procedures already defined in the corresponding `SKILL.md`. Reference `rules.md` at the start.
+- **Standards:** Engineering standards live in `.agents/skills/shared/standards/` using a strict `DO/DON'T` format with clear reasoning principles. Standards must be technology-agnostic (no framework-specific examples). Each standard should include a "Limited Scope" section for safe use by scope-locked agents.
+- **Shared rules:** `rules.md` is the canonical source for Scope-Locking, Test Execution Policy, Flow Artifacts Exception, and Approval & Confirmation. `memory-conventions.md` is the canonical source for all file paths, naming conventions, and session memory formats. Do NOT duplicate these in other files.
+- **Tests:** Agents NEVER execute test commands. They create test files and inform the user of the exact command to run. PRs are never created automatically — the user decides if and when to push branches and open PRs.
+- **Scripts:** Bash for install scripts (cross-platform compatible).
+- **Documentation:** Markdown, clear language, include examples.
 - **AGENTS.md:** For complex projects where you develop or test DevFlow skills, create an `AGENTS.md` in the project root documenting your stack, folder structure, and test conventions. This lets DevFlow skip general codebase exploration and produce more accurate plans. See the README for the suggested format.
 
 ### Project Layout
 
-- **`.agents/skills/`**: Agent logic and phase workflows.
-- **`.agents/skills/shared/`**: Common logic, memory management, and standards.
-- **`.github/prompts/`**: Model behavior definitions for each phase/agent.
-- **`editor-profiles/`**: YAML profiles defining editor-specific paths and tool mappings.
-- **`docs/`**: Core framework documentation and design specs.
+```
+DevFlow/
+├── .agents/skills/              # AI Sub-agents (Copilot skills)
+│   ├── devflow-orchestrator/    # Main orchestrator agent
+│   ├── devflow-brainstormer/
+│   ├── devflow-architect/
+│   ├── devflow-planner/
+│   ├── devflow-tester/          # Manual helper only (not an automatic phase)
+│   ├── devflow-implementer/
+│   ├── devflow-reviewer/
+│   ├── devflow-debugger/
+│   ├── devflow-finalizer/
+│   ├── devflow-bug-fixer/       # Standalone bug fixing agent
+│   ├── devflow-feature/         # Standalone feature agent
+│   ├── devflow-refactor/        # Standalone refactoring agent
+│   └── shared/                  # Common rules, conventions, and standards
+│       ├── rules.md
+│       ├── memory-conventions.md
+│       ├── output-format.md
+│       ├── stack-detection.md
+│       └── standards/           # Engineering standards (Private Library)
+│           ├── solid.md
+│           ├── clean-architecture.md
+│           ├── security.md
+│           ├── performance.md
+│           ├── rest-api.md
+│           ├── project-design.md
+│           └── ui-design.md
+├── .github/
+│   ├── prompts/                 # Slash command prompts
+│   │   ├── devflow.prompt.md   # Full lifecycle
+│   │   └── devflow-*.prompt.md # Phase-specific and standalone
+│   └── instructions/
+│       └── devflow-conventions.instructions.md
+├── docs/
+│   ├── ARCHITECTURE.md          # Internal design documentation
+│   └── devflow/                 # Persistent artifacts (generated at runtime)
+├── editor-profiles/             # Editor-specific installation configs
+│   └── vscode.yaml
+├── install.sh / install.ps1     # Installation scripts
+├── uninstall.sh / uninstall.ps1 # Uninstallation scripts
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
+└── README.md
+```
 
 ### Extension Ideas
 
@@ -49,6 +92,8 @@ We're looking for contributions in these areas:
 - 🔐 **Security Auditor** — Deep security review (OWASP++)
 - 🐳 **DevOps Helper** — Docker, K8s, CI/CD setup
 - 📈 **Data Science** — ML model training and evaluation
+
+> **Note for new agents:** Follow the pattern of existing standalone agents (`devflow-refactor`, `devflow-feature`, `devflow-bug-fix`). Include a `questions-template.md` for clarifying questions, save the plan/report before asking for user approval, and respect the framework-wide policies: never execute tests, never create PRs automatically, and reference shared rules via `{{SKILLS_DIR}}`.
 
 #### Editor Support
 
@@ -78,17 +123,6 @@ Adding support for a new editor requires **zero** changes to skills, agents, or 
    ```
 
 4. **No other changes needed** — Skills automatically receive the correct tool names and paths at install time via sed substitution.
-
----
-- GitHub Issues / Discussions
-- Jira / Linear / Azure DevOps
-- Slack notifications
-- GitLab CI
-
-#### Tools
-- Batch processing (run on multiple features)
-- Performance metrics dashboard
-- Historical reports (how we've improved over time)
 
 ### Process
 

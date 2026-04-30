@@ -5,32 +5,25 @@ agent: workspace
 
 # DevFlow — Plan Phase
 
-Run ONLY the Planner phase of the DevFlow lifecycle.
+Run the Planner phase of the DevFlow lifecycle.
 
-## 🧩 Active Instructions
+## Active Instructions
 
-To perform this task, you MUST first read and follow the full instructions in your skill file:
+1. **Read common rules:** `{{SKILLS_DIR}}/shared/rules.md`
+2. **Read Skill:** `{{SKILLS_DIR}}/devflow-planner/SKILL.md`
+3. **Follow the procedure** defined in the SKILL.md
 
-1. **Read Skill:** `{{SKILLS_DIR}}/devflow-planner/SKILL.md`
-2. **Follow Procedure:** Task Breakdown → File Map → Commits → Plan Persist
+## Summary
 
-## Summary of Workflow (Ref: SKILL.md)
+1. Read the Architecture Spec from session memory or `docs/devflow/specs/`.
+2. Ask the Stack Mode question (conditional — only if the feature is large and spans multiple layers).
+3. Explore existing code patterns, test conventions, and reference implementations.
+4. Generate HTML mockups (if UI feature).
+5. Break down the spec into atomic, ordered tasks with complete code snippets, test code, and commit messages.
+6. Save the plan to `docs/devflow/plans/YYYY-MM-DD-{slug}.md`.
+7. If invoked as part of the full lifecycle, hand control back to the Orchestrator for the Confirmation Gate. If invoked standalone, present the plan to the user for approval and STOP.
 
-1. Locate and read the spec document (from session memory or `docs/devflow/specs/`)
-2. Explore the codebase — including test framework, test conventions, and run commands
-3. Decompose into atomic, ordered tasks grouped by logical unit
-4. Map each task to specific files (modify/create)
-5. Write complete, ready-to-paste code snippets for each step
-6. For each task, include a `🧪 Tests for this Task` section with:
-   - Complete, ready-to-paste test code using the project's actual test framework and conventions
-   - All required imports/annotations/setup following project conventions
-   - At least one test per scenario: happy path, edge case, failure scenario
-   - The exact command to run only those tests
-   - Assertions designed to FAIL until production code is written
-7. Include commit messages at each task checkpoint
-8. Save plan to `docs/devflow/plans/YYYY-MM-DD-{slug}.md`
-
-Read session memory first if prior context exists (`/memories/session/devflow/`).
+**NEVER** write implementation code — only plan documents and mockups.
 
 ## Spec or Feature Description
 

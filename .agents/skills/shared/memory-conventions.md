@@ -1,9 +1,19 @@
 # DevFlow — Memory Conventions
 
+> **Note on examples:** All paths, file names, and technology examples in this document are illustrative. Replace them with the actual stack, conventions, and tools detected for the project.
+
+These conventions define where and how DevFlow agents persist state and artifacts. Every SKILL.md and `rules.md` references this file.
+
+---
+
 ## Session Memory (Transient)
+
+These files live only for the duration of a DevFlow session. They are not versioned and may be cleaned up after the feature is complete.
 
 **Primary path:** `/memories/session/devflow/`
 **Fallback path:** `docs/devflow/session/`
+
+> **Agents MUST ensure the target directory exists** before writing session files. Use available tools to create the directory if missing.
 
 | File | Purpose | Written by |
 |------|---------|------------|
@@ -19,7 +29,7 @@
 **Request:** {user's original request}
 **Slug:** {feature-slug}
 **Feature Type:** {web frontend | backend | fullstack | mobile | CLI | library}
-**Stack Mode:** {yes | no}
+**Stack Mode:** {yes | no}   <!-- "yes" to split work into stacked branches/PRs per architectural layer (set by the Planner); "no" for a single-branch PR -->
 **Selected Mockup:** {filename, if applicable}
 
 ## Stack Profile
@@ -32,7 +42,7 @@
 | **Package Manager** | {npm \| pnpm \| yarn \| pip \| poetry \| go mod \| nuget \| composer \| bundler \| ...} |
 | **Test Runner** | {Jest \| Vitest \| pytest \| go test \| xUnit \| JUnit \| PHPUnit \| RSpec \| ...} |
 | **Test Command** | {npm test \| pnpm test \| pytest \| go test ./... \| dotnet test \| mvn test \| ...} |
-| **Test Command (single file)** | {npx jest {file} \| pytest {file} \| go test {package} \| dotnet test --filter {name} \| ...} |
+| **Test Command (single file)** | {npm exec jest {file} \| pytest {file} \| go test {package} \| dotnet test --filter {name} \| ...} |
 | **Build Command** | {npm run build \| go build \| dotnet build \| mvn package \| ...} |
 | **Lint Command** | {npm run lint \| eslint . \| flake8 \| golangci-lint run \| ...} |
 | **Source Root** | {src/ \| app/ \| lib/ \| cmd/ \| ...} |
@@ -123,7 +133,12 @@
 
 ## Memory Rules
 
-1. **Before starting any phase**, read all relevant session memory files.
-2. **After completing any phase**, update `phase-state.md` with phase completed + timestamp.
-3. **At cycle end**, clean session memory and ensure persistent artifacts are saved.
-4. All sub-agents read from and write to the SAME memory — this is how they communicate.
+1. **Before starting any phase**, read all relevant session memory files (`context.md`, `phase-state.md`, `test-registry.md`).
+2. **After completing any phase**, update `phase-state.md`:
+   - Mark the completed phase with `[x]`.
+   - Update `Current Phase` to the next number.
+   - Add a `Last Updated` timestamp.
+3. **At cycle end** (Finalizer completes):
+   - Clean session memory by deleting all files in the session memory path (`/memories/session/devflow/` or `docs/devflow/session/`).
+   - Confirm all persistent artifacts are saved.
+4. **All sub-agents read from and write to the SAME memory** — this is how they communicate. Do not create separate session files for different agents.

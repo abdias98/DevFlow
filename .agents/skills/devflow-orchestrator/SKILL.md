@@ -1,6 +1,6 @@
 ---
 name: devflow
-description: "Multi-agent engineering framework that simulates a professional software team. Orchestrates specialized sub-agents (Brainstormer, Architect, Planner, Tester, Implementer, Reviewer, Debugger, Finalizer) through a strict phase-based lifecycle with persistent memory. USE WHEN: full development lifecycle, build feature end-to-end, multi-agent development, structured implementation, TDD workflow, architecture-first development."
+description: "Multi-agent engineering framework that simulates a professional software team. Orchestrates specialized sub-agents (Brainstormer, Architect, Planner, Implementer, Reviewer, Debugger, Finalizer) through a strict phase-based lifecycle with persistent memory. USE WHEN: full development lifecycle, build feature end-to-end, multi-agent development, structured implementation, TDD workflow, architecture-first development."
 ---
 
 # DevFlow — Multi-Agent Engineering Orchestrator
@@ -13,19 +13,18 @@ Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) for language detection, to
 
 ## Sub-Agents (Skills)
 
-| Agent | Role | Skill | Phase |
-|-------|------|-------|-------|
-| 🧠 Brainstormer | Problem understanding, clarifying questions | `devflow-brainstorm` | 1 |
-| 🧩 Architect | Requirements analysis, system design, **Stack Profile** | `devflow-architect` | 2 |
-| 📋 Planner | Task breakdown, test code design, mockups | `devflow-plan` | 3 |
-| ⚙️ Implementer | Red→Green TDD cycle per task | `devflow-implement` | 4 |
-| 🧪 Tester | Manual: create specific failing test | `devflow-test` | Manual |
-| 🔍 Reviewer | Code quality, architecture alignment | `devflow-review` | 5 |
-| 🐞 Debugger | Root cause analysis, systematic debugging | `devflow-debug` | 6 |
-| 🚀 Finalizer | Final summary, test verification, cleanup | `devflow-finalize` | 7 |
-| 🔧 Refactorer | Scope-locked code improvement without behavior change | `devflow-refactor` | Standalone |
-| 🩹 Bug-Fixer | Reproduce → Isolate → Fix reported bugs | `devflow-bug-fix` | Standalone |
-| ⚡ Feature Agent | Lightweight TDD cycle for small-medium features | `devflow-feature` | Standalone |
+| Agent | Skill | Phase |
+|-------|-------|-------|
+| Brainstormer | `devflow-brainstorm` | 1 |
+| Architect | `devflow-architect` | 2 |
+| Planner | `devflow-plan` | 3 |
+| Implementer | `devflow-implement` | 4 |
+| Reviewer | `devflow-review` | 5 |
+| Debugger | `devflow-debug` | 6 (conditional) |
+| Finalizer | `devflow-finalize` | 7 |
+| Refactorer | `devflow-refactor` | Standalone |
+| Bug-Fixer | `devflow-bug-fix` | Standalone |
+| Feature Agent | `devflow-feature` | Standalone |
 
 ---
 
@@ -44,14 +43,14 @@ See [lifecycle details](<{{SKILLS_DIR}}/devflow-orchestrator/lifecycle.md>) for 
 **Essential flow:**
 1. **Phase 1: Brainstormer** → Ask questions, identify goal/constraints → save Problem Statement
 2. **Phase 2: Architect** → Explore codebase, define architecture → save Spec
-3. **Phase 3: Planner** → Stack Mode gate, create mockups (UI), write plan → save Plan
+3. **Phase 3: Planner** → Stack Mode gate (conditional), create mockups (UI), write plan → save Plan
 4. **⏸️ Confirmation Gate — STOP HERE**
    - Present the plan summary and mockup paths.
    - If multiple mockups exist → ask the user to select one.
-   - Ask for explicit approval. **Do NOT proceed to Phase 4 until the user says "Approve" or "Execute".**
+   - Ask for explicit approval. **Do NOT proceed to Phase 4 until the user approves.**
 5. **Phase 4: Implementer** → Red→Green TDD per task → commit at each checkpoint
 6. **Phase 5: Reviewer** → Diff against spec+plan → BLOCK/WARN/INFO → fix if BLOCK
-7. **Phase 6: Debugger** → Only if tests fail → reproduce, isolate, fix
+7. **Phase 6: Debugger** → Only if tests fail or runtime issues → reproduce, isolate, fix
 8. **Phase 7: Finalizer** → Run full suite, summary, clean memory
 
 See [stack mode](<{{SKILLS_DIR}}/devflow-orchestrator/stack-mode.md>) for stacked PR behavior.
@@ -82,9 +81,8 @@ See [stack mode](<{{SKILLS_DIR}}/devflow-orchestrator/stack-mode.md>) for stacke
 | `/devflow-architect` | Only Phase 2 |
 | `/devflow-plan` | Only Phase 3 |
 | `/devflow-implement` | Only Phase 4 |
-| `/devflow-test` | Manual: create specific failing test |
-| `/devflow-review` | Only Phase 5 |
-| `/devflow-debug` | Only Phase 6 |
+| `/devflow-review` | Only Phase 5 (or standalone) |
+| `/devflow-debug` | Only Phase 6 (or standalone) |
 | `/devflow-finalize` | Only Phase 7 |
 | `/devflow-refactor` | **Standalone:** Scope-locked refactoring of existing code |
 | `/devflow-bug-fix` | **Standalone:** Reproduce → Isolate → Fix a reported bug |

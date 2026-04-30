@@ -14,27 +14,24 @@ For each Stack in the Stack Plan table (in order):
 
 ## 🔴 Red → 🟢 Green per Task
 2. For each task inside this Stack:
-   - Execute the full Red Phase (create test file, verify FAIL)
-   - Execute the full Green Phase (write production code, verify PASS, commit)
-   - Register tests in session memory
+   - Read the task's test code from the plan.
+   - Create the test file using `create_file` and tell the user the exact command to run it (do NOT run it).
+   - Write the production code using `create_file` or `replace_file_content`.
+   - Tell the user the test command again to verify it now passes.
+   - Commit with the planned message.
+   - Register tests in session memory (`test-registry.md`).
 
-## 📤 Create Stack PR
-3. After all tasks in the Stack are complete, push and open the PR:
-   ```bash
-   git push -u origin feat/{slug}/stack-{N}
-
-   gh pr create \
-     --base "{stack-base-branch}" \
-     --title "[{N}/{M}] feat({scope}): {stack title}" \
-     --body "## Stack {N}/{M}: {stack title}
-   Part of feature: {feature title}
-   Plan: \`docs/devflow/plans/YYYY-MM-DD-{slug}.md\`
-   ### Tasks in this Stack
-   {list of task titles}"
+## 📤 Branch and PR (Manual)
+3. After all tasks in the Stack are complete, **inform the user** of the branch and how to push and create a PR manually:
    ```
+   Stack {N}/{M} complete on branch feat/{slug}/stack-{N}.
+   To share this work:
+     git push -u origin feat/{slug}/stack-{N}
+   Then create a PR from that branch to {stack-base-branch} with title:
+     [{N}/{M}] feat({scope}): {stack title}
+   ```
+   **NEVER run `gh pr create` or any equivalent.** The user decides if and when to open PRs.
 
-4. If `gh` not available → print manual fallback with compare URL
-5. Display the PR URL
-6. **Continue immediately to the next Stack — do NOT wait for PR review**
+4. **Continue immediately to the next Stack** — do NOT wait for PR review.
 
-After all Stacks are complete → run full test suite, verify no regressions.
+After all Stacks are complete → provide the full test suite command and recommend the user run it to verify no regressions.

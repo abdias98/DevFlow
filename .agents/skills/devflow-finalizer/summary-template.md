@@ -9,7 +9,7 @@
 | {criterion from context.md} | ✅ Met / ⚠️ Not verified |
 
 ### ✅ Tests
-{N} tests passing | 0 failing
+{N} tests passing | 0 failing (confirmed by user)
 
 ### 📦 Files Changed
 **Created:**
@@ -43,23 +43,11 @@
 - Plan:   `docs/devflow/plans/{filename}` ✔️ *(checkboxes updated)*
 - Review: `docs/devflow/reviews/{filename}`
 
-### 📤 Stack PRs *(Stack Mode = yes only)*
-| Stack | Branch | Base | PR Title | Status |
-|-------|--------|------|----------|--------|
+### 📤 Stack Branches *(Stack Mode = yes only)*
+| Stack | Branch | Base | Title | Status |
+|-------|--------|------|-------|--------|
 
-> The team reviews and merges stacked PRs in order.
-```
-
-## Knowledge Persistence
-
-Before cleaning session, append to `/memories/repo/devflow-project-knowledge.md`:
-
-```markdown
-## YYYY-MM-DD — {slug}
-- **Stack detected:** {tech stack}
-- **Key conventions found:** {naming, test structure, organization}
-- **Reusable patterns discovered:** {wrappers, base classes, utilities}
-- **Pitfalls encountered:** {issues that caused rework}
+> Push branches and create PRs manually when ready. Review and merge in order.
 ```
 
 ## Finalization Rules
@@ -72,4 +60,5 @@ Before cleaning session, append to `/memories/repo/devflow-project-knowledge.md`
 | ALWAYS clean session memory | Prevents stale context |
 | ALWAYS update plan checkboxes | Clean, auditable record |
 | ALWAYS include "How to Run" | User verifies independently |
-| ALWAYS include Stack PR summary if stacked | Complete PR list needed |
+| ALWAYS include Stack branches summary if stacked | Complete branch list needed |
+| NEVER execute test or git commands | User controls execution |

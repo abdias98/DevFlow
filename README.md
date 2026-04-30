@@ -37,7 +37,7 @@ Installs the `@devflow` agent globally — available in **every workspace** with
 
 ---
 
-## � Upgrading from v1.2.x
+## ⬆️ Upgrading from v1.2.x
 
 If you have an older version installed, the installer automatically detects and cleans up:
 
@@ -52,14 +52,17 @@ bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/instal
 irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
 ```
 
-**What's new in v2.6.2:**
-- ✅ Interactive editor selection with installation status
-- ✅ Support for multiple editors (VS Code, CLI/generic, easily extensible)
-- ✅ Always-prompt workflow (no auto-detection)
-- ✅ YAML-driven editor profiles for zero-config new editor support
-- ✅ Single global installation (no per-workspace setup)
-- ✅ Automatic cleanup of old files
-- ✅ Skills + instructions now globally managed
+**What's new in v2.7.0:**
+- 🧠 **Framework-wide refinement** — Complete review and hardening of all skills, standards, rules, prompts, and conventions.
+- 🧪 **Tests are never auto-executed** — Every agent now informs you of the exact command to run instead of executing tests itself. You control when tests run.
+- 🔀 **Stacked PRs are manual** — DevFlow prepares branches and provides the commands, but you decide if and when to push and create PRs.
+- 📋 **Smarter Stack Mode** — The Planner only asks about stacked PRs for large features (>5 tasks or >3 layers). Small features proceed directly.
+- 🎯 **Conditional standard loading** — REST API and UI Design standards are only applied when relevant to your feature type.
+- 🔒 **Stronger Scope-Locking** — All agents now have explicit boundaries and use INFO comments for findings outside their scope.
+- 📦 **Single Source of Truth** — Eliminated duplication across the framework. Rules, memory conventions, and procedures each have one canonical source.
+- 🌐 **Technology agnostic** — All standards and guides are now free of technology-specific references. Works with any stack.
+- 🏗️ **Standalone agents refined** — Refactorer, Bug-Fixer, and Feature Agent now have structured question templates, complexity gates, and plan-before-approval workflows.
+
 ### Interactive Editor Selection
 
 When you run the installer, you'll see a prompt listing all available editor profiles:
@@ -82,7 +85,7 @@ The installer:
 
 Reload or restart your selected editor if needed, then follow the installer's post-install message.
 
-See [CHANGELOG.md](CHANGELOG.md#breaking-changes) for detailed migration notes.
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 ---
 
@@ -94,16 +97,18 @@ DevFlow is a **multi-agent framework** that simulates a professional engineering
 |-------|--------------|----------------|--------|
 | 1 | 🧠 **Brainstormer** | Clarifying questions, goals, constraints, edge cases | Problem Statement |
 | 2 | 🧩 **Architect** | Requirements analysis, system design, **Stack Profile** | Architecture spec |
-| 3 | 📋 **Planner** | Task breakdown + **complete test code per task** | Plan with ready-to-paste tests |
-| ⏸️ | — | **Confirmation Gate** — waits for `/devflow-implement` | — |
-| 4 | ⚙️ **Implementer** | 🔴→🟢 Red→Green TDD cycle per task (create failing tests from plan → write production code → pass) | Production code + passing tests |
+| 3 | 📋 **Planner** | Task breakdown + **complete test code per task** + HTML mockups (UI) | Plan with ready-to-paste tests |
+| ⏸️ | — | **Confirmation Gate** — waits for user approval | — |
+| 4 | ⚙️ **Implementer** | 🔴→🟢 Red→Green TDD cycle per task (creates tests, writes production code, informs user) | Production code + test files |
 | 5 | 🔍 **Reviewer** | Code quality, security (OWASP), architecture validation | Code review findings |
 | 6 | 🐞 **Debugger** | Root cause analysis (never guesses) | Debug logs + fixes |
-| 7 | 🚀 **Finalizer** | Verify tests pass, generate summary, clean memory | Final report |
+| 7 | 🚀 **Finalizer** | Verifies completion, generates summary, cleans memory | Final report |
 | — | 🧪 **Tester** *(manual helper)* | Creates a specific failing test from the plan on demand | Failing test file |
 | — | 🔧 **Refactorer** *(standalone)* | Scope-locked code improvement without behavior change | Refactor report |
 | — | 🩹 **Bug-Fixer** *(standalone)* | Reproduce → Isolate → Fix reported bugs | Bug-fix report |
 | — | ⚡ **Feature Agent** *(standalone)* | Lightweight TDD cycle for small-medium features | Feature report |
+
+> **Important:** DevFlow agents **never execute test commands**. They create test files and tell you the exact command to run. You maintain full control over test execution. PRs are never created automatically — you decide if and when to push branches and open pull requests.
 
 Each role has **clear responsibilities**, **strict role separation**, and **persistent memory** between phases.
 
@@ -115,18 +120,18 @@ Each role has **clear responsibilities**, **strict role separation**, and **pers
 ```
 @devflow Build a REST API for managing users
 ```
-Runs all phases: Brainstorm → Architect → Plan+TDD → ⏸️ Confirm → Tester (Red Phase) → Implementer (Green Phase) → Review → Debug → Finalize
+Runs all phases: Brainstorm → Architect → Plan+TDD → ⏸️ Confirm → Implement (Red→Green TDD) → Review → Debug → Finalize
 
 ### Individual phases via slash commands
 ```
 /devflow-brainstorm   Clarify requirements and define scope
 /devflow-architect    Design a component or system
-/devflow-plan         Break down a feature (includes test code)
+/devflow-plan         Break down a feature (includes test code + UI mockups)
 /devflow-implement    Start implementation (Red→Green TDD cycle per task)
 /devflow-test         Manual helper: create a specific failing test from the plan
-/devflow-review       Review code quality & security
-/devflow-debug        Debug a failing test
-/devflow-finalize     Generate final summary and verify all tests pass
+/devflow-review       Review code quality & security (cycle or standalone)
+/devflow-debug        Debug a failing test (cycle or standalone)
+/devflow-finalize     Generate final summary and verify completion
 ```
 
 ### Standalone agents (no full lifecycle needed)
@@ -158,20 +163,21 @@ Your Request
 │  • 🧪 Tests for this Task (per task):    │
 │    - Complete test code (ready to paste) │
 │    - All imports, mocks, assertions      │
-│    - Exact run command                   │
+│    - Exact run command (informs user)    │
+│  • 🎨 HTML mockups (UI features)         │
 └──────┬───────────────────────────────────┘
        ▼
   ⏸️  CONFIRMATION GATE
   ──────────────────────
-  Run: @devflow implement
+  Approve the plan to proceed
        │
        ▼
 ┌──────────────────────────────────────────┐
 │ ⚙️ Implementer (per task)                 │
-│  🔴 Red: create test file from plan →   │
-│          run → verify FAIL               │
+│  🔴 Red: create test file from plan →    │
+│          inform user of run command      │
 │  🟢 Green: write production code →       │
-│            run → verify PASS             │
+│           inform user of verify command  │
 └──────┬─────────────────────┬─────────────┘
        │                     │
        ▼                     ▼
@@ -191,11 +197,10 @@ Your Request
 
 ### Iteration Rules
 
-- **Tests FAIL** → Debugger → Implementer (retry)
-- **Review BLOCK** → Implementer (fix issues)
+- **Tests FAIL** → Debugger → Implementer (retry, max 3 attempts)
+- **Review BLOCK** → Implementer (fix issues, max 3 iterations)
 - **Architecture flaw** → Architect (redesign)
 - **Plan needs adjustment** → Planner (revise)
-- Max 3 retries per phase before escalating
 
 ---
 
@@ -258,8 +263,8 @@ DevFlow is installed **globally** in VS Code, available in **all workspaces**:
 | Directory | Description |
 |-----------|-------------|
 | [`.agents/skills/`](.agents/skills/) | Core logic and workflows for each agent. Each agent has its own `SKILL.md`. |
-| [`.agents/skills/shared/`](.agents/skills/shared/) | Shared rules, memory conventions, and stack detection logic. |
-| [`.agents/skills/shared/standards/`](.agents/skills/shared/standards/) | Private engineering standards library (SOLID, Security, UI, etc.). |
+| [`.agents/skills/shared/`](.agents/skills/shared/) | Shared rules (`rules.md`), memory conventions, stack detection, and output format. |
+| [`.agents/skills/shared/standards/`](.agents/skills/shared/standards/) | Private engineering standards library — 7 standards with conditional loading. |
 | [`.github/prompts/`](.github/prompts/) | Prompt templates for the agents, used by the editor to trigger specific behaviors. |
 | [`editor-profiles/`](editor-profiles/) | YAML definitions for supported editors, including path and tool mappings. |
 | [`docs/`](docs/) | Architecture diagrams, flow definitions, and internal documentation. |
@@ -274,7 +279,7 @@ DevFlow **detects your workspace's tech stack dynamically** by analyzing the con
 
 Rather than relying on hardcoded lists, agents read files like `package.json`, `*.csproj`, `pyproject.toml`, `go.mod`, or `build.gradle` to extract the full technology profile—including frameworks, ORMs, linters, and test runners.
 
-Works with **any** language and framework out of the box.
+Works with **any** language and framework out of the box. All engineering standards are technology-agnostic with illustrative examples that adapt to your detected stack.
 
 ---
 
@@ -346,30 +351,31 @@ tests/          # Integration and e2e tests
 - `cn()` from `src/lib/utils.ts` — class name merging  
 ```
 
-> **Strongly recommended:** Create an `AGENTS.md` file in your project root describing your stack, folder structure, naming conventions, and test tooling. DevFlow reads it automatically at the start of every Architect phase and skips general codebase exploration — significantly speeding up analysis and improving output accuracy. The more complete it is, the better DevFlow performs. See the format below.
+> **Strongly recommended:** Create an `AGENTS.md` file in your project root describing your stack, folder structure, naming conventions, and test tooling. DevFlow reads it automatically at the start of every Architect phase and skips general codebase exploration — significantly speeding up analysis and improving output accuracy. The more complete it is, the better DevFlow performs.
 
 ---
 
 ## 📚 Key Features
 
-✅ **TDD by Default** — Plan includes complete test code per task; Tester executes Red phase, Implementer executes Green phase.
-✅ **UI Mockups** — Architect generates ASCII wireframes with component annotations for every frontend feature  
+✅ **TDD by Default** — Plan includes complete test code per task; Implementer executes Red→Green cycle and informs you of the exact commands to verify. You run the tests.  
+✅ **UI Mockups** — Planner generates HTML wireframes with component annotations for every frontend feature  
 ✅ **API Contracts** — Every endpoint defined explicitly (method, path, request/response shapes, error codes) before any code is written; Reviewer validates the implementation against the contract  
 ✅ **Risk Assessment** — Architect rates risk per design decision (HIGH/MEDIUM/LOW); Planner converts HIGH risks into task-level flags with rollback steps  
 ✅ **Definition of Done** — Brainstormer captures explicit success criteria; Finalizer verifies each one before closing the cycle  
-✅ **Confirmation Gate** — Implementation never starts automatically; you decide when to proceed with `@devflow implement`  
+✅ **Confirmation Gate** — Implementation never starts automatically; you approve the plan before any code is written  
 ✅ **Architecture First** — No code without a design spec  
-✅ **Never Guesses** — Debugger performs systematic root cause analysis; patterns are persisted across cycles in `/memories/repo/debug-patterns.md`  
+✅ **Never Guesses** — Debugger performs systematic root cause analysis  
 ✅ **Accessibility Built-in** — Planner adds a11y checklist (WCAG 2.1 AA) to every UI task; Reviewer validates it  
-✅ **Private Engineering Standards** — Operates as a Senior Engineering team applying 7 core standards (SOLID, Clean Architecture, Security, Performance, REST API, Project Design, UI Design) strictly during agent execution to guarantee high-quality output.  
+✅ **Private Engineering Standards** — Operates as a Senior Engineering team applying 7 core standards (SOLID, Clean Architecture, Security, Performance, REST API, Project Design, UI Design) with conditional loading based on feature type  
 ✅ **No External Tools** — Pure VS Code + Copilot (no npm packages, no docker, nothing)  
-✅ **Dynamic Stack Detection** — Tech-stack agnostic. Agents dynamically analyze your config files (package.json, pyproject.toml, go.mod, etc.) to extract the exact framework, ORM, and testing tools without relying on hardcoded mappings.  
-✅ **AGENTS.md Support** — Place an `AGENTS.md` in your project root (or `docs/`) describing your stack, structure, and conventions. DevFlow reads it automatically at the start of every Architect phase and skips general codebase exploration, significantly speeding up the analysis.  
-✅ **Stacked PRs** — Optional Stack Mode splits large features into layered PRs (~400 LOC each) for easier code review. Automatic branch management and PR creation via `gh` CLI  
+✅ **Dynamic Stack Detection** — Tech-stack agnostic. Agents dynamically analyze your config files to extract the exact framework, ORM, and testing tools  
+✅ **AGENTS.md Support** — Place an `AGENTS.md` in your project root; DevFlow reads it and skips general exploration  
+✅ **Stacked PRs (Manual)** — Optional Stack Mode splits large features into layered branches. DevFlow prepares branches and provides commands; you create PRs manually when ready  
 ✅ **Auto-Review** — Every implementation is automatically code-reviewed (includes API contract, accessibility, dependency audit)  
-✅ **Documented Decisions** — Specs, plans, reviews, and debug logs saved to `docs/devflow/`  
+✅ **Documented Decisions** — Specs, plans, reviews, debug logs, refactor reports, bug-fix reports, and feature summaries saved to `docs/devflow/`  
 ✅ **Actionable Next Steps** — Finalizer outputs follow-up features as user stories, not vague suggestions  
 ✅ **Role Separation** — Each agent has clear, strict boundaries  
+✅ **You Control Execution** — DevFlow never runs tests, never creates PRs automatically, and always asks for approval before applying changes  
 
 ---
 
@@ -385,9 +391,9 @@ tests/          # Integration and e2e tests
 ## 📖 Documentation
 
 - **[Wiki](../../wiki)** — Detailed guides for each phase
-- **[Examples](./examples)** — Real-world use cases
 - **[Contributing](./CONTRIBUTING.md)** — How to extend DevFlow
 - **[Architecture](./docs/ARCHITECTURE.md)** — Internal design
+- **[Changelog](./CHANGELOG.md)** — Version history
 
 ---
 

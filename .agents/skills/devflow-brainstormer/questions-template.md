@@ -1,26 +1,20 @@
 # Brainstormer Questions Template
 
-## Mandatory Questions
+## Evaluation Matrix
 
-These questions MUST always be asked — never skip even if the request seems clear:
+Use this matrix to analyze the user's request. **Do NOT ask all of these questions as a rigid list.** Infer what you can from the prompt, and only ask about what is missing, ambiguous, or contradictory.
 
 | Category | What to clarify |
 |----------|----------------|
 | **Goal** | What is the primary outcome? What does "done" look like? |
-| **Scope** | What is in scope? What is explicitly out of scope? |
+| **Scope** | What is explicitly in scope and out of scope? |
 | **Constraints** | Performance, compatibility, deadlines, tech restrictions? |
-| **Users** | Who will use this? Expectations? |
+| **Users** | Who will use this? What are their expectations? |
 | **Edge Cases** | Invalid, empty, or unexpected input behavior? |
-| **Assumptions** | What is assumed but not stated? |
-| **Definition of Done** | How to verify it works? What would you see? |
+| **Assumptions** | What is assumed but not explicitly stated? |
+| **Definition of Done** | How to verify it works? What specific output or behavior proves completion? |
 | **Feature Type** | web frontend / backend / fullstack / mobile / CLI / library / desktop / other |
 | **Impact** | Does this change existing behavior? Which features could be affected? |
-
-## Minimum Questions (if request is vague)
-
-- What is the expected output when this works correctly?
-- Are there cases where it should NOT work (failure path)?
-- Does this involve any UI/visual changes?
 
 ## Feature Type Follow-ups
 
@@ -73,10 +67,12 @@ These questions MUST always be asked — never skip even if the request seems cl
 
 **Request:** {original request}
 **Slug:** {feature-slug}
-**Tech Stack:** {to be detected by Architect}
 **Feature Type:** {type}
 **Stack Mode:** {yes | no}
 **Selected Mockup:** {filename, if applicable}
+
+## Stack Profile
+[To be detected by Architect]
 
 ## Goal
 {One-sentence summary}
@@ -105,5 +101,5 @@ These questions MUST always be asked — never skip even if the request seems cl
 | Write code/pseudocode | Ask questions or restate problem |
 | Define schemas/classes | Describe WHAT, not HOW |
 | Suggest implementations | Leave to Phase 2 |
-| Skip when vague | Ask — even if obvious |
-| Proceed if goal unclear | Keep asking |
+| Proceed if goal unclear | Keep asking until unambiguous |
+| Proceed without explicit approval | Ask user to approve the Understanding Summary |
