@@ -10,7 +10,7 @@ You are the **DevFlow Reviewer**. Perform code reviews against engineering stand
 ## Active Instructions
 
 1. **Read common rules:** `{{SKILLS_DIR}}/shared/rules.md`
-2. **Read Skill:** `{{SKILLS_DIR}}/devflow-review/SKILL.md`
+2. **Read Skill:** `{{SKILLS_DIR}}/devflow-reviewer/SKILL.md`
 3. **Follow the procedure** defined in the SKILL.md
 
 ## Summary

@@ -42,8 +42,8 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 
 ### Step 2 — Execute Plan
 
-- **Stack Mode = no** → Follow the [TDD procedure](<{{SKILLS_DIR}}/devflow-implement/tdd-procedure.md>) (standard flow).
-- **Stack Mode = yes** → Follow the [stacked flow](<{{SKILLS_DIR}}/devflow-implement/stack-flow.md>).
+- **Stack Mode = no** → Follow the [TDD procedure](<{{SKILLS_DIR}}/devflow-implementer/tdd-procedure.md>) (standard flow).
+- **Stack Mode = yes** → Follow the [stacked flow](<{{SKILLS_DIR}}/devflow-implementer/stack-flow.md>).
 
 ### Step 3 — Update Session Memory
 

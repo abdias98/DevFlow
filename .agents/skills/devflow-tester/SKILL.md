@@ -1,19 +1,3 @@
-## Análisis del Tester
-
-| # | Problema | Consecuencia |
-|---|----------|--------------|
-| 1 | **Step 3: Ejecuta tests** ("Run each task's test command") | Viola la política de no ejecutar tests definida en `rules.md`. |
-| 2 | **Rutas relativas** (`../shared/`) | Inconsistencia con el estándar `{{SKILLS_DIR}}`. |
-| 3 | **No carga `rules.md` ni estándares** | No tiene acceso a las reglas comunes ni a los estándares de código. |
-| 4 | **Step 5 menciona "Phase 4 start"** | Incorrecto. El Tester no inicia la fase 4 (eso lo hace el Implementer). Es un helper manual. |
-| 5 | **Falta Flow Artifacts Exception** | No aclara que los tests creados son parte del scope aprobado. |
-| 6 | **Descripción ambigua** | "resume mid-implementation" sugiere que reemplaza al Implementer, cuando solo es un helper para recrear tests. |
-
----
-
-## Versión mejorada
-
-```markdown
 ---
 name: devflow-test
 description: "Manual helper for recreating failing test files from the plan on demand. NOT invoked automatically — the Implementer handles the Red→Green cycle internally. USE WHEN: need to recreate a lost test file, verify a test exists, manually start the Red phase, debug a missing test file."

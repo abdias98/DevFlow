@@ -59,7 +59,7 @@ Based on the plan's file map and the Implementer's commit messages in session me
 
 For each changed file:
 1. Read the complete file (not just diff) for context.
-2. Apply the [review checklist](<{{SKILLS_DIR}}/devflow-review/review-checklist.md>).
+2. Apply the [review checklist](<{{SKILLS_DIR}}/devflow-reviewer/review-checklist.md>).
 3. Record each finding: Severity, File+Line, Issue, Suggestion.
 
 ### Step 4 — Generate Review Document
@@ -109,7 +109,7 @@ Based on the agent's artifact (plan/report) and commit messages, identify which 
 
 For each changed file:
 1. Read the complete file for context.
-2. Apply the [review checklist](<{{SKILLS_DIR}}/devflow-review/review-checklist.md>), focusing on the standalone standards section.
+2. Apply the [review checklist](<{{SKILLS_DIR}}/devflow-reviewer/review-checklist.md>), focusing on the standalone standards section.
 3. Record each finding: Severity, File+Line, Issue, Suggestion.
 
 ### Step 4 — Generate Review Document

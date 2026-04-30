@@ -29,7 +29,7 @@ These files live only for the duration of a DevFlow session. They are not versio
 **Request:** {user's original request}
 **Slug:** {feature-slug}
 **Feature Type:** {web frontend | backend | fullstack | mobile | CLI | library}
-**Stack Mode:** {yes | no}   <!-- "yes" if the project already has a stack detected; "no" if this is a new project with no existing codebase -->
+**Stack Mode:** {yes | no}   <!-- "yes" to split work into stacked branches/PRs per architectural layer (set by the Planner); "no" for a single-branch PR -->
 **Selected Mockup:** {filename, if applicable}
 
 ## Stack Profile

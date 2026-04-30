@@ -10,7 +10,7 @@ agent: workspace
 ## Active Instructions
 
 1. **Read common rules:** `{{SKILLS_DIR}}/shared/rules.md`
-2. **Read Skill:** `{{SKILLS_DIR}}/devflow-test/SKILL.md`
+2. **Read Skill:** `{{SKILLS_DIR}}/devflow-tester/SKILL.md`
 3. **Follow the procedure** defined in the SKILL.md
 
 ## Summary

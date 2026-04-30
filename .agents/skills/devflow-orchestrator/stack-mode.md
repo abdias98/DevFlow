@@ -6,13 +6,13 @@ When `Stack Mode: yes` is set in session memory (saved by the Planner), the life
 |-------|--------------------|---------| 
 | Phase 3 (Planner) | Single task list | Tasks grouped into Stacks with branches assigned |
 | Phase 4 (Implementer) | Linear Red→Green | Per-Stack: branch checkout → Red→Green per task → commit → next Stack |
-| Phase 5 (Reviewer) | `git diff HEAD~N..HEAD` | `git diff {stack-base}..HEAD` per Stack |
+| Phase 5 (Reviewer) | Review changed files (ask user for diff if needed) | Review changed files per Stack (ask user for diff if needed) |
 | Phase 6 (Debugger) | Fix on current branch | Fix on current Stack branch — stack-agnostic internally |
 | Phase 7 (Finalizer) | Single summary | Summary includes table of all Stack branches created |
 
 ## Branch Creation
 
-The Planner provides the git commands for the user to create branches locally. The user may also choose to let the Implementer create them automatically during Phase 4. Example:
+The Planner provides the git commands for the user to create branches locally. The user runs them manually. Example:
 
 ```bash
 git checkout -b feat/{slug}/stack-1 main

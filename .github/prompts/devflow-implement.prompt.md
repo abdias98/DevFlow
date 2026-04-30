@@ -10,7 +10,7 @@ Run the Implementer phase of the DevFlow lifecycle.
 ## Active Instructions
 
 1. **Read common rules:** `{{SKILLS_DIR}}/shared/rules.md`
-2. **Read Skill:** `{{SKILLS_DIR}}/devflow-implement/SKILL.md`
+2. **Read Skill:** `{{SKILLS_DIR}}/devflow-implementer/SKILL.md`
 3. **Follow the procedure** defined in the SKILL.md
 
 ## Summary

@@ -52,7 +52,7 @@ Systematic analysis in order:
 4. Check dependencies (imports, services, configs).
 5. Check state (setup/teardown, initialization).
 6. Compare with plan code.
-7. Check the [debug template](<{{SKILLS_DIR}}/devflow-debug/debug-template.md>) for common patterns by area.
+7. Check the [debug template](<{{SKILLS_DIR}}/devflow-debugger/debug-template.md>) for common patterns by area.
 
 Also check `/memories/repo/debug-patterns.md` if it exists for project-specific patterns.
 
@@ -80,7 +80,7 @@ Ask the user to verify the fix:
 
 ### Step 6 — Document
 
-1. **Use `create_file` to save** the debug log to `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md` following the [debug template](<{{SKILLS_DIR}}/devflow-debug/debug-template.md>).
+1. **Use `create_file` to save** the debug log to `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md` following the [debug template](<{{SKILLS_DIR}}/devflow-debugger/debug-template.md>).
 2. If the root cause pattern is reusable, suggest the user append it to `/memories/repo/debug-patterns.md`.
 
 ### Step 7 — Update Memory

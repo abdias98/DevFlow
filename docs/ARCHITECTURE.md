@@ -10,13 +10,13 @@ DevFlow/
 │   ├── devflow-orchestrator/    # Main orchestrator agent
 │   ├── devflow-brainstormer/
 │   ├── devflow-architect/
-│   ├── devflow-plan/
-│   ├── devflow-test/            # Manual helper only (not an automatic phase)
-│   ├── devflow-implement/
-│   ├── devflow-review/
-│   ├── devflow-debug/
-│   ├── devflow-finalize/
-│   ├── devflow-bug-fix/         # Standalone bug fixing agent
+│   ├── devflow-planner/
+│   ├── devflow-tester/          # Manual helper only (not an automatic phase)
+│   ├── devflow-implementer/
+│   ├── devflow-reviewer/
+│   ├── devflow-debugger/
+│   ├── devflow-finalizer/
+│   ├── devflow-bug-fixer/       # Standalone bug fixing agent
 │   ├── devflow-feature/         # Standalone feature agent
 │   ├── devflow-refactor/        # Standalone refactoring agent
 │   └── shared/                  # Common rules, conventions, and standards
@@ -159,7 +159,7 @@ Transient state for active development cycle:
 - `phase-state.md` — Completion tracking, iteration counter, iteration log
 - `test-registry.md` — Test names, FAIL/PASS status
 
-See [Memory Conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>) for canonical file formats, rules, and Quick Reference.
+See [Memory Conventions](.agents/skills/shared/memory-conventions.md) for canonical file formats, rules, and Quick Reference.
 
 ### Persistent Artifacts (`docs/devflow/`)
 Versioned with git, survive across conversations:
