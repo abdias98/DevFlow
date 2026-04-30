@@ -1,29 +1,26 @@
 ---
-description: "Manually trigger the red phase of a specific task: create the failing test from the plan and verify it FAILs. Use only when resuming mid-implementation or debugging a specific test."
+description: "Manually trigger the red phase of a specific task: create the failing test from the plan. Use only when resuming mid-implementation or debugging a specific test. Never executes tests."
 agent: workspace
 ---
 
 # DevFlow — Test Phase (Red Phase Only)
 
-> ⚠️ Normally the red→green cycle runs automatically inside the Implementer. Use this prompt only to manually create and verify a failing test for a specific task.
+> Normally the Red→Green cycle runs inside the Implementer. Use this prompt only to manually create a failing test for a specific task.
 
-## 🧩 Active Instructions
+## Active Instructions
 
-To perform this task, you MUST first read and follow the full instructions in your skill file:
+1. **Read common rules:** `{{SKILLS_DIR}}/shared/rules.md`
+2. **Read Skill:** `{{SKILLS_DIR}}/devflow-test/SKILL.md`
+3. **Follow the procedure** defined in the SKILL.md
 
-1. **Read Skill:** `{{SKILLS_DIR}}/devflow-tester/SKILL.md`
-2. **Follow Procedure:** Load Plan → Create Failing Test → Instruct User
+## Summary
 
-## Instructions
+1. Read the plan and locate the task's `🧪 Tests for this Task` section.
+2. Create the test file exactly as written in the plan.
+3. Inform the user of the exact command to run the test — **do NOT run it**.
+4. Register the test in session memory.
 
-1. Read the plan from `docs/devflow/plans/` or session memory
-2. Locate the task's `🧪 Tests for this Task` section
-3. Copy the complete test code exactly as written in the plan — do NOT redesign it
-4. Create the test file using `create_file` or add to existing with `replace_string_in_file`
-5. Run the exact command from the plan's test section and verify the test **FAILs**
-6. Register the test in `/memories/session/devflow/test-registry.md` (status: FAIL)
-
-**Critical:** NEVER write production code here — only the test file.
+**Critical:** NEVER write production code. NEVER run tests. This is a helper for creating test files only.
 
 ## Task to Test
 

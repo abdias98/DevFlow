@@ -5,24 +5,24 @@ agent: workspace
 
 # DevFlow — Architect Phase
 
-Run ONLY the Architect phase of the DevFlow lifecycle.
+Run the Architect phase of the DevFlow lifecycle.
 
-## 🧩 Active Instructions
+## Active Instructions
 
-To perform this task, you MUST first read and follow the full instructions in your skill file:
+1. **Read common rules:** `{{SKILLS_DIR}}/shared/rules.md`
+2. **Read Skill:** `{{SKILLS_DIR}}/devflow-architect/SKILL.md`
+3. **Follow the procedure** defined in the SKILL.md
 
-1. **Read Skill:** `{{SKILLS_DIR}}/devflow-architect/SKILL.md`
-2. **Follow Procedure:** Analysis → Design → ASCII Mockups → Stack Profile → Spec Persist
+## Summary
 
-## Summary of Workflow (Ref: SKILL.md)
+1. Read the Problem Statement from session memory (`context.md`).
+2. Explore the codebase (or use `AGENTS.md` if present).
+3. Define architecture: components, data structures, data flow, integration points.
+4. Save the design spec to `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`.
+5. Update `context.md` with Stack Profile and Architect Findings.
+6. If invoked as part of the full lifecycle, hand control back to the Orchestrator. If invoked standalone, present the spec to the user and STOP.
 
-1. Understand the requirements from the user's input
-2. Explore the codebase to understand existing patterns and conventions
-3. Define system architecture: components, data flow, data structures
-4. Produce a design spec document in `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`
-5. Get user confirmation before saving
-
-Read session memory first if prior context exists (`/memories/session/devflow/`).
+**NEVER** write implementation code — only architecture and design.
 
 ## Feature/Requirement
 

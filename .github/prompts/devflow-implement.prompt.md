@@ -1,31 +1,27 @@
 ---
-description: "Write minimal production code to make failing tests pass, following the plan step-by-step. Auto-invokes Reviewer when done. Phase 4 of the DevFlow lifecycle."
+description: "Write minimal production code to make failing tests pass, following the plan step-by-step. Never executes tests — informs the user with the exact command. Auto-invokes Reviewer when done. Phase 4 of the DevFlow lifecycle."
 agent: workspace
 ---
 
 # DevFlow — Implement Phase
 
-Run ONLY the Implementer phase of the DevFlow lifecycle.
+Run the Implementer phase of the DevFlow lifecycle.
 
-## 🧩 Active Instructions
+## Active Instructions
 
-To perform this task, you MUST first read and follow the full instructions in your skill file:
+1. **Read common rules:** `{{SKILLS_DIR}}/shared/rules.md`
+2. **Read Skill:** `{{SKILLS_DIR}}/devflow-implement/SKILL.md`
+3. **Follow the procedure** defined in the SKILL.md
 
-1. **Read Skill:** `{{SKILLS_DIR}}/devflow-implementer/SKILL.md`
-2. **Follow Procedure:** Red-Green-Refactor → Mini-Review → Commit
+## Summary
 
-## Summary of Workflow (Ref: SKILL.md)
-
-1. Load context from session memory (plan path, test registry, phase state)
-2. Read the plan document
-3. Execute each step in order: modify/create files as specified
-4. Run the associated failing tests and verify your changes make them PASS
-5. Commit at each task checkpoint with the pre-written message
-6. After ALL steps complete, **auto-invoke devflow-review**
+1. Load context from session memory (plan path, Stack Mode, test registry).
+2. For each task in the plan: Red Phase (create test file, inform user) → Green Phase (write production code, inform user).
+3. **NEVER run tests.** Provide the exact command and let the user execute it.
+4. Commit at each task checkpoint with the pre-written message.
+5. After ALL tasks complete, auto-invoke the Reviewer.
 
 **Critical:** Write MINIMAL code to pass tests. Do NOT add features, refactor, or "improve" beyond the plan.
-
-Read session memory first (`/memories/session/devflow/`).
 
 ## Plan or Task to Implement
 

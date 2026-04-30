@@ -1,30 +1,27 @@
 ---
-description: "Finalization phase — verify all tests pass, produce clean final summary, explain how to run/test, list possible improvements, and clean session memory. Phase 7 of the DevFlow lifecycle."
+description: "Finalization phase — verifies all tests pass and BLOCK findings are resolved, produces clean final summary, explains how to run/test, lists possible improvements, and cleans session memory. Phase 7 of the DevFlow lifecycle. Never executes tests."
 agent: workspace
 ---
 
 # DevFlow — Finalize Phase
 
-Run ONLY the Finalizer phase of the DevFlow lifecycle.
+Run the Finalizer phase of the DevFlow lifecycle.
 
-## 🧩 Active Instructions
+## Active Instructions
 
-To perform this task, you MUST first read and follow the full instructions in your skill file:
+1. **Read common rules:** `{{SKILLS_DIR}}/shared/rules.md`
+2. **Read Skill:** `{{SKILLS_DIR}}/devflow-finalize/SKILL.md`
+3. **Follow the procedure** defined in the SKILL.md
 
-1. **Read Skill:** `{{SKILLS_DIR}}/devflow-finalizer/SKILL.md`
-2. **Follow Procedure:** Full Test Suite → Cleanup Memory → Summary → Improvements
+## Summary
 
-## Summary of Workflow (Ref: SKILL.md)
+1. Ask the user to run the full test suite — if any test fails, route to Debugger.
+2. Verify all BLOCK review findings are resolved and DoD criteria are met.
+3. Collect all artifacts (files changed, tests added, documents created).
+4. Generate and save the final summary to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`.
+5. Ask for user confirmation, then clean session memory.
 
-1. Run the full test suite — STOP and route to Debugger if any test fails
-2. Check the review document — STOP and route to Implementer if BLOCK findings remain
-3. Collect all files created/modified during this cycle
-4. Generate the final clean solution summary
-5. Provide "How to Run / Test" instructions (exact commands)
-6. List possible future improvements
-7. Clean session memory (`/memories/session/devflow/`)
-
-Read session memory first (`/memories/session/devflow/`) for full cycle context.
+**NEVER execute tests.** Ask the user to run them and report results.
 
 ## Feature or Context
 

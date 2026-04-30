@@ -11,6 +11,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.7.0] — 2026-04-29
+
+### 🧠 Framework-Wide Refinement
+
+Complete review and hardening of the entire DevFlow framework to enforce consistency, eliminate duplication, reinforce the "never execute commands" policy, and ensure full technology agnosticism across all agents, standards, and prompts.
+
+### ✨ Added
+
+- **Scope-Locking reinforcements** — All skills and rules now define explicit boundaries for file modifications, with mandatory INFO comments for violations found outside the approved scope.
+- **Flow Artifacts Exception** — Plan documents, refactor reports, bug-fix reports, feature summaries, and all other artifacts defined in Memory Conventions are always allowed, regardless of declared scope.
+- **Limited Scope sections** — Added "Applying This Standard with a Limited Scope" to all 7 engineering standards (SOLID, Clean Architecture, Performance, Security, REST API, UI Design, Project Design).
+- **Complexity Gates** — Refactorer and Bug-Fixer now assess complexity before proceeding and recommend the full `/devflow` cycle for large changes.
+- **Questions templates** — Feature Agent and Bug-Fixer now have structured question templates (like Brainstormer and Refactorer).
+- **Quick Reference table** — Added to `memory-conventions.md` showing exactly which agent reads/writes each session file.
+
+### 🔄 Changed
+
+- **Single Source of Truth** — Eliminated duplication across the framework. `memory-conventions.md` is the canonical source for paths and formats. `rules.md` is the canonical source for shared rules. All other files reference these instead of copying.
+- **Technology agnosticism** — Removed all technology-specific references (POCOs/POJOs, HttpContext, DbSet, ILogger\<T\>, Serilog, npm/pip commands, Android-specific attributes) from standards and guides. All examples are now generic or explicitly marked as illustrative.
+- **Stack Mode is now conditional** — The Planner only asks the Stack Mode question for large features (>5 tasks or >3 layers). For small features, it proceeds directly to planning.
+- **PRs are always manual** — The Planner and Implementer never create PRs automatically. They provide branch creation commands and the user decides if and when to push and open PRs.
+- **Standard loading is conditional** — REST API Design is only loaded when API endpoints are involved. UI Design is only loaded when the feature has a UI. All skills follow this pattern.
+- **All 12 prompts simplified** — Reduced from ~85 lines to ~45 lines on average. Removed duplication of procedures already defined in SKILL.md files. Added references to `rules.md`.
+- **Architecture spec updated** — `ARCHITECTURE.md` now reflects the actual directory structure, standalone agents, conditional standard loading, and manual PR policy.
+- **Convention instructions simplified** — `devflow-conventions.instructions.md` reduced from ~350 to ~120 lines. Templates and session memory formats now link to canonical sources instead of duplicating them.
+- **Exploration guide simplified** — Stack-specific patterns replaced with generic area-based patterns (Backend, Frontend, Mobile, CLI/Library).
+- **Review checklist simplified** — Reduced from ~150 to ~80 lines. Technology-specific examples removed. Universal/UI/API checks separated.
+
+### 🔧 Fixed
+
+- **Test execution policy enforced globally** — Replaced all instances of "run the test", "execute the command", and "verify tests PASS" with "inform the user of the command" across all skills (Implementer, Debugger, Finalizer, Tester). Every skill now has an explicit "NEVER execute commands" rule.
+- **Plan persistence before approval** — Refactorer, Feature Agent, and Bug-Fixer now save their plan/report to the artifact path BEFORE asking for user approval, enabling review of the persisted file.
+- **Inconsistent step naming unified** — All skills with similar steps now use identical names (e.g., "Brainstorming (Problem Understanding)" in Refactorer, Feature Agent, and Bug-Fixer).
+- **Confirmation Gate duplication removed** — The Implementer no longer asks for a second confirmation (the Orchestrator handles this at the Confirmation Gate).
+- **"Spec PR" concept removed** — Eliminated all references to an undefined "Spec PR" from Planner and Orchestrator.
+- **Tester agent aligned** — Removed automatic test execution. Now only creates test files and informs the user.
+- **All routes use `{{SKILLS_DIR}}`** — Replaced relative paths (`../shared/`) with the canonical variable across all skills, templates, and guides.
+- **Stack Flow and TDD Procedure aligned** — Both now instruct the user to run tests instead of executing them. Stack Flow no longer creates PRs automatically.
+
+### 📚 Documentation
+
+- `rules.md` — Scope-Locking precision, Flow Artifacts Exception, INFO notes format, Approval & Confirmation section.
+- `memory-conventions.md` — Stack Mode field documented, Quick Reference added, directory creation instructions, Scope-Locking note.
+- `standards/solid.md` — v2 with technology-agnostic examples, interactions & tensions, code review checklist, limited scope section.
+- `standards/clean-architecture.md` — v2 with technology-agnostic examples, limited scope section.
+- `standards/performance.md` — v2 with async/resource/caching interactions, checklist, limited scope section.
+- `standards/security.md` — v2 with transport security, data protection at rest, rate limiting, checklist, limited scope section.
+- `standards/rest-api.md` — v2 with idempotency, documentation, security & safety, checklist, limited scope section.
+- `standards/project-design.md` — v2 with Architecture Spec documentation, checklist, limited scope section.
+- `standards/ui-design.md` — v2 with interactions & trade-offs, checklist, limited scope section.
+- `ARCHITECTURE.md` — Updated directory tree, standalone agents, conditional standards, manual PR policy.
+- `CHANGELOG.md` — This entry.
+
+---
+
 ## [2.6.2] — 2026-04-25
 
 ### ✨ Features

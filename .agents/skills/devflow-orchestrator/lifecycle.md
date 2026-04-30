@@ -1,123 +1,85 @@
 # Lifecycle Phase Details
 
-## PHASE 1: BRAINSTORMER (`devflow-brainstorm`)
+This document provides a quick reference for the DevFlow lifecycle phases. For the complete step‑by‑step procedures, refer to each agent's `SKILL.md`.
 
-1. Read user's request carefully
-2. Ask clarifying questions (Feature Type, scope, constraints, Definition of Done)
-3. Identify: Goal, Constraints, Edge Cases, Assumptions
-4. Restate the problem in your own words
-5. **Output:** Problem Statement saved to session memory
-6. **Restriction:** NEVER write code, design, or architecture
-7. **Auto-trigger:** Invoke `devflow-architect` when understanding is complete
-
-## PHASE 2: ARCHITECT (`devflow-architect`)
-
-1. Read Problem Statement from session memory
-2. Check for `AGENTS.md` — if present, skip general exploration
-3. Check repo memory for known pitfalls and project knowledge
-4. Full codebase exploration (if no AGENTS.md)
-5. Define architecture: components, data structures, interfaces, data flow
-6. **Output:** Spec document saved to `docs/devflow/specs/`
-7. **Update memory:** Save tech stack and architecture decisions
-
-## PHASE 3: PLANNING (`devflow-plan`)
-
-1. Read the spec from Phase 2
-2. Ask Stack Mode question (FIRST ACTION — STOP and wait)
-3. Explore the codebase — including test framework, conventions, run commands
-4. **Generate HTML mockup(s)** for UI features — save with `create_file` + show inline
-5. Break down into atomic, ordered tasks with complete code snippets + test code
-6. **Output:** Plan saved to `docs/devflow/plans/` using `create_file`
-
-## ⏸️ CONFIRMATION GATE — After Phase 3
-
-After Planning completes, you MUST ask for confirmation:
-
-| header | question | type |
-|--------|----------|------|
-| `plan_confirmation` | Plan + Test Cases + Mockups complete. Review the plan — proceed to Implementation? | options: ✅ Yes, start Implementation, ✏️ Request changes, ❌ Cancel |
-
-If multiple mockups were generated, include mockup selection:
-
-| header | question | type |
-|--------|----------|------|
-| `mockup_selection` | Multiple mockup proposals generated. Which one to use? | options: {list each mockup file} |
-
-- **✅ Yes** → Invoke `devflow-implement`
-- **✏️ Request changes** → Revise plan, re-ask
-- **❌ Cancel** → Stop
-
-**Do NOT invoke Implementer or write code until user confirms.**
-
-## PHASE 4: IMPLEMENTER (`devflow-implement`)
-
-For each task: **🔴 Red** (create failing test) → **🟢 Green** (write minimal code to pass).
-1. Follow the plan strictly — no speculative refactoring
-2. Commit after each task
-3. **Auto-trigger:** Invoke `devflow-review` after completing implementation
-
-## PHASE 5: REVIEWER (`devflow-review`)
-
-1. Read the diff of implemented code
-2. Compare against spec and plan
-3. Check: code quality, security (OWASP), performance, test coverage
-4. Classify: 🔴 BLOCK / 🟡 WARN / 🟢 INFO
-5. **Output:** Review saved to `docs/devflow/reviews/`
-6. **If BLOCK findings** → Route back to PHASE 4
-
-## PHASE 6: DEBUGGER (`devflow-debug`) — Conditional
-
-Only if tests fail or reviewer detects runtime issues.
-1. Reproduce → Isolate → Explain → Fix → Verify
-2. **Output:** Debug log saved to `docs/devflow/debug-logs/`
-
-## PHASE 7: FINALIZER (`devflow-finalize`)
-
-1. Run full test suite — route to Debugger if failures
-2. Verify all BLOCK findings are resolved
-3. Generate final summary: files changed, tests added, improvements
-4. Clean session memory
-
-## Iteration Rules
+## Phase Flow
 
 ```
-Tests FAIL after implementation  → PHASE 6 (Debugger) → PHASE 4 (retry)
-Reviewer finds BLOCK issues      → PHASE 4 (fix findings)
-Architecture flaw discovered     → PHASE 2 (redesign)
-Plan incomplete or ambiguous     → PHASE 3 (revise)
-Finalizer finds failing tests    → PHASE 6 (Debugger)
-NEVER proceed past Confirmation Gate without explicit user approval
-Maximum 3 iteration loops per phase before escalating to user
+Phase 1: Brainstormer → Phase 2: Architect → Phase 3: Planner → ⏸️ Confirmation Gate → Phase 4: Implementer → Phase 5: Reviewer → Phase 6: Debugger (conditional) → Phase 7: Finalizer
 ```
 
 ---
 
-## Standalone Agents (Outside Lifecycle)
+## Phase Summary
 
-The following agents operate **independently** of the Phase 1–7 lifecycle. They are invoked directly by the user for targeted tasks on existing code.
+| Phase | Agent | Input | Output | Key Rule |
+|-------|-------|-------|--------|----------|
+| 1 | Brainstormer | User request | `context.md` (session memory) | NEVER write code or design |
+| 2 | Architect | `context.md`, codebase | Spec at `docs/devflow/specs/` | Explore before designing |
+| 3 | Planner | Spec, codebase | Plan at `docs/devflow/plans/` + mockups (UI) | Stack Mode gate (conditional) |
+| ⏸️ | **Confirmation Gate** | Plan + mockups | User approval | NEVER proceed without explicit approval |
+| 4 | Implementer | Plan | Code + tests (committed) | Red→Green TDD per task |
+| 5 | Reviewer | Diff, spec, plan | Review at `docs/devflow/reviews/` | BLOCK findings → back to Phase 4 |
+| 6 | Debugger | Test failures, review findings | Debug log at `docs/devflow/debug-logs/` | Only if tests fail or runtime errors |
+| 7 | Finalizer | All artifacts, session memory | Final summary, cleanup | Verify no regressions, clean session |
 
-| Agent | Command | When to use |
-|-------|---------|-------------|
-| 🔧 Refactorer | `/devflow-refactor` | Improve code structure/readability without changing behavior |
-| 🩹 Bug-Fixer | `/devflow-bug-fix` | Fix a reported bug (error message, stack trace, unexpected behavior) |
-| ⚡ Feature Agent | `/devflow-feature` | Implement a small-medium feature without full planning overhead |
+---
+
+## Confirmation Gate
+
+After Phase 3 (Planner), the Orchestrator MUST:
+
+1. Present the plan summary and mockup paths.
+2. If multiple mockups exist → ask the user to select one.
+3. Ask for explicit approval.
+
+| header | question | type |
+|--------|----------|------|
+| `plan_confirmation` | Plan + Test Cases + Mockups complete. Review the plan — proceed to Implementation? | options: ✅ Yes, ✏️ Request changes, ❌ Cancel |
+
+**Do NOT proceed to Phase 4 until the user approves.**
+
+---
+
+## Iteration Rules
+
+```
+Tests FAIL after implementation  → Phase 6 (Debugger) → Phase 4 (retry)
+Reviewer finds BLOCK issues      → Phase 4 (fix findings)
+Architecture flaw discovered     → Phase 2 (redesign)
+Plan incomplete or ambiguous     → Phase 3 (revise)
+Finalizer finds failing tests    → Phase 6 (Debugger)
+```
+
+- Maximum **3 iteration loops** per phase before escalating to the user.
+- NEVER proceed past the Confirmation Gate without explicit user approval.
+
+---
+
+## Standalone Agents
+
+The following agents operate **independently** of the Phase 1–7 lifecycle. They are invoked directly by the user.
+
+| Agent | Command | Use Case |
+|-------|---------|----------|
+| Refactorer | `devflow-refactor` | Improve code structure/readability without changing behavior |
+| Bug-Fixer | `devflow-bug-fix` | Fix a reported bug with reproduction test |
+| Feature Agent | `devflow-feature` | Implement a small-medium feature without full planning overhead |
+| Reviewer | `devflow-review` | Review existing code against standards |
+| Debugger | `devflow-debug` | Diagnose and fix issues (standalone) |
 
 ### Standalone vs Full Lifecycle
 
 | Criterion | Standalone Agent | Full `/devflow` Lifecycle |
 |-----------|-----------------|--------------------------|
 | Scope | Narrow and known | Broad or exploratory |
-| Files affected | ≤5 | >5 or unknown |
-| Architectural impact | None / minimal | Significant |
-| Requires spec/plan | No | Yes |
-| Speed | Fast | Thorough |
+| Files affected | ≤5 (Refactorer, Bug-Fixer, Feature) | Any |
+| Architectural impact | None / minimal | Any |
+| Requires spec/plan | No (mini-plan for Feature) | Yes |
+| User approval | Before applying changes | At Confirmation Gate |
 
-### Stack Profile Dependency
+---
 
-All standalone agents require the **Stack Profile** (`## Stack Profile` in `context.md`) to know:
-- What test command to use for the project
-- Where source and test files live
-- What framework and package manager are in use
+## Stack Mode Awareness
 
-If no Stack Profile exists (no prior Architect cycle), each standalone agent performs [Quick Stack Detection](../shared/stack-detection.md) at startup and writes the result to session memory.
-
+When the Planner sets `Stack Mode: yes`, the lifecycle adapts. See `stack-mode.md` for details.

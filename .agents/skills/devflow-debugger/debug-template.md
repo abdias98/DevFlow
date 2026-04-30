@@ -11,7 +11,7 @@ Save to `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md`:
 
 ## Error
 \`\`\`
-{Exact error message / stack trace}
+{Exact error message / stack trace — provided by user}
 \`\`\`
 
 ## Root Cause
@@ -26,25 +26,22 @@ Save to `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md`:
 \`\`\`
 
 ## Verification
-\`\`\`
-{Test output showing PASS}
-\`\`\`
+{User confirmed: test PASS / full suite PASS}
 
 ## Lessons Learned
-{What pattern caused this? How to prevent it?}
+{What pattern caused this? How to prevent it in the future?}
 ```
 
-## Debug Patterns by Stack
+## Common Pitfalls by Area
 
-| Stack | Common pitfalls |
-|-------|-----------------|
-| **React** | Missing dependency array in `useEffect`; calling hooks conditionally; stale closure; state mutation |
-| **Next.js** | Browser APIs in SSR; missing `"use client"`; incorrect dynamic import |
-| **Node/Express** | Missing `next()` in middleware; unhandled promise rejection; blocking event loop |
-| **.NET** | Service not registered in DI; `async void` instead of `async Task`; EF tracking mismatch |
-| **Python** | Missing `await`; mutable default argument; circular imports; pytest fixture scope |
-| **Go** | Nil pointer dereference; goroutine leak; unclosed file/response body |
-| **SQL/ORM** | N+1 queries; missing index; transaction not committed; wrong isolation level |
+| Area | Common pitfalls |
+|------|-----------------|
+| **UI / Frontend** | Missing dependency array in reactive hooks; browser APIs called during server rendering; stale closures; state mutation |
+| **Backend / API** | Unhandled promise rejection; missing middleware; blocking event loop; service not registered in DI; incorrect async/await usage |
+| **Database / ORM** | N+1 queries; missing index; transaction not committed; incorrect isolation level; entity tracking mismatch |
+| **General** | Null/undefined reference; type mismatch; circular imports; incorrect import path; fixture/seed data mismatch |
+
+> Adapt these patterns to the detected stack. Always check the project's own `debug-patterns.md` first if it exists.
 
 ## Escalation Rules
 
@@ -58,7 +55,7 @@ Save to `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md`:
 
 ## Structured Triage (after 3 attempts)
 
-Present these options:
+Present these options to the user:
 - **A) Architectural change** → Route to Architect
 - **B) Plan revision** → Route to Planner
 - **C) Simplify scope** → Update plan, skip test

@@ -10,19 +10,20 @@ DevFlow/
 │   ├── devflow-orchestrator/    # Main orchestrator agent
 │   ├── devflow-brainstormer/
 │   ├── devflow-architect/
-│   ├── devflow-planner/
-│   ├── devflow-tester/          # Manual helper only (not an automatic phase)
-│   ├── devflow-implementer/
-│   ├── devflow-reviewer/
-│   ├── devflow-debugger/
-│   ├── devflow-finalizer/
-│   ├── devflow-bug-fixer/       # Standalone bug fixing agent
+│   ├── devflow-plan/
+│   ├── devflow-test/            # Manual helper only (not an automatic phase)
+│   ├── devflow-implement/
+│   ├── devflow-review/
+│   ├── devflow-debug/
+│   ├── devflow-finalize/
+│   ├── devflow-bug-fix/         # Standalone bug fixing agent
 │   ├── devflow-feature/         # Standalone feature agent
 │   ├── devflow-refactor/        # Standalone refactoring agent
 │   └── shared/                  # Common rules, conventions, and standards
 │       ├── rules.md
 │       ├── memory-conventions.md
 │       ├── output-format.md
+│       ├── stack-detection.md
 │       └── standards/           # Engineering standards (Private Library)
 │           ├── solid.md
 │           ├── clean-architecture.md
@@ -34,14 +35,14 @@ DevFlow/
 ├── .github/
 │   ├── prompts/                 # Slash command prompts
 │   │   ├── devflow.prompt.md   # Full lifecycle
-│   │   └── devflow-*.prompt.md # Phase-specific
+│   │   └── devflow-*.prompt.md # Phase-specific and standalone
 │   └── instructions/
 │       └── devflow-conventions.instructions.md
 ├── docs/
 │   └── ARCHITECTURE.md          # This file
 ├── editor-profiles/             # Editor-specific installation configs
 │   └── vscode.yaml
-├── install.sh / install.ps1     # Installation scripts (Linux/macOS and Windows)
+├── install.sh / install.ps1     # Installation scripts
 ├── uninstall.sh / uninstall.ps1 # Uninstallation scripts
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
@@ -56,82 +57,97 @@ DevFlow/
 - Manages state and iteration logic
 - Coordinates sub-agents
 - Enforces strict phase ordering
+- Reads `rules.md` and `lifecycle.md`
 
 ### Brainstormer (`devflow-brainstorm`)
 - **Input:** User request
-- **Output:** Problem Statement saved to `/memories/session/devflow/context.md`
+- **Output:** Problem Statement saved to session memory (`context.md`)
 - **Actions:**
-  - Clarifying questions (`vscode_askQuestions`)
+  - Clarifying questions (Goal, Scope, Constraints, Feature Type, Definition of Done)
   - Goal/constraints/edge cases identification
   - Problem restatement
-  - Hand-off to Architect
+  - Initialize `phase-state.md`
 - **Restriction:** NEVER writes code, schema, or architecture
 
 ### Architect (`devflow-architect`)
-- **Input:** User requirements + workspace files
+- **Input:** Problem Statement from session memory + workspace files
 - **Output:** `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`
 - **Actions:**
-  - Clarifying questions (`vscode_askQuestions`)
-  - Codebase exploration (Explore subagent)
-  - Design document generation
-  - Preview + confirmation loop
+  - Read `AGENTS.md` if present (skip general exploration sub-steps)
+  - Full codebase exploration if no `AGENTS.md`
+  - Define architecture: components, data structures, data flow
+  - Save spec after user confirmation
+  - Update `context.md` with Stack Profile and Architect Findings
+- **Restriction:** NEVER writes implementation code
 
 ### Planner (`devflow-plan`)
-- **Input:** Spec document
+- **Input:** Architecture Spec
 - **Output:** `docs/devflow/plans/YYYY-MM-DD-{slug}.md`
 - **Actions:**
-  - Decompose into atomic tasks
-  - Map files to modify/create
-  - Generate complete code snippets
-  - Pre-write commit messages
+  - Stack Mode gate (conditional — only for large features spanning multiple layers)
+  - Explore existing patterns and test conventions
+  - Generate HTML mockups (UI features only)
+  - Decompose into atomic tasks with complete code snippets and test code
+  - Save plan before asking for approval
 
 ### Tester (`devflow-test`) — Manual Helper Only
 - **NOT an automatic phase** — the Implementer handles Red→Green TDD internally
 - **Input:** Plan document (specific task)
 - **Output:** A specific failing test file
 - **Trigger:** Manual only via `/devflow-test` (e.g., resume after context loss, recreate lost test)
-- **Constraint:** NEVER writes production code
+- **Constraint:** NEVER writes production code, NEVER runs tests
 
 ### Implementer (`devflow-implement`)
 - **Input:** Plan document
-- **Output:** Production code + passing tests in workspace
-- **Constraint:** Minimal code, follow plan strictly
+- **Output:** Production code + test files in workspace
+- **Constraint:** Minimal code, follow plan strictly, NEVER run tests
 - **Actions:**
-  - **🔴 Red Phase per task:** Create test file from plan's `🧪 Tests for this Task` section, run and verify FAIL
-  - **🟢 Green Phase per task:** Write minimal production code, run and verify PASS
+  - **Red Phase per task:** Create test file from plan, inform user how to run it
+  - **Green Phase per task:** Write minimal production code, inform user how to verify
   - Commit at task checkpoints with pre-written messages
   - Auto-invoke Reviewer when all tasks complete
 
 ### Reviewer (`devflow-review`)
-- **Input:** Git diff + spec + plan
+- **Input:** Changed files + spec + plan
 - **Output:** `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`
 - **Actions:**
-  - Code quality checks
-  - Security validation (OWASP)
-  - Architecture alignment
+  - Detect mode: Cycle Mode (full lifecycle) or Standalone Mode (invoked by Feature, Refactor, or Bug-Fix agents)
+  - Apply review checklist: code quality, security, architecture alignment, plan compliance, performance, test coverage
   - Classify findings (BLOCK/WARN/INFO)
-  - Route back to Implementer if blockers
+  - Route back to invoking agent if blockers
+- **Constraint:** NEVER executes commands, NEVER fixes code
 
 ### Debugger (`devflow-debug`)
 - **Input:** Error / failing test / reviewer finding
 - **Output:** `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md`
-- **Constraint:** Never guess, always root cause
+- **Constraint:** Never guess, always root cause, NEVER execute tests
 - **Actions:**
-  - Reproduce error
+  - Ask user to reproduce the error and provide output
   - Isolate root cause
-  - Apply fix
-  - Re-verify
+  - Apply minimal fix
+  - Ask user to verify
 
 ### Finalizer (`devflow-finalize`)
 - **Input:** Completed cycle (all tests passing, no BLOCK findings)
-- **Output:** Final summary presented to user + session memory cleaned
+- **Output:** Final summary saved to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md` + session memory cleaned
 - **Actions:**
-  - Run full test suite and verify GREEN
+  - Ask user to run full test suite — if failures, route to Debugger
   - Verify all BLOCK review findings resolved
   - Collect all files created/modified
   - Generate summary (files changed, tests added, architecture decisions, next steps)
   - Provide exact How to Run / Test instructions
-  - Clean `/memories/session/devflow/`
+  - Clean session memory after user confirmation
+- **Constraint:** NEVER execute tests or commands
+
+## Standalone Agents (Outside Lifecycle)
+
+| Agent | Command | Use Case |
+|-------|---------|----------|
+| Refactorer | `/devflow-refactor` | Improve existing code without changing behavior |
+| Bug-Fixer | `/devflow-bug-fix` | Fix a reported bug with reproduction test |
+| Feature Agent | `/devflow-feature` | Implement a small-medium feature without full planning overhead |
+
+See each agent's `SKILL.md` for detailed procedures.
 
 ## Memory System
 
@@ -139,11 +155,11 @@ DevFlow/
 **Fallback:** `docs/devflow/session/` (when `/memories/` is unavailable)
 
 Transient state for active development cycle:
-- `context.md` — Request, tech stack, constraints
-- `phase-state.md` — Completion tracking, iteration log
+- `context.md` — Request, tech stack (Stack Profile), constraints, DoD
+- `phase-state.md` — Completion tracking, iteration counter, iteration log
 - `test-registry.md` — Test names, FAIL/PASS status
 
-See [Memory Conventions](../.agents/skills/shared/memory-conventions.md) for file formats and rules.
+See [Memory Conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>) for canonical file formats, rules, and Quick Reference.
 
 ### Persistent Artifacts (`docs/devflow/`)
 Versioned with git, survive across conversations:
@@ -152,6 +168,9 @@ Versioned with git, survive across conversations:
 - `mockups/` — HTML wireframe mockups
 - `reviews/` — Code review findings
 - `debug-logs/` — Debug sessions
+- `refactors/` — Refactoring summaries
+- `bug-fixes/` — Bug fix reports
+- `features/` — Feature reports and final summaries
 
 ## Iteration Logic
 
@@ -171,129 +190,79 @@ Versioned with git, survive across conversations:
       DEBUGGER  NEXT PHASE
           │
           ▼
-      Fix + Retry
+      Fix + Retry (max 3 attempts)
 ```
 
 ### Stack Mode
 
-When `Stack Mode: yes` is set (by the Planner), the iteration logic applies **within each Stack**:
+When `Stack Mode: yes` is set (by the Planner, conditional on feature size), the iteration logic applies **within each Stack**:
 
-- The Implementer creates a branch per Stack (`feat/{slug}/stack-{N}`), executes Red→Green per task, then pushes and creates a PR before moving to the next Stack.
-- The Reviewer diffs each Stack against its base branch (from the Stack Plan table).
+- The Planner groups tasks into Stacks with branches assigned.
+- The Implementer creates a branch per Stack (`feat/{slug}/stack-{N}`), executes Red→Green per task.
+- The Reviewer diffs each Stack against its base branch.
 - BLOCK → fix → re-review loops apply within the current Stack branch.
-- The Finalizer includes a summary table of all Stack PRs.
+- The Finalizer includes a summary table of all Stack branches.
+- **PRs are never created automatically.** The user decides if and when to push branches and open PRs.
 
-See `devflow-conventions.instructions.md` § PR Stacking Conventions for naming and sizing rules.
+See [stack-planning.md](<{{SKILLS_DIR}}/devflow-plan/stack-planning.md>) and [stack-mode.md](<{{SKILLS_DIR}}/devflow-orchestrator/stack-mode.md>) for details.
 
 ## Naming Conventions
 
-All artifacts use: `YYYY-MM-DD-{slug}-{type}.md`
+All artifacts follow [Memory Conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>).
 
-Examples:
-- `2026-03-28-user-auth-design.md` (spec)
-- `2026-03-28-user-auth.md` (plan)
-- `2026-03-28-user-auth-review.md` (review)
-- `2026-03-28-user-auth-debug.md` (debug log)
+| Type | Pattern | Example |
+|------|---------|---------|
+| Spec | `YYYY-MM-DD-{slug}-design.md` | `2026-03-28-user-auth-design.md` |
+| Plan | `YYYY-MM-DD-{slug}.md` | `2026-03-28-user-auth.md` |
+| Review | `YYYY-MM-DD-{slug}-review.md` | `2026-03-28-user-auth-review.md` |
+| Debug Log | `YYYY-MM-DD-{slug}-debug.md` | `2026-03-28-user-auth-debug.md` |
+| Mockup | `YYYY-MM-DD-{slug}-mockup[-A|-B].html` | `2026-03-28-user-auth-mockup-A.html` |
+| Refactor | `YYYY-MM-DD-{slug}-refactor.md` | `2026-03-28-user-auth-refactor.md` |
+| Bug-Fix | `YYYY-MM-DD-{slug}-bugfix.md` | `2026-03-28-user-auth-bugfix.md` |
+| Feature Report | `YYYY-MM-DD-{slug}-feature.md` | `2026-03-28-user-auth-feature.md` |
 
 ## Standard Engineering System
 
-DevFlow uses a **Private Library** approach to enforce engineering standards exclusively through its agents. This ensures the framework provides measurable added value over standard AI chat.
+DevFlow uses a **Private Library** approach to enforce engineering standards exclusively through its agents.
 
 ### Architecture
-Standards live in `.agents/skills/shared/standards/` and are read directly by each agent via explicit rules in their `SKILL.md`. This makes the standards a core competency of DevFlow — not a global editor preference.
+Standards live in `shared/standards/` and are read directly by each agent via explicit rules in their `SKILL.md`.
 
-### Standards Available (Phase 1)
+### Standards
 
-| File | Standard | Applied by |
-|------|----------|------------|
-| `standards/solid.md` | SOLID Principles | Architect, Planner, Implementer, Reviewer, Debugger |
-| `standards/clean-architecture.md` | Clean Architecture | Architect, Planner, Implementer, Reviewer, Debugger |
-| `standards/security.md` | Security | Architect, Planner, Implementer, Reviewer, Debugger |
-| `standards/performance.md` | Performance | Architect, Planner, Implementer, Reviewer, Debugger |
-| `standards/rest-api.md` | REST API Design *(conditional — skipped for non-API projects)* | Architect, Planner, Implementer, Reviewer |
-| `standards/project-design.md` | Project Design Patterns | Architect, Planner, Reviewer |
-| `standards/ui-design.md` | UI Design *(conditional — skipped for non-UI projects)* | Architect, Planner, Implementer, Reviewer |
-
-> **Why not global editor instructions?** Standards are intentionally kept private to DevFlow. When a user invokes a DevFlow agent, they receive architecture-grade output guided by these standards. This creates a clear quality gap versus plain AI chat, demonstrating the framework's value.
-
-### Adding a New Standard
-1. Create `standards/{name}.md` following the `DO/DON'T` format used by existing standards.
-2. Add `- Read [{Name}](../shared/standards/{name}.md)` to the `## Rules` of agents that benefit from it (typically Architect, Planner, Implementer, Reviewer, Debugger).
-3. Document the new standard in this table.
+| Standard | Applied by | Condition |
+|----------|------------|-----------|
+| SOLID Principles | All agents | Always |
+| Clean Architecture | All agents | Always |
+| Security | All agents | Always |
+| Performance | All agents | Always |
+| Project Design Patterns | Architect, Planner, Reviewer | Always |
+| REST API Design | Architect, Planner, Implementer, Reviewer, Debugger | Only if API endpoints are involved |
+| UI Design | Architect, Planner, Implementer, Reviewer, Debugger | Only if the feature has a UI |
 
 ## AGENTS.md Skip Optimization
 
-When a project has an `AGENTS.md` file (in the project root or a subdirectory such as `docs/AGENTS.md`), the Architect reads it at the start of Phase 2 (Step 1.5) and skips the following general exploration sub-steps:
+When a project has an `AGENTS.md` file, the Architect reads it at the start of Phase 2 and skips general exploration sub-steps (folder structure, naming conventions, tech stack details, architecture patterns, conventions for similar features). Sub-steps for reference implementation, reusability inventory, and deep test architecture analysis still run.
 
-| Skipped sub-step | What it covers |
-|---|---|
-| 1 — Full project structure | Folder hierarchy, module boundaries |
-| 2 — Naming conventions | File, class, function, route naming |
-| 4 — Tech stack details | Frameworks, ORMs, build tools, test runners |
-| 5 — Architecture patterns | MVC, CQRS, layered, feature-based, etc. |
-| 6 — Conventions for similar features | Reference templates from existing features |
-
-Sub-steps 3 (reference implementation), 7 (reusability inventory), and 8 (deep test architecture analysis) still run — scoped to the feature using the AGENTS.md context.
-
-The Architect stores the extracted AGENTS.md data in `/memories/session/devflow/context.md` under a `## AGENTS.md Context` block so the Planner can read it in Phase 3 without re-discovering test conventions.
-
-> **Tip for project maintainers:** Creating an `AGENTS.md` in your project root is the single most effective way to speed up every DevFlow cycle. See the README for the suggested format.
-
----
+The Architect stores extracted AGENTS.md data in session memory so the Planner can reuse it without re-discovering conventions.
 
 ## Tech Stack Detection
 
-DevFlow agents detect the project's technology stack **dynamically** by reading the **content** of workspace configuration files — not through a hardcoded lookup table. This allows the framework to work with any language, framework, or toolchain without requiring updates.
-
-### Detection Strategy
-
-1. **Scan** the workspace root for known config files.
-2. **Read** their contents to extract: language, framework, ORM, test runner, linter, and build tools.
-3. **Store** findings in session memory so all downstream agents reuse them without re-discovering.
-
-### Common Config Files (non-exhaustive)
-
-| File | What it reveals |
-|------|-----------------|
-| `package.json` | Node.js ecosystem — framework, test runner, linter, build tools (from `dependencies` and `scripts`) |
-| `*.csproj` / `*.sln` | .NET ecosystem — target framework, NuGet packages, test SDK |
-| `pyproject.toml` / `requirements.txt` | Python ecosystem — framework (Django, FastAPI), test runner (pytest), linter |
-| `go.mod` | Go ecosystem — module path, dependencies |
-| `composer.json` | PHP ecosystem — framework (Laravel, Symfony), test runner (PHPUnit) |
-| `Cargo.toml` | Rust ecosystem — crate dependencies, edition |
-| `build.gradle` / `pom.xml` | Java/Kotlin ecosystem — framework (Spring), build tool, test runner |
-| `Gemfile` | Ruby ecosystem — framework (Rails), test runner (RSpec) |
-| `pubspec.yaml` | Dart/Flutter ecosystem |
-
-> **Note:** This list is a starting point, not a constraint. Agents should read any config file they encounter and extract the full technology profile from its contents.
-
-All agents use this information to generate stack-appropriate designs, code, tests, and commands.
+DevFlow agents detect the project's technology stack **dynamically** by reading workspace configuration files. See [stack-detection.md](<{{SKILLS_DIR}}/shared/stack-detection.md>) for the complete detection reference. Detected values are stored in the `## Stack Profile` table in `context.md` and reused by all downstream agents.
 
 ## Extensibility
 
 ### Adding a Custom Agent
 
-1. Create `devflow-custom/SKILL.md` in the editor's skills directory
-   (path resolved dynamically by `editor-profiles/vscode.yaml` — varies by OS)
-2. Define YAML frontmatter (`name`, `description`, `argument-hint`)
-3. Implement the procedure following the pattern of existing agents
-4. Create `custom.prompt.md` in the editor's prompts directory if needed
-5. Reference the new skill in the orchestrator
+1. Create `devflow-custom/SKILL.md` in the skills directory.
+2. Define YAML frontmatter (`name`, `description`, `argument-hint`).
+3. Implement the procedure following the pattern of existing agents.
+4. Create `custom.prompt.md` in the prompts directory if needed.
+5. Reference the new skill in the orchestrator.
 
 ### Custom Rules per Repo *(Planned — Not Yet Implemented)*
 
-> ⚠️ This feature is planned for a future release. The configuration format below is a design proposal and is not currently supported.
-
-```json
-{
-  "testFramework": "vitest",
-  "linter": "eslint",
-  "reviewRules": {
-    "securityLevel": "strict",
-    "performanceThreshold": "critical"
-  }
-}
-```
+> ⚠️ This feature is planned for a future release.
 
 ---
 
