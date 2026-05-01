@@ -72,43 +72,18 @@ Explore ONLY the files relevant to this feature:
 
 ### Step 4 — Generate & Persist Feature Plan
 
-1. Generate a concise implementation plan (max 8 tasks) using the template below.
-2. **MANDATORY**: Execute `create_file` to save the plan **before** asking for approval.
+1. Using the [feature plan template](<{{SKILLS_DIR}}/devflow-feature/plan-template.md>), write the complete plan document.
+2. **IMMEDIATELY after generating the plan content**, execute `create_file` to save it.
    - **Path**: `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`
+   - This action MUST happen **before** you present anything to the user.
    - This is the canonical artifact path for this flow; Step 8 MUST overwrite this same file with the final feature report.
-3. In the plan, explicitly include the tasks, test files, and test commands.
-4. Present the plan summary to the user and the file path.
+3. **Confirm the file was saved successfully.** If `create_file` fails, STOP and report the error — do NOT proceed.
+4. Only **after** the file is confirmed saved, present a brief summary of the plan and explicitly state the file path.
+5. Then ask:
 
-**Plan template:**
-
-```markdown
-## ⚡ Feature Plan: {slug}
-
-**Goal:** {one sentence}
-**Definition of Done:**
-- {criterion 1}
-- {criterion 2}
-
-**Stack:** {Language} · {Framework} · {Test Runner}
-
-### Tasks
-
-- [ ] Task 1: {description} — `{file to create/modify}`
-  - 🧪 Test: `{test file}` — `{test name}`
-  - Code: {complete snippet}
-
-- [ ] Task 2: {description} — `{file}`
-  - 🧪 Test: `{test file}` — `{test name}`
-  - Code: {complete snippet}
-
-**Test command:** `{Test Command}`
-**Single file:** `{Test Command (single file)} {test path}`
-```
-
-Ask:
 | header | question | type |
 |--------|----------|------|
-| `feature_confirmation` | Review the plan at {path}. Proceed with implementation? | options: ✅ Approve, ✏️ Modify plan, ❌ Cancel |
+| `feature_confirmation` | The plan has been saved at `{path}`. Proceed with implementation? | options: ✅ Approve, ✏️ Modify plan, ❌ Cancel |
 
 **STOP. Do NOT apply any changes or create test files until the user approves.**
 
