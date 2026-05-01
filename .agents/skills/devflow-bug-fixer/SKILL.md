@@ -79,16 +79,20 @@ If recommending `/devflow`, tell the user:
 
 ### Step 4 — Generate & Persist Bug-Fix Plan
 
-1. Generate a concise fix plan using the template below.
-2. **MANDATORY**: Execute `create_file` to save the plan **before** asking for approval.
+1. Generate a concise fix plan using the [bugfix plan template](<{{SKILLS_DIR}}/devflow-bug-fix/plan-template.md>).
+2. **IMMEDIATELY after generating the plan content**, execute `create_file` to save it.
    - **Path**: `docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md`
+   - This action MUST happen **before** you present anything to the user.
    - This is the canonical artifact path for this flow; Step 8 MUST overwrite this same file with the final bug-fix report.
-3. In the plan, explicitly include:
-   - Root cause hypothesis.
-   - Reproduction test path and test command.
-   - Files to modify and the minimal fix strategy.
-   - If a known debug pattern matches, reference it.
-4. Present the plan summary to the user and the file path.
+3. **Confirm the file was saved successfully.** If `create_file` fails, STOP and report the error — do NOT proceed.
+4. Only **after** the file is confirmed saved, present a brief summary of the plan and explicitly state the file path.
+5. Then ask:
+
+| header | question | type |
+|--------|----------|------|
+| `bugfix_confirmation` | The plan has been saved at `{path}`. Proceed with fix? | options: ✅ Approve, ✏️ Modify plan, ❌ Cancel |
+
+**STOP. Do NOT apply any changes or create test files until the user approves.**
 
 **Plan template:**
 
