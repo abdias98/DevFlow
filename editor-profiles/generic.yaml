@@ -27,17 +27,17 @@ display_name: "Generic (CLI / Headless)"
 # install.sh reads user_dir.<OS_NAME> and exposes it as $USER_DIR for path resolution.
 # For CLI/headless use, the same directory is used on every platform.
 user_dir:
-  macOS: "$HOME/.devflow"
-  Linux: "$HOME/.devflow"
-  Windows: "$HOME/.devflow"
+  macOS: "$HOME/.agents"
+  Linux: "$HOME/.agents"
+  Windows: "$HOME/.agents"
 
 # ── Installation paths ────────────────────────────────────────────────────────
 paths:
-  base: "$HOME/.devflow"
-  skills: "$HOME/.devflow/skills"
-  prompts: "$HOME/.devflow/prompts"
-  instructions: "$HOME/.devflow/instructions"
-  agents: "$HOME/.devflow/agents"
+  base: "$USER_DIR"
+  skills: "$USER_DIR/skills"
+  prompts: "$USER_DIR/prompts"
+  instructions: "$USER_DIR/instructions"
+  agents: "$USER_DIR"
 
 # ── Tool name mappings ────────────────────────────────────────────────────────
 # Maps FROM (tool name in skill/prompt source files) TO (equivalent for this editor).
