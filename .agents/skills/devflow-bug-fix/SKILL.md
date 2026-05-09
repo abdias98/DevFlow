@@ -94,39 +94,6 @@ If recommending `/devflow`, tell the user:
 
 **STOP. Do NOT apply any changes or create test files until the user approves.**
 
-**Plan template:**
-
-```markdown
-## 🐛 Bug-Fix Plan: {slug}
-
-**Bug:** {one-line description}
-**Error type:** {TypeError | NullReferenceException | 404 | timeout | wrong output | ...}
-**Root cause hypothesis:** {one sentence}
-
-**Stack:** {Language} · {Framework} · {Test Runner}
-
-### Affected Files
-- `{file1}` — {reason}
-- `{file2}` — {reason}
-
-### Reproduction Test
-- **Path:** `{test path}`
-- **Command:** `{Test Command (single file)} {test path}`
-
-### Fix Strategy
-- [ ] Task 1: {description} — `{file to modify}`
-  - Change: {minimal description of the fix}
-
-**Test command:** `{Test Command}`
-```
-
-Ask:
-| header | question | type |
-|--------|----------|------|
-| `bugfix_confirmation` | Review the plan at {path}. Proceed with fix? | options: ✅ Approve, ✏️ Modify plan, ❌ Cancel |
-
-**STOP. Do NOT apply any changes or create test files until the user approves.**
-
 ### Step 5 — Create Reproduction Test
 
 After plan approval:
