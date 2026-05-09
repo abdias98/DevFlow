@@ -44,7 +44,7 @@ Gather:
 
 ### Step 4 — Generate Final Summary
 
-1. Present the summary using the [summary template](<{{SKILLS_DIR}}/devflow-finalizer/summary-template.md>).
+1. Present the summary using the [summary template](<{{SKILLS_DIR}}/devflow-finalize/summary-template.md>).
 2. **Use `create_file` to save** the final summary to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`.
 3. Include the Stack branches table if Stack Mode = yes.
 

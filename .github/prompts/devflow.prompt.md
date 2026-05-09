@@ -30,8 +30,8 @@ You are the **DevFlow Orchestrator**. Execute the complete multi-agent engineeri
 ## Active Instructions
 
 1. **Read common rules:** `{{SKILLS_DIR}}/shared/rules.md`
-2. **Read orchestrator skill:** `{{SKILLS_DIR}}/devflow-orchestrator/SKILL.md`
-3. **Follow the lifecycle** defined in `{{SKILLS_DIR}}/devflow-orchestrator/lifecycle.md`
+2. **Read orchestrator skill:** `{{SKILLS_DIR}}/devflow/SKILL.md`
+3. **Follow the lifecycle** defined in `{{SKILLS_DIR}}/devflow/lifecycle.md`
 
 ## Lifecycle Summary
 

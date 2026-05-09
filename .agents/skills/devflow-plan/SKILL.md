@@ -46,7 +46,7 @@ You are the **Planner** sub-agent of the DevFlow framework. Read a design spec a
 |--------|----------|------|
 | `stack_mode` | This feature is large and spans multiple layers. Do you want to split it into stacked PRs (separate branches per layer) for easier review? | options: ✅ Yes – Stacked PRs, ❌ No – Single PR |
 
-- If the user chooses **Yes**: set `Stack Mode: yes` in session memory. You MUST read and apply [stack-planning.md](<{{SKILLS_DIR}}/devflow-planner/stack-planning.md>).
+- If the user chooses **Yes**: set `Stack Mode: yes` in session memory. You MUST read and apply [stack-planning.md](<{{SKILLS_DIR}}/devflow-plan/stack-planning.md>).
 - If the user chooses **No** or the feature is small (≤5 tasks, ≤2 layers): set `Stack Mode: no` and skip Stack Planning entirely.
 
 ### Step 3 — Analyze and Decompose
@@ -60,7 +60,7 @@ Group into **Tasks** — each task is a logical unit of work with a clear goal.
 
 ### Step 4 — Stack Planning *(only if Stack Mode = yes)*
 
-Follow the [stack planning rules](<{{SKILLS_DIR}}/devflow-planner/stack-planning.md>) to group tasks into Stacks and prepare branch metadata. The Planner provides the git commands for branch creation but never creates PRs automatically.
+Follow the [stack planning rules](<{{SKILLS_DIR}}/devflow-plan/stack-planning.md>) to group tasks into Stacks and prepare branch metadata. The Planner provides the git commands for branch creation but never creates PRs automatically.
 
 ### Step 5 — Explore Existing Patterns
 
@@ -75,12 +75,12 @@ Ensure you understand: file conventions, import patterns, test framework + asser
 ### Step 6 — Generate HTML Mockup *(UI features only)*
 
 1. **Detect UI needs:** Check `Feature Type` in session memory AND scan the spec for keywords (`page`, `form`, `screen`, `modal`, `UI`, `component`, `interface`, `dashboard`, `button`, `input`, `layout`).
-2. **MANDATORY:** If UI is detected, **you MUST use `read_file` to load [mockup-rules.md](<{{SKILLS_DIR}}/devflow-planner/mockup-rules.md>)** for detailed aesthetic rules and saving instructions.
+2. **MANDATORY:** If UI is detected, **you MUST use `read_file` to load [mockup-rules.md](<{{SKILLS_DIR}}/devflow-plan/mockup-rules.md>)** for detailed aesthetic rules and saving instructions.
 3. **Action:** Generate mockup(s) following those rules. Use `create_file` to save. Display HTML inline.
 
 ### Step 7 — Write the Plan
 
-Using the [plan template](<{{SKILLS_DIR}}/devflow-planner/plan-template.md>), write the complete plan document.
+Using the [plan template](<{{SKILLS_DIR}}/devflow-plan/plan-template.md>), write the complete plan document.
 
 ### Step 8 — Persist Plan (MANDATORY)
 

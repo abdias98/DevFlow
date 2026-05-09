@@ -38,7 +38,7 @@ See [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>) for path
 
 You MUST follow this strict lifecycle. NEVER skip phases. NEVER proceed if current phase is incomplete.
 
-See [lifecycle details](<{{SKILLS_DIR}}/devflow-orchestrator/lifecycle.md>) for the complete phase-by-phase procedure including the Confirmation Gate.
+See [lifecycle details](<{{SKILLS_DIR}}/devflow/lifecycle.md>) for the complete phase-by-phase procedure including the Confirmation Gate.
 
 **Essential flow:**
 1. **Phase 1: Brainstormer** → Ask questions, identify goal/constraints → save Problem Statement
@@ -53,7 +53,7 @@ See [lifecycle details](<{{SKILLS_DIR}}/devflow-orchestrator/lifecycle.md>) for 
 7. **Phase 6: Debugger** → Only if tests fail or runtime issues → reproduce, isolate, fix
 8. **Phase 7: Finalizer** → Run full suite, summary, clean memory
 
-See [stack mode](<{{SKILLS_DIR}}/devflow-orchestrator/stack-mode.md>) for stacked PR behavior.
+See [stack mode](<{{SKILLS_DIR}}/devflow/stack-mode.md>) for stacked PR behavior.
 
 ---
 

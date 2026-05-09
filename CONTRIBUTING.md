@@ -38,16 +38,16 @@ Found a bug or have a suggestion? Open an issue with:
 ```
 DevFlow/
 ├── .agents/skills/              # AI Sub-agents (Copilot skills)
-│   ├── devflow-orchestrator/    # Main orchestrator agent
-│   ├── devflow-brainstormer/
+│   ├── devflow/                 # Main orchestrator agent
+│   ├── devflow-brainstorm/
 │   ├── devflow-architect/
-│   ├── devflow-planner/
-│   ├── devflow-tester/          # Manual helper only (not an automatic phase)
-│   ├── devflow-implementer/
-│   ├── devflow-reviewer/
-│   ├── devflow-debugger/
-│   ├── devflow-finalizer/
-│   ├── devflow-bug-fixer/       # Standalone bug fixing agent
+│   ├── devflow-plan/
+│   ├── devflow-test/            # Manual helper only (not an automatic phase)
+│   ├── devflow-implement/
+│   ├── devflow-review/
+│   ├── devflow-debug/
+│   ├── devflow-finalize/
+│   ├── devflow-bug-fix/         # Standalone bug fixing agent
 │   ├── devflow-feature/         # Standalone feature agent
 │   ├── devflow-refactor/        # Standalone refactoring agent
 │   └── shared/                  # Common rules, conventions, and standards
