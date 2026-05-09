@@ -361,7 +361,7 @@ for prompt_file in "$SOURCE_DIR"/.github/prompts/devflow*.prompt.md; do
 done
 
 # ── Global: skills → editor skills dir (with tool-name substitutions) ────────
-for skill_dir in "$SOURCE_DIR"/.agents/skills/devflow-*/; do
+for skill_dir in "$SOURCE_DIR"/.agents/skills/devflow/ "$SOURCE_DIR"/.agents/skills/devflow-*/; do
   if [ -d "$skill_dir" ]; then
     skill_name=$(basename "$skill_dir")
     mkdir -p "$SKILLS_DIR/$skill_name"

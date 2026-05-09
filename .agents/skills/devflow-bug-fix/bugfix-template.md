@@ -13,9 +13,9 @@ Save to `docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md`:
 
 **Error:** `{error message or description}`
 **Stack Trace:**
-```
+
 {paste stack trace}
-```
+
 **Steps to reproduce:** {description}
 
 ## Root Cause

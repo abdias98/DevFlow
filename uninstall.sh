@@ -167,8 +167,8 @@ for prompt_file in "$PROMPTS_DIR"/devflow*.prompt.md; do
   fi
 done
 
-# ── Remove skills (only devflow-* and shared) ─────────────────────────────────
-for skill_dir in "$SKILLS_DIR"/devflow-*/; do
+# ── Remove skills (devflow/, devflow-*, and shared) ──────────────────────────
+for skill_dir in "$SKILLS_DIR"/devflow/ "$SKILLS_DIR"/devflow-*/; do
   if [ -d "$skill_dir" ]; then
     rm -rf "$skill_dir"
     echo "  ✓ Removed skill: $(basename "$skill_dir")"

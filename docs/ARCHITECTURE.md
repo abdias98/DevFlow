@@ -7,16 +7,16 @@ Internal design documentation for contributors and advanced users.
 ```
 DevFlow/
 ├── .agents/skills/              # AI Sub-agents (Copilot skills)
-│   ├── devflow-orchestrator/    # Main orchestrator agent
-│   ├── devflow-brainstormer/
+│   ├── devflow/                 # Main orchestrator agent
+│   ├── devflow-brainstorm/
 │   ├── devflow-architect/
-│   ├── devflow-planner/
-│   ├── devflow-tester/          # Manual helper only (not an automatic phase)
-│   ├── devflow-implementer/
-│   ├── devflow-reviewer/
-│   ├── devflow-debugger/
-│   ├── devflow-finalizer/
-│   ├── devflow-bug-fixer/       # Standalone bug fixing agent
+│   ├── devflow-plan/
+│   ├── devflow-test/            # Manual helper only (not an automatic phase)
+│   ├── devflow-implement/
+│   ├── devflow-review/
+│   ├── devflow-debug/
+│   ├── devflow-finalize/
+│   ├── devflow-bug-fix/         # Standalone bug fixing agent
 │   ├── devflow-feature/         # Standalone feature agent
 │   ├── devflow-refactor/        # Standalone refactoring agent
 │   └── shared/                  # Common rules, conventions, and standards
@@ -204,7 +204,7 @@ When `Stack Mode: yes` is set (by the Planner, conditional on feature size), the
 - The Finalizer includes a summary table of all Stack branches.
 - **PRs are never created automatically.** The user decides if and when to push branches and open PRs.
 
-See [stack-planning.md](<{{SKILLS_DIR}}/devflow-plan/stack-planning.md>) and [stack-mode.md](<{{SKILLS_DIR}}/devflow-orchestrator/stack-mode.md>) for details.
+See [stack-planning.md](<{{SKILLS_DIR}}/devflow-plan/stack-planning.md>) and [stack-mode.md](<{{SKILLS_DIR}}/devflow/stack-mode.md>) for details.
 
 ## Naming Conventions
 
