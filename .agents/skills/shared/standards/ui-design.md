@@ -3,7 +3,7 @@
 > **Apply only if:** the project has a user interface (web frontend, mobile app, desktop app, or server-rendered views).
 > If this is a pure API, CLI tool, library, or background worker, skip this standard entirely.
 >
-> **Note on examples:** All framework names, library references, and visual concepts are illustrative. Replace them with the actual tools, design systems, and conventions of the detected stack.
+> **Note on examples:** All framework names, library references, code snippets, and visual concepts are illustrative. Replace them with the actual tools, design systems, and conventions of the detected stack.
 
 Apply these principles when designing, planning, implementing, or reviewing UI code.
 
@@ -92,7 +92,7 @@ Color communicates state, guides attention, and reinforces brand — not just de
   - **Accent:** Optional, for highlights or decorative elements.
   - **Neutral scale:** A grayscale from 50 (near-white) to 950 (near-black) for text, backgrounds, borders, and surfaces.
   - **Semantic colors:** Success (green), Warning (amber/orange), Danger (red), Info (blue). Each must have a light variant for backgrounds and a dark variant for text/icons.
-- **DO:** Ensure all text/background color combinations meet **WCAG AA contrast ratio of 4.5:1** for normal text and **3:1** for large text (≥18px or 14px bold).
+- **DO:** Ensure all text/background color combinations meet **WCAG AA contrast ratio of 4.5:1** for normal text and **3:1** for large text (≥18pt / ~24 CSS px regular, or ≥14pt / ~18.66 CSS px bold).
 - **DO:** Design for dark mode from the start. Invert the neutral scale: light backgrounds become dark surfaces; dark text becomes light text. Semantic colors should be desaturated in dark mode to reduce eye strain.
 - **DON'T:** Use pure black (`#000`) or pure white (`#fff`) as main surface colors — they cause eye strain. Use near-black (`#111`, `#1a1a1a`) and near-white (`#fafafa`, `#f5f5f5`).
 - **DON'T:** Convey information through color alone. Always pair color with an icon, label, or pattern for accessibility (color-blind users).
@@ -115,9 +115,9 @@ Every interactive element must communicate its state clearly. An element without
 |-------|-------------|
 | **Default (rest)** | The normal appearance. Must be visually distinct from non-interactive content. |
 | **Hover** | Desktop-only feedback that the element is interactive. Subtle change: lighten/darken background, underline text, slight scale (1.02–1.05). |
-| **Focus-visible** | Keyboard focus indicator. Must be a high-contrast outline or ring (≥2px). Never remove focus styles without providing an alternative. |
+| **Focus-visible (or platform equivalent)** | Keyboard focus indicator. Must be a high-contrast outline or ring (≥2px). Never remove focus styles without providing an alternative. |
 | **Active / Pressed** | The moment of interaction. Darken background, slight scale-down (0.98), or inset shadow. |
-| **Disabled** | Grayed out, reduced opacity (≤0.5), no pointer cursor, no interaction. Include a tooltip or adjacent text explaining *why* it's disabled. |
+| **Disabled** | Grayed out, reduced opacity (≤0.5), no pointer cursor, no interaction. Include persistent adjacent/help text explaining *why* it's disabled. If a tooltip is used, it must be triggered by a separate focusable element and announced to assistive technologies. |
 | **Loading** | Show a skeleton, spinner, or progress indicator. The interactive area should be replaced or overlaid — never leave the user wondering if something is happening. |
 | **Error** | Red border/background + descriptive error message adjacent to the element. The error message must explain *what went wrong* and *how to fix it*. |
 | **Success** | Brief green confirmation (checkmark, border flash). Auto-dismiss or transition to the next logical state. |
@@ -125,7 +125,7 @@ Every interactive element must communicate its state clearly. An element without
 - **DO:** Design every state for every interactive component before shipping. States are not edge cases — they are the UI.
 - **DO:** Ensure all states are reachable and distinguishable by screen readers via appropriate ARIA attributes (`aria-disabled`, `aria-busy`, `aria-invalid`, `aria-describedby`).
 - **DON'T:** Use the disabled state to hide information. Disabled buttons should still be visible and explain their disabled condition.
-- **DON'T:** Remove `:focus-visible` styles. If the default browser ring is visually incompatible, replace it with a custom, equally visible alternative — never remove it.
+- **DON'T:** Remove `:focus-visible` styles (or the platform-equivalent focus indicator API). If the default focus indicator is visually incompatible, replace it with a custom, equally visible alternative — never remove it.
 
 ## 7. Motion & Micro-Interactions
 
@@ -149,7 +149,7 @@ Motion must be purposeful, fast, and respectful of user preferences.
 - **DON'T:** Animate layout-triggering properties (`width`, `height`, `top`, `left`, `margin`, `padding`) — they cause expensive layout recalculations.
 - **DON'T:** Use bounce, elastic, or spring animations for functional UI elements. Reserve expressive animations for brand/onboarding moments only.
 - **DON'T:** Auto-play infinite animations (except loading indicators). They distract and can trigger vestibular disorders in some users.
-- **DON'T:** Animate without a completion callback. If the animation triggers a state change, the state update must happen after the animation ends.
+- **DON'T:** Let state transitions depend on animation timing without a completion signal. If an animation's end is required for a state change, perform that update only after the animation completes.
 
 ## 8. Content Strategy — Minimalism & Density
 
@@ -207,7 +207,7 @@ Accessibility is not a feature — it is a requirement.
 - **DO:** Maintain a minimum contrast ratio of 4.5:1 for normal text and 3:1 for large text (WCAG AA). Check with a contrast analyzer — don't guess.
 - **DO:** Provide visible focus indicators with a contrast ratio of at least 3:1 against the background.
 - **DO:** Respect user preferences: `prefers-reduced-motion`, `prefers-contrast`, `prefers-color-scheme`, and zoom levels up to 200%.
-- **DON'T:** Use generic containers (`div`, `span`) as interactive elements without proper ARIA role, keyboard handlers, and focus management.
+- **DON'T:** Use generic containers (`div`, `span`) as interactive elements unless no native semantic control can represent the interaction. In that rare fallback, add proper ARIA role, keyboard handlers, and focus management.
 - **DON'T:** Use `aria-hidden="true"` on focusable elements — it creates an unreachable focus trap.
 - **DON'T:** Rely on color alone to convey meaning (see § 4). Always pair with an icon, text label, or pattern.
 
@@ -279,7 +279,7 @@ When reviewing UI code, verify:
 - [ ] Component API uses enumerated variants, not arbitrary string props.
 
 ### Interaction States
-- [ ] All interactive elements have designed states: default, hover, focus-visible, active, disabled, loading, error.
+- [ ] All interactive elements have designed states: default, hover, focus-visible (or platform equivalent), active/pressed, disabled, loading, error, success.
 - [ ] Focus indicators are visible and high-contrast (≥3:1 against background).
 - [ ] Disabled elements explain *why* they are disabled.
 - [ ] Loading states use skeletons for content; spinners only for short operations.
@@ -339,7 +339,7 @@ When applying UI design rules to a **specific set of files or modules** (the dec
 5. **Performance improvements.**
    - Adding lazy-loading to an in-scope component is allowed. Do not modify build configurations, bundler settings, or global loading strategies unless they are explicitly in scope.
 6. **State & interaction fixes.**
-   - Adding missing interaction states (focus, hover, disabled, loading, error) to an in-scope component is always allowed.
+   - Adding missing interaction states (focus, hover, active/pressed, disabled, loading, error, success) to an in-scope component is always allowed.
 7. **Scope-safe improvements are always allowed:**
    - Replacing magic numbers with design tokens (within the same file or a token file in scope).
    - Adding semantic elements and ARIA labels.
