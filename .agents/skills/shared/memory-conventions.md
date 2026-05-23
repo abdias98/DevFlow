@@ -44,6 +44,9 @@ These files live only for the duration of a DevFlow session. They are not versio
 | **Test Runner** | {Jest \| Vitest \| pytest \| go test \| xUnit \| JUnit \| PHPUnit \| RSpec \| ...} |
 | **Test Command** | {npm test \| pnpm test \| pytest \| go test ./... \| dotnet test \| mvn test \| ...} |
 | **Test Command (single file)** | {npm exec jest {file} \| pytest {file} \| go test {package} \| dotnet test --filter {name} \| ...} |
+| **Unit Test Command** | {npm exec jest {file} \| pytest {file} -m unit \| go test {package} \| ...} *(optional — same as single file if not differentiated)* |
+| **Integration Test Command** | {npm exec jest --testPathPattern integration \| pytest -m integration \| ...} *(optional)* |
+| **E2E Test Command** | {npx cypress run \| npx playwright test \| ...} *(optional — omit if no E2E tests)* |
 | **Build Command** | {npm run build \| go build \| dotnet build \| mvn package \| ...} |
 | **Lint Command** | {npm run lint \| eslint . \| flake8 \| golangci-lint run \| ...} |
 | **Watch Command** | {npm run dev \| next dev \| vite \| python manage.py runserver \| go run . \| air \| ...} |
@@ -93,8 +96,9 @@ These files live only for the duration of a DevFlow session. They are not versio
 {One-sentence summary}
 
 ## Definition of Done
-- {verifiable criterion 1}
-- {verifiable criterion 2}
+> Universal criteria (lint, build, tests, no BLOCKs) from [dod-template.md](./dod-template.md) apply automatically.
+- {feature-specific criterion 1}
+- {feature-specific criterion 2}
 
 ## Constraints
 - {constraint 1}

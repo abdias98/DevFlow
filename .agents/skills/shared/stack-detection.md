@@ -88,6 +88,13 @@ Read config files for test runner configuration:
 - dotnet: `dotnet test --filter {TestName}`
 - RSpec: `bundle exec rspec {file}`
 
+**Layered test commands** (optional — detect if the project separates test types):
+- **Unit:** Check `package.json` → `scripts.test:unit`; pytest markers (`-m unit`); Go `go test ./... -short`.
+- **Integration:** Check `package.json` → `scripts.test:integration`; pytest markers (`-m integration`); separate integration test directories or config files.
+- **E2E:** Check for `cypress.json`, `playwright.config.*`, `nightwatch.conf.*`. Extract `npx cypress run`, `npx playwright test`, etc.
+
+If test layers are not differentiated, leave the optional fields empty. Downstream agents fall back to `Test Command`.
+
 ### Step 5 — Detect Source and Test Roots
 
 - **Source Root:** Look for `src/`, `app/`, `lib/`, `cmd/`, or the folder with the most source files.

@@ -12,7 +12,7 @@ Use this matrix to analyze the user's request. **Do NOT ask all of these questio
 | **Users** | Who will use this? What are their expectations? |
 | **Edge Cases** | Invalid, empty, or unexpected input behavior? |
 | **Assumptions** | What is assumed but not explicitly stated? |
-| **Definition of Done** | How to verify it works? What specific output or behavior proves completion? |
+| **Definition of Done** | How to verify it works? What specific output or behavior proves completion? **Universal criteria** (lint, build, tests, no BLOCKs, etc.) are defined in [dod-template.md](<{{SKILLS_DIR}}/shared/dod-template.md>) and apply automatically to every cycle. Only add feature-specific criteria here. |
 | **Feature Type** | web frontend / backend / fullstack / mobile / CLI / library / desktop / other |
 | **Impact** | Does this change existing behavior? Which features could be affected? |
 
