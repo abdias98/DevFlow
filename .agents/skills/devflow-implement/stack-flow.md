@@ -4,16 +4,20 @@
 
 For each Stack in the Stack Plan table (in order):
 
-## 🌿 Branch Setup
-1. Create and switch to the Stack branch from the up-to-date base:
-   ```bash
-   git checkout {stack-base-branch}
-   git pull origin {stack-base-branch}
-   git checkout -b feat/{slug}/stack-{N}
-   ```
+## 🌿 Branch Setup (Manual — User Creates)
+1. **Inform the user** to create and switch to the Stack branch. **NEVER run git commands yourself.**
+   > "Create the Stack branch with:
+   > ```bash
+   > git checkout {stack-base-branch}
+   > git pull origin {stack-base-branch}
+   > git checkout -b feat/{slug}/stack-{N}
+   > ```
+   > Confirm when ready so I can proceed with implementation."
+
+2. **STOP and wait** for the user to confirm the branch is ready before proceeding.
 
 ## 🔴 Red → 🟢 Green per Task
-2. For each task inside this Stack:
+3. For each task inside this Stack:
    - Read the task's test code from the plan.
    - Create the test file using `create_file` and tell the user the exact command to run it (do NOT run it).
    - Write the production code using `create_file` or `replace_file_content`.
@@ -22,7 +26,7 @@ For each Stack in the Stack Plan table (in order):
    - Register tests in session memory (`test-registry.md`).
 
 ## 📤 Branch and PR (Manual)
-3. After all tasks in the Stack are complete, **inform the user** of the branch and how to push and create a PR manually:
+4. After all tasks in the Stack are complete, **inform the user** of the branch and how to push and create a PR manually:
    ```
    Stack {N}/{M} complete on branch feat/{slug}/stack-{N}.
    To share this work:
@@ -32,6 +36,6 @@ For each Stack in the Stack Plan table (in order):
    ```
    **NEVER run `gh pr create` or any equivalent.** The user decides if and when to open PRs.
 
-4. **Continue immediately to the next Stack** — do NOT wait for PR review.
+5. **Continue immediately to the next Stack** — do NOT wait for PR review. Go back to step 1 for the next Stack.
 
 After all Stacks are complete → provide the full test suite command and recommend the user run it to verify no regressions.

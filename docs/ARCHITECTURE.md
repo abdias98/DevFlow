@@ -199,7 +199,7 @@ Versioned with git, survive across conversations:
 When `Stack Mode: yes` is set (by the Planner, conditional on feature size), the iteration logic applies **within each Stack**:
 
 - The Planner groups tasks into Stacks with branches assigned.
-- The Implementer creates a branch per Stack (`feat/{slug}/stack-{N}`), executes Red→Green per task.
+- The user creates a branch per Stack (`feat/{slug}/stack-{N}`) with commands provided by the Planner. The Implementer then executes Red→Green per task.
 - The Reviewer diffs each Stack against its base branch.
 - BLOCK → fix → re-review loops apply within the current Stack branch.
 - The Finalizer includes a summary table of all Stack branches.
