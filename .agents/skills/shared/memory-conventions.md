@@ -144,6 +144,7 @@ These files live only for the duration of a DevFlow session. They are not versio
 | `refactors/` | Refactoring summaries | `YYYY-MM-DD-{slug}-refactor.md` |
 | `bug-fixes/` | Bug fix reports | `YYYY-MM-DD-{slug}-bugfix.md` |
 | `features/` | Lightweight feature docs | `YYYY-MM-DD-{slug}-feature.md` |
+| `metrics/` | Cycle quality metrics + aggregate trends | `YYYY-MM-DD-{slug}-metrics.md` |
 
 ## Memory Rules
 

@@ -59,7 +59,9 @@ See [stack mode](<{{SKILLS_DIR}}/devflow/stack-mode.md>) for stacked PR behavior
 
 ## Procedure
 
-You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You manage the lifecycle: verify prerequisites, invoke sub-agents, enforce the Confirmation Gate, track iterations, and handle escalation.
+You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You manage the lifecycle: verify prerequisites, invoke sub-agents, enforce the Confirmation Gate, track iterations, record metrics, and handle escalation.
+
+**Timing:** Record the start timestamp before each phase invocation and the completion timestamp after verification in `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` under `## Timing`.
 
 ### Step 0 — Session Initialization
 
@@ -74,6 +76,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - Initialize `phase-state.md` with `Current Phase: 1`, `Feature: {slug}`.
    - **Acquire the memory lock:** Set `Locked By: Orchestrator` and `Locked Since: {current timestamp}` in `phase-state.md`.
    - Initialize `context.md` with the user's request.
+   - **Initialize metrics:** Create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>). Fill the cycle header (slug, stack, started timestamp).
 4. Detect the project stack profile (or leave `[To be detected by Architect]`).
 5. **Record checkpoint:** Ask the user for the current git SHA:
    > "Before starting, run `git rev-parse HEAD` and tell me the output so I can record a rollback checkpoint."

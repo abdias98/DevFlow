@@ -41,6 +41,13 @@ Gather:
 - All test files added (from `test-registry.md`).
 - All document paths (spec, plan, review, mockups).
 - Update plan checkboxes to `[x]` for completed tasks.
+- **Compute quality metrics** using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>):
+  - Read the review → count BLOCK/WARN/INFO + extract top categories.
+  - Read `test-registry.md` → count tests, first-pass rate.
+  - Read `context.md` → DoD coverage.
+  - Read `traceability.md` → coverage percentage.
+  - Fill all remaining values in `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`.
+  - Append a new row to `docs/devflow/metrics/_aggregate.md` and recalculate averages.
 
 ### Step 4 — Generate Final Summary
 
