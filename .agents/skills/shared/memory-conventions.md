@@ -46,6 +46,7 @@ These files live only for the duration of a DevFlow session. They are not versio
 | **Test Command (single file)** | {npm exec jest {file} \| pytest {file} \| go test {package} \| dotnet test --filter {name} \| ...} |
 | **Build Command** | {npm run build \| go build \| dotnet build \| mvn package \| ...} |
 | **Lint Command** | {npm run lint \| eslint . \| flake8 \| golangci-lint run \| ...} |
+| **Watch Command** | {npm run dev \| next dev \| vite \| python manage.py runserver \| go run . \| air \| ...} |
 | **Source Root** | {src/ \| app/ \| lib/ \| cmd/ \| ...} |
 | **Test Root** | {tests/ \| __tests__/ \| test/ \| spec/ \| ...} |
 | **Test Utilities** | {e.g., factories in tests/factories/, fixtures in tests/fixtures/} |

@@ -94,10 +94,11 @@ Read config files for test runner configuration:
 - **Test Root:** Look for `tests/`, `test/`, `__tests__/`, `spec/`. Check test runner config for configured paths.
 - **Test Utilities:** Look inside the test root for: `factories/`, `fixtures/`, `helpers/`, `mocks/`, `support/`.
 
-### Step 6 — Detect Build and Lint Commands
+### Step 6 — Detect Build, Lint, and Watch Commands
 
 - **Build:** `package.json` → `scripts.build`; `go build ./...`; `dotnet build`; `mvn package`.
 - **Lint:** `package.json` → `scripts.lint`; check for `.eslintrc*`, `flake8`, `golangci-lint`, etc.
+- **Watch:** `package.json` → `scripts.dev` or `scripts.start`; look for `nodemon`, `air` (Go), `python manage.py runserver`, framework-specific dev servers (Next.js `next dev`, Vite `vite`). If no watch command found, leave empty or derive from the framework (e.g., Django → `python manage.py runserver`).
 
 ### Step 7 — Write Stack Profile to context.md
 
