@@ -25,6 +25,7 @@ For each Stack in the Stack Plan table (in order):
    - Commit with the planned message.
    - Register tests in session memory (`test-registry.md`).
    - Update `traceability.md`: fill Impl File paths and set Status = ✅ DONE for this task's rows.
+   - **Pair Mode:** If `Pair Mode: yes` in `phase-state.md`, after each task pause and ask: *"Task {N}/{M} complete. Review and approve?"* Options: ✅ Approve, ✏️ Revise, ❌ Cancel.
 
 ## 📤 Branch and PR (Manual)
 4. After all tasks in the Stack are complete, **inform the user** of the branch and how to push and create a PR manually:

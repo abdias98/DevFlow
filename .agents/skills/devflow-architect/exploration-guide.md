@@ -28,7 +28,7 @@ Auto-detect from config files: frameworks, test runners, build tools, ORM, DI, s
 - **Single project:** Use `## Stack Profile` table.
 - **Monorepo:** Use `## Stack Profiles` format. Create one entry per affected package. Include Workspace root for shared config (Package Manager, Monorepo Tool, workspace scripts).
 
-Fields per entry: Language, Runtime, Framework, Package Manager, Build Command, Lint Command, Source Root.
+Fields per entry: Language, Runtime, Framework, Database, Package Manager, Build Command, Lint Command, Audit Command, Watch Command, Source Root.
 
 Use [stack-detection.md](<{{SKILLS_DIR}}/shared/stack-detection.md>) as the detection reference for any stack not listed in the examples below.
 
@@ -64,7 +64,8 @@ These values are used by ALL downstream agents (Implementer, Tester, Refactorer,
 
 ### Backend (General)
 - Common layered pattern: Request/Controller → Validation → Service/Use Case → Repository → Model/Entity
-- Look for: middleware pipeline, dependency injection patterns, ORM conventions, authentication/authorization mechanisms.
+- Look for: middleware pipeline, dependency injection patterns, ORM/ODM conventions, authentication/authorization mechanisms.
+- Detect database type: SQL (PostgreSQL, MySQL, SQLite) via ORM configs; NoSQL (MongoDB, DynamoDB, Redis, Firestore) via driver/ODM dependencies.
 - If the framework has an official way (e.g., FormRequest, Policies, Guards), check if the project uses them.
 
 ### Frontend (General)

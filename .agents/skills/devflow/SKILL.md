@@ -25,6 +25,7 @@ Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) for language detection, to
 | Refactorer | `devflow-refactor` | Standalone |
 | Bug-Fixer | `devflow-bug-fix` | Standalone |
 | Feature Agent | `devflow-feature` | Standalone |
+| Performance Agent | `devflow-perf` | Standalone |
 
 ---
 
@@ -132,11 +133,12 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 
    | header | question | type |
    |--------|----------|------|
-   | `plan_confirmation` | Plan + Test Cases + Mockups complete. Review the plan — proceed to Implementation? | options: ✅ Yes — proceed, ✏️ Request changes, ❌ Cancel |
+   | `plan_confirmation` | Plan + Test Cases + Mockups complete. Choose implementation mode: | options: ✅ Standard — auto-complete, 🤝 Pair — review each task, ✏️ Request changes, ❌ Cancel |
 
-4. **If ✅ Yes** → record approval in `phase-state.md` and proceed to Step 5.
-5. **If ✏️ Request changes** → collect user feedback. Route back to Step 3 (Planner) with the feedback. Max 2 revision loops; escalate to user on the 3rd.
-6. **If ❌ Cancel** → stop the cycle. Release the memory lock (`Locked By: none`, `Locked Since: —`). Present the rollback option:
+4. **If ✅ Standard** → record `Pair Mode: no` in `phase-state.md` and proceed to Step 5.
+5. **If 🤝 Pair** → record `Pair Mode: yes` in `phase-state.md` and proceed to Step 5.
+6. **If ✏️ Request changes** → collect user feedback. Route back to Step 3 (Planner) with the feedback. Max 2 revision loops; escalate to user on the 3rd.
+7. **If ❌ Cancel** → stop the cycle. Release the memory lock (`Locked By: none`, `Locked Since: —`). Present the rollback option:
    > "Cycle cancelled. To revert all DevFlow artifacts created so far, run: `git reset --hard {pre-phase-1-sha}`"
    Update `phase-state.md` noting cancellation. Do NOT clean session memory (preserve artifacts for reference).
 
@@ -191,6 +193,7 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
    - No failing tests (user confirmed full suite passes).
    - All Definition of Done criteria from `context.md` are met.
    - Traceability coverage ≥ 100% on DoD and Edge Cases (check `traceability.md`).
+   - Dependency audit passed — no critical/high vulnerabilities (if `Audit Command` is configured).
    - **If any check fails** → route to the appropriate phase (Debugger or Implementer).
 2. Invoke `devflow-finalize`.
 3. **Wait** for completion. Verify:
@@ -218,6 +221,8 @@ Update the `## Iteration Log` in `phase-state.md` with each loop:
 |---|------|----|--------|
 | 1 | Reviewer | Implementer | BLOCK: missing input validation in auth.ts:42 |
 ```
+
+**When escalating to the user** (iteration limit reached), document the escalation in `## Escalation Log` in `phase-state.md` before presenting options to the user. Record: phases involved, trigger, number of attempts, root cause, and the user's decision after they respond.
 
 ---
 
@@ -290,6 +295,7 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 | `/devflow-refactor` | **Standalone:** Scope-locked refactoring of existing code |
 | `/devflow-bug-fix` | **Standalone:** Reproduce → Isolate → Fix a reported bug |
 | `/devflow-feature` | **Standalone:** Lightweight TDD cycle for small-medium features |
+| `/devflow-perf` | **Standalone:** Performance analysis, profiling, and optimization recommendations |
 
 When a single phase is invoked, the agent still reads session memory for prior context.
 

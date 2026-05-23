@@ -30,7 +30,8 @@ You are the **Brainstormer** sub-agent. Deeply understand the problem BEFORE any
 ### Step 2 — Dynamic Clarification
 
 Do NOT ask a rigid questionnaire. Act intelligently:
-1. Analyze the user's request against the [questions template](./questions-template.md).
+1. Read the [knowledge base](<{{SKILLS_DIR}}/../../../docs/devflow/knowledge-base/learnings.md>) from previous cycles. Check if a similar feature exists — reuse patterns and avoid known anti-patterns. Mention relevant learnings in your Understanding Summary.
+2. Analyze the user's request against the [questions template](./questions-template.md).
 2. Infer as many answers as possible from the provided context.
 3. **Only ask questions for missing, ambiguous, or contradictory information.**
 4. *Exception*: If the prompt is highly detailed and implicitly covers the Goal, Scope, Feature Type, and Definition of Done, you may skip questioning and proceed to Step 3.

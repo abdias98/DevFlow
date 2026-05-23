@@ -64,6 +64,29 @@ Read the primary config file and inspect dependencies/imports:
 - **pom.xml / build.gradle** → look for: `spring-boot`, `quarkus`, `micronaut`.
 - **composer.json** → look for: `laravel/framework`, `symfony/symfony`.
 
+### Step 3a — Detect Database / Storage
+
+Check config files and dependencies for database type:
+
+| Database | Signals |
+|----------|---------|
+| **PostgreSQL** | `pg`, `postgres`, `psycopg2`, `Npgsql` in dependencies |
+| **MySQL** | `mysql2`, `mysql`, `mysqli`, `MySqlConnector` |
+| **SQLite** | `better-sqlite3`, `sqlite3`, `System.Data.SQLite` |
+| **MongoDB** | `mongoose`, `mongodb`, `mongoengine`, `pymongo` in dependencies |
+| **DynamoDB** | `@aws-sdk/client-dynamodb`, `boto3` with `dynamodb`, DynamoDB SDK references |
+| **Redis** | `redis`, `ioredis`, `redis-py`, `StackExchange.Redis` in dependencies |
+| **Firestore** | `firebase-admin`, `@google-cloud/firestore`, `firebase/firestore` |
+| **Elasticsearch** | `@elastic/elasticsearch`, `elasticsearch`, `elasticsearch-py` |
+| **ORM-only** (SQL agnostic) | `prisma`, `typeorm`, `sequelize`, `django.db`, `SQLAlchemy`, `Entity Framework`, `Hibernate` |
+
+Record the detected database(s) in `## Stack Profile` as a new row:
+```
+| **Database** | {PostgreSQL \| MongoDB \| SQLite \| ...} |
+```
+
+For monorepos, record per-package. If multiple databases are used, list all separated by commas.
+
 ### Step 4 — Detect Test Runner and Commands
 
 Read config files for test runner configuration:
@@ -88,16 +111,25 @@ Read config files for test runner configuration:
 - dotnet: `dotnet test --filter {TestName}`
 - RSpec: `bundle exec rspec {file}`
 
+**Layered test commands** (optional — detect if the project separates test types):
+- **Unit:** Check `package.json` → `scripts.test:unit`; pytest markers (`-m unit`); Go `go test ./... -short`.
+- **Integration:** Check `package.json` → `scripts.test:integration`; pytest markers (`-m integration`); separate integration test directories or config files.
+- **E2E:** Check for `cypress.json`, `playwright.config.*`, `nightwatch.conf.*`. Extract `npx cypress run`, `npx playwright test`, etc.
+
+If test layers are not differentiated, leave the optional fields empty. Downstream agents fall back to `Test Command`.
+
 ### Step 5 — Detect Source and Test Roots
 
 - **Source Root:** Look for `src/`, `app/`, `lib/`, `cmd/`, or the folder with the most source files.
 - **Test Root:** Look for `tests/`, `test/`, `__tests__/`, `spec/`. Check test runner config for configured paths.
 - **Test Utilities:** Look inside the test root for: `factories/`, `fixtures/`, `helpers/`, `mocks/`, `support/`.
 
-### Step 6 — Detect Build and Lint Commands
+### Step 6 — Detect Build, Lint, Audit, and Watch Commands
 
 - **Build:** `package.json` → `scripts.build`; `go build ./...`; `dotnet build`; `mvn package`.
 - **Lint:** `package.json` → `scripts.lint`; check for `.eslintrc*`, `flake8`, `golangci-lint`, etc.
+- **Audit:** Check for dependency audit tools. `package.json` → `scripts.audit`; presence of `pip-audit`, `safety`, `owasp dependency-check`, `cargo audit`, `bundler-audit` in dependencies or CI configs. Common defaults: npm → `npm audit`, pnpm → `pnpm audit`, pip → `pip-audit` or `safety check`. If no audit tool is configured, leave empty.
+- **Watch:** `package.json` → `scripts.dev` or `scripts.start`; look for `nodemon`, `air` (Go), `python manage.py runserver`, framework-specific dev servers (Next.js `next dev`, Vite `vite`). If no watch command found, leave empty or derive from the framework (e.g., Django → `python manage.py runserver`).
 
 ### Step 7 — Write Stack Profile to context.md
 

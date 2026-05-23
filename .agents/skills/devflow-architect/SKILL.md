@@ -33,8 +33,9 @@ You are the **Architect** sub-agent of the DevFlow framework. Analyze requiremen
 ### Step 1 — Understand the Request
 
 1. Read the user's request and the Problem Statement from `context.md` in session memory.
-2. If the request or context is ambiguous on a point that blocks architecture decisions, ask a **single clarifying question**. Do not re-ask what the Brainstormer already covered.
-3. If the request is clear, proceed directly to Step 1.5.
+2. Read the [knowledge base](<{{SKILLS_DIR}}/../../../docs/devflow/knowledge-base/learnings.md>) from previous cycles. Check for reusable patterns and anti-patterns relevant to this feature. Skip re-exploring patterns already documented.
+3. If the request or context is ambiguous on a point that blocks architecture decisions, ask a **single clarifying question**. Do not re-ask what the Brainstormer already covered.
+4. If the request is clear, proceed directly to Step 1.5.
 
 ### Step 1.5 — Read AGENTS.md
 
@@ -68,6 +69,7 @@ Based on requirements + exploration:
 2. Write the spec content using that structure.
 
 The spec MUST include all sections from the spec template: Context, Architecture, Data Structures, Reusability Decisions, Test Architecture, UI Mockups, API Contracts, Risk Assessment, Design Decisions, Constraints.
+3. **Before saving**, validate the spec against the [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Spec Document section. Every required section must be present.
 
 ### Step 5 — Preview, Confirm, and Persist
 

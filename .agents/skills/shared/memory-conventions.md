@@ -40,17 +40,25 @@ These files live only for the duration of a DevFlow session. They are not versio
 | **Language** | {TypeScript \| Python \| Go \| C# \| Java \| PHP \| Ruby \| Kotlin \| ...} |
 | **Runtime** | {Node.js 20 \| Python 3.12 \| .NET 8 \| Go 1.22 \| ...} |
 | **Framework** | {Next.js 14 \| Django 5 \| ASP.NET Core \| Spring Boot 3 \| Laravel 11 \| ...} |
+| **Database** | {PostgreSQL \| MySQL \| SQLite \| MongoDB \| DynamoDB \| Redis \| ...} |
 | **Package Manager** | {npm \| pnpm \| yarn \| pip \| poetry \| go mod \| nuget \| composer \| bundler \| ...} |
 | **Test Runner** | {Jest \| Vitest \| pytest \| go test \| xUnit \| JUnit \| PHPUnit \| RSpec \| ...} |
 | **Test Command** | {npm test \| pnpm test \| pytest \| go test ./... \| dotnet test \| mvn test \| ...} |
 | **Test Command (single file)** | {npm exec jest {file} \| pytest {file} \| go test {package} \| dotnet test --filter {name} \| ...} |
+| **Unit Test Command** | {npm exec jest {file} \| pytest {file} -m unit \| go test {package} \| ...} *(optional — same as single file if not differentiated)* |
+| **Integration Test Command** | {npm exec jest --testPathPattern integration \| pytest -m integration \| ...} *(optional)* |
+| **E2E Test Command** | {npx cypress run \| npx playwright test \| ...} *(optional — omit if no E2E tests)* |
 | **Build Command** | {npm run build \| go build \| dotnet build \| mvn package \| ...} |
 | **Lint Command** | {npm run lint \| eslint . \| flake8 \| golangci-lint run \| ...} |
+| **Audit Command** | {npm audit \| pnpm audit \| pip-audit \| safety check \| owasp dependency-check \| cargo audit \| ...} *(optional — omit if no audit tool configured)* |
+| **Watch Command** | {npm run dev \| next dev \| vite \| python manage.py runserver \| go run . \| air \| ...} |
 | **Source Root** | {src/ \| app/ \| lib/ \| cmd/ \| ...} |
 | **Test Root** | {tests/ \| __tests__/ \| test/ \| spec/ \| ...} |
 | **Test Utilities** | {e.g., factories in tests/factories/, fixtures in tests/fixtures/} |
 
 > **Monorepo:** When the workspace contains multiple packages (e.g., Nx, Turborepo, Lerna, pnpm workspaces), replace `## Stack Profile` with `## Stack Profiles` below. Each package gets its own profile entry. Downstream agents select the relevant profile based on the feature scope.
+> 
+> **Multi-language:** `## Stack Profiles` supports different languages per package (e.g., TypeScript frontend + Python backend in the same cycle). Each profile entry defines its own Language, Framework, Test Command, etc. A fullstack feature simply references both profiles.
 
 ### `## Stack Profiles` (monorepo only)
 
@@ -92,8 +100,9 @@ These files live only for the duration of a DevFlow session. They are not versio
 {One-sentence summary}
 
 ## Definition of Done
-- {verifiable criterion 1}
-- {verifiable criterion 2}
+> Universal criteria (lint, build, tests, no BLOCKs) from [dod-template.md](./dod-template.md) apply automatically.
+- {feature-specific criterion 1}
+- {feature-specific criterion 2}
 
 ## Constraints
 - {constraint 1}
@@ -146,6 +155,14 @@ These files live only for the duration of a DevFlow session. They are not versio
 |---|------|----|--------|
 | 1 | Reviewer | Implementer | BLOCK: {reason} |
 
+## Escalation Log
+> Documented by the Orchestrator when iteration limits are exhausted and the user is asked to decide.
+
+| # | Phases | Trigger | Attempts | Root Cause | User Decision |
+|---|--------|---------|:--------:|------------|---------------|
+| 1 | Implementer ↔ Debugger | Test still failing | 3 | NullReference at auth.ts:42 | Simplify scope |
+| 2 | Planner revision | User requests changes | 2 | Ambiguous API contract | Redesign spec |
+
 ## Checkpoints
 > Git SHAs recorded by the Orchestrator before phases that produce irreversible changes.
 > Used for rollback when a phase must be reverted. NEVER execute `git reset` — tell the user the command.
@@ -182,7 +199,9 @@ These files live only for the duration of a DevFlow session. They are not versio
 | `refactors/` | Refactoring summaries | `YYYY-MM-DD-{slug}-refactor.md` |
 | `bug-fixes/` | Bug fix reports | `YYYY-MM-DD-{slug}-bugfix.md` |
 | `features/` | Lightweight feature docs | `YYYY-MM-DD-{slug}-feature.md` |
+| `performance/` | Performance analysis reports | `YYYY-MM-DD-{slug}-perf.md` |
 | `metrics/` | Cycle quality metrics + aggregate trends | `YYYY-MM-DD-{slug}-metrics.md` |
+| `knowledge-base/` | Cross-cycle learnings, patterns, and anti-patterns | `learnings.md` (appended per cycle) |
 
 ## Memory Rules
 

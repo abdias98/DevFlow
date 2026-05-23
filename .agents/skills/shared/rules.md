@@ -5,6 +5,9 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
 ## Language
 
 - **Always respond in the user's language.** Detect from their message. If the user writes in Spanish, respond in Spanish. If English, respond in English.
+- **User-facing messages** (questions, confirmations, summaries, error messages) MUST be in the user's language. Use [i18n-es.md](./i18n-es.md) for canonical Spanish translations of framework terms and common phrases.
+- **Internal artifacts** (specs, plans, reviews, code comments) remain in English as they are technical documents.
+- Agent names and phase names (Brainstormer, Architect, etc.) may be translated to the user's language in user-facing messages, but skill invocations and internal references always use English names.
 
 ## Tool Compatibility
 
@@ -34,6 +37,19 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
 - NEVER hardcode paths, tech stack names, or repo-specific conventions.
 - Use `AGENTS.md` when present — if the project has one, read it first and skip redundant exploration.
 - **Engineering standards** are versioned (see `shared/standards/CHANGELOG.md`). Each standard declares its version in the file header. When proposing changes to standards, follow the version policy.
+
+## Template Variables
+
+Skill files use template variables that are resolved at install time by `install.sh`. These are NOT runtime variables — they are replaced with actual paths during installation.
+
+| Variable | Resolves to | Example |
+|----------|------------|---------|
+| `{{SKILLS_DIR}}` | Installed skills directory | `~/.agents/skills` |
+| `{{AGENTS_DIR}}` | Installed agents directory | `~/.agents` |
+| `{{PROMPTS_DIR}}` | Installed prompts directory | `~/.agents/prompts` |
+| `{{INSTR_DIR}}` | Installed instructions directory | `~/.agents/instructions` |
+
+**Usage:** Only use `{{SKILLS_DIR}}` in skill file **path references** (e.g., `<{{SKILLS_DIR}}/shared/rules.md>`). Never use them in code snippets, commands, or runtime logic. When editing a skill file in the source repository, write `{{SKILLS_DIR}}` — the install script handles substitution for each editor profile.
 
 ## Scope-Locking
 
@@ -102,6 +118,35 @@ CI mode is active when the environment variable `CI=true` is set. This is the st
 5. **Reviewer:** Normal behavior — still classifies BLOCK/WARN/INFO.
 6. **Debugger:** Skip. If tests fail, report error and exit.
 7. **Finalizer:** Normal behavior — save summary and clean session memory.
+
+## Pair Programming Mode
+
+DevFlow supports an interactive mode where the user reviews and approves each task during implementation, rather than the Implementer auto-completing all tasks.
+
+### Activation
+Pair Mode is activated by the Orchestrator at the Confirmation Gate. The user chooses between:
+- **✅ Standard mode:** Implementer auto-completes all tasks sequentially
+- **🤝 Pair Mode:** Implementer pauses after each task for user review
+
+### Behavior in Pair Mode
+
+| Phase | Standard Mode | Pair Mode |
+|-------|--------------|-----------|
+| Implementer (per task) | Auto-continue to next task | Pause, show changes, ask for approval |
+| Task approval | Implicit (commits) | Explicit ✅/✏️/❌ per task |
+| Error handling | Auto-retry or debugger | User decides next action |
+
+### Config
+
+| Variable | Default | Effect |
+|----------|:-------:|--------|
+| `DEVFLOW_PAIR` | `false` | Forces Pair Mode on (overrides Confirmation Gate) |
+
+### Agent responsibilities in Pair Mode
+
+1. **Orchestrator:** Offer Pair Mode as an option at the Confirmation Gate. Record choice in `context.md` (`Pair Mode: yes`).
+2. **Implementer:** After each task's Green Phase completes and tests pass, STOP and present the changes. Ask: *"Task {N}/{M} complete. Review and approve to continue?"* Options: ✅ Approve, ✏️ Revise, ❌ Cancel. Resume only after explicit approval.
+3. **All other agents:** No change — Pair Mode only affects the Implementer phase.
 
 ## INFO Notes & Violation Reporting
 
