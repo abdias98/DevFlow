@@ -64,7 +64,7 @@ For each changed file:
 
 ### Step 4 — Generate Review Document
 
-**Use `create_file` to save** to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`. Follow the template defined in the review checklist.
+**Use `create_file` to save** to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`. Follow the template defined in the review checklist. Before saving, validate the review against the [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Review Document section: Summary, all severity sections present, every finding has file+line reference, Verdict clearly stated.
 
 ### Step 5 — Route Decision
 

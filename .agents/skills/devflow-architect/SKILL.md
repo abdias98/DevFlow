@@ -69,6 +69,7 @@ Based on requirements + exploration:
 2. Write the spec content using that structure.
 
 The spec MUST include all sections from the spec template: Context, Architecture, Data Structures, Reusability Decisions, Test Architecture, UI Mockups, API Contracts, Risk Assessment, Design Decisions, Constraints.
+3. **Before saving**, validate the spec against the [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Spec Document section. Every required section must be present.
 
 ### Step 5 — Preview, Confirm, and Persist
 

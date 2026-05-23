@@ -80,7 +80,7 @@ Ensure you understand: file conventions, import patterns, test framework + asser
 
 ### Step 7 — Write the Plan
 
-Using the [plan template](<{{SKILLS_DIR}}/devflow-plan/plan-template.md>), write the complete plan document.
+Using the [plan template](<{{SKILLS_DIR}}/devflow-plan/plan-template.md>), write the complete plan document. Before proceeding to Step 8, validate the plan against the [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Plan Document section: all required sections present, each task has commit checkpoint + test code.
 
 ### Step 7a — Generate Traceability Matrix
 
