@@ -133,11 +133,12 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 
    | header | question | type |
    |--------|----------|------|
-   | `plan_confirmation` | Plan + Test Cases + Mockups complete. Review the plan — proceed to Implementation? | options: ✅ Yes — proceed, ✏️ Request changes, ❌ Cancel |
+   | `plan_confirmation` | Plan + Test Cases + Mockups complete. Choose implementation mode: | options: ✅ Standard — auto-complete, 🤝 Pair — review each task, ✏️ Request changes, ❌ Cancel |
 
-4. **If ✅ Yes** → record approval in `phase-state.md` and proceed to Step 5.
-5. **If ✏️ Request changes** → collect user feedback. Route back to Step 3 (Planner) with the feedback. Max 2 revision loops; escalate to user on the 3rd.
-6. **If ❌ Cancel** → stop the cycle. Release the memory lock (`Locked By: none`, `Locked Since: —`). Present the rollback option:
+4. **If ✅ Standard** → record `Pair Mode: no` in `phase-state.md` and proceed to Step 5.
+5. **If 🤝 Pair** → record `Pair Mode: yes` in `phase-state.md` and proceed to Step 5.
+6. **If ✏️ Request changes** → collect user feedback. Route back to Step 3 (Planner) with the feedback. Max 2 revision loops; escalate to user on the 3rd.
+7. **If ❌ Cancel** → stop the cycle. Release the memory lock (`Locked By: none`, `Locked Since: —`). Present the rollback option:
    > "Cycle cancelled. To revert all DevFlow artifacts created so far, run: `git reset --hard {pre-phase-1-sha}`"
    Update `phase-state.md` noting cancellation. Do NOT clean session memory (preserve artifacts for reference).
 

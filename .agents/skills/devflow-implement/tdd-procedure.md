@@ -21,9 +21,14 @@ For each task in the plan:
 9. Inform the user how to verify the test now passes:
    > "Production code written. To verify the test passes, run: `{Test Command (single file)} {test path}`"
 10. Track progress:
-     - If the user reports tests pass → update `test-registry.md` (PASS), mark step complete, update `traceability.md` (fill Impl File, set Status = ✅ DONE for this task's rows), continue.
+     - If the user reports tests pass → update `test-registry.md` (PASS), mark step complete, update `traceability.md` (fill Impl File, set Status = ✅ DONE for this task's rows).
      - If the user reports failure → stop, document failure, consider invoking debugger.
-11. Commit at task checkpoints with the message from the plan.
+11. **Pair Mode gate (if `Pair Mode: yes` in `phase-state.md`):**
+    - After the task completes successfully, STOP and present the changes.
+    - Ask: *"Task {N}/{M} complete: {task title}. Files: {list}. Review and approve?"*
+    - Options: ✅ Approve → commit and continue, ✏️ Revise → redo Green Phase, ❌ Cancel → stop.
+    - Wait for explicit user approval before proceeding to the next task.
+12. Commit at task checkpoints with the message from the plan.
 
 ## After All Tasks
 

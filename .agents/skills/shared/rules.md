@@ -116,6 +116,35 @@ CI mode is active when the environment variable `CI=true` is set. This is the st
 6. **Debugger:** Skip. If tests fail, report error and exit.
 7. **Finalizer:** Normal behavior — save summary and clean session memory.
 
+## Pair Programming Mode
+
+DevFlow supports an interactive mode where the user reviews and approves each task during implementation, rather than the Implementer auto-completing all tasks.
+
+### Activation
+Pair Mode is activated by the Orchestrator at the Confirmation Gate. The user chooses between:
+- **✅ Standard mode:** Implementer auto-completes all tasks sequentially
+- **🤝 Pair Mode:** Implementer pauses after each task for user review
+
+### Behavior in Pair Mode
+
+| Phase | Standard Mode | Pair Mode |
+|-------|--------------|-----------|
+| Implementer (per task) | Auto-continue to next task | Pause, show changes, ask for approval |
+| Task approval | Implicit (commits) | Explicit ✅/✏️/❌ per task |
+| Error handling | Auto-retry or debugger | User decides next action |
+
+### Config
+
+| Variable | Default | Effect |
+|----------|:-------:|--------|
+| `DEVFLOW_PAIR` | `false` | Forces Pair Mode on (overrides Confirmation Gate) |
+
+### Agent responsibilities in Pair Mode
+
+1. **Orchestrator:** Offer Pair Mode as an option at the Confirmation Gate. Record choice in `context.md` (`Pair Mode: yes`).
+2. **Implementer:** After each task's Green Phase completes and tests pass, STOP and present the changes. Ask: *"Task {N}/{M} complete. Review and approve to continue?"* Options: ✅ Approve, ✏️ Revise, ❌ Cancel. Resume only after explicit approval.
+3. **All other agents:** No change — Pair Mode only affects the Implementer phase.
+
 ## INFO Notes & Violation Reporting
 
 - When a code smell, architectural violation, or potential improvement is found in a file outside the scope, add an INFO note following this format:
