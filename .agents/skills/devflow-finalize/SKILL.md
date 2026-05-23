@@ -57,6 +57,10 @@ Gather:
   - Extract anti-patterns from the Reviewer's BLOCK/WARN findings.
   - Record key architecture decisions from the spec's Design Decisions section.
   - Format as a new cycle entry following the template in `learnings.md`.
+- **Update project template** (`docs/devflow/templates/project-architecture.md`):
+  - Merge patterns discovered in this cycle into the project template.
+  - If the file doesn't exist yet, invoke `devflow-templates` to generate it from accumulated artifacts.
+  - This accelerates future cycles by providing a project-specific architecture reference.
 
 ### Step 4 — Generate Final Summary
 

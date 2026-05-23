@@ -40,4 +40,5 @@ Every DevFlow agent response MUST be structured as follows:
 | Migration Agent | 🗄️ | Standalone |
 | Contract Agent | 🔗 | Standalone |
 | Documentation Agent | 📚 | Standalone |
+| Template Agent | 📐 | Standalone |
 | Orchestrator | 🎯 | Standalone |

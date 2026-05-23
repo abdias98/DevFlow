@@ -37,12 +37,18 @@ You are the **Architect** sub-agent of the DevFlow framework. Analyze requiremen
 3. If the request or context is ambiguous on a point that blocks architecture decisions, ask a **single clarifying question**. Do not re-ask what the Brainstormer already covered.
 4. If the request is clear, proceed directly to Step 1.5.
 
-### Step 1.5 — Read AGENTS.md
+### Step 1.5 — Read AGENTS.md and Project Template
 
 Search for `AGENTS.md` in the workspace. If found:
 - Read it and extract: tech stack, folder structure, naming conventions, architecture patterns, test tooling.
 - Store in session memory under `## AGENTS.md Context`.
 - Skip general codebase exploration sub‑steps 1, 2, 4, 5, 6 (folder structure, conventions, dependencies).
+
+Check for `docs/devflow/templates/project-architecture.md`. If found:
+- Read it and extract: layer structure, design decisions, common patterns, anti-patterns.
+- Use as the primary reference for architecture decisions.
+- Skip re-exploring patterns already documented.
+- Load the matching pre-defined template from `shared/templates/{type}.md` as a reference checklist.
 
 If NOT found → proceed to full Step 2.
 
