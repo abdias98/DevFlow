@@ -22,6 +22,7 @@ Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) for language detection, to
 | Reviewer | `devflow-review` | 5 |
 | Debugger | `devflow-debug` | 6 (conditional) |
 | Finalizer | `devflow-finalize` | 7 |
+| Tester | `devflow-test` | Manual |
 | Refactorer | `devflow-refactor` | Standalone |
 | Bug-Fixer | `devflow-bug-fix` | Standalone |
 | Feature Agent | `devflow-feature` | Standalone |
@@ -31,6 +32,7 @@ Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) for language detection, to
 | Documentation Agent | `devflow-docs` | Standalone |
 | Template Agent | `devflow-templates` | Standalone |
 | Tutorial Agent | `devflow-tutorial` | Standalone |
+| Reverse Agent | `devflow-reverse` | Standalone |
 
 ---
 
@@ -297,6 +299,7 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 | `/devflow-review` | Only Phase 5 (or standalone) |
 | `/devflow-debug` | Only Phase 6 (or standalone) |
 | `/devflow-finalize` | Only Phase 7 |
+| `/devflow-test` | **Manual:** Create failing test files from the plan on demand |
 | `/devflow-refactor` | **Standalone:** Scope-locked refactoring of existing code |
 | `/devflow-bug-fix` | **Standalone:** Reproduce → Isolate → Fix a reported bug |
 | `/devflow-feature` | **Standalone:** Lightweight TDD cycle for small-medium features |
@@ -306,6 +309,7 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 | `/devflow-docs` | **Standalone:** Generate/update README, API docs, CHANGELOG, architecture docs from artifacts |
 | `/devflow-templates` | **Standalone:** Generate/maintain project-specific architecture templates from DevFlow cycles |
 | `/devflow-tutorial` | **Standalone:** Interactive onboarding — guided walkthrough of a complete DevFlow cycle |
+| `/devflow-reverse` | **Standalone:** Reverse engineer undocumented project — generate AGENTS.md, specs, deps |
 
 When a single phase is invoked, the agent still reads session memory for prior context.
 

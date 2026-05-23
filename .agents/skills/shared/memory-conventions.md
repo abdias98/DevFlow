@@ -205,6 +205,7 @@ These files live only for the duration of a DevFlow session. They are not versio
 | `documentation/` | Documentation generation reports | `YYYY-MM-DD-{slug}-docs.md` |
 | `templates/` | Project-specific architecture templates (generated) | `project-architecture.md` |
 | `tutorial/` | Tutorial + cheat sheet for new users | `YYYY-MM-DD-{slug}-tutorial.md` |
+| `reverse/` | Reverse engineering analysis reports | `YYYY-MM-DD-{slug}-reverse-design.md` |
 | `metrics/` | Cycle quality metrics + aggregate trends | `YYYY-MM-DD-{slug}-metrics.md` |
 | `knowledge-base/` | Cross-cycle learnings, patterns, and anti-patterns | `learnings.md` (appended per cycle) |
 

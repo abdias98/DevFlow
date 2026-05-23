@@ -80,12 +80,14 @@ The following agents operate **independently** of the Phase 1–7 lifecycle. The
 | Refactorer | `devflow-refactor` | Improve code structure/readability without changing behavior |
 | Bug-Fixer | `devflow-bug-fix` | Fix a reported bug with reproduction test |
 | Feature Agent | `devflow-feature` | Implement a small-medium feature without full planning overhead |
+| Tester | `devflow-test` | Create failing test files from the plan (manual helper) |
 | Performance Agent | `devflow-perf` | Analyze performance bottlenecks and recommend optimizations |
 | Migration Agent | `devflow-migrate` | Generate database migrations with compatibility checks |
 | Contract Agent | `devflow-contract` | Validate API implementation against spec contract |
 | Documentation Agent | `devflow-docs` | Generate README, API docs, CHANGELOG from artifacts |
 | Template Agent | `devflow-templates` | Generate/maintain project-specific architecture templates |
 | Tutorial Agent | `devflow-tutorial` | Interactive onboarding — guided walkthrough of DevFlow |
+| Reverse Agent | `devflow-reverse` | Analyze undocumented project — generate AGENTS.md + specs |
 | Reviewer | `devflow-review` | Review existing code against standards |
 | Debugger | `devflow-debug` | Diagnose and fix issues (standalone) |
 

@@ -42,4 +42,5 @@ Every DevFlow agent response MUST be structured as follows:
 | Documentation Agent | 📚 | Standalone |
 | Template Agent | 📐 | Standalone |
 | Tutorial Agent | 🎓 | Standalone |
+| Reverse Agent | 🔍 | Standalone |
 | Orchestrator | 🎯 | Standalone |
