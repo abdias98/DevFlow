@@ -20,6 +20,7 @@ These files live only for the duration of a DevFlow session. They are not versio
 | `context.md` | Problem statement, constraints, DoD, tech stack, Stack Mode | Brainstormer, Architect, Planner |
 | `phase-state.md` | Current phase, checklist, iteration counter/log | All agents |
 | `test-registry.md` | Test names, status (FAIL/PASS), files created | Implementer, Tester |
+| `traceability.md` | Cross-reference: requirements → spec → tasks → tests → files | Planner, Implementer |
 
 ### `context.md` format
 

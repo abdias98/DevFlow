@@ -45,16 +45,18 @@ Gather:
 ### Step 4 — Generate Final Summary
 
 1. Present the summary using the [summary template](<{{SKILLS_DIR}}/devflow-finalize/summary-template.md>).
-2. **Use `create_file` to save** the final summary to `docs/devflow/summaries/YYYY-MM-DD-{slug}-summary.md`.
-3. Include the Stack branches table if Stack Mode = yes.
+2. Read `traceability.md` from session memory and include the Coverage Summary in the final report.
+3. **Use `create_file` to save** the final summary to `docs/devflow/summaries/YYYY-MM-DD-{slug}-summary.md`.
+4. Include the Stack branches table if Stack Mode = yes.
 
 ### Step 5 — Clean Session Memory
 
 1. Confirm with the user that all artifacts are saved and the feature is complete.
 2. Delete all session memory files in the session path (`docs/devflow/session/` or `/memories/session/devflow/`), following [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>):
-   - `context.md`
-   - `phase-state.md`
-   - `test-registry.md`
+    - `context.md`
+    - `phase-state.md`
+    - `test-registry.md`
+    - `traceability.md`
 
 ### Step 6 — Final Confirmation
 

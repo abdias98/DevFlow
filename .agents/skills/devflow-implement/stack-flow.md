@@ -24,6 +24,7 @@ For each Stack in the Stack Plan table (in order):
    - Tell the user the test command again to verify it now passes.
    - Commit with the planned message.
    - Register tests in session memory (`test-registry.md`).
+   - Update `traceability.md`: fill Impl File paths and set Status = ✅ DONE for this task's rows.
 
 ## 📤 Branch and PR (Manual)
 4. After all tasks in the Stack are complete, **inform the user** of the branch and how to push and create a PR manually:

@@ -172,11 +172,12 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
    - No unresolved BLOCK findings (check latest review in `docs/devflow/reviews/`).
    - No failing tests (user confirmed full suite passes).
    - All Definition of Done criteria from `context.md` are met.
+   - Traceability coverage ≥ 100% on DoD and Edge Cases (check `traceability.md`).
    - **If any check fails** → route to the appropriate phase (Debugger or Implementer).
 2. Invoke `devflow-finalize`.
 3. **Wait** for completion. Verify:
    - Final summary saved at `docs/devflow/summaries/YYYY-MM-DD-{slug}-summary.md`.
-   - Session memory cleaned (`context.md`, `phase-state.md`, `test-registry.md` deleted).
+   - Session memory cleaned (`context.md`, `phase-state.md`, `test-registry.md`, `traceability.md` deleted).
    - All persistent artifacts confirmed saved.
 4. Present the Finalizer's summary to the user. Cycle complete. ✅
 
