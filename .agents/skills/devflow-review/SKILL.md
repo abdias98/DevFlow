@@ -36,7 +36,7 @@ You are the **Reviewer** sub-agent. Perform deep code review — either comparin
 | Condition | Mode |
 |-----------|------|
 | Invoked from the full `/devflow` lifecycle (Implementer auto-invoked me) | **Cycle Mode** |
-| Invoked from `/devflow-feature`, `/devflow-refactor`, `/devflow-bug-fix`, or `/devflow-perf` | **Standalone Mode** |
+| Invoked from `/devflow-feature`, `/devflow-refactor`, `/devflow-bug-fix`, `/devflow-perf`, or `/devflow-migrate` | **Standalone Mode** |
 | Invoked directly via `/devflow-review` by the user | **Cycle Mode** (falls back to Standalone if no spec/plan found) |
 
 Set `REVIEW_MODE` and proceed to the corresponding procedure below.
@@ -86,16 +86,17 @@ Update `phase-state.md`:
 
 ## Procedure — Standalone Mode
 
-Used when invoked by Feature Agent, Refactorer, Bug-Fixer, or Performance Agent.
+Used when invoked by Feature Agent, Refactorer, Bug-Fixer, Performance Agent, or Migration Agent.
 
 ### Step 1 — Gather Context
 
-1. Identify the invoking agent: `{feature | refactor | bug-fix | perf}`.
+1. Identify the invoking agent: `{feature | refactor | bug-fix | perf | migrate}`.
 2. Read the agent's artifact from session memory:
    - Feature: `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`
    - Refactor: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`
    - Bug-Fix: `docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md`
    - Performance: `docs/devflow/performance/YYYY-MM-DD-{slug}-perf.md`
+   - Migration: `docs/devflow/migrations/YYYY-MM-DD-{slug}-migration.md`
 3. Read `## Stack Profile` from `context.md` to determine `Feature Type` (UI/backend/fullstack/etc.).
 4. Identify which standards to apply based on `Feature Type`:
    - **Always:** SOLID, Clean Architecture, Security, Performance, Project Design Patterns.
@@ -117,7 +118,7 @@ For each changed file:
 
 **Use `create_file` to save** to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`. Include a header indicating standalone mode:
 ```markdown
-**Review Mode:** Standalone (invoked by {Feature Agent | Refactorer | Bug-Fixer | Performance Agent})
+**Review Mode:** Standalone (invoked by {Feature Agent | Refactorer | Bug-Fixer | Performance Agent | Migration Agent})
 **Reference:** `docs/devflow/{type}/{artifact-file}`
 ```
 

@@ -26,6 +26,7 @@ Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) for language detection, to
 | Bug-Fixer | `devflow-bug-fix` | Standalone |
 | Feature Agent | `devflow-feature` | Standalone |
 | Performance Agent | `devflow-perf` | Standalone |
+| Migration Agent | `devflow-migrate` | Standalone |
 
 ---
 
@@ -296,6 +297,7 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 | `/devflow-bug-fix` | **Standalone:** Reproduce → Isolate → Fix a reported bug |
 | `/devflow-feature` | **Standalone:** Lightweight TDD cycle for small-medium features |
 | `/devflow-perf` | **Standalone:** Performance analysis, profiling, and optimization recommendations |
+| `/devflow-migrate` | **Standalone:** Database migration generation, compatibility checks, zero-downtime strategies |
 
 When a single phase is invoked, the agent still reads session memory for prior context.
 

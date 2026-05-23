@@ -200,6 +200,7 @@ These files live only for the duration of a DevFlow session. They are not versio
 | `bug-fixes/` | Bug fix reports | `YYYY-MM-DD-{slug}-bugfix.md` |
 | `features/` | Lightweight feature docs | `YYYY-MM-DD-{slug}-feature.md` |
 | `performance/` | Performance analysis reports | `YYYY-MM-DD-{slug}-perf.md` |
+| `migrations/` | Database migration reports + files | `YYYY-MM-DD-{slug}-migration.md` |
 | `metrics/` | Cycle quality metrics + aggregate trends | `YYYY-MM-DD-{slug}-metrics.md` |
 | `knowledge-base/` | Cross-cycle learnings, patterns, and anti-patterns | `learnings.md` (appended per cycle) |
 

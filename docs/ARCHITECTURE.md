@@ -19,6 +19,8 @@ DevFlow/
 │   ├── devflow-bug-fix/         # Standalone bug fixing agent
 │   ├── devflow-feature/         # Standalone feature agent
 │   ├── devflow-refactor/        # Standalone refactoring agent
+│   ├── devflow-perf/            # Standalone performance agent
+│   ├── devflow-migrate/         # Standalone migration agent
 │   └── shared/                  # Common rules, conventions, and standards
 │       ├── rules.md
 │       ├── memory-conventions.md
@@ -147,6 +149,7 @@ DevFlow/
 | Bug-Fixer | `/devflow-bug-fix` | Fix a reported bug with reproduction test |
 | Feature Agent | `/devflow-feature` | Implement a small-medium feature without full planning overhead |
 | Performance Agent | `/devflow-perf` | Analyze performance bottlenecks and recommend optimizations |
+| Migration Agent | `/devflow-migrate` | Generate database migrations with forward/backward compatibility checks |
 
 See each agent's `SKILL.md` for detailed procedures.
 
@@ -173,6 +176,7 @@ Versioned with git, survive across conversations:
 - `bug-fixes/` — Bug fix reports
 - `features/` — Feature reports (Feature Agent standalone)
 - `performance/` — Performance analysis reports (Performance Agent)
+- `migrations/` — Migration reports + files (Migration Agent)
 - `summaries/` — Cycle completion summaries (Finalizer)
 
 ## Iteration Logic
@@ -224,6 +228,7 @@ All artifacts follow [Memory Conventions](<{{SKILLS_DIR}}/shared/memory-conventi
 | Bug-Fix | `YYYY-MM-DD-{slug}-bugfix.md` | `2026-03-28-user-auth-bugfix.md` |
 | Feature Report | `YYYY-MM-DD-{slug}-feature.md` | `2026-03-28-user-auth-feature.md` |
 | Performance | `YYYY-MM-DD-{slug}-perf.md` | `2026-03-28-user-auth-perf.md` |
+| Migration | `YYYY-MM-DD-{slug}-migration.md` | `2026-03-28-user-auth-migration.md` |
 | Summary | `YYYY-MM-DD-{slug}-summary.md` | `2026-03-28-user-auth-summary.md` |
 
 ## Standard Engineering System
