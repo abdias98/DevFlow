@@ -84,6 +84,8 @@ These files live only for the duration of a DevFlow session. They are not versio
 
 **Current Phase:** {1-7}
 **Feature:** {slug}
+**Locked By:** {agent name or "none"}
+**Locked Since:** {ISO timestamp or "—"}
 
 ## Completed Phases
 - [x] Phase 1: Brainstormer — context saved
@@ -154,3 +156,20 @@ These files live only for the duration of a DevFlow session. They are not versio
    - Clean session memory by deleting all files in the session memory path (`/memories/session/devflow/` or `docs/devflow/session/`).
    - Confirm all persistent artifacts are saved.
 4. **All sub-agents read from and write to the SAME memory** — this is how they communicate. Do not create separate session files for different agents.
+
+## Memory Locking
+
+Session memory is shared across agents. A lightweight lock in `phase-state.md` prevents concurrent writes.
+
+### Lock format (in `phase-state.md`)
+```markdown
+**Locked By:** {agent name | "none"}
+**Locked Since:** {ISO timestamp | "—"}
+```
+
+### Lock rules
+1. **Check before reading/writing:** Every agent MUST read `phase-state.md` first. If `Locked By` is set to a different agent, STOP and inform the user: *"Session memory is locked by {agent}. A DevFlow cycle is active for '{feature}'. Wait for it to complete or start a new session."*
+2. **Acquire lock:** The Orchestrator sets `Locked By` and `Locked Since` when starting a new cycle (Step 0). The lock stays active for the entire cycle duration.
+3. **Release lock:** The Orchestrator clears the lock (`Locked By: none`, `Locked Since: —`) when the cycle completes (Step 8) or is cancelled.
+4. **Stale lock detection:** If `Locked Since` is more than 30 minutes old and no phase progress has been made, the lock is stale. Any agent may break it after informing the user: *"A stale lock from {agent} ({N} min ago) was detected. Breaking lock and proceeding."*
+5. **Standalone agents:** Before writing to session memory, check the lock. If locked by a lifecycle agent, do NOT write — report to user and suggest waiting or starting a new session.

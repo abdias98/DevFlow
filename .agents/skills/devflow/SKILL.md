@@ -65,13 +65,15 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 
 1. Check for an active session: `docs/devflow/session/phase-state.md`.
 2. **If a cycle exists:**
-   - Read `phase-state.md` to determine the current phase and feature slug.
+   - Read `phase-state.md` to determine the current phase, feature slug, and lock status.
+   - If the lock is **stale** (>30 min with no phase progress) → break it: *"A stale lock was detected. Breaking lock and resuming."*
    - Present the state to the user: *"A DevFlow cycle is in progress at Phase {N} for '{slug}'. Continue or start a new cycle?"*
    - If **continue**: resume from the current phase (skip completed phases).
    - If **new**: archive old session files and start fresh.
 3. **If no cycle exists:**
    - Ensure `docs/devflow/session/` directory exists.
    - Initialize `phase-state.md` with `Current Phase: 1`.
+   - **Acquire the memory lock:** Set `Locked By: Orchestrator` and `Locked Since: {current timestamp}` in `phase-state.md`.
    - Initialize `context.md` with the user's request.
 4. Detect the project stack profile (or leave `[To be detected by Architect]`).
 5. **Record checkpoint:** Ask the user for the current git SHA:
@@ -129,7 +131,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 
 4. **If ✅ Yes** → record approval in `phase-state.md` and proceed to Step 5.
 5. **If ✏️ Request changes** → collect user feedback. Route back to Step 3 (Planner) with the feedback. Max 2 revision loops; escalate to user on the 3rd.
-6. **If ❌ Cancel** → stop the cycle. Present the rollback option:
+6. **If ❌ Cancel** → stop the cycle. Release the memory lock (`Locked By: none`, `Locked Since: —`). Present the rollback option:
    > "Cycle cancelled. To revert all DevFlow artifacts created so far, run: `git reset --hard {pre-phase-1-sha}`"
    Update `phase-state.md` noting cancellation. Do NOT clean session memory (preserve artifacts for reference).
 
@@ -188,7 +190,7 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
 2. Invoke `devflow-finalize`.
 3. **Wait** for completion. Verify:
    - Final summary saved at `docs/devflow/summaries/YYYY-MM-DD-{slug}-summary.md`.
-   - Session memory cleaned (`context.md`, `phase-state.md`, `test-registry.md`, `traceability.md` deleted).
+   - Session memory cleaned (`context.md`, `phase-state.md`, `test-registry.md`, `traceability.md` deleted) — **memory lock released implicitly**.
    - All persistent artifacts confirmed saved.
 4. Present the Finalizer's summary to the user. Cycle complete. ✅
 
