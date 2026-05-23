@@ -202,6 +202,7 @@ These files live only for the duration of a DevFlow session. They are not versio
 | `performance/` | Performance analysis reports | `YYYY-MM-DD-{slug}-perf.md` |
 | `migrations/` | Database migration reports + files | `YYYY-MM-DD-{slug}-migration.md` |
 | `contracts/` | API contract validation reports | `YYYY-MM-DD-{slug}-contract.md` |
+| `documentation/` | Documentation generation reports | `YYYY-MM-DD-{slug}-docs.md` |
 | `metrics/` | Cycle quality metrics + aggregate trends | `YYYY-MM-DD-{slug}-metrics.md` |
 | `knowledge-base/` | Cross-cycle learnings, patterns, and anti-patterns | `learnings.md` (appended per cycle) |
 
