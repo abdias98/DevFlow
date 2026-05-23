@@ -1,0 +1,81 @@
+# DevFlow Editor Profile — opencode
+# Source of truth for install.sh — parsed at install time via grep/awk.
+#
+# FORMAT RULES (required for bash parsing):
+#   - No inline comments after values
+#   - One key: value per line, indented with 2 spaces under section header
+#   - String values may be quoted or unquoted
+#   - Env vars ($USER_DIR) are resolved by install.sh after reading user_dir.<OS_NAME> from this file
+#   - REMOVE as value = install.sh will strip that tool/path from installed files
+#
+# SOLID Open/Closed: Adding a new editor = new YAML file in editor-profiles/.
+# install.sh discovers profiles automatically and uses paths.base existence for status.
+#
+# SHARED DIRECTORY: install.sh automatically copies .agents/skills/shared/ to
+# skills_dir/shared/ for every editor profile. Skills reference shared rules via
+# relative paths (../shared/rules.md) which resolve correctly at any install target.
+#
+# opencode tool mapping notes:
+#   - `write`       = file creation/overwrite (replaces `create_file`)
+#   - `edit`        = exact string replacement in files (replaces `replace_file_content` and `replace_string_in_file`)
+#   - `read`        = file read + directory listing (replaces `read_file` and `list_dir`)
+#   - `question`    = interactive user questions (replaces `vscode_askQuestions`)
+#   - `bash`        = terminal command execution (replaces `run_in_terminal`)
+#   - `glob`        = file pattern matching (replaces `file_search`)
+#   - `grep`        = content search with regex (replaces `semantic_search` and `grep_search`)
+#   - `task`        = sub-agent invocation (no equivalent mapping needed — opencode natively supports skills)
+
+id: opencode
+display_name: "opencode (CLI AI Agent)"
+
+# ── User directory per OS ─────────────────────────────────────────────────────
+# opencode loads global skills from ~/.agents/skills/ on all platforms.
+# install.sh reads user_dir.<OS_NAME> and exposes it as $USER_DIR for path resolution.
+user_dir:
+  macOS: "$HOME/.agents"
+  Linux: "$HOME/.agents"
+  Windows: "$HOME/.agents"
+
+# ── Installation paths ────────────────────────────────────────────────────────
+# $USER_DIR is resolved by install.sh from user_dir.<OS_NAME> above.
+paths:
+  base: "$USER_DIR"
+  skills: "$USER_DIR/skills"
+  prompts: "$USER_DIR/prompts"
+  instructions: "$USER_DIR/instructions"
+  agents: "$USER_DIR"
+
+# ── Tool name mappings ────────────────────────────────────────────────────────
+# Maps FROM (tool name used in Copilot/VS Code skill source files) TO (opencode tool name).
+# REMOVE = lines containing that backtick-wrapped tool name are deleted.
+# install.sh reads these pairs and applies sed substitutions at install time.
+# See install.sh copy_devflow_file() for the exact substitution logic.
+tool_mappings:
+  vscode_askQuestions: question
+  semantic_search: grep
+  grep_search: grep
+  file_search: glob
+  read_file: read
+  create_file: write
+  replace_string_in_file: edit
+  replace_file_content: edit
+  multi_replace_file_content: edit
+  run_in_terminal: bash
+  memory: REMOVE
+  list_dir: read
+
+# ── Path mappings ────────────────────────────────────────────────────────────
+# Maps hardcoded paths in skills/prompts to editor-specific equivalents.
+# /memories is not available in opencode — the fallback path docs/devflow/session/
+# is used instead. Lines containing /memories are removed during installation.
+path_mappings:
+  /memories: REMOVE
+
+# ── Install behavior ──────────────────────────────────────────────────────────
+install:
+  tool_substitution: true
+
+# ── Post-install message ─────────────────────────────────────────────────────
+post_install:
+  reload_message: "Restart opencode to pick up the new agent skills"
+  usage_command: "/devflow <feature request>"
