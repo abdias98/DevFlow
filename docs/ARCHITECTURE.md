@@ -146,6 +146,7 @@ DevFlow/
 | Refactorer | `/devflow-refactor` | Improve existing code without changing behavior |
 | Bug-Fixer | `/devflow-bug-fix` | Fix a reported bug with reproduction test |
 | Feature Agent | `/devflow-feature` | Implement a small-medium feature without full planning overhead |
+| Performance Agent | `/devflow-perf` | Analyze performance bottlenecks and recommend optimizations |
 
 See each agent's `SKILL.md` for detailed procedures.
 
@@ -171,6 +172,7 @@ Versioned with git, survive across conversations:
 - `refactors/` — Refactoring summaries
 - `bug-fixes/` — Bug fix reports
 - `features/` — Feature reports (Feature Agent standalone)
+- `performance/` — Performance analysis reports (Performance Agent)
 - `summaries/` — Cycle completion summaries (Finalizer)
 
 ## Iteration Logic
@@ -221,6 +223,7 @@ All artifacts follow [Memory Conventions](<{{SKILLS_DIR}}/shared/memory-conventi
 | Refactor | `YYYY-MM-DD-{slug}-refactor.md` | `2026-03-28-user-auth-refactor.md` |
 | Bug-Fix | `YYYY-MM-DD-{slug}-bugfix.md` | `2026-03-28-user-auth-bugfix.md` |
 | Feature Report | `YYYY-MM-DD-{slug}-feature.md` | `2026-03-28-user-auth-feature.md` |
+| Performance | `YYYY-MM-DD-{slug}-perf.md` | `2026-03-28-user-auth-perf.md` |
 | Summary | `YYYY-MM-DD-{slug}-summary.md` | `2026-03-28-user-auth-summary.md` |
 
 ## Standard Engineering System

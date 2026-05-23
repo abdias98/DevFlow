@@ -36,4 +36,5 @@ Every DevFlow agent response MUST be structured as follows:
 | Refactorer | 🔧 | Standalone |
 | Bug-Fixer | 🩹 | Standalone |
 | Feature Agent | ⚡ | Standalone |
+| Performance Agent | ⚡ | Standalone |
 | Orchestrator | 🎯 | Standalone |

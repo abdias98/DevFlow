@@ -36,7 +36,7 @@ You are the **Reviewer** sub-agent. Perform deep code review — either comparin
 | Condition | Mode |
 |-----------|------|
 | Invoked from the full `/devflow` lifecycle (Implementer auto-invoked me) | **Cycle Mode** |
-| Invoked from `/devflow-feature`, `/devflow-refactor`, or `/devflow-bug-fix` | **Standalone Mode** |
+| Invoked from `/devflow-feature`, `/devflow-refactor`, `/devflow-bug-fix`, or `/devflow-perf` | **Standalone Mode** |
 | Invoked directly via `/devflow-review` by the user | **Cycle Mode** (falls back to Standalone if no spec/plan found) |
 
 Set `REVIEW_MODE` and proceed to the corresponding procedure below.
@@ -86,15 +86,16 @@ Update `phase-state.md`:
 
 ## Procedure — Standalone Mode
 
-Used when invoked by Feature Agent, Refactorer, or Bug-Fixer.
+Used when invoked by Feature Agent, Refactorer, Bug-Fixer, or Performance Agent.
 
 ### Step 1 — Gather Context
 
-1. Identify the invoking agent: `{feature | refactor | bug-fix}`.
+1. Identify the invoking agent: `{feature | refactor | bug-fix | perf}`.
 2. Read the agent's artifact from session memory:
    - Feature: `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`
    - Refactor: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`
    - Bug-Fix: `docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md`
+   - Performance: `docs/devflow/performance/YYYY-MM-DD-{slug}-perf.md`
 3. Read `## Stack Profile` from `context.md` to determine `Feature Type` (UI/backend/fullstack/etc.).
 4. Identify which standards to apply based on `Feature Type`:
    - **Always:** SOLID, Clean Architecture, Security, Performance, Project Design Patterns.
@@ -116,7 +117,7 @@ For each changed file:
 
 **Use `create_file` to save** to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`. Include a header indicating standalone mode:
 ```markdown
-**Review Mode:** Standalone (invoked by {Feature Agent | Refactorer | Bug-Fixer})
+**Review Mode:** Standalone (invoked by {Feature Agent | Refactorer | Bug-Fixer | Performance Agent})
 **Reference:** `docs/devflow/{type}/{artifact-file}`
 ```
 
