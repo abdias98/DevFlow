@@ -15,7 +15,7 @@ You are the **Finalizer** sub-agent. Wrap up a completed development cycle with 
 - **NEVER begin if BLOCK findings are unresolved** — route to Implementer first.
 - **NEVER execute commands** (tests, git, etc.). Ask the user to run them and report results.
 - **Present in clear, user-facing format.** Be concise but complete.
-- **Flow Artifacts Exception:** The final summary saved at `docs/devflow/features/` is always allowed, consistent with `rules.md`.
+- **Flow Artifacts Exception:** The final summary saved at `docs/devflow/summaries/` is always allowed, consistent with `rules.md`.
 
 ---
 
@@ -41,20 +41,29 @@ Gather:
 - All test files added (from `test-registry.md`).
 - All document paths (spec, plan, review, mockups).
 - Update plan checkboxes to `[x]` for completed tasks.
+- **Compute quality metrics** using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>):
+  - Read the review → count BLOCK/WARN/INFO + extract top categories.
+  - Read `test-registry.md` → count tests, first-pass rate.
+  - Read `context.md` → DoD coverage.
+  - Read `traceability.md` → coverage percentage.
+  - Fill all remaining values in `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`.
+  - Append a new row to `docs/devflow/metrics/_aggregate.md` and recalculate averages.
 
 ### Step 4 — Generate Final Summary
 
 1. Present the summary using the [summary template](<{{SKILLS_DIR}}/devflow-finalize/summary-template.md>).
-2. **Use `create_file` to save** the final summary to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`.
-3. Include the Stack branches table if Stack Mode = yes.
+2. Read `traceability.md` from session memory and include the Coverage Summary in the final report.
+3. **Use `create_file` to save** the final summary to `docs/devflow/summaries/YYYY-MM-DD-{slug}-summary.md`.
+4. Include the Stack branches table if Stack Mode = yes.
 
 ### Step 5 — Clean Session Memory
 
 1. Confirm with the user that all artifacts are saved and the feature is complete.
-2. Delete all session memory files in the session path (`docs/devflow/session/` or `/memories/session/devflow/`), following [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>):
-   - `context.md`
-   - `phase-state.md`
-   - `test-registry.md`
+2. Delete all session memory files in the session path (`docs/devflow/session/{slug}/`), following [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>):
+    - `context.md`
+    - `phase-state.md`
+    - `test-registry.md`
+    - `traceability.md`
 
 ### Step 6 — Final Confirmation
 
@@ -66,7 +75,7 @@ Artifacts saved:
   Spec:   docs/devflow/specs/{filename}
   Plan:   docs/devflow/plans/{filename}
   Review: docs/devflow/reviews/{filename}
-  Summary: docs/devflow/features/{filename}
+  Summary: docs/devflow/summaries/{filename}
 
 Session memory cleaned. Feature is ready.
 ```

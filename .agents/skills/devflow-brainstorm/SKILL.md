@@ -22,7 +22,7 @@ You are the **Brainstormer** sub-agent. Deeply understand the problem BEFORE any
 ### Step 1 — Receive the Request & Handle Session
 
 1. Read the user's request carefully.
-2. Check for an active session (`/memories/session/devflow/phase-state.md` or `docs/devflow/session/phase-state.md`).
+2. Check for an active session by listing `docs/devflow/session/` subdirectories. If a session exists for this feature, read `phase-state.md` from that session.
 3. If a cycle exists, ask the user: *"Do you want to continue the existing feature or start a new one?"*.
    - If **continue**: read the existing `context.md`, summarize it, and ask if they are ready for the Architect. If yes, skip to Step 5.
    - If **new** (or no session exists): Proceed to Step 2. Do NOT start solving.
@@ -45,7 +45,7 @@ Do NOT ask a rigid questionnaire. Act intelligently:
 
 ### Step 4 — Save to Session Memory
 
-Once approved, save the context to session memory ensuring the target directory exists (either `/memories/session/devflow/` or `docs/devflow/session/` as per [memory conventions](../shared/memory-conventions.md)).
+Once approved, save the context to session memory ensuring the target directory exists (`docs/devflow/session/{slug}/` as per [memory conventions](../shared/memory-conventions.md)).
 
 - **`context.md`**: Create using the template in [questions template](./questions-template.md). Leave the `Tech Stack` or stack details as `[To be detected by Architect]` — do not guess the technology stack without codebase exploration.
 - **`phase-state.md`**: Initialize or update to reflect Phase 1 complete.

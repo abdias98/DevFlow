@@ -10,8 +10,8 @@ These conventions define where and how DevFlow agents persist state and artifact
 
 These files live only for the duration of a DevFlow session. They are not versioned and may be cleaned up after the feature is complete.
 
-**Primary path:** `/memories/session/devflow/`
-**Fallback path:** `docs/devflow/session/`
+**Primary path:** `/memories/session/devflow/{slug}/`
+**Fallback path:** `docs/devflow/session/{slug}/`
 
 > **Agents MUST ensure the target directory exists** before writing session files. Use available tools to create the directory if missing.
 
@@ -20,6 +20,7 @@ These files live only for the duration of a DevFlow session. They are not versio
 | `context.md` | Problem statement, constraints, DoD, tech stack, Stack Mode | Brainstormer, Architect, Planner |
 | `phase-state.md` | Current phase, checklist, iteration counter/log | All agents |
 | `test-registry.md` | Test names, status (FAIL/PASS), files created | Implementer, Tester |
+| `traceability.md` | Cross-reference: requirements → spec → tasks → tests → files | Planner, Implementer |
 
 ### `context.md` format
 
@@ -48,6 +49,44 @@ These files live only for the duration of a DevFlow session. They are not versio
 | **Source Root** | {src/ \| app/ \| lib/ \| cmd/ \| ...} |
 | **Test Root** | {tests/ \| __tests__/ \| test/ \| spec/ \| ...} |
 | **Test Utilities** | {e.g., factories in tests/factories/, fixtures in tests/fixtures/} |
+
+> **Monorepo:** When the workspace contains multiple packages (e.g., Nx, Turborepo, Lerna, pnpm workspaces), replace `## Stack Profile` with `## Stack Profiles` below. Each package gets its own profile entry. Downstream agents select the relevant profile based on the feature scope.
+
+### `## Stack Profiles` (monorepo only)
+
+```markdown
+## Stack Profiles
+
+**Monorepo Tool:** {Nx \| Turborepo \| Lerna \| pnpm workspaces \| yarn workspaces \| Rush \| none}
+**Package Manager:** {pnpm \| yarn \| npm \| ...}
+**Workspace Root:** {./}
+
+### Workspace root
+{Common config: workspace scripts, lint, format, shared tooling}
+
+### {packages/frontend}
+| Key | Value |
+|-----|-------|
+| **Language** | TypeScript |
+| **Framework** | Next.js 14 |
+| **Test Command** | pnpm --filter frontend test |
+| **Test Command (single file)** | pnpm --filter frontend exec jest {file} |
+| **Source Root** | packages/frontend/src/ |
+| **Test Root** | packages/frontend/__tests__/ |
+
+### {packages/api}
+| Key | Value |
+|-----|-------|
+| **Language** | TypeScript |
+| **Runtime** | Node.js 20 |
+| **Framework** | Express |
+| **Test Command** | pnpm --filter api test |
+| **Test Command (single file)** | pnpm --filter api exec jest {file} |
+| **Source Root** | packages/api/src/ |
+| **Test Root** | packages/api/__tests__/ |
+
+{Repeat for each package affected by the feature}
+```
 
 ## Goal
 {One-sentence summary}
@@ -83,6 +122,8 @@ These files live only for the duration of a DevFlow session. They are not versio
 
 **Current Phase:** {1-7}
 **Feature:** {slug}
+**Locked By:** {agent name or "none"}
+**Locked Since:** {ISO timestamp or "—"}
 
 ## Completed Phases
 - [x] Phase 1: Brainstormer — context saved
@@ -104,6 +145,16 @@ These files live only for the duration of a DevFlow session. They are not versio
 | # | From | To | Reason |
 |---|------|----|--------|
 | 1 | Reviewer | Implementer | BLOCK: {reason} |
+
+## Checkpoints
+> Git SHAs recorded by the Orchestrator before phases that produce irreversible changes.
+> Used for rollback when a phase must be reverted. NEVER execute `git reset` — tell the user the command.
+
+| Phase | Git SHA | Recorded At | Purpose |
+|-------|---------|-------------|---------|
+| Pre-Phase 1 | {sha} | {timestamp} | Baseline — before any DevFlow artifacts |
+| Pre-Phase 4 | {sha} | {timestamp} | Before implementation — rollback point for code changes |
+| Pre-Phase 6 | {sha} | {timestamp} | Before debug fixes — rollback point for invasive changes |
 ```
 
 ### `test-registry.md` format
@@ -126,10 +177,12 @@ These files live only for the duration of a DevFlow session. They are not versio
 | `plans/` | Implementation plans | `YYYY-MM-DD-{slug}.md` |
 | `mockups/` | HTML wireframe mockups | `YYYY-MM-DD-{slug}-mockup[-A\|-B\|-C].html` |
 | `reviews/` | Code review findings | `YYYY-MM-DD-{slug}-review.md` |
+| `summaries/` | Cycle completion summaries (Finalizer) | `YYYY-MM-DD-{slug}-summary.md` |
 | `debug-logs/` | Root cause analysis | `YYYY-MM-DD-{slug}-debug.md` |
 | `refactors/` | Refactoring summaries | `YYYY-MM-DD-{slug}-refactor.md` |
 | `bug-fixes/` | Bug fix reports | `YYYY-MM-DD-{slug}-bugfix.md` |
 | `features/` | Lightweight feature docs | `YYYY-MM-DD-{slug}-feature.md` |
+| `metrics/` | Cycle quality metrics + aggregate trends | `YYYY-MM-DD-{slug}-metrics.md` |
 
 ## Memory Rules
 
@@ -139,6 +192,23 @@ These files live only for the duration of a DevFlow session. They are not versio
    - Update `Current Phase` to the next number.
    - Add a `Last Updated` timestamp.
 3. **At cycle end** (Finalizer completes):
-   - Clean session memory by deleting all files in the session memory path (`/memories/session/devflow/` or `docs/devflow/session/`).
+   - Clean session memory by deleting all files in the session memory path (`/memories/session/devflow/{slug}/` or `docs/devflow/session/{slug}/`).
    - Confirm all persistent artifacts are saved.
 4. **All sub-agents read from and write to the SAME memory** — this is how they communicate. Do not create separate session files for different agents.
+
+## Memory Locking
+
+Session memory is shared across agents. A lightweight lock in `phase-state.md` prevents concurrent writes.
+
+### Lock format (in `phase-state.md`)
+```markdown
+**Locked By:** {agent name | "none"}
+**Locked Since:** {ISO timestamp | "—"}
+```
+
+### Lock rules
+1. **Check before reading/writing:** Every agent MUST read `phase-state.md` first. If `Locked By` is set to a different agent, STOP and inform the user: *"Session memory is locked by {agent}. A DevFlow cycle is active for '{feature}'. Wait for it to complete or start a new session."*
+2. **Acquire lock:** The Orchestrator sets `Locked By` and `Locked Since` when starting a new cycle (Step 0). The lock stays active for the entire cycle duration.
+3. **Release lock:** The Orchestrator clears the lock (`Locked By: none`, `Locked Since: —`) when the cycle completes (Step 8) or is cancelled.
+4. **Stale lock detection:** If `Locked Since` is more than 30 minutes old and no phase progress has been made, the lock is stale. Any agent may break it after informing the user: *"A stale lock from {agent} ({N} min ago) was detected. Breaking lock and proceeding."*
+5. **Standalone agents:** Before writing to session memory, check the lock. If locked by a lifecycle agent, do NOT write — report to user and suggest waiting or starting a new session.

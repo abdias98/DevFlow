@@ -1,5 +1,7 @@
 # TDD Procedure — Red→Green Cycle (Without Executing Tests)
 
+> **CI Mode exception:** When `CI=true` is detected, tests MAY be auto-executed. This is the only exception to the "NEVER run tests" rule. See `rules.md` → `## CI/CD Mode`.
+
 ## Standard Flow (Stack Mode = no)
 
 For each task in the plan:
@@ -19,8 +21,8 @@ For each task in the plan:
 9. Inform the user how to verify the test now passes:
    > "Production code written. To verify the test passes, run: `{Test Command (single file)} {test path}`"
 10. Track progress:
-    - If the user reports tests pass → update `test-registry.md` (PASS), mark step complete, continue.
-    - If the user reports failure → stop, document failure, consider invoking debugger.
+     - If the user reports tests pass → update `test-registry.md` (PASS), mark step complete, update `traceability.md` (fill Impl File, set Status = ✅ DONE for this task's rows), continue.
+     - If the user reports failure → stop, document failure, consider invoking debugger.
 11. Commit at task checkpoints with the message from the plan.
 
 ## After All Tasks

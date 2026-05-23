@@ -1,5 +1,7 @@
 # DevFlow Engineering Standards: Security (Technology-Agnostic)
 
+> **Version:** 2.0.0 | **Last Updated:** 2026-04-29
+
 > **Note on examples:** All tool names and code fragments are illustrative. Replace them with the actual libraries, services, and conventions of the detected stack.
 
 Apply these principles to all code you design, generate, or review.

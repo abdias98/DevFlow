@@ -129,7 +129,7 @@ DevFlow/
 
 ### Finalizer (`devflow-finalize`)
 - **Input:** Completed cycle (all tests passing, no BLOCK findings)
-- **Output:** Final summary saved to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md` + session memory cleaned
+- **Output:** Final summary saved to `docs/devflow/summaries/YYYY-MM-DD-{slug}-summary.md` + session memory cleaned
 - **Actions:**
   - Ask user to run full test suite — if failures, route to Debugger
   - Verify all BLOCK review findings resolved
@@ -170,7 +170,8 @@ Versioned with git, survive across conversations:
 - `debug-logs/` — Debug sessions
 - `refactors/` — Refactoring summaries
 - `bug-fixes/` — Bug fix reports
-- `features/` — Feature reports and final summaries
+- `features/` — Feature reports (Feature Agent standalone)
+- `summaries/` — Cycle completion summaries (Finalizer)
 
 ## Iteration Logic
 
@@ -198,7 +199,7 @@ Versioned with git, survive across conversations:
 When `Stack Mode: yes` is set (by the Planner, conditional on feature size), the iteration logic applies **within each Stack**:
 
 - The Planner groups tasks into Stacks with branches assigned.
-- The Implementer creates a branch per Stack (`feat/{slug}/stack-{N}`), executes Red→Green per task.
+- The user creates a branch per Stack (`feat/{slug}/stack-{N}`) with commands provided by the Planner. The Implementer then executes Red→Green per task.
 - The Reviewer diffs each Stack against its base branch.
 - BLOCK → fix → re-review loops apply within the current Stack branch.
 - The Finalizer includes a summary table of all Stack branches.
@@ -220,6 +221,7 @@ All artifacts follow [Memory Conventions](<{{SKILLS_DIR}}/shared/memory-conventi
 | Refactor | `YYYY-MM-DD-{slug}-refactor.md` | `2026-03-28-user-auth-refactor.md` |
 | Bug-Fix | `YYYY-MM-DD-{slug}-bugfix.md` | `2026-03-28-user-auth-bugfix.md` |
 | Feature Report | `YYYY-MM-DD-{slug}-feature.md` | `2026-03-28-user-auth-feature.md` |
+| Summary | `YYYY-MM-DD-{slug}-summary.md` | `2026-03-28-user-auth-summary.md` |
 
 ## Standard Engineering System
 

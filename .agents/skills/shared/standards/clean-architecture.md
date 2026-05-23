@@ -1,5 +1,7 @@
 # DevFlow Engineering Standards: Clean Architecture (Technology-Agnostic)
 
+> **Version:** 2.0.0 | **Last Updated:** 2026-04-29
+
 > **Note on examples:** All code-like fragments and tool references are illustrative. Replace them with the actual libraries, frameworks, and naming conventions of the detected stack.
 
 Apply these patterns to all code you design, generate, or review.

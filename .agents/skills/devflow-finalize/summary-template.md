@@ -32,6 +32,15 @@
 ### 📚 Documentation
 {APIs, components, configs changed — or "No updates needed"}
 
+### 🎯 Traceability Coverage
+| Source | Total | Covered | % |
+|--------|:-----:|:-------:|:--:|
+| Definition of Done | {N} | {N} | {N}% |
+| Edge Cases | {N} | {N} | {N}% |
+| Tasks completed | {N} | {N} | {N}% |
+
+{If coverage < 100%: list uncovered items with justification}
+
 ### 💡 Next Steps
 > Format by project type:
 > - **Web/mobile:** Story format: *As a {user}, I want to {goal}. (Est: S/M/L)*

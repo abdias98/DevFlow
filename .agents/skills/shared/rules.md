@@ -15,8 +15,10 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
 ## Memory Fallback
 
 - If `/memories/` is available → use it for session state (preferred).
-- If `/memories/` is NOT available → use `docs/devflow/session/` as regular files instead.
-- See [Memory Conventions](./memory-conventions.md) for paths and formats.
+- If `/memories/` is NOT available → use `docs/devflow/session/{slug}/` as regular files instead.
+- See [Memory Conventions](./memory-conventions.md) for paths, formats, and **lock rules**.
+- **Before reading or writing session memory**, check `phase-state.md` for an active lock (`Locked By`). If locked by another agent, do NOT write — report to the user.
+- Standalone agents (Refactorer, Bug-Fixer, Feature Agent) MUST check the lock before touching session memory. If a lifecycle cycle is active, recommend waiting or using full `/devflow` cycle instead.
 
 ## File Persistence
 
@@ -31,6 +33,7 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
 - **Save detected stack** to `context.md` under `## Stack Profile` so subsequent steps and other agents can reuse it.
 - NEVER hardcode paths, tech stack names, or repo-specific conventions.
 - Use `AGENTS.md` when present — if the project has one, read it first and skip redundant exploration.
+- **Engineering standards** are versioned (see `shared/standards/CHANGELOG.md`). Each standard declares its version in the file header. When proposing changes to standards, follow the version policy.
 
 ## Scope-Locking
 
@@ -60,6 +63,45 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
 - **Any change outside the declared scope requires explicit user confirmation.** This includes renaming public APIs, modifying configuration files, updating dependencies, or altering folder structure.
 - **Do not proceed with a plan that includes out-of-scope changes until the user explicitly approves those specific changes.**
 - Present options clearly and wait for the user's selection. Do not time out or assume a default.
+
+## CI/CD Mode
+
+DevFlow supports non-interactive execution for CI/CD pipelines (GitHub Actions, GitLab CI, Jenkins, etc.).
+
+### Detection
+CI mode is active when the environment variable `CI=true` is set. This is the standard convention across all major CI platforms.
+
+### Behavior changes in CI mode
+
+| Rule | Normal Mode | CI Mode |
+|------|-------------|---------|
+| Confirmation Gate | Wait for user approval | Auto-approve plan |
+| Spec approval | Ask user | Auto-accept |
+| Test execution | Tell user the command | Auto-run tests |
+| Interactive questions | Ask user | Use defaults or skip |
+| Iteration loops | Max 3 | Max 1 (fail fast) |
+| Error handling | Ask user how to proceed | Log error and exit |
+| Git commands | Tell user to run | Auto-execute (branch, commit) |
+| Rollback | Tell user to run | Skip rollback (fail fast) |
+
+### CI configuration (environment variables)
+
+| Variable | Default (CI) | Effect |
+|----------|:------------:|--------|
+| `CI` | `true` | Enables CI mode auto-detection |
+| `DEVFLOW_AUTO_APPROVE` | `true` | Auto-approve plan and spec |
+| `DEVFLOW_FAIL_FAST` | `true` | Exit on first error, max 1 iteration |
+| `DEVFLOW_MAX_ITERATIONS` | `1` | Override max iteration loops |
+
+### Agent responsibilities in CI mode
+
+1. **Orchestrator:** Detect CI mode at Step 0. Skip the Confirmation Gate (auto-approve). Reduce max iterations to 1.
+2. **Brainstormer:** Skip clarifying questions. Infer from context or use reasonable defaults.
+3. **Architect:** Auto-accept spec without user confirmation.
+4. **Implementer:** Auto-run tests after each task (exception: `run_in_terminal` / `bash` is allowed). Report results inline.
+5. **Reviewer:** Normal behavior — still classifies BLOCK/WARN/INFO.
+6. **Debugger:** Skip. If tests fail, report error and exit.
+7. **Finalizer:** Normal behavior — save summary and clean session memory.
 
 ## INFO Notes & Violation Reporting
 

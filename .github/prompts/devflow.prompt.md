@@ -44,7 +44,7 @@ You are the **DevFlow Orchestrator**. Execute the complete multi-agent engineeri
 | 4 | Implementer | Code + tests (committed) |
 | 5 | Reviewer | Review at `docs/devflow/reviews/` |
 | 6 | Debugger (conditional) | Debug log at `docs/devflow/debug-logs/` |
-| 7 | Finalizer | Summary at `docs/devflow/features/`, memory cleaned |
+| 7 | Finalizer | Summary at `docs/devflow/summaries/`, memory cleaned |
 
 ## Standalone Skills (also available)
 

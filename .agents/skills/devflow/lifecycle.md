@@ -1,6 +1,6 @@
 # Lifecycle Phase Details
 
-This document provides a quick reference for the DevFlow lifecycle phases. For the complete step‑by‑step procedures, refer to each agent's `SKILL.md`.
+This document provides a quick reference for the DevFlow lifecycle phases. For the complete step‑by‑step procedures including iteration tracking, Confirmation Gate handling, and escalation logic, refer to the **Orchestrator's `SKILL.md`** and each sub-agent's `SKILL.md`.
 
 ## Phase Flow
 
@@ -53,6 +53,21 @@ Finalizer finds failing tests    → Phase 6 (Debugger)
 
 - Maximum **3 iteration loops** per phase before escalating to the user.
 - NEVER proceed past the Confirmation Gate without explicit user approval.
+
+## Rollback
+
+Git-based checkpointing enables safe rollback when a phase must be reverted. The Orchestrator records SHAs before phases that produce irreversible changes.
+
+| Checkpoint | When | Rollback effect |
+|------------|------|-----------------|
+| Pre-Phase 1 | Before any work | Undo entire cycle |
+| Pre-Phase 4 | Before implementation | Revert code, keep spec + plan |
+| Pre-Phase 6 | Before debug fixes | Revert invasive fix attempts |
+
+**Rollback command:** `git reset --hard {checkpoint-sha}` — user executes, never automated.
+After rollback, the Orchestrator resets `phase-state.md` and resumes from the target phase.
+
+See the Orchestrator's `SKILL.md` → `## Rollback` for the complete procedure.
 
 ---
 
