@@ -106,4 +106,5 @@ Example structure varies by stack:
 - [ ] Test code uses the detected test framework and follows project conventions
 - [ ] Dependencies between tasks are respected
 - [ ] No orphan files (everything referenced exists)
+- [ ] Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format: `type(scope): description` (types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `perf`, `ci`)
 - [ ] HTML wireframe mockup generated (UI features only) — saved to `docs/devflow/mockups/`

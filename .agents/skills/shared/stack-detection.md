@@ -64,6 +64,29 @@ Read the primary config file and inspect dependencies/imports:
 - **pom.xml / build.gradle** → look for: `spring-boot`, `quarkus`, `micronaut`.
 - **composer.json** → look for: `laravel/framework`, `symfony/symfony`.
 
+### Step 3a — Detect Database / Storage
+
+Check config files and dependencies for database type:
+
+| Database | Signals |
+|----------|---------|
+| **PostgreSQL** | `pg`, `postgres`, `psycopg2`, `Npgsql` in dependencies |
+| **MySQL** | `mysql2`, `mysql`, `mysqli`, `MySqlConnector` |
+| **SQLite** | `better-sqlite3`, `sqlite3`, `System.Data.SQLite` |
+| **MongoDB** | `mongoose`, `mongodb`, `mongoengine`, `pymongo` in dependencies |
+| **DynamoDB** | `@aws-sdk/client-dynamodb`, `boto3` with `dynamodb`, DynamoDB SDK references |
+| **Redis** | `redis`, `ioredis`, `redis-py`, `StackExchange.Redis` in dependencies |
+| **Firestore** | `firebase-admin`, `@google-cloud/firestore`, `firebase/firestore` |
+| **Elasticsearch** | `@elastic/elasticsearch`, `elasticsearch`, `elasticsearch-py` |
+| **ORM-only** (SQL agnostic) | `prisma`, `typeorm`, `sequelize`, `django.db`, `SQLAlchemy`, `Entity Framework`, `Hibernate` |
+
+Record the detected database(s) in `## Stack Profile` as a new row:
+```
+| **Database** | {PostgreSQL \| MongoDB \| SQLite \| ...} |
+```
+
+For monorepos, record per-package. If multiple databases are used, list all separated by commas.
+
 ### Step 4 — Detect Test Runner and Commands
 
 Read config files for test runner configuration:

@@ -64,7 +64,8 @@ These values are used by ALL downstream agents (Implementer, Tester, Refactorer,
 
 ### Backend (General)
 - Common layered pattern: Request/Controller → Validation → Service/Use Case → Repository → Model/Entity
-- Look for: middleware pipeline, dependency injection patterns, ORM conventions, authentication/authorization mechanisms.
+- Look for: middleware pipeline, dependency injection patterns, ORM/ODM conventions, authentication/authorization mechanisms.
+- Detect database type: SQL (PostgreSQL, MySQL, SQLite) via ORM configs; NoSQL (MongoDB, DynamoDB, Redis, Firestore) via driver/ODM dependencies.
 - If the framework has an official way (e.g., FormRequest, Policies, Guards), check if the project uses them.
 
 ### Frontend (General)

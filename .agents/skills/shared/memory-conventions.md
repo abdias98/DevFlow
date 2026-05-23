@@ -40,6 +40,7 @@ These files live only for the duration of a DevFlow session. They are not versio
 | **Language** | {TypeScript \| Python \| Go \| C# \| Java \| PHP \| Ruby \| Kotlin \| ...} |
 | **Runtime** | {Node.js 20 \| Python 3.12 \| .NET 8 \| Go 1.22 \| ...} |
 | **Framework** | {Next.js 14 \| Django 5 \| ASP.NET Core \| Spring Boot 3 \| Laravel 11 \| ...} |
+| **Database** | {PostgreSQL \| MySQL \| SQLite \| MongoDB \| DynamoDB \| Redis \| ...} |
 | **Package Manager** | {npm \| pnpm \| yarn \| pip \| poetry \| go mod \| nuget \| composer \| bundler \| ...} |
 | **Test Runner** | {Jest \| Vitest \| pytest \| go test \| xUnit \| JUnit \| PHPUnit \| RSpec \| ...} |
 | **Test Command** | {npm test \| pnpm test \| pytest \| go test ./... \| dotnet test \| mvn test \| ...} |
@@ -55,6 +56,8 @@ These files live only for the duration of a DevFlow session. They are not versio
 | **Test Utilities** | {e.g., factories in tests/factories/, fixtures in tests/fixtures/} |
 
 > **Monorepo:** When the workspace contains multiple packages (e.g., Nx, Turborepo, Lerna, pnpm workspaces), replace `## Stack Profile` with `## Stack Profiles` below. Each package gets its own profile entry. Downstream agents select the relevant profile based on the feature scope.
+> 
+> **Multi-language:** `## Stack Profiles` supports different languages per package (e.g., TypeScript frontend + Python backend in the same cycle). Each profile entry defines its own Language, Framework, Test Command, etc. A fullstack feature simply references both profiles.
 
 ### `## Stack Profiles` (monorepo only)
 
