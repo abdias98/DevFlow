@@ -1,5 +1,7 @@
 # DevFlow Engineering Standards: UI Design (Technology-Agnostic)
 
+> **Version:** 2.1.0 | **Last Updated:** 2026-05-22
+
 > **Apply only if:** the project has a user interface (web frontend, mobile app, desktop app, or server-rendered views).
 > If this is a pure API, CLI tool, library, or background worker, skip this standard entirely.
 >

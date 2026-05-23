@@ -1,5 +1,7 @@
 # DevFlow Engineering Standards: SOLID Principles (Technology-Agnostic)
 
+> **Version:** 2.0.0 | **Last Updated:** 2026-04-29
+
 > **Note on examples:** All code-like fragments use generic pseudo-code or abstract concepts (e.g., “HTTP client”, “ORM entity”, “service locator”) to avoid dependence on any specific language or framework. Adapt the concrete syntax to the detected stack.
 
 Apply these principles to all code you design, generate, or review.

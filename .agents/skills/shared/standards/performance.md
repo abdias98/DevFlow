@@ -1,5 +1,7 @@
 # DevFlow Engineering Standards: Performance (Technology-Agnostic)
 
+> **Version:** 2.0.0 | **Last Updated:** 2026-04-29
+
 > **Note on examples:** All patterns and code fragments are illustrative. Adapt syntax and tool names to the detected stack.
 
 Apply these principles to all code you design, generate, or review.

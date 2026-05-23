@@ -1,5 +1,7 @@
 # TDD Procedure — Red→Green Cycle (Without Executing Tests)
 
+> **CI Mode exception:** When `CI=true` is detected, tests MAY be auto-executed. This is the only exception to the "NEVER run tests" rule. See `rules.md` → `## CI/CD Mode`.
+
 ## Standard Flow (Stack Mode = no)
 
 For each task in the plan:

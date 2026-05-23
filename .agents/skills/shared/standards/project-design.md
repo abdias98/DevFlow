@@ -1,5 +1,7 @@
 # DevFlow Engineering Standards: Project Design Patterns (Technology-Agnostic)
 
+> **Version:** 2.0.0 | **Last Updated:** 2026-04-29
+
 > **Note on examples:** All file names, patterns, and tool references are illustrative. Adapt terminology and conventions to the detected stack.
 
 Apply these principles when designing or reviewing the structural architecture of a project.

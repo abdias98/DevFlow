@@ -1,5 +1,7 @@
 # DevFlow Engineering Standards: REST API Design (Technology-Agnostic)
 
+> **Version:** 2.0.0 | **Last Updated:** 2026-04-29
+
 > **Apply only if:** the project has HTTP endpoints, REST controllers, or API contracts.
 > If this is a CLI, library, background worker, or frontend-only project, skip this standard entirely.
 >

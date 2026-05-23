@@ -66,7 +66,8 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 ### Step 0 — Session Initialization
 
 1. **Discover active sessions:** List subdirectories of `docs/devflow/session/`. For each subdirectory found, read its `phase-state.md` to identify the feature slug and current phase.
-2. **If active sessions exist:**
+2. **Detect CI mode:** Check if the environment variable `CI=true` is set. If yes, apply CI mode rules: auto-approve confirmations, fail fast (max 1 iteration per phase), auto-execute tests and git commands. Record `CI Mode: yes` in `context.md`.
+3. **If active sessions exist:**
    - Present them to the user: *"Active DevFlow sessions found: {list of slugs with phases}. Select one to continue, or start a new feature."*
    - If the user selects an existing session → resume from its current phase.
    - If the user wants a new feature → proceed to step 3.
@@ -115,7 +116,9 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 
 ### Step 4 — Confirmation Gate ⏸️
 
-**STOP HERE. Do NOT invoke the Implementer until the user explicitly approves.**
+**In CI mode:** Auto-approve the plan and proceed directly to Step 5. Log: "CI mode: plan auto-approved."
+
+**In normal mode, STOP HERE. Do NOT invoke the Implementer until the user explicitly approves.**
 
 1. Read the plan from `docs/devflow/plans/` and present a summary:
    - **Feature:** {slug}
