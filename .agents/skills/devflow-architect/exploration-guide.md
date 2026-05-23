@@ -28,7 +28,7 @@ Auto-detect from config files: frameworks, test runners, build tools, ORM, DI, s
 - **Single project:** Use `## Stack Profile` table.
 - **Monorepo:** Use `## Stack Profiles` format. Create one entry per affected package. Include Workspace root for shared config (Package Manager, Monorepo Tool, workspace scripts).
 
-Fields per entry: Language, Runtime, Framework, Package Manager, Build Command, Lint Command, Watch Command, Source Root.
+Fields per entry: Language, Runtime, Framework, Database, Package Manager, Build Command, Lint Command, Audit Command, Watch Command, Source Root.
 
 Use [stack-detection.md](<{{SKILLS_DIR}}/shared/stack-detection.md>) as the detection reference for any stack not listed in the examples below.
 
