@@ -146,6 +146,14 @@ These files live only for the duration of a DevFlow session. They are not versio
 |---|------|----|--------|
 | 1 | Reviewer | Implementer | BLOCK: {reason} |
 
+## Escalation Log
+> Documented by the Orchestrator when iteration limits are exhausted and the user is asked to decide.
+
+| # | Phases | Trigger | Attempts | Root Cause | User Decision |
+|---|--------|---------|:--------:|------------|---------------|
+| 1 | Implementer ↔ Debugger | Test still failing | 3 | NullReference at auth.ts:42 | Simplify scope |
+| 2 | Planner revision | User requests changes | 2 | Ambiguous API contract | Redesign spec |
+
 ## Checkpoints
 > Git SHAs recorded by the Orchestrator before phases that produce irreversible changes.
 > Used for rollback when a phase must be reverted. NEVER execute `git reset` — tell the user the command.

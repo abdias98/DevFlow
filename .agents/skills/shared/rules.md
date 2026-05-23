@@ -35,6 +35,19 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
 - Use `AGENTS.md` when present — if the project has one, read it first and skip redundant exploration.
 - **Engineering standards** are versioned (see `shared/standards/CHANGELOG.md`). Each standard declares its version in the file header. When proposing changes to standards, follow the version policy.
 
+## Template Variables
+
+Skill files use template variables that are resolved at install time by `install.sh`. These are NOT runtime variables — they are replaced with actual paths during installation.
+
+| Variable | Resolves to | Example |
+|----------|------------|---------|
+| `{{SKILLS_DIR}}` | Installed skills directory | `~/.agents/skills` |
+| `{{AGENTS_DIR}}` | Installed agents directory | `~/.agents` |
+| `{{PROMPTS_DIR}}` | Installed prompts directory | `~/.agents/prompts` |
+| `{{INSTR_DIR}}` | Installed instructions directory | `~/.agents/instructions` |
+
+**Usage:** Only use `{{SKILLS_DIR}}` in skill file **path references** (e.g., `<{{SKILLS_DIR}}/shared/rules.md>`). Never use them in code snippets, commands, or runtime logic. When editing a skill file in the source repository, write `{{SKILLS_DIR}}` — the install script handles substitution for each editor profile.
+
 ## Scope-Locking
 
 - **ONLY modify files explicitly requested by the user** or files that are a **direct, hard dependency** of the requested change. A direct dependency is one that, if not updated, would cause the in-scope change to fail compilation or break the build in an obvious way. Examples: renaming a method requires updating immediate callers within the same module; changing a type signature requires updating direct references. It does NOT include: restructuring project folders, updating DI registrations, modifying base classes that affect many unrelated modules, or “improving” nearby code.

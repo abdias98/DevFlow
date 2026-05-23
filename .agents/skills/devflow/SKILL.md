@@ -220,6 +220,8 @@ Update the `## Iteration Log` in `phase-state.md` with each loop:
 | 1 | Reviewer | Implementer | BLOCK: missing input validation in auth.ts:42 |
 ```
 
+**When escalating to the user** (iteration limit reached), document the escalation in `## Escalation Log` in `phase-state.md` before presenting options to the user. Record: phases involved, trigger, number of attempts, root cause, and the user's decision after they respond.
+
 ---
 
 ## Rollback
