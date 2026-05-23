@@ -23,6 +23,7 @@ DevFlow/
 │   ├── devflow-migrate/         # Standalone migration agent
 │   ├── devflow-contract/        # Standalone contract testing agent
 │   ├── devflow-docs/            # Standalone documentation agent
+│   ├── devflow-templates/       # Standalone template agent
 │   └── shared/                  # Common rules, conventions, and standards
 │       ├── rules.md
 │       ├── memory-conventions.md
@@ -154,6 +155,7 @@ DevFlow/
 | Migration Agent | `/devflow-migrate` | Generate database migrations with forward/backward compatibility checks |
 | Contract Agent | `/devflow-contract` | Validate API endpoints against spec contract |
 | Documentation Agent | `/devflow-docs` | Generate README, API docs, CHANGELOG from DevFlow artifacts |
+| Template Agent | `/devflow-templates` | Generate/maintain project-specific architecture templates |
 
 See each agent's `SKILL.md` for detailed procedures.
 
@@ -183,6 +185,7 @@ Versioned with git, survive across conversations:
 - `migrations/` — Migration reports + files (Migration Agent)
 - `contracts/` — API contract validation reports (Contract Agent)
 - `documentation/` — Documentation generation reports (Documentation Agent)
+- `templates/` — Project-specific architecture templates (generated from cycles)
 - `summaries/` — Cycle completion summaries (Finalizer)
 
 ## Iteration Logic
@@ -237,6 +240,7 @@ All artifacts follow [Memory Conventions](<{{SKILLS_DIR}}/shared/memory-conventi
 | Migration | `YYYY-MM-DD-{slug}-migration.md` | `2026-03-28-user-auth-migration.md` |
 | Contract | `YYYY-MM-DD-{slug}-contract.md` | `2026-03-28-user-auth-contract.md` |
 | Documentation | `YYYY-MM-DD-{slug}-docs.md` | `2026-03-28-user-auth-docs.md` |
+| Template | `project-architecture.md` | `project-architecture.md` |
 | Summary | `YYYY-MM-DD-{slug}-summary.md` | `2026-03-28-user-auth-summary.md` |
 
 ## Standard Engineering System
