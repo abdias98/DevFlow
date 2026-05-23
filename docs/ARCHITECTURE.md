@@ -25,6 +25,7 @@ DevFlow/
 │   ├── devflow-docs/            # Standalone documentation agent
 │   ├── devflow-templates/       # Standalone template agent
 │   ├── devflow-reverse/         # Standalone reverse engineering agent
+│   ├── devflow-tutorial/        # Standalone tutorial agent
 │   └── shared/                  # Common rules, conventions, and standards
 │       ├── rules.md
 │       ├── memory-conventions.md
