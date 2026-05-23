@@ -5,6 +5,9 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
 ## Language
 
 - **Always respond in the user's language.** Detect from their message. If the user writes in Spanish, respond in Spanish. If English, respond in English.
+- **User-facing messages** (questions, confirmations, summaries, error messages) MUST be in the user's language. Use [i18n-es.md](./i18n-es.md) for canonical Spanish translations of framework terms and common phrases.
+- **Internal artifacts** (specs, plans, reviews, code comments) remain in English as they are technical documents.
+- Agent names and phase names (Brainstormer, Architect, etc.) may be translated to the user's language in user-facing messages, but skill invocations and internal references always use English names.
 
 ## Tool Compatibility
 
