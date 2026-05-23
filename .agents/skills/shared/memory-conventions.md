@@ -10,8 +10,8 @@ These conventions define where and how DevFlow agents persist state and artifact
 
 These files live only for the duration of a DevFlow session. They are not versioned and may be cleaned up after the feature is complete.
 
-**Primary path:** `/memories/session/devflow/`
-**Fallback path:** `docs/devflow/session/`
+**Primary path:** `/memories/session/devflow/{slug}/`
+**Fallback path:** `docs/devflow/session/{slug}/`
 
 > **Agents MUST ensure the target directory exists** before writing session files. Use available tools to create the directory if missing.
 
@@ -153,7 +153,7 @@ These files live only for the duration of a DevFlow session. They are not versio
    - Update `Current Phase` to the next number.
    - Add a `Last Updated` timestamp.
 3. **At cycle end** (Finalizer completes):
-   - Clean session memory by deleting all files in the session memory path (`/memories/session/devflow/` or `docs/devflow/session/`).
+   - Clean session memory by deleting all files in the session memory path (`/memories/session/devflow/{slug}/` or `docs/devflow/session/{slug}/`).
    - Confirm all persistent artifacts are saved.
 4. **All sub-agents read from and write to the SAME memory** — this is how they communicate. Do not create separate session files for different agents.
 

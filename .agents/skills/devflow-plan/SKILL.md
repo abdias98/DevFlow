@@ -89,7 +89,7 @@ After the plan is complete, generate a traceability matrix using the [traceabili
 1. Cross-reference each requirement (DoD criteria, Edge Cases from `context.md`, Spec sections, API Contracts, Risk Mitigations) with the plan tasks that address them.
 2. For each requirement, identify the task, test file, and test scenario from the plan.
 3. Leave `Impl File` and `Status` columns empty (filled by the Implementer).
-4. Save the matrix to session memory: `docs/devflow/session/traceability.md`.
+4. Save the matrix to session memory: `docs/devflow/session/{slug}/traceability.md`.
 5. Compute the Coverage Summary — every DoD criterion and Edge Case must map to at least one task and test. Flag any gaps with a `⚠️` note.
 
 ### Step 8 — Persist Plan (MANDATORY)

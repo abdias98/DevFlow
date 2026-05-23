@@ -52,7 +52,7 @@ Gather:
 ### Step 5 — Clean Session Memory
 
 1. Confirm with the user that all artifacts are saved and the feature is complete.
-2. Delete all session memory files in the session path (`docs/devflow/session/` or `/memories/session/devflow/`), following [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>):
+2. Delete all session memory files in the session path (`docs/devflow/session/{slug}/`), following [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>):
     - `context.md`
     - `phase-state.md`
     - `test-registry.md`

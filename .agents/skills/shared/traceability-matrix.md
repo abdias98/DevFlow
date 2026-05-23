@@ -1,6 +1,6 @@
 # Traceability Matrix Template
 
-This session memory file (`docs/devflow/session/traceability.md`) cross-references requirements through the full development pipeline: Problem Statement → Architecture Spec → Plan Tasks → Tests → Implementation.
+This session memory file (`docs/devflow/session/{slug}/traceability.md`) cross-references requirements through the full development pipeline: Problem Statement → Architecture Spec → Plan Tasks → Tests → Implementation.
 
 **Written by:** Planner (initial generation from spec + plan)
 **Updated by:** Implementer (file paths + status per task)

@@ -63,16 +63,15 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 
 ### Step 0 — Session Initialization
 
-1. Check for an active session: `docs/devflow/session/phase-state.md`.
-2. **If a cycle exists:**
-   - Read `phase-state.md` to determine the current phase, feature slug, and lock status.
-   - If the lock is **stale** (>30 min with no phase progress) → break it: *"A stale lock was detected. Breaking lock and resuming."*
-   - Present the state to the user: *"A DevFlow cycle is in progress at Phase {N} for '{slug}'. Continue or start a new cycle?"*
-   - If **continue**: resume from the current phase (skip completed phases).
-   - If **new**: archive old session files and start fresh.
-3. **If no cycle exists:**
-   - Ensure `docs/devflow/session/` directory exists.
-   - Initialize `phase-state.md` with `Current Phase: 1`.
+1. **Discover active sessions:** List subdirectories of `docs/devflow/session/`. For each subdirectory found, read its `phase-state.md` to identify the feature slug and current phase.
+2. **If active sessions exist:**
+   - Present them to the user: *"Active DevFlow sessions found: {list of slugs with phases}. Select one to continue, or start a new feature."*
+   - If the user selects an existing session → resume from its current phase.
+   - If the user wants a new feature → proceed to step 3.
+3. **If no active sessions (or user chose new):**
+   - Extract or ask for the feature slug.
+   - Ensure `docs/devflow/session/{slug}/` directory exists.
+   - Initialize `phase-state.md` with `Current Phase: 1`, `Feature: {slug}`.
    - **Acquire the memory lock:** Set `Locked By: Orchestrator` and `Locked Since: {current timestamp}` in `phase-state.md`.
    - Initialize `context.md` with the user's request.
 4. Detect the project stack profile (or leave `[To be detected by Architect]`).
