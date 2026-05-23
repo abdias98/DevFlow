@@ -74,6 +74,9 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - Initialize `phase-state.md` with `Current Phase: 1`.
    - Initialize `context.md` with the user's request.
 4. Detect the project stack profile (or leave `[To be detected by Architect]`).
+5. **Record checkpoint:** Ask the user for the current git SHA:
+   > "Before starting, run `git rev-parse HEAD` and tell me the output so I can record a rollback checkpoint."
+   Record it in `phase-state.md` under `## Checkpoints` as `Pre-Phase 1`.
 
 ### Step 1 — Phase 1: Brainstormer
 
@@ -126,13 +129,18 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 
 4. **If ✅ Yes** → record approval in `phase-state.md` and proceed to Step 5.
 5. **If ✏️ Request changes** → collect user feedback. Route back to Step 3 (Planner) with the feedback. Max 2 revision loops; escalate to user on the 3rd.
-6. **If ❌ Cancel** → stop the cycle. Update `phase-state.md` noting cancellation. Do NOT clean session memory (preserve artifacts for reference).
+6. **If ❌ Cancel** → stop the cycle. Present the rollback option:
+   > "Cycle cancelled. To revert all DevFlow artifacts created so far, run: `git reset --hard {pre-phase-1-sha}`"
+   Update `phase-state.md` noting cancellation. Do NOT clean session memory (preserve artifacts for reference).
 
 ### Step 5 — Phase 4: Implementer
 
 1. Verify entry condition: Confirmation Gate approved (check `phase-state.md`).
-2. Invoke `devflow-implement`.
-3. **Wait** for completion. Verify:
+2. **Record Pre-Phase 4 checkpoint:** Ask the user for the current git SHA:
+   > "Before implementation begins, run `git rev-parse HEAD` so I can record a rollback checkpoint."
+   Record it in `phase-state.md` under `## Checkpoints` as `Pre-Phase 4`.
+3. Invoke `devflow-implement`.
+4. **Wait** for completion. Verify:
    - `test-registry.md` updated with all test files and statuses.
    - `phase-state.md` shows `[x] Phase 4: Implementer`.
 4. **If the Implementer reports user test failures:**
@@ -158,8 +166,11 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 This phase is ONLY executed when tests fail or a specific bug is identified.
 
 1. Verify entry condition: test failure or runtime error reported.
-2. Invoke `devflow-debug`.
-3. **Wait** for completion. Verify:
+2. **Record Pre-Phase 6 checkpoint:** Ask the user for the current git SHA:
+   > "Before applying debug fixes, run `git rev-parse HEAD` so I can record a rollback checkpoint."
+   Record it in `phase-state.md` under `## Checkpoints` as `Pre-Phase 6`.
+3. Invoke `devflow-debug`.
+4. **Wait** for completion. Verify:
    - Debug log saved at `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md`.
    - Root cause identified and fix applied.
 4. After the Debugger completes:
@@ -200,6 +211,45 @@ Update the `## Iteration Log` in `phase-state.md` with each loop:
 |---|------|----|--------|
 | 1 | Reviewer | Implementer | BLOCK: missing input validation in auth.ts:42 |
 ```
+
+---
+
+## Rollback
+
+The Orchestrator records git SHAs as checkpoints before phases that produce irreversible changes. **NEVER execute `git reset` yourself** — provide the command and let the user run it.
+
+### Checkpoints recorded
+
+| Checkpoint | When | What it protects |
+|------------|------|------------------|
+| Pre-Phase 1 | Before any DevFlow work | Baseline state — undo the entire cycle |
+| Pre-Phase 4 | Before Implementer writes code | Code changes — revert to plan-only state |
+| Pre-Phase 6 | Before Debugger applies fixes | Debug fixes — revert invasive fix attempts |
+
+### Rollback triggers
+
+| Situation | Rollback to | Action |
+|-----------|-------------|--------|
+| User cancels at Confirmation Gate | Pre-Phase 1 | Undo spec + plan artifacts |
+| Implementation produces unrecoverable errors after 3 Debugger loops | Pre-Phase 4 | Revert code, keep spec + plan |
+| Debugger fix causes more damage than the original bug | Pre-Phase 6 | Revert fix attempt, keep original code |
+| Architecture flaw discovered mid-implementation | Pre-Phase 1 | Full restart from Architecture |
+
+### Rollback procedure
+
+1. Identify the appropriate checkpoint SHA from `phase-state.md` → `## Checkpoints`.
+2. Present the rollback command to the user:
+   > "To rollback to {phase}, run:
+   > ```bash
+   > git reset --hard {sha}
+   > ```
+   > This will revert all changes since {checkpoint description}. Confirm you want to proceed."
+3. **Wait** for the user to execute the command and confirm.
+4. After rollback:
+   - Update `phase-state.md`: mark rolled-back phases as incomplete.
+   - Reset the `Current Phase` to the rollback target.
+   - Clear iteration counters for rolled-back phases.
+   - Resume from the appropriate step.
 
 ---
 

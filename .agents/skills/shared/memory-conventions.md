@@ -105,6 +105,16 @@ These files live only for the duration of a DevFlow session. They are not versio
 | # | From | To | Reason |
 |---|------|----|--------|
 | 1 | Reviewer | Implementer | BLOCK: {reason} |
+
+## Checkpoints
+> Git SHAs recorded by the Orchestrator before phases that produce irreversible changes.
+> Used for rollback when a phase must be reverted. NEVER execute `git reset` — tell the user the command.
+
+| Phase | Git SHA | Recorded At | Purpose |
+|-------|---------|-------------|---------|
+| Pre-Phase 1 | {sha} | {timestamp} | Baseline — before any DevFlow artifacts |
+| Pre-Phase 4 | {sha} | {timestamp} | Before implementation — rollback point for code changes |
+| Pre-Phase 6 | {sha} | {timestamp} | Before debug fixes — rollback point for invasive changes |
 ```
 
 ### `test-registry.md` format
