@@ -201,6 +201,7 @@ These files live only for the duration of a DevFlow session. They are not versio
 | `features/` | Lightweight feature docs | `YYYY-MM-DD-{slug}-feature.md` |
 | `performance/` | Performance analysis reports | `YYYY-MM-DD-{slug}-perf.md` |
 | `metrics/` | Cycle quality metrics + aggregate trends | `YYYY-MM-DD-{slug}-metrics.md` |
+| `knowledge-base/` | Cross-cycle learnings, patterns, and anti-patterns | `learnings.md` (appended per cycle) |
 
 ## Memory Rules
 

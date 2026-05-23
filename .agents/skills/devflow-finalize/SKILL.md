@@ -52,6 +52,11 @@ Gather:
   - Read `traceability.md` → coverage percentage.
   - Fill all remaining values in `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`.
   - Append a new row to `docs/devflow/metrics/_aggregate.md` and recalculate averages.
+- **Append to knowledge base** (`docs/devflow/knowledge-base/learnings.md`):
+  - Extract reusable patterns from the Architect's spec (design patterns, component structures).
+  - Extract anti-patterns from the Reviewer's BLOCK/WARN findings.
+  - Record key architecture decisions from the spec's Design Decisions section.
+  - Format as a new cycle entry following the template in `learnings.md`.
 
 ### Step 4 — Generate Final Summary
 
