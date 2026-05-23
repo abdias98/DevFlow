@@ -28,6 +28,7 @@ Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) for language detection, to
 | Performance Agent | `devflow-perf` | Standalone |
 | Migration Agent | `devflow-migrate` | Standalone |
 | Contract Agent | `devflow-contract` | Standalone |
+| Documentation Agent | `devflow-docs` | Standalone |
 
 ---
 
@@ -300,6 +301,7 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 | `/devflow-perf` | **Standalone:** Performance analysis, profiling, and optimization recommendations |
 | `/devflow-migrate` | **Standalone:** Database migration generation, compatibility checks, zero-downtime strategies |
 | `/devflow-contract` | **Standalone:** API contract validation — checks endpoints against spec contract |
+| `/devflow-docs` | **Standalone:** Generate/update README, API docs, CHANGELOG, architecture docs from artifacts |
 
 When a single phase is invoked, the agent still reads session memory for prior context.
 
