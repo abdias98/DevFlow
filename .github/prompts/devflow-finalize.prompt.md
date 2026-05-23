@@ -18,7 +18,7 @@ Run the Finalizer phase of the DevFlow lifecycle.
 1. Ask the user to run the full test suite — if any test fails, route to Debugger.
 2. Verify all BLOCK review findings are resolved and DoD criteria are met.
 3. Collect all artifacts (files changed, tests added, documents created).
-4. Generate and save the final summary to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`.
+4. Generate and save the final summary to `docs/devflow/summaries/YYYY-MM-DD-{slug}-summary.md`.
 5. Ask for user confirmation, then clean session memory.
 
 **NEVER execute tests.** Ask the user to run them and report results.

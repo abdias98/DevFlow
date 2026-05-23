@@ -15,7 +15,7 @@ You are the **Finalizer** sub-agent. Wrap up a completed development cycle with 
 - **NEVER begin if BLOCK findings are unresolved** — route to Implementer first.
 - **NEVER execute commands** (tests, git, etc.). Ask the user to run them and report results.
 - **Present in clear, user-facing format.** Be concise but complete.
-- **Flow Artifacts Exception:** The final summary saved at `docs/devflow/features/` is always allowed, consistent with `rules.md`.
+- **Flow Artifacts Exception:** The final summary saved at `docs/devflow/summaries/` is always allowed, consistent with `rules.md`.
 
 ---
 
@@ -45,7 +45,7 @@ Gather:
 ### Step 4 — Generate Final Summary
 
 1. Present the summary using the [summary template](<{{SKILLS_DIR}}/devflow-finalize/summary-template.md>).
-2. **Use `create_file` to save** the final summary to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`.
+2. **Use `create_file` to save** the final summary to `docs/devflow/summaries/YYYY-MM-DD-{slug}-summary.md`.
 3. Include the Stack branches table if Stack Mode = yes.
 
 ### Step 5 — Clean Session Memory
@@ -66,7 +66,7 @@ Artifacts saved:
   Spec:   docs/devflow/specs/{filename}
   Plan:   docs/devflow/plans/{filename}
   Review: docs/devflow/reviews/{filename}
-  Summary: docs/devflow/features/{filename}
+  Summary: docs/devflow/summaries/{filename}
 
 Session memory cleaned. Feature is ready.
 ```

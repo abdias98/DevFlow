@@ -126,6 +126,7 @@ These files live only for the duration of a DevFlow session. They are not versio
 | `plans/` | Implementation plans | `YYYY-MM-DD-{slug}.md` |
 | `mockups/` | HTML wireframe mockups | `YYYY-MM-DD-{slug}-mockup[-A\|-B\|-C].html` |
 | `reviews/` | Code review findings | `YYYY-MM-DD-{slug}-review.md` |
+| `summaries/` | Cycle completion summaries (Finalizer) | `YYYY-MM-DD-{slug}-summary.md` |
 | `debug-logs/` | Root cause analysis | `YYYY-MM-DD-{slug}-debug.md` |
 | `refactors/` | Refactoring summaries | `YYYY-MM-DD-{slug}-refactor.md` |
 | `bug-fixes/` | Bug fix reports | `YYYY-MM-DD-{slug}-bugfix.md` |
