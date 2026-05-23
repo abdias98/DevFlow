@@ -8,6 +8,26 @@ Use this procedure when `## Stack Profile` is absent from session memory (`conte
 
 ## Detection Order
 
+### Step 0 — Detect Monorepo (run first)
+
+Check for monorepo workspace configuration. If ANY of these files exist, the project is a monorepo:
+
+| File | Monorepo Tool |
+|------|---------------|
+| `nx.json` | Nx |
+| `turbo.json` | Turborepo |
+| `lerna.json` | Lerna |
+| `pnpm-workspace.yaml` | pnpm workspaces |
+| `rush.json` | Rush |
+| `package.json` with `workspaces` field | yarn/npm workspaces |
+
+If monorepo detected:
+- Record the monorepo tool and package manager in `## Stack Profiles`.
+- Run Steps 1–6 for **each package** in the workspace that is relevant to the feature.
+- Use the `## Stack Profiles` format (not single `## Stack Profile`).
+
+If NOT a monorepo: proceed to Step 1 (standard detection).
+
 ### Step 1 — Check AGENTS.md first
 
 Search for `AGENTS.md` in the workspace root and `docs/AGENTS.md`. If found:
@@ -81,8 +101,11 @@ Read config files for test runner configuration:
 
 ### Step 7 — Write Stack Profile to context.md
 
-Merge the detected values into the `## Stack Profile` table in `context.md`.
-**NEVER overwrite fields that were already populated by a prior Architect cycle.**
+**For single-project workspaces:** Merge the detected values into the `## Stack Profile` table in `context.md`.
+
+**For monorepos:** Use `## Stack Profiles` format. Create one profile entry per affected package. Each entry must have: package path, Language, Framework, Test Command, Test Command (single file), Source Root, Test Root. Common workspace-level config (Package Manager, Monorepo Tool, Lint Command, Build Command) goes under `### Workspace root`.
+
+**NEVER overwrite** fields that were already populated by a prior Architect cycle. Merge incrementally.
 
 ---
 
@@ -101,4 +124,4 @@ Then inform the user: "I could not detect the test command automatically. Please
 - **NEVER hardcode** a test runner or command. Always derive it from the project files.
 - **NEVER assume** a stack without reading at least one config file.
 - **ALWAYS prefer** the value from `AGENTS.md` if it exists.
-- If two stacks coexist (e.g., Python backend + Next.js frontend), detect both and record the primary one based on the feature being worked on.
+- **Monorepo:** When multiple packages coexist, detect ALL stacks relevant to the feature. Use `## Stack Profiles` format. Never arbitrarily pick a "primary" — record all affected packages.

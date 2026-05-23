@@ -50,6 +50,44 @@ These files live only for the duration of a DevFlow session. They are not versio
 | **Test Root** | {tests/ \| __tests__/ \| test/ \| spec/ \| ...} |
 | **Test Utilities** | {e.g., factories in tests/factories/, fixtures in tests/fixtures/} |
 
+> **Monorepo:** When the workspace contains multiple packages (e.g., Nx, Turborepo, Lerna, pnpm workspaces), replace `## Stack Profile` with `## Stack Profiles` below. Each package gets its own profile entry. Downstream agents select the relevant profile based on the feature scope.
+
+### `## Stack Profiles` (monorepo only)
+
+```markdown
+## Stack Profiles
+
+**Monorepo Tool:** {Nx \| Turborepo \| Lerna \| pnpm workspaces \| yarn workspaces \| Rush \| none}
+**Package Manager:** {pnpm \| yarn \| npm \| ...}
+**Workspace Root:** {./}
+
+### Workspace root
+{Common config: workspace scripts, lint, format, shared tooling}
+
+### {packages/frontend}
+| Key | Value |
+|-----|-------|
+| **Language** | TypeScript |
+| **Framework** | Next.js 14 |
+| **Test Command** | pnpm --filter frontend test |
+| **Test Command (single file)** | pnpm --filter frontend exec jest {file} |
+| **Source Root** | packages/frontend/src/ |
+| **Test Root** | packages/frontend/__tests__/ |
+
+### {packages/api}
+| Key | Value |
+|-----|-------|
+| **Language** | TypeScript |
+| **Runtime** | Node.js 20 |
+| **Framework** | Express |
+| **Test Command** | pnpm --filter api test |
+| **Test Command (single file)** | pnpm --filter api exec jest {file} |
+| **Source Root** | packages/api/src/ |
+| **Test Root** | packages/api/__tests__/ |
+
+{Repeat for each package affected by the feature}
+```
+
 ## Goal
 {One-sentence summary}
 

@@ -13,6 +13,8 @@ If `AGENTS.md` was found → skip sub-steps 1, 2, 4, 5, 6. Run only **sub-steps 
 ### 1. Full Project Structure
 Map every significant directory and file. Understand folder hierarchy, module boundaries, and organization.
 
+**Monorepo check:** Look for `nx.json`, `turbo.json`, `lerna.json`, `pnpm-workspace.yaml`, `rush.json`, or `package.json` with a `workspaces` field. If found, identify all packages (e.g., `packages/*`, `apps/*`). Map each package's internal structure separately.
+
 ### 2. Naming Conventions
 Identify how files, classes, functions, variables, and routes are named. New components must follow the same conventions.
 
@@ -22,9 +24,11 @@ Find the existing feature closest to what will be built. Study its complete file
 ### 4. Tech Stack Details ⚠️ WRITES STACK PROFILE
 Auto-detect from config files: frameworks, test runners, build tools, ORM, DI, state management, custom abstractions.
 
-**MANDATORY OUTPUT:** After detection, **merge** (do not overwrite) the following fields into the `## Stack Profile` table in `context.md` (session memory):
-- Language, Runtime, Framework, Package Manager
-- Build Command, Lint Command, Source Root
+**MANDATORY OUTPUT:** After detection, **merge** (do not overwrite) the following fields into `context.md` (session memory):
+- **Single project:** Use `## Stack Profile` table.
+- **Monorepo:** Use `## Stack Profiles` format. Create one entry per affected package. Include Workspace root for shared config (Package Manager, Monorepo Tool, workspace scripts).
+
+Fields per entry: Language, Runtime, Framework, Package Manager, Build Command, Lint Command, Source Root.
 
 Use [stack-detection.md](<{{SKILLS_DIR}}/shared/stack-detection.md>) as the detection reference for any stack not listed in the examples below.
 
@@ -45,8 +49,10 @@ Exhaustively explore how the project tests. Discover:
 - Imports, shared dependencies, test-specific config
 - Exact commands to run tests (full suite, subset, single file, coverage)
 
-**MANDATORY OUTPUT:** After discovery, **merge** (do not overwrite) the following fields into the `## Stack Profile` table in `context.md`:
-- Test Runner, Test Command, Test Command (single file), Test Root, Test Utilities
+**MANDATORY OUTPUT:** After discovery, **merge** (do not overwrite) the following fields into `context.md`:
+- **Single project:** Into `## Stack Profile` table.
+- **Monorepo:** Into each package's profile under `## Stack Profiles`.
+- Fields: Test Runner, Test Command, Test Command (single file), Test Root, Test Utilities.
 
 These values are used by ALL downstream agents (Implementer, Tester, Refactorer, Bug-Fixer, Feature) to determine how to run tests. If any value cannot be detected, write `unknown` and note it.
 
