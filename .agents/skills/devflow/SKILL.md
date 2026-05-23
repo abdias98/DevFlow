@@ -30,6 +30,8 @@ Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) for language detection, to
 | Contract Agent | `devflow-contract` | Standalone |
 | Documentation Agent | `devflow-docs` | Standalone |
 | Template Agent | `devflow-templates` | Standalone |
+| Tutorial Agent | `devflow-tutorial` | Standalone |
+| Reverse Agent | `devflow-reverse` | Standalone |
 
 ---
 
@@ -304,6 +306,8 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 | `/devflow-contract` | **Standalone:** API contract validation — checks endpoints against spec contract |
 | `/devflow-docs` | **Standalone:** Generate/update README, API docs, CHANGELOG, architecture docs from artifacts |
 | `/devflow-templates` | **Standalone:** Generate/maintain project-specific architecture templates from DevFlow cycles |
+| `/devflow-tutorial` | **Standalone:** Interactive onboarding — guided walkthrough of a complete DevFlow cycle |
+| `/devflow-reverse` | **Standalone:** Reverse engineer undocumented project — generate AGENTS.md, specs, deps |
 
 When a single phase is invoked, the agent still reads session memory for prior context.
 
