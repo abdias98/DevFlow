@@ -82,6 +82,7 @@ The following agents operate **independently** of the Phase 1–7 lifecycle. The
 | Feature Agent | `devflow-feature` | Implement a small-medium feature without full planning overhead |
 | Performance Agent | `devflow-perf` | Analyze performance bottlenecks and recommend optimizations |
 | Migration Agent | `devflow-migrate` | Generate database migrations with compatibility checks |
+| Contract Agent | `devflow-contract` | Validate API implementation against spec contract |
 | Reviewer | `devflow-review` | Review existing code against standards |
 | Debugger | `devflow-debug` | Diagnose and fix issues (standalone) |
 

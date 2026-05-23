@@ -21,6 +21,7 @@ DevFlow/
 │   ├── devflow-refactor/        # Standalone refactoring agent
 │   ├── devflow-perf/            # Standalone performance agent
 │   ├── devflow-migrate/         # Standalone migration agent
+│   ├── devflow-contract/        # Standalone contract testing agent
 │   └── shared/                  # Common rules, conventions, and standards
 │       ├── rules.md
 │       ├── memory-conventions.md
@@ -150,6 +151,7 @@ DevFlow/
 | Feature Agent | `/devflow-feature` | Implement a small-medium feature without full planning overhead |
 | Performance Agent | `/devflow-perf` | Analyze performance bottlenecks and recommend optimizations |
 | Migration Agent | `/devflow-migrate` | Generate database migrations with forward/backward compatibility checks |
+| Contract Agent | `/devflow-contract` | Validate API endpoints against spec contract |
 
 See each agent's `SKILL.md` for detailed procedures.
 
@@ -177,6 +179,7 @@ Versioned with git, survive across conversations:
 - `features/` — Feature reports (Feature Agent standalone)
 - `performance/` — Performance analysis reports (Performance Agent)
 - `migrations/` — Migration reports + files (Migration Agent)
+- `contracts/` — API contract validation reports (Contract Agent)
 - `summaries/` — Cycle completion summaries (Finalizer)
 
 ## Iteration Logic
@@ -229,6 +232,7 @@ All artifacts follow [Memory Conventions](<{{SKILLS_DIR}}/shared/memory-conventi
 | Feature Report | `YYYY-MM-DD-{slug}-feature.md` | `2026-03-28-user-auth-feature.md` |
 | Performance | `YYYY-MM-DD-{slug}-perf.md` | `2026-03-28-user-auth-perf.md` |
 | Migration | `YYYY-MM-DD-{slug}-migration.md` | `2026-03-28-user-auth-migration.md` |
+| Contract | `YYYY-MM-DD-{slug}-contract.md` | `2026-03-28-user-auth-contract.md` |
 | Summary | `YYYY-MM-DD-{slug}-summary.md` | `2026-03-28-user-auth-summary.md` |
 
 ## Standard Engineering System

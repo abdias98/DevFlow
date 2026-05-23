@@ -38,4 +38,5 @@ Every DevFlow agent response MUST be structured as follows:
 | Feature Agent | ⚡ | Standalone |
 | Performance Agent | ⚡ | Standalone |
 | Migration Agent | 🗄️ | Standalone |
+| Contract Agent | 🔗 | Standalone |
 | Orchestrator | 🎯 | Standalone |
