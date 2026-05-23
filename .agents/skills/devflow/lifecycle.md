@@ -1,6 +1,6 @@
 # Lifecycle Phase Details
 
-This document provides a quick reference for the DevFlow lifecycle phases. For the complete step‑by‑step procedures, refer to each agent's `SKILL.md`.
+This document provides a quick reference for the DevFlow lifecycle phases. For the complete step‑by‑step procedures including iteration tracking, Confirmation Gate handling, and escalation logic, refer to the **Orchestrator's `SKILL.md`** and each sub-agent's `SKILL.md`.
 
 ## Phase Flow
 
