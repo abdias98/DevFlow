@@ -136,33 +136,46 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - **Stack Mode:** {yes/no} — {branch plan if stacked}
    - **Mockups:** {paths} (if UI)
 2. **If multiple mockups exist** → ask the user to select one. Record the selection in `context.md` under `## Selected Mockup`.
-3. Ask for explicit approval:
+3. Ask for implementation mode:
 
    | header | question | type |
    |--------|----------|------|
    | `plan_confirmation` | Plan + Test Cases + Mockups complete. Choose implementation mode: | options: ✅ Standard — auto-complete, 🤝 Pair — review each task, ✏️ Request changes, ❌ Cancel |
 
-4. **If ✅ Standard** → record `Pair Mode: no` in `phase-state.md` and proceed to Step 5.
-5. **If 🤝 Pair** → record `Pair Mode: yes` in `phase-state.md` and proceed to Step 5.
-6. **If ✏️ Request changes** → collect user feedback. Route back to Step 3 (Planner) with the feedback. Max 2 revision loops; escalate to user on the 3rd.
-7. **If ❌ Cancel** → stop the cycle. Release the memory lock (`Locked By: none`, `Locked Since: —`). Present the rollback option:
+4. **If ✅ Standard** → record `Pair Mode: no` in `phase-state.md`. Then ask for the branch name:
+   > **"Standard mode selected. This will auto-execute: branch creation, test runs, commits, and git SHAs for rollback."**
+   > Ask: *"Branch name? Suggested: `feat/{slug}`. Press Enter to accept or type a custom name."*
+   - Record the branch name in `phase-state.md` as `Branch: {name}`.
+   - Standard mode auto-execution rules: see `rules.md` → Standard Mode.
+   - Proceed to Step 5.
+5. **If ✅ Standard and Stack Mode = no** → the branch `feat/{slug}` is created even for small features. This provides: isolated workspace, clean rollback point, safe experimentation.
+6. **If 🤝 Pair** → record `Pair Mode: yes` in `phase-state.md`. Pair mode keeps the current behavior: the user runs tests, creates branches, and confirms each task. Proceed to Step 5.
+7. **If ✏️ Request changes** → collect user feedback. Route back to Step 3 (Planner) with the feedback. Max 2 revision loops; escalate to user on the 3rd.
+8. **If ❌ Cancel** → stop the cycle. Release the memory lock (`Locked By: none`, `Locked Since: —`). Present the rollback option:
    > "Cycle cancelled. To revert all DevFlow artifacts created so far, run: `git reset --hard {pre-phase-1-sha}`"
    Update `phase-state.md` noting cancellation. Do NOT clean session memory (preserve artifacts for reference).
 
 ### Step 5 — Phase 4: Implementer
 
 1. Verify entry condition: Confirmation Gate approved (check `phase-state.md`).
-2. **Record Pre-Phase 4 checkpoint:** Ask the user for the current git SHA:
-   > "Before implementation begins, run `git rev-parse HEAD` so I can record a rollback checkpoint."
+2. **Check `Pair Mode`** in `phase-state.md`:
+   - **If `Pair Mode: no` (Standard):** The Implementer auto-executes tests, creates branches, commits, and records git SHAs. See `rules.md` → Standard Mode.
+   - **If `Pair Mode: yes` (Pair):** The Implementer tells the user each command and waits for confirmation.
+3. **Create the branch** (Standard mode auto-executes, Pair mode tells user):
+   - Standard: auto-execute `git checkout -b {branch-name}`.
+   - Pair: ask user to run `git checkout -b {branch-name}`.
+4. **Record Pre-Phase 4 checkpoint:**
+   - Standard: auto-execute `git rev-parse HEAD` and record the SHA.
+   - Pair: ask user to run `git rev-parse HEAD` and report the SHA.
    Record it in `phase-state.md` under `## Checkpoints` as `Pre-Phase 4`.
-3. Invoke `devflow-implement`.
-4. **Wait** for completion. Verify:
+5. Invoke `devflow-implement`.
+6. **Wait** for completion. Verify:
    - `test-registry.md` updated with all test files and statuses.
    - `phase-state.md` shows `[x] Phase 4: Implementer`.
-4. **If the Implementer reports user test failures:**
+7. **If the Implementer reports user test failures:**
    - Read the failing test details from `test-registry.md`.
    - Go to Step 7 (Debugger).
-5. After all tasks complete and tests are passing, proceed to Step 6.
+8. After all tasks complete and tests are passing, proceed to Step 6.
 
 ### Step 6 — Phase 5: Reviewer
 
