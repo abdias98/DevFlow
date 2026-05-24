@@ -119,34 +119,52 @@ CI mode is active when the environment variable `CI=true` is set. This is the st
 6. **Debugger:** Skip. If tests fail, report error and exit.
 7. **Finalizer:** Normal behavior — save summary and clean session memory.
 
-## Pair Programming Mode
+## Implementation Modes
 
-DevFlow supports an interactive mode where the user reviews and approves each task during implementation, rather than the Implementer auto-completing all tasks.
+At the Confirmation Gate, the user chooses between Standard mode (auto-execute) and Pair mode (interactive).
 
-### Activation
-Pair Mode is activated by the Orchestrator at the Confirmation Gate. The user chooses between:
-- **✅ Standard mode:** Implementer auto-completes all tasks sequentially
-- **🤝 Pair Mode:** Implementer pauses after each task for user review
+### ✅ Standard Mode (Auto-Execute)
 
-### Behavior in Pair Mode
+Standard mode is the default. The Implementer auto-executes commands that would normally require user interaction. This is the ONLY mode (besides CI mode) where agents may auto-execute git commands and tests.
+
+**Auto-executed actions in Standard mode:**
+
+| Action | Pair Mode | Standard Mode |
+|--------|-----------|---------------|
+| Branch creation | Tell user the command | Auto-execute `git checkout -b {branch}` |
+| Git SHA for rollback | Ask user for `git rev-parse HEAD` | Auto-execute and record |
+| Test execution | Tell user the command | Auto-run `{Test Command}` |
+| Commit | Tell user to commit | Auto-execute `git add` + `git commit` |
+| Task continuation | Pause for approval | Auto-continue to next task |
+| PR creation | NEVER auto-create | NEVER auto-create |
+
+**Branch policy in Standard mode:**
+- A branch is ALWAYS created (even for single-task features). Suggested name: `feat/{slug}`.
+- User may accept the suggestion or provide a custom name.
+- The branch is created before implementation begins.
+- This policy applies regardless of Stack Mode. Stack Mode adds stacked branches on top of this.
+
+**Exception:** Git `push` and `gh pr create` are NEVER auto-executed in any mode.
+
+### 🤝 Pair Mode (Interactive)
+
+In Pair Mode, the user reviews and approves each task during implementation.
+
+**Activation:** User selects Pair Mode at the Confirmation Gate, or sets `DEVFLOW_PAIR=true`.
+
+**Behavior:**
 
 | Phase | Standard Mode | Pair Mode |
 |-------|--------------|-----------|
 | Implementer (per task) | Auto-continue to next task | Pause, show changes, ask for approval |
 | Task approval | Implicit (commits) | Explicit ✅/✏️/❌ per task |
 | Error handling | Auto-retry or debugger | User decides next action |
+| Branch, tests, commits | Auto-executed | User executes manually |
 
-### Config
+### Agent responsibilities
 
-| Variable | Default | Effect |
-|----------|:-------:|--------|
-| `DEVFLOW_PAIR` | `false` | Forces Pair Mode on (overrides Confirmation Gate) |
-
-### Agent responsibilities in Pair Mode
-
-1. **Orchestrator:** Offer Pair Mode as an option at the Confirmation Gate. Record choice in `context.md` (`Pair Mode: yes`).
-2. **Implementer:** After each task's Green Phase completes and tests pass, STOP and present the changes. Ask: *"Task {N}/{M} complete. Review and approve to continue?"* Options: ✅ Approve, ✏️ Revise, ❌ Cancel. Resume only after explicit approval.
-3. **All other agents:** No change — Pair Mode only affects the Implementer phase.
+1. **Orchestrator:** Offer mode choice at Confirmation Gate. Record `Pair Mode: yes/no` and `Branch: {name}` in `phase-state.md`.
+2. **Implementer:** In Standard mode, auto-execute branch, tests, commits, git SHAs. In Pair mode, tell user commands and wait for confirmation.
 
 ## INFO Notes & Violation Reporting
 
