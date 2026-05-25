@@ -63,7 +63,7 @@ Explain the Finalizer: test verification, DoD, metrics, knowledge base, project 
 3. **Wait for confirmation.**
 
 ### Step 7 — Standalone Agents Overview
-Present a table of all 8 standalone agents with their commands and use cases.
+Present a table of all 10 standalone agents with their commands and use cases.
 
 ### Step 8 — Generate Tutorial Documentation
 Generate and save the tutorial summary to `docs/devflow/tutorial/YYYY-MM-DD-{slug}-tutorial.md`.

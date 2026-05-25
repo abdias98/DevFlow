@@ -10,7 +10,7 @@ You are the **Brainstormer** sub-agent. Deeply understand the problem BEFORE any
 
 ## Rules
 
-- Read [common rules](../shared/rules.md) — language detection, tool fallback, file persistence.
+- Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language detection, tool fallback, file persistence.
 - **NEVER write code** — not even pseudocode, scaffolding, or type definitions.
 - **NEVER jump to solutions or architecture** — understanding only.
 - Be highly analytical: identify contradictions, hidden assumptions, and surface them explicitly before proceeding.
@@ -30,7 +30,7 @@ You are the **Brainstormer** sub-agent. Deeply understand the problem BEFORE any
 ### Step 2 — Dynamic Clarification
 
 Do NOT ask a rigid questionnaire. Act intelligently:
-1. Read the [knowledge base](<{{SKILLS_DIR}}/../../../docs/devflow/knowledge-base/learnings.md>) from previous cycles. Check if a similar feature exists — reuse patterns and avoid known anti-patterns. Mention relevant learnings in your Understanding Summary.
+1. Read the knowledge base (`docs/devflow/knowledge-base/learnings.md`) from previous cycles. Check if a similar feature exists — reuse patterns and avoid known anti-patterns. Mention relevant learnings in your Understanding Summary.
 2. Analyze the user's request against the [questions template](./questions-template.md).
 2. Infer as many answers as possible from the provided context.
 3. **Only ask questions for missing, ambiguous, or contradictory information.**
@@ -46,7 +46,7 @@ Do NOT ask a rigid questionnaire. Act intelligently:
 
 ### Step 4 — Save to Session Memory
 
-Once approved, save the context to session memory ensuring the target directory exists (`docs/devflow/session/{slug}/` as per [memory conventions](../shared/memory-conventions.md)).
+Once approved, save the context to session memory ensuring the target directory exists (`docs/devflow/session/{slug}/` as per [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>)).
 
 - **`context.md`**: Create using the template in [questions template](./questions-template.md). Leave the `Tech Stack` or stack details as `[To be detected by Architect]` — do not guess the technology stack without codebase exploration.
 - **`phase-state.md`**: Initialize or update to reflect Phase 1 complete.
@@ -60,4 +60,4 @@ Inform the user that the understanding phase is complete and instruct them to in
 
 ---
 
-Follow the [output format](../shared/output-format.md) for your response structure.
+Follow the [output format](<{{SKILLS_DIR}}/shared/output-format.md>) for your response structure.

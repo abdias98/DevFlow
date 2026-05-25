@@ -118,7 +118,7 @@ DevFlow/
 - **Input:** Changed files + spec + plan
 - **Output:** `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`
 - **Actions:**
-  - Detect mode: Cycle Mode (full lifecycle) or Standalone Mode (invoked by Feature, Refactor, or Bug-Fix agents)
+  - Detect mode: Cycle Mode (full lifecycle) or Standalone Mode (invoked by Feature, Refactor, Bug-Fix, Performance, Migration, Contract, Documentation, Template, Tutorial, or Reverse agents)
   - Apply review checklist: code quality, security, architecture alignment, plan compliance, performance, test coverage
   - Classify findings (BLOCK/WARN/INFO)
   - Route back to invoking agent if blockers

@@ -57,10 +57,10 @@ DevFlow/
 
 ## Architecture Patterns
 
-- **Multi-agent orchestration**: Orchestrator manages 7-phase lifecycle + 5 standalone agents
+- **Multi-agent orchestration**: Orchestrator manages 7-phase lifecycle + 10 standalone agents
 - **Skill-based**: Each agent is a self-contained SKILL.md with frontmatter, rules, and procedure
 - **TDD by default**: Red→Green cycle mandatory for all implementation
-- **Never execute commands**: Agents inform the user of commands; never auto-run tests or git
+- **Auto-execution modes**: Standard mode and CI mode auto-execute tests and git commands (never auto-push or auto-create PRs). Pair mode and standalone agents require user interaction.
 - **Scope-locking**: Agents only touch explicitly approved files
 - **Persistent memory**: Session memory (`context.md`, `phase-state.md`, `test-registry.md`, `traceability.md`) + persistent artifacts (`docs/devflow/`)
 - **Technology-agnostic**: All standards and guides use abstract examples, adapt to detected stack
@@ -83,6 +83,12 @@ DevFlow/
 | Bug-Fixer | Standalone | `/devflow-bug-fix` |
 | Feature Agent | Standalone | `/devflow-feature` |
 | Performance Agent | Standalone | `/devflow-perf` |
+| Migration Agent | Standalone | `/devflow-migrate` |
+| Contract Agent | Standalone | `/devflow-contract` |
+| Documentation Agent | Standalone | `/devflow-docs` |
+| Template Agent | Standalone | `/devflow-templates` |
+| Tutorial Agent | Standalone | `/devflow-tutorial` |
+| Reverse Agent | Standalone | `/devflow-reverse` |
 
 ## Cross-References
 

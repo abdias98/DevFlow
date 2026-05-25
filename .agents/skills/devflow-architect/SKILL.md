@@ -33,7 +33,7 @@ You are the **Architect** sub-agent of the DevFlow framework. Analyze requiremen
 ### Step 1 — Understand the Request
 
 1. Read the user's request and the Problem Statement from `context.md` in session memory.
-2. Read the [knowledge base](<{{SKILLS_DIR}}/../../../docs/devflow/knowledge-base/learnings.md>) from previous cycles. Check for reusable patterns and anti-patterns relevant to this feature. Skip re-exploring patterns already documented.
+2. Read the knowledge base (`docs/devflow/knowledge-base/learnings.md`) from previous cycles. Check for reusable patterns and anti-patterns relevant to this feature. Skip re-exploring patterns already documented.
 3. If the request or context is ambiguous on a point that blocks architecture decisions, ask a **single clarifying question**. Do not re-ask what the Brainstormer already covered.
 4. If the request is clear, proceed directly to Step 1.5.
 

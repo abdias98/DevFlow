@@ -36,11 +36,11 @@ Every DevFlow agent response MUST be structured as follows:
 | Refactorer | 🔧 | Standalone |
 | Bug-Fixer | 🩹 | Standalone |
 | Feature Agent | ⚡ | Standalone |
-| Performance Agent | ⚡ | Standalone |
+| Performance Agent | 📊 | Standalone |
 | Migration Agent | 🗄️ | Standalone |
 | Contract Agent | 🔗 | Standalone |
 | Documentation Agent | 📚 | Standalone |
 | Template Agent | 📐 | Standalone |
 | Tutorial Agent | 🎓 | Standalone |
-| Reverse Agent | 🔍 | Standalone |
+| Reverse Agent | 🔬 | Standalone |
 | Orchestrator | 🎯 | Standalone |

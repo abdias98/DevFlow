@@ -96,7 +96,7 @@ The following agents operate **independently** of the Phase 1–7 lifecycle. The
 | Criterion | Standalone Agent | Full `/devflow` Lifecycle |
 |-----------|-----------------|--------------------------|
 | Scope | Narrow and known | Broad or exploratory |
-| Files affected | ≤5 (Refactorer, Bug-Fixer, Feature) | Any |
+| Files affected | ≤5 (all standalone agents enforce scope limits) | Any |
 | Architectural impact | None / minimal | Any |
 | Requires spec/plan | No (mini-plan for Feature) | Yes |
 | User approval | Before applying changes | At Confirmation Gate |
