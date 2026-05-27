@@ -36,6 +36,7 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
 - **Save detected stack** to `context.md` under `## Stack Profile` so subsequent steps and other agents can reuse it.
 - NEVER hardcode paths, tech stack names, or repo-specific conventions.
 - Use `AGENTS.md` when present — if the project has one, read it first and skip redundant exploration.
+- Use `DESIGN.md` when present — search for `DESIGN.md` in the workspace root. If found, read it and extract project-specific design guidelines (color systems, typography, spacing, component patterns, naming conventions, architectural rules). Store under `## DESIGN.md Guidelines` in session memory. All agents should consult it before making design-affecting decisions.
 - **Engineering standards** are versioned (see `shared/standards/CHANGELOG.md`). Each standard declares its version in the file header. When proposing changes to standards, follow the version policy.
 
 ## Template Variables

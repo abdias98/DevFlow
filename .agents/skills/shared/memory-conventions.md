@@ -120,6 +120,9 @@ These files live only for the duration of a DevFlow session. They are not versio
 ## AGENTS.md Context
 {Extracted data from AGENTS.md, if found}
 
+## DESIGN.md Guidelines
+{Extracted project-specific design guidelines from DESIGN.md, if found}
+
 ## Architect Findings
 {Key discoveries from codebase exploration}
 ```
