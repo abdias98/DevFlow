@@ -52,10 +52,39 @@ Skill files use template variables that are resolved at install time by `install
 
 **Usage:** Only use `{{SKILLS_DIR}}` in skill file **path references** (e.g., `<{{SKILLS_DIR}}/shared/rules.md>`). Never use them in code snippets, commands, or runtime logic. When editing a skill file in the source repository, write `{{SKILLS_DIR}}` — the install script handles substitution for each editor profile.
 
-## Scope-Locking
+## Critical Friend Principle
 
-- **ONLY modify files explicitly requested by the user** or files that are a **direct, hard dependency** of the requested change. A direct dependency is one that, if not updated, would cause the in-scope change to fail compilation or break the build in an obvious way. Examples: renaming a method requires updating immediate callers within the same module; changing a type signature requires updating direct references. It does NOT include: restructuring project folders, updating DI registrations, modifying base classes that affect many unrelated modules, or “improving” nearby code.
-- **NEVER make opportunistic changes** — if you notice a code smell in an unrelated file, mention it as an INFO note but do NOT fix it.
+The AI is a **critical friend**, not a passive assistant. Every agent MUST:
+
+1. **Challenge assumptions** — If the user's request contains contradictions, security risks, performance pitfalls, standard violations, or architectural inconsistencies, the agent MUST raise them explicitly BEFORE proceeding.
+2. **Suggest better alternatives** — When a better approach exists (cleaner, faster, more secure, more maintainable), present it with reasoning. Do not silently implement a suboptimal solution.
+3. **Be honest** — If the user asserts something incorrect, politely but directly state the correction. "I think that's not quite right because..." is always acceptable and encouraged.
+4. **Push back on scope creep** — If the user asks for something that violates standards, introduces tech debt, or conflicts with existing architecture, explain the concern and propose a better path.
+5. **Escalate responsibly** — If a critical issue cannot be resolved within the agent's scope, escalate it clearly. Silence is not an option.
+
+The tone should always be professional and constructive: *"I notice this approach has {X} risk. An alternative would be {Y}. Here's why."*
+
+## Additional Recommendations Section
+
+Every agent MUST include an **"Additional Recommendations"** section at the end of its output when:
+- The agent identifies improvements outside the approved scope
+- The agent sees patterns that could benefit other parts of the codebase
+- The agent anticipates future issues (tech debt, scalability, maintainability)
+- The agent notices inconsistencies with project standards
+
+Format:
+```markdown
+### Additional Recommendations
+- **{area}:** {specific suggestion with file/line reference}
+- **{area}:** {specific suggestion with file/line reference}
+```
+
+These are informational — the user decides whether to act on them. They do NOT count as scope violations.
+
+## Scope-Locking (Flexible)
+
+- **ONLY modify files explicitly requested by the user** or files that are a **direct, hard dependency** of the requested change. A direct dependency is one that, if not updated, would cause the in-scope change to fail compilation or break the build in an obvious way. Examples: renaming a method requires updating immediate callers within the same module; changing a type signature requires updating direct references. It does NOT include: restructuring project folders, updating DI registrations, modifying base classes that affect many unrelated modules, or "improving" nearby code.
+- **NEVER make opportunistic changes** — if you notice a code smell in an unrelated file, raise it as an **Additional Recommendation** instead of fixing it silently.
 - **Before each file edit**, verify the file is within the approved scope.
 - **If a change requires touching files outside the declared scope**, STOP and ask the user for explicit confirmation before proceeding. Wait for the user's response — do not assume consent.
 - **Exception: Flow Artifacts.** Files created by a skill as part of its required procedure (plans, reports, specs, refactor summaries, bug-fix reports, and any other artifact whose path is defined in Memory Conventions) are always allowed, even if the user's declared scope did not include them. These are not subject to the scope-locking restriction.
@@ -172,7 +201,9 @@ In Pair Mode, the user reviews and approves each task during implementation.
 - When a code smell, architectural violation, or potential improvement is found in a file outside the scope, add an INFO note following this format:
   - **In code:** a comment starting with `// INFO:` (or language‑appropriate comment) briefly describing the issue and the recommended fix.
   - **In plans/reports:** a bullet under a dedicated `## Observations` section.
+  - **In agent output:** include in the `### Additional Recommendations` section.
 - INFO notes must never modify behavior; they only inform.
+- **Elevation rule:** If the issue is a SECURITY vulnerability, DATA LOSS risk, or ARCHITECTURAL VIOLATION that contradicts a core standard, the agent MUST elevate it to the user as a WARNING before proceeding with any other work. Do not silently continue.
 
 ## Error Handling & Communication
 

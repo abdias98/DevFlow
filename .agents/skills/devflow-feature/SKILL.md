@@ -51,8 +51,13 @@ If recommending `/devflow`, tell the user:
 2. **MANDATORY**: Use the [Feature Agent questions template](<{{SKILLS_DIR}}/devflow-feature/questions-template.md>) to ask clarifying questions. Infer what you can — only ask what is missing or ambiguous.
    - **Exception:** If the user's request already includes the specific scope (files, components), the Definition of Done, and any relevant reference implementation, you may skip the questions template and proceed directly to Step 2 after confirming your understanding in the **Understanding Summary**.
 3. Identify: goal, scope, DoD, reusable code, and constraints.
-4. **STOP after sending the questions**. Wait for the user to answer before proceeding.
-5. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
+4. **Critical Friend check:** Before proceeding, evaluate the request critically:
+   - Does this request contradict any standard (security, SOLID, architecture)?
+   - Is there a simpler/better approach the user hasn't considered?
+   - Are there assumptions that need to be challenged?
+   - If YES to any → present your concerns to the user before proceeding.
+5. **STOP after sending the questions**. Wait for the user to answer before proceeding.
+6. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
 
 ### Step 2 — Load Stack Profile
 
@@ -102,17 +107,23 @@ For each task in the approved plan:
 3. Keep it minimal — only what makes the test pass.
 4. Commit: `feat({scope}): {task description}`
 
-### Step 6 — Quick Self-Review
+### Step 6 — Critical Self-Review
 
-After all tasks are complete, run a quick self-review:
-- Security: any input validation missing? any hardcoded secrets?
-- Naming: consistent with project conventions?
-- SOLID: does the new code respect SRP and OCP?
-- Clean Architecture: are dependencies inward? any forbidden imports?
-- Performance: any N+1 queries, unbounded collections, or blocking I/O?
+After all tasks are complete, run a critical self-review:
+- **Security:** any input validation missing? any hardcoded secrets? any injection risks?
+- **Naming:** consistent with project conventions?
+- **SOLID:** does the new code respect SRP and OCP?
+- **Clean Architecture:** are dependencies inward? any forbidden imports?
+- **Performance:** any N+1 queries, unbounded collections, or blocking I/O?
+- **Honesty check:** Is there anything about this implementation that you would critique if a colleague wrote it?
 
 If a BLOCK issue is found **that can be fixed within the files already in the approved plan** → fix it before continuing.
 If the fix would require editing a file outside the plan → **do NOT fix it.** Add an INFO comment in the closest in-scope file and mention it in the final report.
+
+**Compile recommendations** — include an `### Additional Recommendations` section in your response with:
+- Out-of-scope improvements discovered during implementation.
+- Standards violations that could not be fixed within scope.
+- Technical debt or areas that need future attention.
 
 ### Step 7 — Inform Verification
 

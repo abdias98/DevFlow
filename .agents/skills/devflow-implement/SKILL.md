@@ -23,7 +23,11 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 - For each task: Red phase (create test file, inform user) → Green phase (write code to pass, inform user).
 - **NEVER run tests.** Provide the exact command and let the user execute it. **Exception (Standard mode):** When `Pair Mode: no` is set, auto-execute tests, branches, commits, and git SHAs. See `rules.md` → `## Implementation Modes`.
 - **NEVER run git commands** (branch, checkout, push, pull, etc.). **Exception (Standard mode):** When `Pair Mode: no` is set, auto-execute branch creation and commits. NEVER auto-push or auto-create PRs in any mode.
-- **NEVER refactor** beyond what the plan specifies.
+- **NEVER refactor** beyond what the plan specifies **unless** you discover a justified improvement. If you find a better implementation approach while coding:
+  1. Evaluate if the deviation improves correctness, performance, or maintainability without changing behavior.
+  2. If yes, **document the proposed deviation** in an INFO comment or `## Additional Recommendations` section.
+  3. **Flag it to the user** with reasoning before making the change.
+  4. Only proceed with the deviation after user approval.
 - **NEVER add features** not in the plan.
 - **When applying standards:** If a standard requires editing files outside the plan's scope, **do not edit them**. Add an INFO comment in the in-scope file describing the recommended change.
 - Commit at each task checkpoint with the pre-written message from the plan.
@@ -46,14 +50,21 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 - **Stack Mode = no** → Follow the [TDD procedure](<{{SKILLS_DIR}}/devflow-implement/tdd-procedure.md>) (standard flow).
 - **Stack Mode = yes** → Follow the [stacked flow](<{{SKILLS_DIR}}/devflow-implement/stack-flow.md>).
 
-### Step 3 — Update Session Memory
+### Step 3 — Additional Recommendations
+
+After completing all tasks, review the implementation holistically:
+1. Did you encounter any patterns, code smells, or improvement opportunities outside the task scope?
+2. Are there any architectural concerns, security notes, or performance observations?
+3. Compile these into an `### Additional Recommendations` section in your response.
+
+### Step 4 — Update Session Memory
 
 Update `test-registry.md` and `phase-state`:
 ```markdown
-- [x] Phase 4: Implementer — all {N} tasks complete
+- [x] Phase 5: Implementer — all {N} tasks complete
 ```
 
-### Step 4 — Auto-Invoke Reviewer
+### Step 5 — Auto-Invoke Reviewer
 
 Inform user: "Implementation complete. All tasks done. Invoking code review..."
 Invoke `devflow-review`.

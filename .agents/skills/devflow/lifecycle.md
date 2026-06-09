@@ -5,7 +5,7 @@ This document provides a quick reference for the DevFlow lifecycle phases. For t
 ## Phase Flow
 
 ```
-Phase 1: Brainstormer → Phase 2: Architect → Phase 3: Planner → ⏸️ Confirmation Gate → Phase 4: Implementer → Phase 5: Reviewer → Phase 6: Debugger (conditional) → Phase 7: Finalizer
+Phase 1: Brainstormer → ⏸️ Phase 1.5: Validation Gate → Phase 2: Architect → Phase 3: Planner → ⏸️ Confirmation Gate → Phase 5: Implementer → Phase 6: Reviewer → Phase 7: Debugger (conditional) → Phase 8: Finalizer
 ```
 
 ---
@@ -15,13 +15,32 @@ Phase 1: Brainstormer → Phase 2: Architect → Phase 3: Planner → ⏸️ Con
 | Phase | Agent | Input | Output | Key Rule |
 |-------|-------|-------|--------|----------|
 | 1 | Brainstormer | User request | `context.md` (session memory) | NEVER write code or design |
+| ⏸️ | **Validation Gate** | Problem Statement | Validation report, challenged assumptions | Challenge & scan standards before architecting |
 | 2 | Architect | `context.md`, codebase | Spec at `docs/devflow/specs/` | Explore before designing |
 | 3 | Planner | Spec, codebase | Plan at `docs/devflow/plans/` + mockups (UI) | Stack Mode gate (conditional) |
 | ⏸️ | **Confirmation Gate** | Plan + mockups | User approval | NEVER proceed without explicit approval |
-| 4 | Implementer | Plan | Code + tests (committed) | Red→Green TDD per task |
-| 5 | Reviewer | Diff, spec, plan | Review at `docs/devflow/reviews/` | BLOCK findings → back to Phase 4 |
-| 6 | Debugger | Test failures, review findings | Debug log at `docs/devflow/debug-logs/` | Only if tests fail or runtime errors |
-| 7 | Finalizer | All artifacts, session memory | Final summary, cleanup | Verify no regressions, clean session |
+| 5 | Implementer | Plan | Code + tests (committed) | Red→Green TDD per task |
+| 6 | Reviewer | Diff, spec, plan | Review at `docs/devflow/reviews/` | BLOCK findings → back to Phase 5 |
+| 7 | Debugger | Test failures, review findings | Debug log at `docs/devflow/debug-logs/` | Only if tests fail or runtime errors |
+| 8 | Finalizer | All artifacts, session memory | Final summary, cleanup | Verify no regressions, clean session |
+
+---
+
+## Validation Gate (Phase 1.5)
+
+After Phase 1 (Brainstormer), the Orchestrator MUST invoke the Validator:
+
+1. **Challenge assumptions** — question every unstated assumption in the Problem Statement.
+2. **Scan standards** — check against SOLID, Security, Clean Architecture, Performance, etc.
+3. **Flag risks** — security vulnerabilities, architectural issues, scope creep, contradictions.
+4. **Propose alternatives** — if a better approach exists, present it with reasoning.
+5. **Save validation report** — `docs/devflow/session/{slug}/validation-report.md`.
+
+| header | question | type |
+|--------|----------|------|
+| `validation_block` | The Validation Gate found BLOCK issues. How to proceed? | options: ✅ Accept risks & continue, ✏️ Revise requirements, ❌ Cancel |
+
+**Do NOT proceed to Phase 2 if BLOCK issues are unresolved without user acceptance.**
 
 ---
 
@@ -37,18 +56,19 @@ After Phase 3 (Planner), the Orchestrator MUST:
 |--------|----------|------|
 | `plan_confirmation` | Plan + Test Cases + Mockups complete. Review the plan — proceed to Implementation? | options: ✅ Yes, ✏️ Request changes, ❌ Cancel |
 
-**Do NOT proceed to Phase 4 until the user approves.**
+**Do NOT proceed to Phase 5 until the user approves.**
 
 ---
 
 ## Iteration Rules
 
 ```
-Tests FAIL after implementation  → Phase 6 (Debugger) → Phase 4 (retry)
-Reviewer finds BLOCK issues      → Phase 4 (fix findings)
+Validation finds BLOCK issues    → Phase 1 (Brainstormer — revise requirements)
+Tests FAIL after implementation  → Phase 7 (Debugger) → Phase 5 (retry)
+Reviewer finds BLOCK issues      → Phase 5 (fix findings)
 Architecture flaw discovered     → Phase 2 (redesign)
 Plan incomplete or ambiguous     → Phase 3 (revise)
-Finalizer finds failing tests    → Phase 6 (Debugger)
+Finalizer finds failing tests    → Phase 7 (Debugger)
 ```
 
 - Maximum **3 iteration loops** per phase before escalating to the user.
@@ -61,8 +81,8 @@ Git-based checkpointing enables safe rollback when a phase must be reverted. The
 | Checkpoint | When | Rollback effect |
 |------------|------|-----------------|
 | Pre-Phase 1 | Before any work | Undo entire cycle |
-| Pre-Phase 4 | Before implementation | Revert code, keep spec + plan |
-| Pre-Phase 6 | Before debug fixes | Revert invasive fix attempts |
+| Pre-Phase 5 | Before implementation | Revert code, keep spec + plan |
+| Pre-Phase 7 | Before debug fixes | Revert invasive fix attempts |
 
 **Rollback command:** `git reset --hard {checkpoint-sha}` — user executes, never automated.
 After rollback, the Orchestrator resets `phase-state.md` and resumes from the target phase.

@@ -26,11 +26,15 @@
 ## Lifecycle Flow
 
 ```
-Phase 1: Brainstormer → Phase 2: Architect → Phase 3: Planner
-                                                    ↓
-                                              ⏸️ Confirmation Gate
-                                                    ↓
-Phase 4: Implementer → Phase 5: Reviewer → Phase 6: Debugger (conditional) → Phase 7: Finalizer
+Phase 1: Brainstormer
+         ↓
+⏸️ Phase 1.5: Validation Gate — Challenge assumptions, scan standards
+         ↓
+Phase 2: Architect → Phase 3: Planner
+                            ↓
+                      ⏸️ Confirmation Gate
+                            ↓
+Phase 5: Implementer → Phase 6: Reviewer → Phase 7: Debugger (conditional) → Phase 8: Finalizer
 ```
 
 ## Key Artifacts

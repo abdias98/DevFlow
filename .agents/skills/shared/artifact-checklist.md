@@ -2,6 +2,20 @@
 
 Every DevFlow artifact MUST be validated against its template before being saved. The agent that produces the artifact runs this checklist as a final step before calling `create_file`.
 
+## Validation Gate (`docs/devflow/session/{slug}/validation-report.md`)
+
+Validated by: **Validator** (before Step 2 — Architect)
+
+- [ ] **Goal & Constraints Review** — goal is achievable within stated constraints
+- [ ] **Standards Scan** — checked against SOLID, Clean Architecture, Security, Performance, REST API (if applicable), UI Design (if applicable)
+- [ ] **Assumptions Challenged** — at least one assumption questioned with alternative proposed
+- [ ] **Contradictions Flagged** — any internal contradictions in requirements surfaced
+- [ ] **Security Scan** — potential vulnerabilities identified (input validation, auth, injection, secrets)
+- [ ] **Architecture Risks** — architectural concerns or scope risks documented
+- [ ] **Alternatives Proposed** — at least one better approach suggested if applicable
+- [ ] **Recommendations** — Additional Recommendations section populated with out-of-scope improvements
+- [ ] **Validation Report saved** — report at `docs/devflow/session/{slug}/validation-report.md`
+
 ## Spec Document (`docs/devflow/specs/*.md`)
 
 Validated by: **Architect** (before Step 5 — save)

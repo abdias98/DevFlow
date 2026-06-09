@@ -50,16 +50,21 @@ If recommending `/devflow`, tell the user:
 ### Step 1 — Brainstorming (Problem Understanding)
 
 1. Read the user's report: error message, stack trace, description of unexpected behavior.
-2. **MANDATORY**: Use the [Bug-Fixer questions template](<{{SKILLS_DIR}}/devflow-bug-fix/questions-template.md>) to ask clarifying questions. Infer what you can — only ask what is missing or ambiguous.
+2. **Critical Friend check:** Before accepting the user's stated root cause or proposed fix:
+   - **Question the user's diagnosis** — if the user claims to know the root cause, still verify it independently.
+   - **Challenge assumptions** — "Are you sure it's in {file}? The stack trace suggests {alternative} might be the actual issue."
+   - **Suggest better approaches** — "Instead of {user's proposed fix}, a more robust solution would be {alternative}."
+   - Be honest: if the user's proposed fix would introduce technical debt or security issues, say so.
+3. **MANDATORY**: Use the [Bug-Fixer questions template](<{{SKILLS_DIR}}/devflow-bug-fix/questions-template.md>) to ask clarifying questions. Infer what you can — only ask what is missing or ambiguous.
    - **Exception:** If the user's request already includes the exact error, steps to reproduce, affected files, and expected behavior, you may skip the questions template and proceed directly to Step 2 after confirming your understanding in the **Understanding Summary**.
-3. Extract:
+4. Extract:
    - **Error type:** `{TypeError | NullReferenceException | 404 | timeout | wrong output | ...}`
    - **Affected file(s):** from stack trace or user description
    - **Affected function/method:** from stack trace
    - **Steps to reproduce:** from user description
    - **Expected behavior:** what should have happened
-4. **STOP after sending the questions**. Wait for the user to answer before proceeding.
-5. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
+5. **STOP after sending the questions**. Wait for the user to answer before proceeding.
+6. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
 
 ### Step 2 — Load Stack Profile
 
@@ -136,7 +141,14 @@ To verify:
 
 **DO NOT run the tests.**
 
-### Step 8 — Finalize Bug-Fix Document (MANDATORY)
+### Step 8 — Additional Recommendations
+
+Include an `### Additional Recommendations` section in your response with:
+- Other areas of the codebase that might have similar bugs (same pattern, different location).
+- Out-of-scope improvements or refactoring opportunities discovered during analysis.
+- Security or architectural concerns noted during the fix.
+
+### Step 9 — Finalize Bug-Fix Document (MANDATORY)
 
 1. **MANDATORY**: Execute `create_file` to persist the final report (overwrite the plan file) using the [bugfix template](<{{SKILLS_DIR}}/devflow-bug-fix/bugfix-template.md>).
    - **Path**: `docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md`

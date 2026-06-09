@@ -10,6 +10,7 @@ All generated artifacts follow the conventions defined in [../../.agents/skills/
 
 | Type | Directory | Naming Pattern |
 |------|-----------|----------------|
+| Validation report | `docs/devflow/session/{slug}/` | `validation-report.md` |
 | Design spec | `docs/devflow/specs/` | `YYYY-MM-DD-{slug}-design.md` |
 | Implementation plan | `docs/devflow/plans/` | `YYYY-MM-DD-{slug}.md` |
 | Code review | `docs/devflow/reviews/` | `YYYY-MM-DD-{slug}-review.md` |
@@ -74,19 +75,21 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 
 ## Completed Phases
 - [x] Phase 1: Brainstormer — context saved
+- [x] Phase 1.5: Validation Gate — `validation-report.md`
 - [x] Phase 2: Architect — `docs/devflow/specs/{filename}`
 - [x] Phase 3: Planner — `docs/devflow/plans/{filename}`
-- [ ] Phase 4: Implementer
-- [ ] Phase 5: Reviewer
-- [ ] Phase 6: Debugger (conditional)
-- [ ] Phase 7: Finalizer
+- [ ] Phase 5: Implementer
+- [ ] Phase 6: Reviewer
+- [ ] Phase 7: Debugger (conditional)
+- [ ] Phase 8: Finalizer
 
 ## Iteration Counter
 | Phase | Count | Max |
 |-------|-------|-----|
-| Phase 4 (Implementer) | 0 | 3 |
-| Phase 5 (Reviewer) | 0 | 3 |
-| Phase 6 (Debugger) | 0 | 3 |
+| Phase 1.5 (Validation Gate) | 0 | 2 |
+| Phase 5 (Implementer) | 0 | 3 |
+| Phase 6 (Reviewer) | 0 | 3 |
+| Phase 7 (Debugger) | 0 | 3 |
 
 ## Iteration Log
 | # | From | To | Reason |
@@ -129,9 +132,15 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 {Models, DTOs, interfaces — with code snippets}
 
 ## Design Decisions
-| Decision | Alternatives | Reasoning |
-|----------|--------------|-----------|
-| ... | ... | ... |
+| Decision | Alternatives | Reasoning | Challenge Status |
+|----------|--------------|-----------|-----------------|
+| ... | ... | ... | ✅ Validated \| ⚠️ Risk Accepted \| ❌ Blocked |
+
+## Challenges & Resolutions
+{Assumptions challenged during the Validation Gate and how they were resolved}
+
+## Additional Recommendations
+{Out-of-scope improvements, future considerations, technical debt notes}
 
 ## Constraints
 {Technical or business limitations}

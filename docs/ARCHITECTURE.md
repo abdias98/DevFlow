@@ -9,6 +9,7 @@ DevFlow/
 ├── .agents/skills/              # AI Sub-agents (Copilot skills)
 │   ├── devflow/                 # Main orchestrator agent
 │   ├── devflow-brainstorm/
+│   ├── devflow-validation/      # Phase 1.5 — Challenge assumptions, scan standards
 │   ├── devflow-architect/
 │   ├── devflow-plan/
 │   ├── devflow-test/            # Manual helper only (not an automatic phase)
@@ -62,9 +63,10 @@ DevFlow/
 ### Orchestrator (`devflow` skill)
 - Entry point for full lifecycle
 - Manages state and iteration logic
-- Coordinates sub-agents
+- Coordinates sub-agents (including Validator for Phase 1.5)
 - Enforces strict phase ordering
 - Reads `rules.md` and `lifecycle.md`
+- Enforces the **Critical Friend Principle** — ensures all agents challenge assumptions before proceeding
 
 ### Brainstormer (`devflow-brainstorm`)
 - **Input:** User request
@@ -75,6 +77,17 @@ DevFlow/
   - Problem restatement
   - Initialize `phase-state.md`
 - **Restriction:** NEVER writes code, schema, or architecture
+
+### Validation Gate (Phase 1.5 — Handled by Orchestrator)
+- **Input:** Problem Statement from session memory + engineering standards
+- **Output:** Validation report at `docs/devflow/session/{slug}/validation-report.md`
+- **Actions (performed by Orchestrator directly):**
+  - **Challenge every assumption** — question feasibility, necessity, and correctness
+  - **Scan against standards** — SOLID, Security, Clean Architecture, Performance, etc.
+  - **Flag contradictions** — surface internal inconsistencies in requirements
+  - **Propose alternatives** — suggest better approaches with reasoning
+  - **Security audit** — identify potential vulnerabilities before architecture
+- **Critical:** This gate exists specifically to prevent the AI from blindly implementing bad requirements. BE HONEST. BE CRITICAL. Do NOT rubber-stamp.
 
 ### Architect (`devflow-architect`)
 - **Input:** Problem Statement from session memory + workspace files
@@ -88,14 +101,16 @@ DevFlow/
 - **Restriction:** NEVER writes implementation code
 
 ### Planner (`devflow-plan`)
-- **Input:** Architecture Spec
+- **Input:** Architecture Spec + Validation Report
 - **Output:** `docs/devflow/plans/YYYY-MM-DD-{slug}.md`
 - **Actions:**
+  - **Challenge spec assumptions** — verify feasibility before planning
   - Stack Mode gate (conditional — only for large features spanning multiple layers)
   - Explore existing patterns and test conventions
   - Generate HTML mockups (UI features only)
   - Decompose into atomic tasks with complete code snippets and test code
   - Save plan before asking for approval
+  - Include Additional Recommendations section
 
 ### Tester (`devflow-test`) — Manual Helper Only
 - **NOT an automatic phase** — the Implementer handles Red→Green TDD internally
@@ -107,10 +122,11 @@ DevFlow/
 ### Implementer (`devflow-implement`)
 - **Input:** Plan document
 - **Output:** Production code + test files in workspace
-- **Constraint:** Minimal code, follow plan strictly, NEVER run tests
+- **Constraint:** Minimal code, follow plan strictly, NEVER run tests. **BUT allowed to suggest justified deviations.**
 - **Actions:**
   - **Red Phase per task:** Create test file from plan, inform user how to run it
   - **Green Phase per task:** Write minimal production code, inform user how to verify
+  - **Challenge & suggest:** If a better implementation exists, document in Additional Recommendations and flag user
   - Commit at task checkpoints with pre-written messages
   - Auto-invoke Reviewer when all tasks complete
 
@@ -147,6 +163,8 @@ DevFlow/
 - **Constraint:** NEVER execute tests or commands
 
 ## Standalone Agents (Outside Lifecycle)
+
+All standalone agents follow the **Critical Friend Principle**: challenge the user's assumptions, suggest better approaches, be honest.
 
 | Agent | Command | Use Case |
 |-------|---------|----------|
@@ -202,6 +220,11 @@ Versioned with git, survive across conversations:
 └─────────┬───────────┘
           │
           ▼
+┌─────────────────────┐      ┌──────────────────────┐
+│ Validation BLOCK?   │──YES─│→ Brainstormer Revise  │
+└─────────┬───────────┘      └──────────────────────┘
+          │ NO
+          ▼
 ┌─────────────────────┐
 │ Tests FAIL?         │
 └─────────┬───────────┘
@@ -234,6 +257,7 @@ All artifacts follow [Memory Conventions](<{{SKILLS_DIR}}/shared/memory-conventi
 
 | Type | Pattern | Example |
 |------|---------|---------|
+| Validation Report | `validation-report.md` (session memory) | `validation-report.md` |
 | Spec | `YYYY-MM-DD-{slug}-design.md` | `2026-03-28-user-auth-design.md` |
 | Plan | `YYYY-MM-DD-{slug}.md` | `2026-03-28-user-auth.md` |
 | Review | `YYYY-MM-DD-{slug}-review.md` | `2026-03-28-user-auth-review.md` |

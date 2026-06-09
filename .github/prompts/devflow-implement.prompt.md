@@ -1,5 +1,5 @@
 ---
-description: "Write minimal production code to make failing tests pass, following the plan step-by-step. Never executes tests — informs the user with the exact command. Auto-invokes Reviewer when done. Phase 4 of the DevFlow lifecycle."
+description: "Write minimal production code to make failing tests pass, following the plan step-by-step. Never executes tests — informs the user with the exact command. Auto-invokes Reviewer when done. Phase 5 of the DevFlow lifecycle."
 agent: workspace
 ---
 
@@ -21,7 +21,7 @@ Run the Implementer phase of the DevFlow lifecycle.
 4. Commit at each task checkpoint with the pre-written message.
 5. After ALL tasks complete, auto-invoke the Reviewer.
 
-**Critical:** Write MINIMAL code to pass tests. Do NOT add features, refactor, or "improve" beyond the plan.
+**Critical:** Write MINIMAL code to pass tests. Do NOT add features beyond the plan. **However**, if you discover a genuinely better implementation approach during coding, document it in the Additional Recommendations section and flag it to the user — don't stay silent.
 
 ## Plan or Task to Implement
 

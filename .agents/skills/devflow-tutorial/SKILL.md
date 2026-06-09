@@ -44,7 +44,7 @@ Explain the Planner: atomic tasks, code snippets, test code, Stack Mode, mockups
 3. Explain the Confirmation Gate concept.
 4. **Wait for confirmation.**
 
-### Step 4 — Phase 4: Implementer (TDD Implementation)
+### Step 4 — Phase 5: Implementer (TDD Implementation)
 Explain the Implementer: Red→Green TDD, test-first, minimal code, Pair Mode, commit checkpoints.
 1. Invoke `devflow-implement` for the demo feature.
 2. Show test code → production code → commit messages.

@@ -21,6 +21,8 @@ Every DevFlow agent response MUST be structured as follows:
 > ⚠️ If any artifact shows ❌, you MUST call `create_file` before responding.
 ```
 
+> **Important:** Every agent response MUST include an `### Additional Recommendations` section at the end (even if empty). Use it to surface out-of-scope improvements, standard violations, and future considerations.
+
 ## Agent Identifiers
 
 | Agent | Emoji | Phase |
@@ -28,7 +30,7 @@ Every DevFlow agent response MUST be structured as follows:
 | Brainstormer | 🧠 | Phase 1 |
 | Architect | 🧩 | Phase 2 |
 | Planner | 📋 | Phase 3 |
-| Implementer | ⚙️ | Phase 4 |
+| Implementer | ⚙️ | Phase 5 |
 | Reviewer | 🔍 | Phase 5 |
 | Debugger | 🐞 | Phase 6 |
 | Finalizer | 🚀 | Phase 7 |

@@ -19,10 +19,10 @@ Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) for language detection, to
 | Brainstormer | `devflow-brainstorm` | 1 |
 | Architect | `devflow-architect` | 2 |
 | Planner | `devflow-plan` | 3 |
-| Implementer | `devflow-implement` | 4 |
-| Reviewer | `devflow-review` | 5 |
-| Debugger | `devflow-debug` | 6 (conditional) |
-| Finalizer | `devflow-finalize` | 7 |
+| Implementer | `devflow-implement` | 5 |
+| Reviewer | `devflow-review` | 6 |
+| Debugger | `devflow-debug` | 7 (conditional) |
+| Finalizer | `devflow-finalize` | 8 |
 | Tester | `devflow-test` | Manual |
 | Refactorer | `devflow-refactor` | Standalone |
 | Bug-Fixer | `devflow-bug-fix` | Standalone |
@@ -51,16 +51,17 @@ See [lifecycle details](<{{SKILLS_DIR}}/devflow/lifecycle.md>) for the complete 
 
 **Essential flow:**
 1. **Phase 1: Brainstormer** → Ask questions, identify goal/constraints → save Problem Statement
-2. **Phase 2: Architect** → Explore codebase, define architecture → save Spec
-3. **Phase 3: Planner** → Stack Mode gate (conditional), create mockups (UI), write plan → save Plan
-4. **⏸️ Confirmation Gate — STOP HERE**
+2. **⏸️ Phase 1.5: Validation Gate** → Challenge assumptions, scan standards, flag risks → save Validation Report. **Do NOT proceed if BLOCK issues found without user resolution.**
+3. **Phase 2: Architect** → Explore codebase, define architecture → save Spec
+4. **Phase 3: Planner** → Stack Mode gate (conditional), create mockups (UI), write plan → save Plan
+5. **⏸️ Confirmation Gate — STOP HERE**
    - Present the plan summary and mockup paths.
    - If multiple mockups exist → ask the user to select one.
-   - Ask for explicit approval. **Do NOT proceed to Phase 4 until the user approves.**
-5. **Phase 4: Implementer** → Red→Green TDD per task → commit at each checkpoint
-6. **Phase 5: Reviewer** → Diff against spec+plan → BLOCK/WARN/INFO → fix if BLOCK
-7. **Phase 6: Debugger** → Only if tests fail or runtime issues → reproduce, isolate, fix
-8. **Phase 7: Finalizer** → Run full suite, summary, clean memory
+   - Ask for explicit approval. **Do NOT proceed to Phase 5 until the user approves.**
+6. **Phase 5: Implementer** → Red→Green TDD per task → commit at each checkpoint
+7. **Phase 6: Reviewer** → Diff against spec+plan → BLOCK/WARN/INFO → fix if BLOCK
+8. **Phase 7: Debugger** → Only if tests fail or runtime issues → reproduce, isolate, fix
+9. **Phase 8: Finalizer** → Run full suite, summary, clean memory
 
 See [stack mode](<{{SKILLS_DIR}}/devflow/stack-mode.md>) for stacked PR behavior.
 
@@ -111,9 +112,45 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - **Progress:** *"✅ Phase 1 complete. Context saved. Next: Phase 2 — Architect."*
    - Proceed to Step 2.
 
-### Step 2 — Phase 2: Architect
+### Step 2 — Phase 1.5: Validation Gate ⏸️
 
-1. Verify entry condition: `context.md` exists and has Goal + DoD.
+**Critical:** This gate is the AI's OPPORTUNITY and RESPONSIBILITY to challenge. Do NOT skip it. Do NOT rubber-stamp.
+
+1. Verify entry condition: `context.md` exists and has Goal + DoD + Constraints.
+2. **Perform the validation yourself** (you are the Orchestrator and have full context). Follow the [Validation Gate checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Validation Gate section:
+   - **Challenge assumptions** — question every unstated or stated assumption. Is this really necessary? Is this the best approach?
+   - **Scan standards** — check against SOLID, Security, Clean Architecture, Performance, REST API (if applicable), UI Design (if applicable).
+   - **Flag contradictions** — any internal inconsistencies in the requirements?
+   - **Security scan** — any input validation, auth, injection, or secrets management risks?
+   - **Architecture risks** — will this scale? Any coupling concerns?
+   - **Propose alternatives** — if a better approach exists, document it. Do not just agree.
+   - **Be honest** — if something is a bad idea, say so directly with reasoning.
+3. **Save the validation report** — write to `docs/devflow/session/{slug}/validation-report.md`:
+   - Use the Validation Gate checklist as template.
+   - Include sections: Assumptions Challenged, Standards Scan, Contradictions, Security Risks, Architecture Risks, Alternatives Proposed, Additional Recommendations.
+4. Update `context.md` with `## Validator Findings` (challenges, risks, alternatives).
+5. Update `phase-state.md` to show `[x] Phase 1.5: Validation Gate`.
+6. **Route decision based on findings:**
+   - **✅ CLEAR (no BLOCK)** → proceed to Step 3.
+   - **⚠️ WARNINGS ONLY** → note them, present to user, proceed to Step 3.
+   - **🔴 BLOCK (security, architectural, or contradiction issues)** → present to user, ask for resolution:
+     
+     | header | question | type |
+     |--------|----------|------|
+     | `validation_block` | The Validation Gate found BLOCK issues. How to proceed? | options: ✅ Accept risks & continue, ✏️ Revise requirements, ❌ Cancel cycle |
+     
+     - **✅ Accept risks** → record user's acceptance in `context.md` under `## Accepted Risks`, proceed to Step 3.
+     - **✏️ Revise** → route back to Step 1 (Brainstormer).
+     - **❌ Cancel** → stop cycle, release lock.
+7. After Phase 1.5 is complete:
+   - **Validate artifact:** Check validation report against [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Validation Gate section.
+   - **Record metrics:** Save phase timing + findings count + blockers count.
+   - **Progress:** *"✅ Phase 1.5 complete. {N} findings ({B} blockers). Next: Phase 2 — Architect."*
+   - Proceed to Step 3.
+
+### Step 3 — Phase 2: Architect
+
+1. Verify entry condition: `context.md` exists with Goal + DoD + Validator Findings.
 2. Invoke `devflow-architect`.
 3. **Wait** for completion. Verify:
    - Spec saved at `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`.
@@ -124,9 +161,9 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - **Validate artifact:** Check spec against [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Spec Document section.
    - **Record metrics:** Save phase timing + Stack Profile fields populated count.
    - **Progress:** *"✅ Phase 2 complete. Spec saved + Stack Profile populated. Next: Phase 3 — Planner."*
-   - Proceed to Step 3.
+   - Proceed to Step 4.
 
-### Step 3 — Phase 3: Planner
+### Step 4 — Phase 3: Planner
 
 1. Verify entry condition: spec exists at `docs/devflow/specs/`.
 2. Invoke `devflow-plan` (full lifecycle mode — the Planner hands back after saving the plan).
@@ -140,9 +177,9 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - **Progress:** *"✅ Phase 3 complete. Plan saved ({N} tasks). Proceeding to Confirmation Gate."*
    - Proceed to the **Confirmation Gate**.
 
-### Step 4 — Confirmation Gate ⏸️
+### Step 5 — Confirmation Gate ⏸️
 
-**In CI mode:** Auto-approve the plan and proceed directly to Step 5. Log: "CI mode: plan auto-approved."
+**In CI mode:** Auto-approve the plan and proceed directly to Step 6. Log: "CI mode: plan auto-approved."
 
 **In normal mode, STOP HERE. Do NOT invoke the Implementer until the user explicitly approves.**
 
@@ -166,15 +203,15 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    > Ask: *"Branch name? Suggested: `feat/{slug}`. Press Enter to accept or type a custom name."*
    - Record the branch name in `phase-state.md` as `Branch: {name}`.
    - **Stack Mode or not:** A branch is ALWAYS created, even for single-task features. This provides isolated workspace, clean rollback point, and safe experimentation.
-   - Standard mode auto-execution rules: see `rules.md` → Standard Mode.
-   - Proceed to Step 5.
-6. **If 🤝 Pair** → record `Pair Mode: yes` in `phase-state.md`. Branch is created manually by the user. Pair mode: the user runs tests, creates branches, and confirms each task. Proceed to Step 5.
-7. **If ✏️ Request changes** → collect user feedback. Route back to Step 3 (Planner) with the feedback. Max 2 revision loops; escalate to user on the 3rd.
+    - Standard mode auto-execution rules: see `rules.md` → Standard Mode.
+    - Proceed to Step 6.
+6. **If 🤝 Pair** → record `Pair Mode: yes` in `phase-state.md`. Branch is created manually by the user. Pair mode: the user runs tests, creates branches, and confirms each task. Proceed to Step 6.
+7. **If ✏️ Request changes** → collect user feedback. Route back to Step 4 (Planner) with the feedback. Max 2 revision loops; escalate to user on the 3rd.
 8. **If ❌ Cancel** → stop the cycle. Release the memory lock (`Locked By: none`, `Locked Since: —`). Present the rollback option:
    > "Cycle cancelled. To revert all DevFlow artifacts created so far, run: `git reset --hard {pre-phase-1-sha}`"
    Update `phase-state.md` noting cancellation. Do NOT clean session memory (preserve artifacts for reference).
 
-### Step 5 — Phase 4: Implementer
+### Step 6 — Phase 5: Implementer
 
 1. Verify entry condition: Confirmation Gate approved (check `phase-state.md`).
 2. **Check `Pair Mode`** in `phase-state.md`:
@@ -183,53 +220,53 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 3. **Create the branch** (Standard mode auto-executes, Pair mode tells user):
    - Standard: auto-execute `git checkout -b {branch-name}`.
    - Pair: ask user to run `git checkout -b {branch-name}`.
-4. **Record Pre-Phase 4 checkpoint:**
+4. **Record Pre-Phase 5 checkpoint:**
    - Standard: auto-execute `git rev-parse HEAD` and record the SHA.
    - Pair: ask user to run `git rev-parse HEAD` and report the SHA.
-   Record it in `phase-state.md` under `## Checkpoints` as `Pre-Phase 4`.
+   Record it in `phase-state.md` under `## Checkpoints` as `Pre-Phase 5`.
 5. Invoke `devflow-implement`.
 6. **Wait** for completion. Verify:
    - `test-registry.md` updated with all test files and statuses.
-   - `phase-state.md` shows `[x] Phase 4: Implementer`.
+   - `phase-state.md` shows `[x] Phase 5: Implementer`.
 7. **If the Implementer reports user test failures:**
    - Read the failing test details from `test-registry.md`.
-   - Go to Step 7 (Debugger).
+   - Go to Step 8 (Debugger).
 8. After all tasks complete and tests are passing:
    - **Record metrics:** Save phase timing + test count + iteration count.
-   - **Progress:** *"✅ Phase 4 complete. All {N} tasks implemented. Next: Phase 5 — Reviewer."*
-   - Proceed to Step 6.
+   - **Progress:** *"✅ Phase 5 complete. All {N} tasks implemented. Next: Phase 6 — Reviewer."*
+   - Proceed to Step 7.
 
-### Step 6 — Phase 5: Reviewer
+### Step 7 — Phase 6: Reviewer
 
-1. Verify entry condition: Phase 4 complete, no outstanding test failures.
+1. Verify entry condition: Phase 5 complete, no outstanding test failures.
 2. Invoke `devflow-review` in Cycle Mode.
 3. **Wait** for completion. Verify:
    - Review saved at `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`.
    - Verdict recorded in `phase-state.md`.
 4. **Route decision based on verdict:**
-   - **APPROVED (no BLOCK)** → record metrics (review timing + findings count). Progress: *"✅ Phase 5 complete. Review passed. Next: Phase 7 — Finalizer."* Proceed to Step 8.
-   - **CHANGES REQUESTED (BLOCK findings)** → check iteration counter. If ≤ 3, route back to Step 5 (Implementer) with the Reviewer's findings. If > 3, escalate.
-   - **Architecture flaw** → route back to Step 2 (Architect).
-   - **Plan gap** → route back to Step 3 (Planner).
+   - **APPROVED (no BLOCK)** → record metrics (review timing + findings count). Progress: *"✅ Phase 6 complete. Review passed. Next: Phase 8 — Finalizer."* Proceed to Step 9.
+   - **CHANGES REQUESTED (BLOCK findings)** → check iteration counter. If ≤ 3, route back to Step 6 (Implementer) with the Reviewer's findings. If > 3, escalate.
+   - **Architecture flaw** → route back to Step 3 (Architect).
+   - **Plan gap** → route back to Step 4 (Planner).
 
-### Step 7 — Phase 6: Debugger (Conditional)
+### Step 8 — Phase 7: Debugger (Conditional)
 
 This phase is ONLY executed when tests fail or a specific bug is identified.
 
 1. Verify entry condition: test failure or runtime error reported.
-2. **Record Pre-Phase 6 checkpoint:**
+2. **Record Pre-Phase 7 checkpoint:**
    - **Standard mode:** Auto-execute `git rev-parse HEAD` and record the SHA.
    - **Pair mode:** Ask the user to run `git rev-parse HEAD` and report the SHA.
-   Record it in `phase-state.md` under `## Checkpoints` as `Pre-Phase 6`.
+   Record it in `phase-state.md` under `## Checkpoints` as `Pre-Phase 7`.
 3. Invoke `devflow-debug`.
 4. **Wait** for completion. Verify:
    - Debug log saved at `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md`.
    - Root cause identified and fix applied.
 5. After the Debugger completes:
-   - Route back to Step 5 (Implementer) for re-verification.
-   - If the Debugger escalates (3 failed attempts) → present the structured triage to the user: **A) Architectural change** → Step 2, **B) Plan revision** → Step 3, **C) Simplify scope** → update plan, **D) Manual fix** → user fixes, **E) Abandon cycle** → stop.
+   - Route back to Step 6 (Implementer) for re-verification.
+   - If the Debugger escalates (3 failed attempts) → present the structured triage to the user: **A) Architectural change** → Step 3, **B) Plan revision** → Step 4, **C) Simplify scope** → update plan, **D) Manual fix** → user fixes, **E) Abandon cycle** → stop.
 
-### Step 8 — Phase 7: Finalizer
+### Step 9 — Phase 8: Finalizer
 
 1. **Pre-finalization health check.** Verify ALL entry conditions:
    - [ ] No unresolved BLOCK findings (check latest review in `docs/devflow/reviews/`).
@@ -237,12 +274,12 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
    - [ ] All Definition of Done criteria from `context.md` are met.
    - [ ] Traceability coverage ≥ 100% on DoD and Edge Cases (check `traceability.md`).
    - [ ] Dependency audit passed — no critical/high vulnerabilities (if `Audit Command` is configured).
-   - [ ] All persistent artifacts exist on disk (spec, plan, review, mockups if UI).
+   - [ ] All persistent artifacts exist on disk (spec, plan, validation report, review, mockups if UI).
    - **If any check fails** → route to the appropriate phase (Debugger or Implementer). Do NOT proceed.
 2. Invoke `devflow-finalize`.
 3. **Wait** for completion. Verify:
    - Final summary saved at `docs/devflow/summaries/YYYY-MM-DD-{slug}-summary.md`.
-   - Session memory cleaned (`context.md`, `phase-state.md`, `test-registry.md`, `traceability.md` deleted) — **memory lock released implicitly**.
+   - Session memory cleaned (`context.md`, `phase-state.md`, `test-registry.md`, `traceability.md`, `validation-report.md` deleted) — **memory lock released implicitly**.
    - All persistent artifacts confirmed saved.
 4. **Record metrics:** Save phase timing + final cycle metrics (total duration, quality stats).
 5. **Progress:** Present the Finalizer's summary. *"✅ Cycle complete: {slug}. All {N} phases finished."*
@@ -255,10 +292,11 @@ The Orchestrator enforces the iteration limit. Update `phase-state.md` on every 
 
 | Phase | Max Loops | Loop Trigger | Escalation After |
 |-------|:---------:|--------------|------------------|
-| 4 → 5 → 4 (Implementer ↔ Reviewer) | 3 | BLOCK findings | Route to user with structured triage |
-| 5 → 4 → 5 (Reviewer ↔ Implementer) | 3 | Fix not resolving BLOCK | Route to user |
-| 4 → 7 → 4 (Implementer ↔ Debugger) | 3 | Test still failing after fix | Route to user with 5-option triage |
-| 3 → 3 (Planner revision) | 2 | User requests changes | Escalate to user |
+| 1.5 → 1 (Validation → Brainstormer) | 2 | BLOCK findings unresolved | Route to user with triage |
+| 5 → 6 → 5 (Implementer ↔ Reviewer) | 3 | BLOCK findings | Route to user with structured triage |
+| 6 → 5 → 6 (Reviewer ↔ Implementer) | 3 | Fix not resolving BLOCK | Route to user |
+| 5 → 7 → 5 (Implementer ↔ Debugger) | 3 | Test still failing after fix | Route to user with 5-option triage |
+| 4 → 4 (Planner revision) | 2 | User requests changes | Escalate to user |
 
 Update the `## Iteration Log` in `phase-state.md` with each loop:
 ```
@@ -280,16 +318,17 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 | Checkpoint | When | What it protects |
 |------------|------|------------------|
 | Pre-Phase 1 | Before any DevFlow work | Baseline state — undo the entire cycle |
-| Pre-Phase 4 | Before Implementer writes code | Code changes — revert to plan-only state |
-| Pre-Phase 6 | Before Debugger applies fixes | Debug fixes — revert invasive fix attempts |
+| Pre-Phase 5 | Before Implementer writes code | Code changes — revert to plan-only state |
+| Pre-Phase 7 | Before Debugger applies fixes | Debug fixes — revert invasive fix attempts |
 
 ### Rollback triggers
 
 | Situation | Rollback to | Action |
 |-----------|-------------|--------|
+| User cancels at Validation Gate | Pre-Phase 1 | Undo spec + plan + validation artifacts |
 | User cancels at Confirmation Gate | Pre-Phase 1 | Undo spec + plan artifacts |
-| Implementation produces unrecoverable errors after 3 Debugger loops | Pre-Phase 4 | Revert code, keep spec + plan |
-| Debugger fix causes more damage than the original bug | Pre-Phase 6 | Revert fix attempt, keep original code |
+| Implementation produces unrecoverable errors after 3 Debugger loops | Pre-Phase 5 | Revert code, keep spec + plan |
+| Debugger fix causes more damage than the original bug | Pre-Phase 7 | Revert fix attempt, keep original code |
 | Architecture flaw discovered mid-implementation | Pre-Phase 1 | Full restart from Architecture |
 
 ### Rollback procedure
@@ -320,8 +359,11 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 6. **ALWAYS use memory** — read before acting, write after completing
 7. **ALWAYS maintain role separation** — each sub-agent has a clear boundary
 8. **Use AGENTS.md when present** — skip redundant exploration
-9. **ACT like a senior engineering team**, not a single model
-10. Maximum 3 iteration loops per phase before escalating to user
+9. **ACT like a senior engineering team**, not a single model — challenge bad ideas, suggest better approaches, be honest
+10. **ALWAYS challenge assumptions** — if a requirement is unsafe, inefficient, or violates standards, raise it before proceeding
+11. **ALWAYS include recommendations** — surface out-of-scope improvements in the Additional Recommendations section
+12. **NEVER rubber-stamp the Validation Gate** — it exists for a reason; be critical
+13. Maximum 3 iteration loops per phase before escalating to user
 
 ---
 
@@ -329,14 +371,14 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 
 | Command | Action |
 |---------|--------|
-| `/devflow` | Execute **full lifecycle** (Phase 1 → 7) |
+| `/devflow` | Execute **full lifecycle** (Phase 1 → 8) |
 | `/devflow-brainstorm` | Only Phase 1 |
 | `/devflow-architect` | Only Phase 2 |
 | `/devflow-plan` | Only Phase 3 |
-| `/devflow-implement` | Only Phase 4 |
-| `/devflow-review` | Only Phase 5 (or standalone) |
-| `/devflow-debug` | Only Phase 6 (or standalone) |
-| `/devflow-finalize` | Only Phase 7 |
+| `/devflow-implement` | Only Phase 5 |
+| `/devflow-review` | Only Phase 6 (or standalone) |
+| `/devflow-debug` | Only Phase 7 (or standalone) |
+| `/devflow-finalize` | Only Phase 8 |
 | `/devflow-test` | **Manual:** Create failing test files from the plan on demand |
 | `/devflow-refactor` | **Standalone:** Scope-locked refactoring of existing code |
 | `/devflow-bug-fix` | **Standalone:** Reproduce → Isolate → Fix a reported bug |

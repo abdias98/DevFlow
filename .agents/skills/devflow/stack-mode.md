@@ -5,7 +5,7 @@ When `Stack Mode: yes` is set in session memory (saved by the Planner), the life
 | Phase | Standard (no stack) | Stacked |
 |-------|--------------------|---------| 
 | Phase 3 (Planner) | Single task list | Tasks grouped into Stacks with branches assigned |
-| Phase 4 (Implementer) | Linear Red→Green | Per-Stack: user creates branch → Red→Green per task → commit → next Stack |
+| Phase 5 (Implementer) | Linear Red→Green | Per-Stack: user creates branch → Red→Green per task → commit → next Stack |
 | Phase 5 (Reviewer) | Review changed files (ask user for diff if needed) | Review changed files per Stack (ask user for diff if needed) |
 | Phase 6 (Debugger) | Fix on current branch | Fix on current Stack branch — stack-agnostic internally |
 | Phase 7 (Finalizer) | Single summary | Summary includes table of all Stack branches created |

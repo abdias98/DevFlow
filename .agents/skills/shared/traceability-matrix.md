@@ -64,7 +64,7 @@ The Planner MUST generate this matrix from the plan and spec after writing the p
 
 All rows start with `⬜ PENDING`. The Impl File column is left empty (filled by Implementer).
 
-### Implementer (Phase 4 — updates per task)
+### Implementer (Phase 5 — updates per task)
 
 After each task's Green Phase completes successfully:
 1. Find all rows in the matrix belonging to this task.

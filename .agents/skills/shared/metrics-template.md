@@ -22,20 +22,22 @@ Metrics are recorded per cycle and saved to `docs/devflow/metrics/YYYY-MM-DD-{sl
 | Phase | Started | Completed | Duration (min) |
 |-------|---------|-----------|:--------------:|
 | Phase 1: Brainstormer | {ts} | {ts} | {N} |
+| Phase 1.5: Validation Gate | {ts} | {ts} | {N} |
 | Phase 2: Architect | {ts} | {ts} | {N} |
 | Phase 3: Planner | {ts} | {ts} | {N} |
-| Phase 4: Implementer | {ts} | {ts} | {N} |
-| Phase 5: Reviewer | {ts} | {ts} | {N} |
-| Phase 6: Debugger | {ts} or "—" | {ts} or "—" | {N} or "—" |
-| Phase 7: Finalizer | {ts} | {ts} | {N} |
+| Phase 5: Implementer | {ts} | {ts} | {N} |
+| Phase 6: Reviewer | {ts} | {ts} | {N} |
+| Phase 7: Debugger | {ts} or "—" | {ts} or "—" | {N} or "—" |
+| Phase 8: Finalizer | {ts} | {ts} | {N} |
 | **TOTAL** | **{ts}** | **{ts}** | **{N}** |
 
 ## Iterations
 
 | Loop | Phases | Count | Max |
 |------|--------|:----:|:---:|
-| Implementer ↔ Reviewer | 4 ↔ 5 | {N} | 3 |
-| Implementer ↔ Debugger | 4 ↔ 7 | {N} | 3 |
+| Validation Gate → Brainstormer | 1.5 ↔ 1 | {N} | 2 |
+| Implementer ↔ Reviewer | 5 ↔ 6 | {N} | 3 |
+| Implementer ↔ Debugger | 5 ↔ 7 | {N} | 3 |
 | Planner revision | 3 ↔ 3 | {N} | 2 |
 
 ## Quality

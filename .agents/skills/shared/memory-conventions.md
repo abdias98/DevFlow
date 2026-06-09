@@ -132,26 +132,28 @@ These files live only for the duration of a DevFlow session. They are not versio
 ```markdown
 # DevFlow Phase State
 
-**Current Phase:** {1-7}
+**Current Phase:** {1-8}
 **Feature:** {slug}
 **Locked By:** {agent name or "none"}
 **Locked Since:** {ISO timestamp or "—"}
 
 ## Completed Phases
 - [x] Phase 1: Brainstormer — context saved
+- [x] Phase 1.5: Validation Gate — validation-report.md
 - [x] Phase 2: Architect — `docs/devflow/specs/{filename}`
 - [x] Phase 3: Planner — `docs/devflow/plans/{filename}`
-- [ ] Phase 4: Implementer
-- [ ] Phase 5: Reviewer
-- [ ] Phase 6: Debugger (conditional)
-- [ ] Phase 7: Finalizer
+- [ ] Phase 5: Implementer
+- [ ] Phase 6: Reviewer
+- [ ] Phase 7: Debugger (conditional)
+- [ ] Phase 8: Finalizer
 
 ## Iteration Counter
 | Phase | Count | Max |
 |-------|-------|-----|
-| Phase 4 (Implementer) | 0 | 3 |
-| Phase 5 (Reviewer) | 0 | 3 |
-| Phase 6 (Debugger) | 0 | 3 |
+| Phase 1.5 (Validation Gate) | 0 | 2 |
+| Phase 5 (Implementer) | 0 | 3 |
+| Phase 6 (Reviewer) | 0 | 3 |
+| Phase 7 (Debugger) | 0 | 3 |
 
 ## Iteration Log
 | # | From | To | Reason |
@@ -173,8 +175,8 @@ These files live only for the duration of a DevFlow session. They are not versio
 | Phase | Git SHA | Recorded At | Purpose |
 |-------|---------|-------------|---------|
 | Pre-Phase 1 | {sha} | {timestamp} | Baseline — before any DevFlow artifacts |
-| Pre-Phase 4 | {sha} | {timestamp} | Before implementation — rollback point for code changes |
-| Pre-Phase 6 | {sha} | {timestamp} | Before debug fixes — rollback point for invasive changes |
+| Pre-Phase 5 | {sha} | {timestamp} | Before implementation — rollback point for code changes |
+| Pre-Phase 7 | {sha} | {timestamp} | Before debug fixes — rollback point for invasive changes |
 ```
 
 ### `test-registry.md` format

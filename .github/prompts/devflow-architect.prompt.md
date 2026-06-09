@@ -15,12 +15,13 @@ Run the Architect phase of the DevFlow lifecycle.
 
 ## Summary
 
-1. Read the Problem Statement from session memory (`context.md`).
-2. Explore the codebase (or use `AGENTS.md` if present).
-3. Define architecture: components, data structures, data flow, integration points.
-4. Save the design spec to `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`.
-5. Update `context.md` with Stack Profile and Architect Findings.
-6. If invoked as part of the full lifecycle, hand control back to the Orchestrator. If invoked standalone, present the spec to the user and STOP.
+1. Read the Problem Statement from session memory (`context.md`) and the Validation Report from `docs/devflow/session/{slug}/validation-report.md`.
+2. **Challenge assumptions** — if the requirements contradict standards or have better alternatives, document in the spec under Design Decisions. Do not design around bad requirements.
+3. Explore the codebase (or use `AGENTS.md` if present).
+4. Define architecture: components, data structures, data flow, integration points.
+5. Save the design spec to `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`.
+6. Update `context.md` with Stack Profile and Architect Findings.
+7. If invoked as part of the full lifecycle, hand control back to the Orchestrator. If invoked standalone, present the spec to the user and STOP.
 
 **NEVER** write implementation code — only architecture and design.
 

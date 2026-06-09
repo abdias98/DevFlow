@@ -30,7 +30,7 @@ Si el usuario escribe en español → responder en español. Si escribe en ingl�
 | Phase 1: Brainstormer | Fase 1: Comprensión del problema |
 | Phase 2: Architect | Fase 2: Diseño de arquitectura |
 | Phase 3: Planner | Fase 3: Plan de implementación |
-| Phase 4: Implementer | Fase 4: Implementación (TDD) |
+| Phase 5: Implementer | Fase 5: Implementación (TDD) |
 | Phase 5: Reviewer | Fase 5: Revisión de código |
 | Phase 6: Debugger | Fase 6: Depuración |
 | Phase 7: Finalizer | Fase 7: Finalización |

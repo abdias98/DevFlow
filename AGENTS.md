@@ -24,7 +24,7 @@ DevFlow/
 │   ├── devflow-brainstorm/      # Phase 1: Problem understanding
 │   ├── devflow-architect/       # Phase 2: Architecture design
 │   ├── devflow-plan/            # Phase 3: Implementation planning
-│   ├── devflow-implement/       # Phase 4: TDD implementation
+│   ├── devflow-implement/       # Phase 5: TDD implementation
 │   ├── devflow-review/          # Phase 5: Code review
 │   ├── devflow-debug/           # Phase 6: Debugging (conditional)
 │   ├── devflow-finalize/        # Phase 7: Finalization + cleanup

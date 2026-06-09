@@ -14,6 +14,11 @@ Every feature MUST satisfy these before the Finalizer can complete the cycle:
 - [ ] **Scope respected:** No files modified outside the approved plan
 - [ ] **Standards compliance:** SOLID, Clean Architecture, Security, Performance standards checked by Reviewer
 
+### Requirements Validation
+- [ ] **Validation Gate completed:** All assumptions challenged, standards scanned, risks flagged
+- [ ] **BLOCK issues resolved:** Any security, architectural, or contradiction issues from the Validation Gate accepted or fixed
+- [ ] **Additional Recommendations documented:** Out-of-scope improvements recorded for future cycles
+
 ### Testing
 - [ ] **All tests pass:** `{Test Command}` exits with zero failures
 - [ ] **No regression:** Existing tests continue to pass
