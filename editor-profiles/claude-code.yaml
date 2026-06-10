@@ -1,0 +1,95 @@
+# DevFlow Editor Profile — Claude Code
+# Source of truth for install.sh — parsed at install time via grep/awk.
+#
+# FORMAT RULES (required for bash parsing):
+#   - No inline comments after values
+#   - One key: value per line, indented with 2 spaces under section header
+#   - String values may be quoted or unquoted
+#   - Env vars ($USER_DIR) are resolved by install.sh after reading user_dir.<OS_NAME> from this file
+#   - REMOVE as value = install.sh will strip that tool/path from installed files
+#
+# SOLID Open/Closed: Adding a new editor = new YAML file in editor-profiles/.
+# install.sh discovers profiles automatically and uses paths.base existence for status.
+#
+# SHARED DIRECTORY: install.sh automatically copies .agents/skills/shared/ to
+# skills_dir/shared/ for every editor profile. Skills reference shared rules via
+# relative paths (../shared/rules.md) which resolve correctly at any install target.
+#
+# Claude Code tool mapping notes:
+#   - `Read`          = file read + directory listing (replaces `read_file` and `list_dir`)
+#   - `Write`         = file creation / full overwrite (replaces `create_file` and `replace_file_content`)
+#   - `Edit`          = exact string replacement in files (replaces `replace_string_in_file` and `multi_replace_file_content`)
+#   - `Bash`          = terminal command execution (replaces `run_in_terminal`, `grep_search`, `semantic_search`, `file_search`, `list_dir`)
+#   - `Agent`         = sub-agent invocation (replaces agent-dispatch patterns)
+#   - vscode_askQuestions = REMOVE — Claude Code asks questions directly in the chat response
+#                           per the fallback defined in rules.md → "Tool Compatibility"
+#   - memory          = REMOVE — Claude Code uses auto-memory at ~/.claude/projects/...;
+#                       DevFlow skills fall back to docs/devflow/session/ for session state
+#
+# Claude Code global commands directory:
+#   Skills are loaded from ~/.claude/commands/ as custom slash commands.
+#   Each DevFlow skill (devflow, devflow-architect, etc.) is installed into a
+#   subdirectory: ~/.claude/commands/{skill-name}/SKILL.md
+#   Claude Code discovers commands by the `name` field in the SKILL.md frontmatter.
+#
+# /memories path:
+#   Claude Code does not expose a /memories/ virtual path. Skills fall back to
+#   docs/devflow/session/{slug}/ automatically via the memory fallback in rules.md.
+
+id: claude-code
+display_name: "Claude Code (CLI)"
+
+# ── User directory per OS ─────────────────────────────────────────────────────
+# Claude Code stores all global config under ~/.claude/ on every platform.
+# install.sh reads user_dir.<OS_NAME> and exposes it as $USER_DIR for path resolution.
+user_dir:
+  macOS: "$HOME/.claude"
+  Linux: "$HOME/.claude"
+  Windows: "$HOME/.claude"
+
+# ── Installation paths ────────────────────────────────────────────────────────
+# $USER_DIR is resolved by install.sh from user_dir.<OS_NAME> above.
+#
+# skills    → ~/.claude/commands/     Claude Code global custom slash commands
+# prompts   → ~/.claude/commands/     No separate prompts dir; commands serve both roles
+# instructions → ~/.claude/instructions/  Reference docs (not auto-loaded; consulted manually)
+# agents    → ~/.claude/              Root for any agent-level config
+paths:
+  base: "$USER_DIR"
+  skills: "$USER_DIR/commands"
+  prompts: "$USER_DIR/commands"
+  instructions: "$USER_DIR/instructions"
+  agents: "$USER_DIR"
+
+# ── Tool name mappings ────────────────────────────────────────────────────────
+# Maps FROM (tool name used in Copilot/VS Code skill source files) TO (Claude Code tool name).
+# REMOVE = lines containing that backtick-wrapped tool name are deleted at install time.
+# install.sh reads these pairs and applies sed substitutions when tool_substitution is true.
+tool_mappings:
+  vscode_askQuestions: REMOVE
+  semantic_search: Bash
+  grep_search: Bash
+  file_search: Bash
+  read_file: Read
+  create_file: Write
+  replace_string_in_file: Edit
+  replace_file_content: Write
+  multi_replace_file_content: Edit
+  run_in_terminal: Bash
+  memory: REMOVE
+  list_dir: Bash
+
+# ── Path mappings ────────────────────────────────────────────────────────────
+# /memories is not available in Claude Code.
+# DevFlow skills automatically fall back to docs/devflow/session/ via rules.md.
+path_mappings:
+  /memories: REMOVE
+
+# ── Install behavior ──────────────────────────────────────────────────────────
+install:
+  tool_substitution: true
+
+# ── Post-install message ─────────────────────────────────────────────────────
+post_install:
+  reload_message: "No restart needed — Claude Code picks up commands from ~/.claude/commands/ automatically"
+  usage_command: "/devflow <feature request>"
