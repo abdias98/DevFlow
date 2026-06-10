@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: REST API Design (Technology-Agnostic)
 
-> **Version:** 2.0.0 | **Last Updated:** 2026-04-29
+> **Version:** 2.2.0 | **Last Updated:** 2026-06-10
 
 > **Apply only if:** the project has HTTP endpoints, REST controllers, or API contracts.
 > If this is a CLI, library, background worker, or frontend-only project, skip this standard entirely.
@@ -95,12 +95,24 @@ Apply these principles to all API endpoints you design, generate, or review.
 ## 7. Error Response Format
 - **What:** Structured errors enable clients to handle failures programmatically.
 - **DO:**
-  - Return a consistent, structured error object: `{ "code": "VALIDATION_ERROR", "message": "A human‑readable summary.", "details": [{ "field": "email", "issue": "required" }] }`.
+  - Return a consistent, structured error object. The preferred format is **RFC 9457 Problem Details** (`Content-Type: application/problem+json`):
+    ```json
+    {
+      "type": "https://example.com/errors/validation-error",
+      "title": "Validation Error",
+      "status": 422,
+      "detail": "The 'email' field is required.",
+      "instance": "/orders/42",
+      "errors": [{ "field": "email", "issue": "required" }]
+    }
+    ```
+  - If RFC 9457 is not adopted, use a consistent custom envelope: `{ "code": "VALIDATION_ERROR", "message": "...", "details": [...] }`. Whichever format is chosen, apply it consistently across all endpoints.
   - Use specific error codes that clients can switch on (e.g., `INVALID_INPUT`, `RESOURCE_NOT_FOUND`, `UNAUTHORIZED`, `RATE_LIMITED`).
   - Include a `documentation_url` or `help` link when the error requires further explanation.
 - **DON'T:**
   - Return plain strings, HTML error pages, or unstructured objects.
   - Expose internal exception types or stack traces in error fields.
+  - Mix error formats across endpoints — inconsistency forces clients to parse multiple shapes.
 
 ## 8. Security & Safety
 - **What:** APIs are the front door to your system — they must be secured by default.
@@ -150,7 +162,17 @@ When reviewing an API, verify:
 - [ ] `Idempotency-Key` is supported on non‑idempotent `POST`/`PATCH` endpoints.
 - [ ] API specification (e.g., OpenAPI) is present and up to date.
 
-## 13. Applying This Standard with a Limited Scope
+## 13. Severity Classification
+
+Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `rest-api.md §3`).
+
+| Severity | Triggers |
+|----------|---------|
+| 🔴 **BLOCK** | `200 OK` returned with an error body (§3); unsafe state-changing operation exposed via `GET` (§2); no authentication on an endpoint that exposes or mutates private data (§8); unvalidated client input used directly in a query or command (§8 → security.md §1) |
+| 🟡 **WARN** | Verb in URI path (e.g., `/getUser`, `/createOrder`) (§1); wrong HTTP method for the operation (§2); missing pagination on a collection endpoint (§6); inconsistent response envelope across endpoints (§4); no versioning strategy on a public API (§5); unstructured error response — plain string or HTML (§7) |
+| 🟢 **INFO** | Deeply nested URI (>3 levels) without documented rationale (§1); `Idempotency-Key` not supported on a non-idempotent `POST` (§9); API spec (OpenAPI) missing or outdated (§10); no `documentation_url` in error response (§7) |
+
+## 14. Applying This Standard with a Limited Scope
 
 When applying REST API design rules to a **specific set of files or modules** (the declared scope), follow these constraints:
 

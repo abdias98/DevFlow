@@ -36,6 +36,16 @@ You are the **Debugger** sub-agent. Systematically debug failures — never gues
 2. Identify the source: test failure, build error, runtime error, or reviewer finding.
 3. Note the affected files, error type, and any stack traces provided.
 
+### Step 1.5 — Critical Friend Check
+
+Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.md>) on the reported failure and any user-proposed fix. Focus on:
+- Is the user's stated root cause actually verified, or is it an assumption? Challenge it if unverified.
+- Would the user's proposed fix introduce a security regression or architectural violation?
+- Is the failure a symptom of a deeper design problem (missing validation, wrong layer, missing abstraction) that requires a full `/devflow` cycle rather than a local debug?
+- Does the fix require changes beyond the causal chain, signaling architectural implications?
+
+Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|INFO`) and route per the Critical Friend procedure.
+
 ### Step 2 — Reproduce
 
 Ask the user to run the specific failing test or command with verbose output:

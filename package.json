@@ -22,7 +22,9 @@
   ],
   "scripts": {
     "install": "bash install.sh",
-    "uninstall": "bash uninstall.sh"
+    "uninstall": "bash uninstall.sh",
+    "validate": "bash scripts/validate-framework.sh",
+    "validate:fix": "bash scripts/validate-framework.sh --fix"
   },
   "engines": {
     "vscode": "^1.85.0"

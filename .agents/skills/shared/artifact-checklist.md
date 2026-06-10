@@ -4,17 +4,44 @@ Every DevFlow artifact MUST be validated against its template before being saved
 
 ## Validation Gate (`docs/devflow/session/{slug}/validation-report.md`)
 
-Validated by: **Validator** (before Step 2 — Architect)
+Validated by: **Orchestrator** (before Step 3 — Architect)
 
 - [ ] **Goal & Constraints Review** — goal is achievable within stated constraints
-- [ ] **Standards Scan** — checked against SOLID, Clean Architecture, Security, Performance, REST API (if applicable), UI Design (if applicable)
-- [ ] **Assumptions Challenged** — at least one assumption questioned with alternative proposed
+- [ ] **Standards Scan** — checked against SOLID, Clean Architecture, Security, Performance, REST API (if applicable), UI Design (if applicable). Each finding cites `{standard}.md §{N} → {BLOCK|WARN|INFO}`
+- [ ] **Assumptions Challenged** — all fragile or unverified assumptions questioned. If no fragile assumptions exist, state "No fragile assumptions — justification: {reason}" (do NOT invent challenges)
 - [ ] **Contradictions Flagged** — any internal contradictions in requirements surfaced
-- [ ] **Security Scan** — potential vulnerabilities identified (input validation, auth, injection, secrets)
+- [ ] **Security Scan** — potential vulnerabilities identified (input validation, auth, injection, secrets). Any finding matching the BLOCK triggers below raises a BLOCK immediately
 - [ ] **Architecture Risks** — architectural concerns or scope risks documented
-- [ ] **Alternatives Proposed** — at least one better approach suggested if applicable
+- [ ] **Alternatives Proposed** — better approaches suggested when applicable. If none, state "No better alternative identified — justification: {reason}"
 - [ ] **Recommendations** — Additional Recommendations section populated with out-of-scope improvements
 - [ ] **Validation Report saved** — report at `docs/devflow/session/{slug}/validation-report.md`
+- [ ] **Validation Report archived** — copy saved to `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md` (persists beyond session cleanup)
+
+### Validation Gate — Explicit BLOCK Triggers
+
+The following conditions ALWAYS raise a 🔴 BLOCK regardless of user intent. They must be resolved or explicitly accepted before proceeding:
+
+| Trigger | Standard Reference |
+|---------|-------------------|
+| Request includes hardcoded secrets, API keys, or credentials | security.md §3 |
+| Request asks to roll custom authentication or cryptography | security.md §2 |
+| Request would expose unvalidated external input to system commands, SQL, or shell | security.md §1, §4 |
+| Request violates the Dependency Rule (infrastructure code in domain/use-case layer) | clean-architecture.md §1 |
+| Internal contradiction — two requirements that cannot both be satisfied | (internal) |
+| Request requires storing sensitive tokens in client-accessible browser storage | security.md §2 |
+| Request asks for SQL or DB queries inside Use Cases or Domain Entities | clean-architecture.md §2 |
+| No authentication on an endpoint that modifies or exposes private data | security.md §2 |
+
+### Validation Gate — WARN Triggers
+
+| Trigger | Standard Reference |
+|---------|-------------------|
+| Missing pagination on a collection endpoint | performance.md §2, rest-api.md §6 |
+| Synchronous I/O where async is available | performance.md §4 |
+| God class / god object in design | solid.md §1, project-design.md §3 |
+| Pattern inconsistency with existing project structure | project-design.md §1 |
+| REST verb misuse (e.g., GET for state change) | rest-api.md §2 |
+| Missing error response structure | rest-api.md §7 |
 
 ## Spec Document (`docs/devflow/specs/*.md`)
 

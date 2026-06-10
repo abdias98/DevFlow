@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Performance (Technology-Agnostic)
 
-> **Version:** 2.0.0 | **Last Updated:** 2026-04-29
+> **Version:** 2.2.0 | **Last Updated:** 2026-06-10
 
 > **Note on examples:** All patterns and code fragments are illustrative. Adapt syntax and tool names to the detected stack.
 
@@ -98,7 +98,17 @@ When reviewing, verify:
 - [ ] Optimizations are backed by profiling data or a clear performance budget.
 - [ ] No async‑over‑sync or sync‑over‑async anti‑patterns.
 
-## 9. Applying This Standard with a Limited Scope
+## 9. Severity Classification
+
+Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `performance.md §2`).
+
+| Severity | Triggers |
+|----------|---------|
+| 🔴 **BLOCK** | N+1 database queries in a loop on a hot path with unbounded input (§2); unbounded collection returned from a public API or repository without pagination (§2, §6); fire-and-forget async task with no error handling where failure causes data loss (§4) |
+| 🟡 **WARN** | Missing explicit TTL on cached data (§3); cache introduced without invalidation strategy (§3); synchronous I/O call where async is available in the runtime (§4); resource (connection, file handle) not explicitly released — no `using`/`try-with-resources` (§5); no connection pooling for expensive resources (§5) |
+| 🟢 **INFO** | O(n²) algorithm on a collection that is currently small but could grow (§1); optimization applied without profiling evidence or a performance budget (§6); sequential async calls that could be parallelized (§4) |
+
+## 10. Applying This Standard with a Limited Scope
 
 When applying performance rules to a **specific set of files or modules** (the declared scope), follow these constraints:
 
