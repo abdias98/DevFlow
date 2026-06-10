@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Security (Technology-Agnostic)
 
-> **Version:** 2.0.0 | **Last Updated:** 2026-04-29
+> **Version:** 2.2.0 | **Last Updated:** 2026-06-10
 
 > **Note on examples:** All tool names and code fragments are illustrative. Replace them with the actual libraries, services, and conventions of the detected stack.
 
@@ -78,6 +78,9 @@ Apply these principles to all code you design, generate, or review.
 ## 7. Additional Security Principles
 - **Transport Security:** Encrypt all external communication with TLS (HTTPS). Redirect HTTP to HTTPS. Use HTTP Strict Transport Security (HSTS) for web applications.
 - **Data Protection at Rest:** Encrypt sensitive data stored in databases, file systems, or backups using strong, standard algorithms. Manage encryption keys separately from the encrypted data.
+- **Password Hashing:** Always hash passwords with a memory-hard algorithm (Argon2id is the current recommendation; bcrypt is an acceptable alternative). Never use MD5, SHA-1, or unsalted SHA-256 for passwords. Never store passwords in plain text or with reversible encryption.
+- **JWT Pitfalls:** If using JSON Web Tokens, always verify the signature server-side on every request. Never accept tokens with `alg: none`. Set short expiry (`exp`) and validate it. Do not store sensitive data in the payload (it is base64-encoded, not encrypted). Prefer short-lived access tokens + refresh token rotation over long-lived tokens.
+- **Multi-Factor Authentication (MFA):** Offer MFA for any application that handles sensitive data or actions. Prefer TOTP (authenticator apps) over SMS. Never make MFA bypassable by design (e.g., "remember this device forever" with no re-authentication window).
 - **Rate Limiting & Abuse Prevention:** Apply rate limiting on login, password reset, and other sensitive endpoints to prevent brute‑force attacks. Use CAPTCHAs or proof‑of‑work challenges where appropriate.
 - **Logging & Monitoring:** Log security-relevant events (logins, permission changes, access denials, input validation failures). Set up alerts for suspicious patterns.
 - **Secure Defaults:** Every component should default to a secure configuration. Developers must explicitly opt in to less secure settings when absolutely necessary.
@@ -98,6 +101,16 @@ When reviewing, verify:
 - [ ] Error responses do not expose stack traces, internal paths, or system details.
 - [ ] Sensitive endpoints have rate limiting and abuse prevention.
 - [ ] Communication uses TLS; sensitive data at rest is encrypted.
+
+## 10. Severity Classification
+
+Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `security.md §3`).
+
+| Severity | Triggers |
+|----------|---------|
+| 🔴 **BLOCK** | Hardcoded secret/credential in source code (§3); custom auth/crypto implementation (§2); unvalidated external input reaching SQL, shell, or LDAP (§1, §4); sensitive tokens stored in `localStorage`/`sessionStorage` (§2); no authentication on a data-mutating or private-data endpoint (§2); stack traces or internal paths exposed in API responses (§6) |
+| 🟡 **WARN** | Missing rate limiting on sensitive endpoint (§7); HTTP used without redirect to HTTPS (§7); dependency with known moderate vulnerability (§5); `localStorage` used for non-sensitive tokens with no documented rationale (§2); incomplete input validation (allows but does not reject all bad input) (§1) |
+| 🟢 **INFO** | Missing HSTS header (§7); no structured logging of security events (§7); dependency lock file absent (§5); minor information disclosure in non-production environment (§6) |
 
 ## 10. Applying This Standard with a Limited Scope
 

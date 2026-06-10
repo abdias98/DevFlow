@@ -4,6 +4,49 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.3.0 — 2026-06-10
+
+### New standards — 2.3.0
+- **`testing.md`** (new): Full testing standard with Test Pyramid, Arrange/Act/Assert, mock policy, coverage, regression tests, independence, naming, performance, checklist, Severity Classification, and scope guidance. Covers the TDD requirement that was previously undocumented.
+- **`git-conventions.md`** (new): Conventional Commits format, branch naming policy, DevFlow commit checkpoints, PR rules, tagging, checklist, and Severity Classification. Replaces hardcoded commit formats scattered across skill files.
+
+### Updated standards — 2.3.0
+- **`security.md`**: Added password hashing (Argon2id/bcrypt), JWT pitfalls (`alg:none`, short expiry, no sensitive payload), and MFA guidance (§7).
+- **`rest-api.md`**: Error format now recommends RFC 9457 Problem Details (`application/problem+json`) as the preferred format, with a fallback custom envelope (§7).
+
+### Shared framework files — 2.3.0
+- **`standards-quick-card.md`** (new): Fast-scan BLOCK-only reference card for the Critical Friend check. Agents load this first; if a red flag matches, they load the full standard. Reduces context consumption.
+- **`critical-friend.md`**: Check 1 now references the quick card and adds `testing.md` to the standards table.
+- **`devflow/SKILL.md`**: Validation Gate (Step 2) now archives report to `docs/devflow/validations/` immediately and records accepted risks with timestamp. Step 0 checkpoint (`git rev-parse HEAD`) is now auto-executed (read-only, safe in all modes) instead of asking the user.
+- **`devflow-finalize/SKILL.md`**: Step 5 renamed to "Archive & Clean Session Memory". Added safeguard: Finalizer checks for archived validation report before deleting session copy.
+- **`scripts/validate-framework.sh`** (new): Framework self-validation script. Checks: template variable integrity, broken cross-references, required SKILL.md sections, unreferenced shared files, version headers, Critical Friend step in standalone agents, artifact path consistency. Run with `npm run validate`.
+- **`package.json`**: Added `validate` and `validate:fix` scripts.
+
+---
+
+## 2.2.0 — 2026-06-10
+
+### All standards — 2.2.0
+Added **Severity Classification** section to all 7 standards:
+
+- Each standard now declares which violations are 🔴 BLOCK, 🟡 WARN, or 🟢 INFO.
+- Severity tables cite specific section numbers so agents can reference them deterministically.
+- Replaces discrecional judgment for the Reviewer and Validation Gate with explicit triggers.
+- Standards updated: `solid`, `clean-architecture`, `security`, `performance`, `rest-api`, `project-design`, `ui-design`.
+
+### shared — 2.2.0 (framework files)
+- **`critical-friend.md`** (new): Shared step-by-step Critical Friend procedure for standalone agents. Includes 4 checks, output format with standard citations, and severity routing.
+- **`rules.md`**: Fixed "NEVER auto-run tests" contradiction — now explicitly scoped to Pair mode and standalone agents (Standard mode and CI mode exceptions documented). Updated Critical Friend Principle to require standard citation per finding. Added reference to `critical-friend.md`.
+- **`memory-conventions.md`**: Clarified lock scope — lock is per-cycle (Orchestrator), not per-agent; sub-agents in the same cycle do not need to re-acquire.
+- **`artifact-checklist.md`**: Added explicit BLOCK and WARN trigger tables to Validation Gate section. "At least one assumption challenged" now allows "no fragile assumptions — justification: …" to prevent invented challenges. Added validation report archival path (`docs/devflow/validations/`).
+- **`devflow/SKILL.md`**: Fixed duplicate iteration loop rows (merged into one 5↔6 row). Added Phase 4 gap explanation note. Added CI mode exception: BLOCK findings from Validation Gate fail the CI pipeline (not auto-accepted).
+- **`devflow-refactor/SKILL.md`**: Added Step 1.5 (Critical Friend Check).
+- **`devflow-perf/SKILL.md`**: Added Step 1.5 (Critical Friend Check).
+- **`devflow-debug/SKILL.md`**: Added Step 1.5 (Critical Friend Check).
+- **`devflow-migrate/SKILL.md`**: Added Step 1.5 (Critical Friend Check).
+
+---
+
 ## 2.1.0 — 2026-05-22
 
 ### ui-design — 2.1.0

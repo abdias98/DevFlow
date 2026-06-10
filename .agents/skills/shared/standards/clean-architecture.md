@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Clean Architecture (Technology-Agnostic)
 
-> **Version:** 2.0.0 | **Last Updated:** 2026-04-29
+> **Version:** 2.2.0 | **Last Updated:** 2026-06-10
 
 > **Note on examples:** All code-like fragments and tool references are illustrative. Replace them with the actual libraries, frameworks, and naming conventions of the detected stack.
 
@@ -97,7 +97,17 @@ When reviewing, verify:
 - [ ] External service boundaries have clear contracts (interface definitions in Application).
 - [ ] New functionality follows feature‑folder organization.
 
-## 7. Applying This Standard with a Limited Scope
+## 7. Severity Classification
+
+Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `clean-architecture.md §1`).
+
+| Severity | Triggers |
+|----------|---------|
+| 🔴 **BLOCK** | Dependency Rule violation — inner layer (Domain or Use Case) imports from outer layer (HTTP framework, ORM, DB driver) (§1); ORM entity returned directly from API endpoint or passed to UI (§3); SQL or DB queries written inside Use Cases or Domain Entities (§2); domain exception that inherits from a framework-specific base class (§3) |
+| 🟡 **WARN** | Controller contains `if/else` logic that represents a business rule (§2); Use Case catches exceptions without translating them to domain exceptions (§2); adapter/gateway contains business logic instead of pure translation (§2); feature-folder structure not followed when adding new feature to a large project (§4) |
+| 🟢 **INFO** | Missing DTO for an internal endpoint with no public consumers yet (§2); architecture spec not updated after structural change (§4); logging abstraction missing in domain layer — direct infrastructure logger used (§4) |
+
+## 8. Applying This Standard with a Limited Scope
 
 When you are asked to apply Clean Architecture rules to a **specific set of files or modules** (the declared scope), follow these additional constraints to avoid breaking the principle of “never touch files outside the scope”:
 

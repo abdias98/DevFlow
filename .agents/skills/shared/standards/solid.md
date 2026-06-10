@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: SOLID Principles (Technology-Agnostic)
 
-> **Version:** 2.0.0 | **Last Updated:** 2026-04-29
+> **Version:** 2.2.0 | **Last Updated:** 2026-06-10
 
 > **Note on examples:** All code-like fragments use generic pseudo-code or abstract concepts (e.g., “HTTP client”, “ORM entity”, “service locator”) to avoid dependence on any specific language or framework. Adapt the concrete syntax to the detected stack.
 
@@ -79,7 +79,17 @@ When reviewing, verify:
 - [ ] No direct instantiation (e.g., `new`) of infrastructure or external service classes inside domain/application code.  
 - [ ] No unsupported-operation exceptions or no-op overrides in production subclasses.
 
-## 8. Applying This Standard with a Limited Scope
+## 8. Severity Classification
+
+Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `solid.md §5`).
+
+| Severity | Triggers |
+|----------|---------|
+| 🔴 **BLOCK** | LSP violation that silently breaks runtime substitution (§3); DIP violation where domain/application code directly instantiates infrastructure classes via `new` (§5); unsupported-operation exception or no-op override in production subclass (§3) |
+| 🟡 **WARN** | SRP violation — class has more than one reason to change with "and/or" in its name (§1); OCP violation — new `if/else` or `switch` branch added to an existing, tested class (§2); ISP violation — large interface forces implementers to stub irrelevant methods (§4); DIP violation in non-domain code (§5) |
+| 🟢 **INFO** | Minor naming ambiguity that hints at mixed responsibility (§1); small `switch` that could eventually use polymorphism but is not yet a growth risk (§2); slight interface that could be split but does not currently cause stub methods (§4) |
+
+## 9. Applying This Standard with a Limited Scope
 
 When you are asked to apply SOLID principles to a **specific set of files or modules** (the declared scope), follow these constraints to respect the “never touch files outside the scope” rule:
 

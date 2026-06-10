@@ -94,9 +94,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - Initialize `context.md` with the user's request.
    - **Initialize metrics:** Create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>). Fill the cycle header (slug, stack, started timestamp).
 6. Detect the project stack profile (or leave `[To be detected by Architect]`).
-7. **Record checkpoint:** Ask the user for the current git SHA:
-   > "Before starting, run `git rev-parse HEAD` and tell me the output so I can record a rollback checkpoint."
-   Record it in `phase-state.md` under `## Checkpoints` as `Pre-Phase 1`.
+7. **Record checkpoint:** Auto-execute `git rev-parse HEAD` (read-only — safe in all modes) and record the SHA in `phase-state.md` under `## Checkpoints` as `Pre-Phase 1`. If the command fails (e.g., not a git repo), ask the user for the SHA and explain why it could not be retrieved automatically.
 
 ### Step 1 — Phase 1: Brainstormer
 
@@ -128,9 +126,10 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 3. **Save the validation report** — write to `docs/devflow/session/{slug}/validation-report.md`:
    - Use the Validation Gate checklist as template.
    - Include sections: Assumptions Challenged, Standards Scan, Contradictions, Security Risks, Architecture Risks, Alternatives Proposed, Additional Recommendations.
-4. Update `context.md` with `## Validator Findings` (challenges, risks, alternatives).
-5. Update `phase-state.md` to show `[x] Phase 1.5: Validation Gate`.
-6. **Route decision based on findings:**
+4. **Archive the validation report** — immediately copy to `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md`. This persistent copy survives Finalizer cleanup and informs future cycles for the same feature area.
+5. Update `context.md` with `## Validator Findings` (challenges, risks, alternatives). If the user accepted any BLOCK risks, add `## Accepted Risks` with timestamp, risk description, and user's rationale.
+6. Update `phase-state.md` to show `[x] Phase 1.5: Validation Gate`.
+7. **Route decision based on findings:**
    - **✅ CLEAR (no BLOCK)** → proceed to Step 3.
    - **⚠️ WARNINGS ONLY** → note them, present to user, proceed to Step 3.
    - **🔴 BLOCK (security, architectural, or contradiction issues)** → present to user, ask for resolution:
@@ -139,10 +138,11 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
      |--------|----------|------|
      | `validation_block` | The Validation Gate found BLOCK issues. How to proceed? | options: ✅ Accept risks & continue, ✏️ Revise requirements, ❌ Cancel cycle |
      
-     - **✅ Accept risks** → record user's acceptance in `context.md` under `## Accepted Risks`, proceed to Step 3.
+     - **✅ Accept risks** → record user's acceptance in `context.md` under `## Accepted Risks` (with timestamp and rationale). Also append the accepted risk to the archived report at `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md`. Proceed to Step 3.
      - **✏️ Revise** → route back to Step 1 (Brainstormer).
      - **❌ Cancel** → stop cycle, release lock.
-7. After Phase 1.5 is complete:
+     - **CI mode:** BLOCK findings are NOT auto-accepted. Fail the pipeline immediately with exit code 1 and print the BLOCK findings to stdout.
+8. After Phase 1.5 is complete:
    - **Validate artifact:** Check validation report against [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Validation Gate section.
    - **Record metrics:** Save phase timing + findings count + blockers count.
    - **Progress:** *"✅ Phase 1.5 complete. {N} findings ({B} blockers). Next: Phase 2 — Architect."*
@@ -179,7 +179,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 
 ### Step 5 — Confirmation Gate ⏸️
 
-**In CI mode:** Auto-approve the plan and proceed directly to Step 6. Log: "CI mode: plan auto-approved."
+**In CI mode:** Auto-approve the plan and proceed directly to Step 6. Log: "CI mode: plan auto-approved." **Exception:** CI mode does NOT auto-accept 🔴 BLOCK findings from the Validation Gate (Phase 1.5). A BLOCK in CI mode causes the pipeline to fail and exit immediately — do not auto-accept security or architectural violations.
 
 **In normal mode, STOP HERE. Do NOT invoke the Implementer until the user explicitly approves.**
 
@@ -290,13 +290,14 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
 
 The Orchestrator enforces the iteration limit. Update `phase-state.md` on every loop:
 
-| Phase | Max Loops | Loop Trigger | Escalation After |
-|-------|:---------:|--------------|------------------|
+| Phase Loop | Max Loops | Loop Trigger | Escalation After |
+|-----------|:---------:|--------------|------------------|
 | 1.5 → 1 (Validation → Brainstormer) | 2 | BLOCK findings unresolved | Route to user with triage |
-| 5 → 6 → 5 (Implementer ↔ Reviewer) | 3 | BLOCK findings | Route to user with structured triage |
-| 6 → 5 → 6 (Reviewer ↔ Implementer) | 3 | Fix not resolving BLOCK | Route to user |
-| 5 → 7 → 5 (Implementer ↔ Debugger) | 3 | Test still failing after fix | Route to user with 5-option triage |
-| 4 → 4 (Planner revision) | 2 | User requests changes | Escalate to user |
+| 5 ↔ 6 (Implementer ↔ Reviewer) | 3 | BLOCK findings (either direction) | Route to user with structured triage |
+| 5 ↔ 7 (Implementer ↔ Debugger) | 3 | Test still failing after fix | Route to user with 5-option triage |
+| 3 revision (Planner) | 2 | User requests changes | Escalate to user |
+
+> **Note on Phase numbering:** The sequence is 1 → 1.5 → 2 → 3 → Confirmation Gate → 5 → 6 → 7 → 8. Phase 4 is intentionally reserved (originally Planner was Phase 4; renaming to Phase 3 was a deliberate simplification). The gap is documented, not an error.
 
 Update the `## Iteration Log` in `phase-state.md` with each loop:
 ```

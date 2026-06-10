@@ -30,6 +30,17 @@ You are the **Migration Agent** standalone agent. Analyze schema changes, genera
    - **Current schema:** ask user to provide if not available from the spec.
 2. **STOP and ask clarifying questions if needed.** Infer what you can.
 
+### Step 1.5 — Critical Friend Check
+
+Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.md>) on the schema change request. Focus on:
+- Will this migration lock tables under load? Is a zero-downtime strategy needed? (`performance.md §2`)
+- Is a destructive operation (DROP column, DROP table, rename with data) being requested without a rollback/backup plan? (`security.md §6` — data protection)
+- Does adding a NOT NULL column without a default break existing rows or a running application?
+- Is sensitive data being stored in plain text instead of encrypted? (`security.md §7`)
+- Does the schema change violate the data model defined in the architecture spec?
+
+Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|INFO`) and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
+
 ### Step 2 — Load Stack Profile
 
 1. Read `## Stack Profile` from `context.md`.

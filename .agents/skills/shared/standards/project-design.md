@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Project Design Patterns (Technology-Agnostic)
 
-> **Version:** 2.0.0 | **Last Updated:** 2026-04-29
+> **Version:** 2.2.0 | **Last Updated:** 2026-06-10
 
 > **Note on examples:** All file names, patterns, and tool references are illustrative. Adapt terminology and conventions to the detected stack.
 
@@ -84,7 +84,17 @@ When reviewing project structure, verify:
 - [ ] The Architecture Spec is up to date with the current structure.
 - [ ] For existing projects, structural violations are flagged and a migration path is proposed (not silently applied).
 
-## 6. Applying This Standard with a Limited Scope
+## 6. Severity Classification
+
+Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `project-design.md §3`).
+
+| Severity | Triggers |
+|----------|---------|
+| 🔴 **BLOCK** | Business logic placed in the entry point (main/index) instead of a service or use case (§3); circular dependency between modules that cannot be resolved without architectural change (§3) |
+| 🟡 **WARN** | God object / god module that centralizes all logic for a domain concept (§3); new code fights the existing architectural pattern without explicit approval (§1); `utils`, `helpers`, or `common` dumping ground module created or expanded (§3); Architecture Spec not updated after significant structural change (§4) |
+| 🟢 **INFO** | Minor inconsistency in module naming that does not violate the pattern (§3); feature-folder convention not yet applied to a small, stable module (§2); architecture spec exists but is slightly stale (§4) |
+
+## 7. Applying This Standard with a Limited Scope
 
 When applying project design rules to a **specific set of files or modules** (the declared scope), follow these constraints:
 

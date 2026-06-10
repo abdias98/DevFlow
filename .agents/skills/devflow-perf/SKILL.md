@@ -40,6 +40,16 @@ You are the **Performance Agent** standalone agent. Analyze code for performance
    - **Baseline:** existing benchmark results, SLA targets, or "none".
 3. **STOP and ask clarifying questions if needed.** Infer what you can — only ask what is missing.
 
+### Step 1.5 — Critical Friend Check
+
+Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.md>) on the user's performance request. Focus on:
+- Is the user trying to optimize a path not proven to be a bottleneck? (`performance.md §6` — measure before optimizing)
+- Is caching being proposed without an invalidation strategy? (`performance.md §3`)
+- Would the proposed optimization introduce a security tradeoff (e.g., disabling TLS, weakening auth)?
+- Is the symptom actually a design problem (N+1, unbounded query, missing pagination) that warrants a `/devflow` cycle instead of local optimization?
+
+Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|INFO`) and route per the Critical Friend procedure.
+
 ### Step 2 — Load Stack Profile
 
 1. Read `## Stack Profile` from `context.md` in session memory.

@@ -42,6 +42,16 @@ You are the **Refactorer** standalone agent. Improve existing code without chang
 4. **STOP after sending the questions**. Wait for the user to answer before proceeding.
 5. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
 
+### Step 1.5 — Critical Friend Check
+
+Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.md>) on the user's refactoring request. Focus on:
+- Does the requested refactoring introduce SOLID or Clean Architecture violations instead of fixing them?
+- Is there a simpler, smaller refactor that achieves the same goal with less risk?
+- Would this refactoring change external behavior despite the "no behavior change" guarantee?
+- Are there security implications in the target code that should be addressed before or during the refactor?
+
+Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|INFO`) and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
+
 ### Step 2 — Load Stack Profile
 
 1. Read `## Stack Profile` from `context.md` in session memory.

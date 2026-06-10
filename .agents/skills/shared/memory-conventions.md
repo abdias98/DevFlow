@@ -237,8 +237,9 @@ Session memory is shared across agents. A lightweight lock in `phase-state.md` p
 ```
 
 ### Lock rules
-1. **Check before reading/writing:** Every agent MUST read `phase-state.md` first. If `Locked By` is set to a different agent, STOP and inform the user: *"Session memory is locked by {agent}. A DevFlow cycle is active for '{feature}'. Wait for it to complete or start a new session."*
+1. **Check before reading/writing:** Every agent MUST read `phase-state.md` first. If `Locked By` is set to a different agent **outside the current cycle**, STOP and inform the user: *"Session memory is locked by {agent}. A DevFlow cycle is active for '{feature}'. Wait for it to complete or start a new session."*
 2. **Acquire lock:** The Orchestrator sets `Locked By` and `Locked Since` when starting a new cycle (Step 0). The lock stays active for the entire cycle duration.
-3. **Release lock:** The Orchestrator clears the lock (`Locked By: none`, `Locked Since: —`) when the cycle completes (Step 8) or is cancelled.
-4. **Stale lock detection:** If `Locked Since` is more than 30 minutes old and no phase progress has been made, the lock is stale. Any agent may break it after informing the user: *"A stale lock from {agent} ({N} min ago) was detected. Breaking lock and proceeding."*
-5. **Standalone agents:** Before writing to session memory, check the lock. If locked by a lifecycle agent, do NOT write — report to user and suggest waiting or starting a new session.
+3. **Lock scope — per cycle, not per agent:** The lock is owned by the Orchestrator on behalf of the entire lifecycle cycle. Sub-agents invoked by the Orchestrator (Brainstormer, Architect, Planner, Implementer, Reviewer, Debugger, Finalizer) may read and write session memory under the Orchestrator's lock — they are part of the same cycle and do not re-acquire it individually.
+4. **Release lock:** The Orchestrator clears the lock (`Locked By: none`, `Locked Since: —`) when the cycle completes (Step 8) or is cancelled.
+5. **Stale lock detection:** If `Locked Since` is more than 30 minutes old and no phase progress has been made, the lock is stale. Any agent may break it after informing the user: *"A stale lock from {agent} ({N} min ago) was detected. Breaking lock and proceeding."*
+6. **Standalone agents:** Before writing to session memory, check the lock. If locked by a lifecycle agent (Orchestrator), do NOT write — report to user and suggest waiting or starting a new session.

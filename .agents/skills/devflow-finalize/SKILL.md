@@ -69,14 +69,19 @@ Gather:
 3. **Use `create_file` to save** the final summary to `docs/devflow/summaries/YYYY-MM-DD-{slug}-summary.md`.
 4. Include the Stack branches table if Stack Mode = yes.
 
-### Step 5 — Clean Session Memory
+### Step 5 — Archive & Clean Session Memory
 
-1. Confirm with the user that all artifacts are saved and the feature is complete.
-2. Delete all session memory files in the session path (`docs/devflow/session/{slug}/`), following [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>):
+1. **Archive validation report** (if not already done by the Orchestrator):
+   - Check if `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md` exists.
+   - If NOT present: copy `docs/devflow/session/{slug}/validation-report.md` to that path before deleting.
+   - If accepted risks exist in `context.md` under `## Accepted Risks`: ensure they are in the archived report.
+2. Confirm with the user that all artifacts are saved and the feature is complete.
+3. Delete all session memory files in the session path (`docs/devflow/session/{slug}/`), following [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>):
     - `context.md`
     - `phase-state.md`
     - `test-registry.md`
     - `traceability.md`
+    - `validation-report.md` *(session copy — persistent copy already in `docs/devflow/validations/`)*
 
 ### Step 6 — Final Confirmation
 
