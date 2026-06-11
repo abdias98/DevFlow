@@ -30,6 +30,65 @@ Gate verification, scope checks, iteration limits, locks, and rollback checkpoin
 - **`memory-conventions.md`** — `phase-state.md` format documents the frontmatter schema; iteration counters and checkpoint tables moved from markdown into the frontmatter.
 - **`install.sh`** — files under `shared/bin/` are copied verbatim (no tool/path substitutions, which would corrupt shell code) and keep their executable bit.
 
+### 🔧 Fixed
+
+- **Version sync** — Backfilled missing CHANGELOG entries for v2.7.5, v2.8.7, and v2.9.0 (the package version had moved ahead of the CHANGELOG). `install.sh` no longer hardcodes the version in the legacy-cleanup message (now read from `package.json`), and the README "What's new" section reflects the current release. `validate-framework.sh` gains a version-sync check so `package.json`, `package-lock.json`, and the CHANGELOG can no longer drift apart silently.
+
+---
+
+## [2.9.0] — 2026-06-10
+
+### ✨ Added
+
+- **Claude Code editor profile** (`editor-profiles/claude-code.yaml`) — installs DevFlow skills as global slash commands under `~/.claude/commands/`, with tool-name mappings (`Read`, `Write`, `Edit`, `Bash`) and `/memories` path removal (session state falls back to `docs/devflow/session/`). (#35)
+
+---
+
+## [2.8.7] — 2026-06-10
+
+> Consolidates releases v2.8.5 and v2.8.6 (2026-05-23).
+
+### ✨ Added
+
+- **Validation Gate (Phase 1.5)** — A mandatory gate between Brainstormer and Architect where the Orchestrator challenges assumptions, scans against engineering standards, flags contradictions, and raises BLOCK/WARN findings before any design work. BLOCK findings require explicit user resolution (accept risks, revise, or cancel).
+- **Framework robustness v2.2–v2.3** — Deterministic standards application (explicit BLOCK/WARN triggers with standard citations), agent self-validation steps, and the cross-cycle learning loop. (#34)
+- **Standard mode auto-execution** — At the Confirmation Gate the user chooses Standard mode (auto-executes branch creation, tests, commits, and rollback SHAs) or Pair mode (interactive, user runs commands). Push and PR creation are never auto-executed in any mode. (#33)
+- **Reverse Engineering Agent** (`/devflow-reverse`) — Analyzes undocumented projects and generates `AGENTS.md`, Stack Profile, and architecture specs. (#32)
+- **Tutorial Agent** (`/devflow-tutorial`) — Interactive onboarding that walks new users through a complete DevFlow cycle. (#30)
+- **Template Agent** (`/devflow-templates`) — Generates and maintains project-specific architecture templates from accumulated DevFlow artifacts. (#29)
+- **Documentation Agent** (`/devflow-docs`) — Generates README, API docs, and CHANGELOG from DevFlow artifacts. (#31)
+- **Contract Agent** (`/devflow-contract`) — Validates API endpoints against the architecture spec contract. (#27)
+- **Migration Agent** (`/devflow-migrate`) — Database migration generation with forward/backward compatibility checks and zero-downtime strategies. (#26)
+
+---
+
+## [2.7.5] — 2026-05-22
+
+> Consolidates releases v2.7.1 through v2.7.4 (2026-04-30 → 2026-05-22).
+
+### ✨ Added
+
+- **Pair Mode** — Interactive task-by-task approval during implementation (`DEVFLOW_PAIR=true` or chosen at the Confirmation Gate).
+- **Performance Agent** (`/devflow-perf`) — Anti-pattern analysis, benchmark guidance, and optimization recommendations.
+- **opencode editor profile** — Installation and tool mappings for the opencode CLI agent.
+- **CI/CD mode** — Non-interactive execution when `CI=true`: auto-approvals, fail-fast iterations, auto-executed tests.
+- **Memory locking** — Lightweight lock in `phase-state.md` preventing concurrent session writes, with stale-lock detection.
+- **Git checkpointing & rollback** — Pre-phase SHAs recorded for safe rollback at cycle, implementation, and debug boundaries.
+- **Traceability matrix** — Requirements → spec → tasks → tests → files cross-reference, enforced at the Finalizer health check.
+- **Metrics tracking** — Per-cycle quality metrics persisted to `docs/devflow/metrics/`.
+- **Artifact validation checklist** — Required-section checklists for spec, plan, and review documents.
+- **Cross-cycle knowledge base** — `docs/devflow/knowledge-base/learnings.md` appended per cycle.
+- **Spanish i18n** — Canonical Spanish translations for user-facing framework messages (`shared/i18n-es.md`).
+- **Audit Command, Watch Command, layered test commands & monorepo Stack Profiles** — Extended stack detection and Definition of Done criteria.
+- **Escalation logging** — Structured `## Escalation Log` recorded when iteration limits are exhausted.
+- **AGENTS.md** — DevFlow's own agent architecture documentation.
+
+### 🔄 Changed
+
+- **UI Design standard overhauled** with comprehensive design principles. (#23)
+- **Agent directories renamed** to remove redundant suffixes; install/uninstall globs tightened to `devflow/` and `devflow-*/`. (#21, #22)
+- **Plan persistence before approval** for Refactorer, Feature Agent, and Bug-Fixer standardized via dedicated plan templates. (#20)
+
 ---
 
 ## [2.7.0] — 2026-04-29

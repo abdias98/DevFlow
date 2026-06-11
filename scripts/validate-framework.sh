@@ -214,6 +214,37 @@ if [[ -f "$CTL" ]]; then
   [[ $bad_refs -eq 0 ]] && green "All devflow-ctl subcommand references in skills are valid"
 fi
 
+# ── 9. Version sync (package.json ↔ package-lock.json ↔ CHANGELOG.md) ────────
+header "9. Version sync"
+
+if [[ -f package.json ]]; then
+  PKG_VERSION=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' package.json | head -1)
+  if [[ -z "$PKG_VERSION" ]]; then
+    fail "package.json — could not extract version"
+  else
+    # package-lock.json must carry the same version (top-level and root package entry)
+    if [[ -f package-lock.json ]]; then
+      LOCK_VERSION=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' package-lock.json | head -1)
+      if [[ "$LOCK_VERSION" != "$PKG_VERSION" ]]; then
+        fail "package-lock.json version ($LOCK_VERSION) does not match package.json ($PKG_VERSION)"
+        $FIX_MODE && echo "       FIX: update package-lock.json (npm install --package-lock-only)"
+      fi
+    fi
+    # The released version must have a CHANGELOG entry
+    if ! grep -q "^## \[$PKG_VERSION\]" CHANGELOG.md 2>/dev/null; then
+      fail "CHANGELOG.md — no entry found for version $PKG_VERSION (package.json)"
+      $FIX_MODE && echo "       FIX: add '## [$PKG_VERSION] — YYYY-MM-DD' to CHANGELOG.md or fix the package version"
+    fi
+    # Hardcoded versions in install.sh drift silently — forbid them
+    if grep -qE "Installing v[0-9]+\.[0-9]+\.[0-9]+" install.sh 2>/dev/null; then
+      fail "install.sh — hardcoded version string found (read it from package.json instead)"
+    fi
+    [[ $ERRORS -eq 0 ]] && green "package.json ($PKG_VERSION), package-lock.json, and CHANGELOG.md are in sync"
+  fi
+else
+  warn "package.json not found — skipping version sync check (run from the repo root)"
+fi
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""
 echo "════════════════════════════════════════"
