@@ -32,6 +32,8 @@ DevFlow/
 │       ├── memory-conventions.md
 │       ├── output-format.md
 │       ├── stack-detection.md
+│       ├── bin/
+│       │   └── devflow-ctl      # Deterministic enforcement CLI (gates, scope, iterations, locks)
 │       └── standards/           # Engineering standards (Private Library)
 │           ├── solid.md
 │           ├── clean-architecture.md
@@ -180,6 +182,14 @@ All standalone agents follow the **Critical Friend Principle**: challenge the us
 | Reverse Agent | `/devflow-reverse` | Analyze undocumented project — generate AGENTS.md + specs |
 
 See each agent's `SKILL.md` for detailed procedures.
+
+## Deterministic Enforcement (`devflow-ctl`)
+
+Agents do not self-verify session state. A CLI at `shared/bin/devflow-ctl` performs all gate verifications, scope checks, iteration counting, lock management, and artifact completeness checks as binary operations (exit codes). Session state lives in the YAML frontmatter of `phase-state.md` and changes only through validated CLI transitions — e.g., the Confirmation Gate cannot be approved while the Validation Gate is `blocked`, and `accepted-risks` can only be set from `blocked`.
+
+Because the CLI only reads and writes session-state files (never code, tests, or git history), agents auto-execute it in **all modes including Pair mode**. It is editor-agnostic: every editor profile maps a terminal tool, so the same enforcement works in VS Code, Claude Code, opencode, Antigravity, and headless environments. See `rules.md` → "Deterministic Enforcement" for the command table.
+
+Standalone agents (Feature, Refactorer, Bug-Fixer) initialize their own lightweight sessions (`devflow-ctl init --mode {mode}`) with a `plan_approval` gate, so they get the same guarantees without commits or branches.
 
 ## Memory System
 

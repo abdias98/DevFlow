@@ -23,6 +23,31 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
 - **Before reading or writing session memory**, check `phase-state.md` for an active lock (`Locked By`). If locked by another agent, do NOT write — report to the user.
 - Standalone agents (Refactorer, Bug-Fixer, Feature Agent) MUST check the lock before touching session memory. If a lifecycle cycle is active, recommend waiting or using full `/devflow` cycle instead.
 
+## Deterministic Enforcement (`devflow-ctl`)
+
+DevFlow ships a CLI at `{{SKILLS_DIR}}/shared/bin/devflow-ctl` that turns gate verification, scope checks, and iteration limits from self-assessment into binary checks (exit codes). **Agents MUST invoke it at the integration points defined in their SKILL.md instead of verifying session state by reading markdown.**
+
+Session state lives in the **YAML frontmatter** of `docs/devflow/session/{slug}/phase-state.md` (see [Memory Conventions](./memory-conventions.md)). NEVER hand-edit frontmatter fields — always go through `devflow-ctl` so state transitions are validated.
+
+| Command | Replaces | Exit 1 means |
+|---------|----------|--------------|
+| `devflow-ctl init --mode {m} --slug {s} [--scope {glob}]` | Manual session + lock creation | — |
+| `devflow-ctl status` | Reading `phase-state.md` to summarize state | — |
+| `devflow-ctl gate check {validation\|confirmation\|plan_approval}` | "Verify entry condition…" prose | Gate closed — do NOT proceed |
+| `devflow-ctl gate set {gate} {value}` | Editing gate state in markdown | (exit 2 = illegal transition, rejected) |
+| `devflow-ctl scope check {file}` | Self-verifying a file is in scope | File outside scope — ask the user, then `scope add` |
+| `devflow-ctl iterate {loop}` | Manual iteration counting | Limit exceeded — STOP and escalate with triage |
+| `devflow-ctl lock check\|acquire {agent}\|release` | Lock prose rules | Active lock held by another cycle |
+| `devflow-ctl config set {branch\|pair_mode\|mode\|phase} {v}` | Editing those fields in markdown | — |
+| `devflow-ctl checkpoint set {name} {sha}` | Recording rollback SHAs in a table | — |
+| `devflow-ctl artifacts check {type} {path}` | LLM-reading the [artifact checklist](./artifact-checklist.md) | Required sections missing |
+
+**Execution policy:** `devflow-ctl` only reads and writes session state files — it never touches production code, tests, or git history. It is therefore exempt from the Test Execution Policy and may be auto-executed by agents in **all modes, including Pair mode**. It replaces the markdown edits to `phase-state.md` that agents already performed.
+
+**On check failure (exit 1):** stop, report the CLI's message to the user verbatim, and follow the action it names (escalate, request approval, etc.). NEVER retry the same command expecting a different result, and NEVER proceed past a failed check.
+
+**Fallback:** if the script is missing or not executable in the installed environment, fall back to the manual procedures described in each SKILL.md and inform the user that deterministic enforcement is unavailable.
+
 ## File Persistence
 
 - **ALWAYS use `create_file` to save artifacts** (specs, plans, mockups, reviews, debug logs). NEVER only show content in chat without saving the file.

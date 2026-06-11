@@ -66,11 +66,13 @@ If recommending `/devflow`, tell the user:
 5. **STOP after sending the questions**. Wait for the user to answer before proceeding.
 6. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
 
-### Step 2 — Load Stack Profile
+### Step 2 — Load Stack Profile & Initialize Session
 
-1. Read `## Stack Profile` from `context.md` in session memory.
-2. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
-3. Obtain: `Test Command`, `Test Command (single file)`, `Test Root`, `Test Utilities`.
+1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
+2. **Initialize the standalone session:** run `devflow-ctl init --mode bug-fix --slug {slug} --scope {glob}` with one `--scope` per affected file/pattern.
+3. Read `## Stack Profile` from `context.md` in session memory.
+4. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
+5. Obtain: `Test Command`, `Test Command (single file)`, `Test Root`, `Test Utilities`.
 
 ### Step 3 — Analyze the Target Code
 
@@ -99,7 +101,12 @@ If recommending `/devflow`, tell the user:
 
 **STOP. Do NOT apply any changes or create test files until the user approves.**
 
+- **✅ Approve** → run `devflow-ctl gate set plan_approval approved`, then proceed to Step 5.
+- **❌ Cancel** → run `devflow-ctl lock release` and stop.
+
 ### Step 5 — Create Reproduction Test
+
+**Entry condition:** `devflow-ctl gate check plan_approval` must pass — if it exits non-zero, return to Step 4.
 
 After plan approval:
 1. Write a **minimal test** that:
@@ -118,7 +125,7 @@ After plan approval:
 ### Step 6 — Apply Minimal Fix
 
 For each file in the approved plan:
-1. Verify the file is in the approved scope — if not, STOP.
+1. Run `devflow-ctl scope check {file}` — if it exits 1, STOP and ask the user for explicit approval (then `devflow-ctl scope add {glob}`).
 2. Change **only what is necessary** to fix the root cause.
 3. Do NOT refactor unrelated code. Do NOT add new features.
 4. Apply changes with `replace_file_content` or `multi_replace_file_content`.
@@ -162,6 +169,7 @@ Include an `### Additional Recommendations` section in your response with:
    - [x] Standalone: Bug-Fixer — `docs/devflow/bug-fixes/{filename}`
    ```
 5. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
+6. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the bug-fix report is the persistent artifact).
 
 ### Step 9 — Auto-Invoke Reviewer (Standalone Mode)
 

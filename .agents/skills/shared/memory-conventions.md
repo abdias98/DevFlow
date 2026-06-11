@@ -129,13 +129,38 @@ These files live only for the duration of a DevFlow session. They are not versio
 
 ### `phase-state.md` format
 
+The file has two parts: a **machine-readable YAML frontmatter** managed exclusively through `devflow-ctl` (see [rules.md](./rules.md) → Deterministic Enforcement), and a **human-readable markdown body** that agents update as a session log.
+
+```yaml
+---
+devflow: 1                      # schema version
+slug: {feature-slug}
+mode: lifecycle                 # lifecycle | feature | refactor | bug-fix | ...
+phase: 1                        # current phase (lifecycle: 1, 1.5, 2, 3, 5-8)
+pair_mode: false
+branch: none                    # set at the Confirmation Gate
+locked_by: Orchestrator         # agent name | none
+locked_since: 2026-06-11T10:30:00Z
+gates:                          # lifecycle: validation + confirmation; standalone: plan_approval
+  validation: pending           # pending | passed | blocked | accepted-risks
+  confirmation: pending         # pending | approved | rejected
+scope:                          # declared scope globs (standalone agents; optional in lifecycle)
+  - src/auth/**
+iterations:                     # loop counters, incremented via `devflow-ctl iterate`
+  implement_review: 0
+checkpoints:                    # rollback SHAs, recorded via `devflow-ctl checkpoint set`
+  pre-phase-1: {sha}
+---
+```
+
+**Rules for the frontmatter:**
+
+1. Created by `devflow-ctl init` — never write it by hand.
+2. State changes go through `devflow-ctl` subcommands (`gate set`, `config set`, `iterate`, `lock`, `checkpoint set`). The CLI rejects illegal transitions (e.g., approving the Confirmation Gate while the Validation Gate is blocked).
+3. The markdown body below the frontmatter remains free-form for the human log (Completed Phases, Iteration Log, Escalation Log) and is still edited by agents directly.
+
 ```markdown
 # DevFlow Phase State
-
-**Current Phase:** {1-8}
-**Feature:** {slug}
-**Locked By:** {agent name or "none"}
-**Locked Since:** {ISO timestamp or "—"}
 
 ## Completed Phases
 - [x] Phase 1: Brainstormer — context saved
@@ -146,14 +171,6 @@ These files live only for the duration of a DevFlow session. They are not versio
 - [ ] Phase 6: Reviewer
 - [ ] Phase 7: Debugger (conditional)
 - [ ] Phase 8: Finalizer
-
-## Iteration Counter
-| Phase | Count | Max |
-|-------|-------|-----|
-| Phase 1.5 (Validation Gate) | 0 | 2 |
-| Phase 5 (Implementer) | 0 | 3 |
-| Phase 6 (Reviewer) | 0 | 3 |
-| Phase 7 (Debugger) | 0 | 3 |
 
 ## Iteration Log
 | # | From | To | Reason |
@@ -167,17 +184,9 @@ These files live only for the duration of a DevFlow session. They are not versio
 |---|--------|---------|:--------:|------------|---------------|
 | 1 | Implementer ↔ Debugger | Test still failing | 3 | NullReference at auth.ts:42 | Simplify scope |
 | 2 | Planner revision | User requests changes | 2 | Ambiguous API contract | Redesign spec |
-
-## Checkpoints
-> Git SHAs recorded by the Orchestrator before phases that produce irreversible changes.
-> Used for rollback when a phase must be reverted. NEVER execute `git reset` — tell the user the command.
-
-| Phase | Git SHA | Recorded At | Purpose |
-|-------|---------|-------------|---------|
-| Pre-Phase 1 | {sha} | {timestamp} | Baseline — before any DevFlow artifacts |
-| Pre-Phase 5 | {sha} | {timestamp} | Before implementation — rollback point for code changes |
-| Pre-Phase 7 | {sha} | {timestamp} | Before debug fixes — rollback point for invasive changes |
 ```
+
+> **Iteration counters and rollback checkpoints** live in the frontmatter (`iterations:` and `checkpoints:`) and are managed via `devflow-ctl iterate` and `devflow-ctl checkpoint set` — they are no longer markdown tables. Rollback SHAs protect: Pre-Phase 1 (baseline), Pre-Phase 5 (before implementation), Pre-Phase 7 (before debug fixes). NEVER execute `git reset` — tell the user the command.
 
 ### `test-registry.md` format
 
@@ -230,11 +239,13 @@ These files live only for the duration of a DevFlow session. They are not versio
 
 Session memory is shared across agents. A lightweight lock in `phase-state.md` prevents concurrent writes.
 
-### Lock format (in `phase-state.md`)
-```markdown
-**Locked By:** {agent name | "none"}
-**Locked Since:** {ISO timestamp | "—"}
+### Lock format (in `phase-state.md` frontmatter)
+```yaml
+locked_by: {agent name | none}
+locked_since: {ISO timestamp | —}
 ```
+
+> Manage the lock with `devflow-ctl lock check | acquire {agent} | release` — the CLI applies the rules below deterministically (including stale-lock detection).
 
 ### Lock rules
 1. **Check before reading/writing:** Every agent MUST read `phase-state.md` first. If `Locked By` is set to a different agent **outside the current cycle**, STOP and inform the user: *"Session memory is locked by {agent}. A DevFlow cycle is active for '{feature}'. Wait for it to complete or start a new session."*
