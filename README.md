@@ -52,16 +52,14 @@ bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/instal
 irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
 ```
 
-**What's new in v2.7.0:**
-- 🧠 **Framework-wide refinement** — Complete review and hardening of all skills, standards, rules, prompts, and conventions.
-- 🧪 **Tests are never auto-executed** — Every agent now informs you of the exact command to run instead of executing tests itself. You control when tests run.
-- 🔀 **Stacked PRs are manual** — DevFlow prepares branches and provides the commands, but you decide if and when to push and create PRs.
-- 📋 **Smarter Stack Mode** — The Planner only asks about stacked PRs for large features (>5 tasks or >3 layers). Small features proceed directly.
-- 🎯 **Conditional standard loading** — REST API and UI Design standards are only applied when relevant to your feature type.
-- 🔒 **Stronger Scope-Locking** — All agents now have explicit boundaries and use INFO comments for findings outside their scope.
-- 📦 **Single Source of Truth** — Eliminated duplication across the framework. Rules, memory conventions, and procedures each have one canonical source.
-- 🌐 **Technology agnostic** — All standards and guides are now free of technology-specific references. Works with any stack.
-- 🏗️ **Standalone agents refined** — Refactorer, Bug-Fixer, and Feature Agent now have structured question templates, complexity gates, and plan-before-approval workflows.
+**What's new in v2.9.0:**
+- 🤖 **Claude Code editor profile** — Install DevFlow as global slash commands in Claude Code (`~/.claude/commands/`), alongside the existing VS Code, opencode, Antigravity, and generic profiles.
+- ⏸️ **Validation Gate (Phase 1.5)** — Before any design work, the Orchestrator challenges assumptions, scans against engineering standards, and raises BLOCK/WARN findings that you must resolve explicitly.
+- ⚙️ **Standard vs. Pair mode** — At the Confirmation Gate you choose: Standard mode auto-executes branches, tests, and commits; Pair mode keeps every command in your hands. Push and PR creation are **never** auto-executed in either mode.
+- 🧰 **Six new standalone agents** — Reverse Engineering, Tutorial, Templates, Documentation, Contract, and Migration agents join Refactorer, Bug-Fixer, Feature, and Performance.
+- 🔁 **Cross-cycle learning loop** — Deterministic standards application with explicit BLOCK/WARN triggers, agent self-validation, and a knowledge base that accumulates learnings per cycle.
+
+See [CHANGELOG.md](CHANGELOG.md) for the full history, including v2.7.5 and v2.8.7.
 
 ### Interactive Editor Selection
 

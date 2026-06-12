@@ -334,7 +334,9 @@ if [ "$_legacy_found" -eq 1 ]; then
   fi
   
 
-  echo "✅ Cleanup complete. Installing v2.7.0..."
+  # Resolve the current version from package.json — never hardcode it here.
+  DEVFLOW_VERSION=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$SOURCE_DIR/package.json" 2>/dev/null | head -1)
+  echo "✅ Cleanup complete. Installing v${DEVFLOW_VERSION:-latest}..."
   echo ""
 fi
 
