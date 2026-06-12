@@ -60,6 +60,15 @@ tool_mappings:
 install:
   tool_substitution: true
 
+# ── Permissions (auto-approval of DevFlow actions) ───────────────────────────
+# Antigravity manages terminal auto-execution policy and allowlists through
+# its GUI settings — there is no documented settings file to merge into.
+# install.sh prints manual_note so the user can allow DevFlow actions once.
+# strategy: json-merge | manual | none
+permissions:
+  strategy: manual
+  manual_note: "In Antigravity Settings > Agent > Terminal Auto Execution, add 'devflow-ctl', 'mkdir' and read-only git (rev-parse/status/diff/log) to the allowlist so DevFlow runs without prompts."
+
 # ── Post-install message ─────────────────────────────────────────────────────
 post_install:
   reload_message: "Restart Antigravity to pick up the new agent files"

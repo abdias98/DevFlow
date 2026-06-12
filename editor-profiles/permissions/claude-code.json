@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(~/.claude/commands/**)",
+      "Edit(docs/devflow/**)",
+      "Write(docs/devflow/**)",
+      "Bash(devflow-ctl *)",
+      "Bash($SKILLS_DIR/shared/bin/devflow-ctl *)",
+      "Bash(bash $SKILLS_DIR/shared/bin/devflow-ctl *)",
+      "Bash(mkdir -p docs/devflow*)",
+      "Bash(git rev-parse *)",
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)"
+    ]
+  }
+}

@@ -62,6 +62,13 @@ path_mappings:
 install:
   tool_substitution: true
 
+# ── Permissions (auto-approval of DevFlow actions) ───────────────────────────
+# Generic/headless target: there is no known editor settings file to merge
+# into, so no automatic permission configuration is performed.
+# strategy: json-merge | manual | none
+permissions:
+  strategy: none
+
 # ── Post-install message ─────────────────────────────────────────────────────
 post_install:
   reload_message: "Restart your AI editor/tool to pick up the new agent files"

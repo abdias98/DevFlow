@@ -89,6 +89,17 @@ path_mappings:
 install:
   tool_substitution: true
 
+# ── Permissions (auto-approval of DevFlow actions) ───────────────────────────
+# install.sh merges the snippet into the editor's settings file so DevFlow
+# actions (reading installed skills, writing docs/devflow/*, running
+# devflow-ctl and read-only git) do not prompt for confirmation.
+# Merge is non-destructive: existing user values win, arrays are unioned.
+# strategy: json-merge | manual | none
+permissions:
+  strategy: json-merge
+  config_file: "$USER_DIR/settings.json"
+  snippet: claude-code.json
+
 # ── Post-install message ─────────────────────────────────────────────────────
 post_install:
   reload_message: "No restart needed — Claude Code picks up commands from ~/.claude/commands/ automatically"

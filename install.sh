@@ -194,6 +194,100 @@ copy_devflow_file() {
   sed "${sed_args[@]}" "$src" > "$dst"
 }
 
+# configure_permissions
+# Merges the profile's permission snippet (editor-profiles/permissions/*.json)
+# into the editor's settings file so DevFlow actions (reading installed skills,
+# writing docs/devflow/*, running devflow-ctl and read-only git) do not prompt
+# for confirmation. Driven entirely by the `permissions` section of the
+# profile YAML — zero hardcoded editor logic, like the rest of this script.
+#
+# Strategies:
+#   none       → nothing to configure (generic/headless)
+#   manual     → print permissions.manual_note (editor has no settings file)
+#   json-merge → deep-merge snippet into permissions.config_file
+#
+# Merge semantics (non-destructive): objects merge recursively, arrays are
+# unioned, and on scalar conflicts the user's existing value always wins.
+# A .devflow-backup copy of the settings file is kept before writing.
+configure_permissions() {
+  local strategy snippet_name config_raw config_file snippet_src
+  strategy="$(parse_yaml_value "$PROFILE_FILE" "permissions" "strategy")"
+  [[ -z "$strategy" || "$strategy" == "none" ]] && return 0
+
+  if [[ "$strategy" == "manual" ]]; then
+    local note
+    note="$(parse_yaml_value "$PROFILE_FILE" "permissions" "manual_note")"
+    [[ -n "$note" ]] && echo "🔐 Permissions (manual step): $note"
+    return 0
+  fi
+
+  snippet_name="$(parse_yaml_value "$PROFILE_FILE" "permissions" "snippet")"
+  config_raw="$(parse_yaml_value "$PROFILE_FILE" "permissions" "config_file")"
+  snippet_src="$SOURCE_DIR/editor-profiles/permissions/$snippet_name"
+  if [[ -z "$snippet_name" || -z "$config_raw" || ! -f "$snippet_src" ]]; then
+    echo "⚠️  Permissions: incomplete permissions section in $(basename "$PROFILE_FILE") — skipped"
+    return 0
+  fi
+
+  # Explicit substitution of known variables only (no eval), same policy as
+  # load_editor_profile.
+  config_file="${config_raw//\$HOME/$HOME}"
+  config_file="${config_file//\$APPDATA/${APPDATA:-}}"
+  config_file="${config_file//\$USER_DIR/$USER_DIR}"
+
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "⚠️  Permissions: python3 not found — automatic merge skipped."
+    echo "    Merge manually: $snippet_src → $config_file"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$config_file")"
+  [ -f "$config_file" ] && cp "$config_file" "$config_file.devflow-backup"
+
+  # Resolve install-path placeholders inside the snippet before merging.
+  export DEVFLOW_SNIPPET_JSON
+  DEVFLOW_SNIPPET_JSON="$(sed -e "s|\$SKILLS_DIR|$SKILLS_DIR|g" \
+                              -e "s|\$USER_DIR|$USER_DIR|g" \
+                              -e "s|\$HOME|$HOME|g" "$snippet_src")"
+
+  if python3 - "$config_file" 2>/dev/null <<'PYEOF'
+import json, os, sys
+
+snippet = json.loads(os.environ["DEVFLOW_SNIPPET_JSON"])
+target = sys.argv[1]
+
+def merge(base, add):
+    if isinstance(base, dict) and isinstance(add, dict):
+        for key, value in add.items():
+            base[key] = merge(base[key], value) if key in base else value
+        return base
+    if isinstance(base, list) and isinstance(add, list):
+        return base + [item for item in add if item not in base]
+    return base  # scalar conflict: the user's existing value wins
+
+data = {}
+if os.path.exists(target):
+    with open(target, encoding="utf-8") as fh:
+        content = fh.read().strip()
+    if content:
+        # Raises on JSONC (comments/trailing commas); handled by the caller —
+        # the file is left untouched and manual instructions are printed.
+        data = json.loads(content)
+
+with open(target, "w", encoding="utf-8") as fh:
+    json.dump(merge(data, snippet), fh, indent=2, ensure_ascii=False)
+    fh.write("\n")
+PYEOF
+  then
+    echo "🔐 Permissions configured: $config_file"
+  else
+    echo "⚠️  Permissions: could not merge automatically into $config_file"
+    echo "    (file may contain comments/JSONC — it was left untouched)"
+    echo "    Merge manually: $snippet_src → $config_file"
+  fi
+  unset DEVFLOW_SNIPPET_JSON
+}
+
 # ── Discover supported editors from editor-profiles/*.yaml ──────────────────
 # Each YAML defines paths.base — if that directory exists, the editor is present.
 # Detection (directory check) stays in install.sh; paths come entirely from YAML.
@@ -402,6 +496,9 @@ fi
       echo "  ✓ Installed instructions (global): $filename"
     fi
   done
+echo ""
+# ── Configure editor permissions (auto-approval of DevFlow actions) ─────────
+configure_permissions
 echo ""
 # ── Configure global gitignore (zero impact on projects) ────────────────────
 GLOBAL_GITIGNORE="$HOME/.gitignore_global"

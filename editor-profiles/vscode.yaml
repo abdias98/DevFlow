@@ -58,6 +58,18 @@ path_mappings:
 install:
   tool_substitution: false
 
+# ── Permissions (auto-approval of DevFlow actions) ───────────────────────────
+# install.sh merges the snippet into VS Code's user settings.json so DevFlow
+# terminal commands (devflow-ctl, mkdir docs/devflow, read-only git) are
+# auto-approved in Copilot agent mode via chat.tools.terminal.autoApprove.
+# File edits inside the workspace do not prompt in Copilot agent mode.
+# Merge is non-destructive: existing user values win, arrays are unioned.
+# strategy: json-merge | manual | none
+permissions:
+  strategy: json-merge
+  config_file: "$USER_DIR/settings.json"
+  snippet: vscode.json
+
 # ── Post-install message ─────────────────────────────────────────────────────
 post_install:
   reload_message: "Reload VS Code (Ctrl+Shift+P > Developer: Reload Window)"
