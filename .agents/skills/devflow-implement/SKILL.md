@@ -40,12 +40,16 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 
 ### Step 1 — Load Context
 
-1. Read session memory: `context.md` (tech stack, constraints, Stack Mode) and `phase-state.md` (plan path).
-2. Read the plan document from `docs/devflow/plans/`.
-3. Note Stack Mode: `no` → standard flow, `yes` → stacked flow.
-4. Identify where to start (first unchecked task or resume from checkpoint).
+1. **Verify the Confirmation Gate:** run `devflow-ctl gate check confirmation` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If it exits non-zero, STOP — the user has not approved the plan. Do not write any code.
+2. Read session memory: `context.md` (tech stack, constraints, Stack Mode) and run `devflow-ctl status` for the session state.
+3. Read the plan document from `docs/devflow/plans/`.
+4. **Declare the scope:** register the plan's File Map (Create + Modify lists) with `devflow-ctl scope add {glob}` for each path, if not already declared.
+5. Note Stack Mode: `no` → standard flow, `yes` → stacked flow.
+6. Identify where to start (first unchecked task or resume from checkpoint).
 
 ### Step 2 — Execute Plan
+
+**Before each file edit**, run `devflow-ctl scope check {file}`. If it exits 1, the file is outside the approved scope: STOP, ask the user for explicit approval, and only after they approve run `devflow-ctl scope add {glob}` and proceed. Test files and DevFlow artifacts from the plan always pass (Flow Artifacts Exception).
 
 - **Stack Mode = no** → Follow the [TDD procedure](<{{SKILLS_DIR}}/devflow-implement/tdd-procedure.md>) (standard flow).
 - **Stack Mode = yes** → Follow the [stacked flow](<{{SKILLS_DIR}}/devflow-implement/stack-flow.md>).

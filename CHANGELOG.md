@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ⚙️ Deterministic Enforcement — `devflow-ctl`
+
+Gate verification, scope checks, iteration limits, locks, and rollback checkpoints are no longer LLM self-assessment — they are binary checks performed by a new CLI, working identically across all editor profiles (VS Code, Claude Code, opencode, Antigravity, generic).
+
+### ✨ Added
+
+- **`devflow-ctl` CLI** (`shared/bin/devflow-ctl`) — deterministic session-state tool invoked by agents at every gate transition: `init`, `status`, `gate check/set`, `scope check/add`, `iterate`, `lock check/acquire/release`, `config`, `checkpoint`, `artifacts check`. Exit codes make checks incontestable; illegal state transitions (e.g., approving the Confirmation Gate while Validation is blocked) are rejected by the CLI itself.
+- **Machine-readable session state** — `phase-state.md` now starts with a YAML frontmatter (schema v1: slug, mode, phase, gates, scope, iterations, checkpoints, lock) managed exclusively through `devflow-ctl`. The markdown body remains the human-readable session log.
+- **Deterministic iteration limits** — `devflow-ctl iterate {loop}` increments counters and fails when the limit is exceeded, replacing manual loop counting (`implement_review`, `implement_debug`, `plan_revision`, `validation_brainstorm`).
+- **Standalone agent sessions** — Feature Agent, Refactorer, and Bug-Fixer now initialize lightweight sessions (`init --mode {feature|refactor|bug-fix}`) with a `plan_approval` gate and scope enforcement, so standalone cycles get the same guarantees as the full lifecycle without requiring commits or branches.
+- **Artifact completeness checks** — `devflow-ctl artifacts check {spec|plan|review|validation} {path}` validates required sections before phase transitions (used by the Finalizer health check).
+- **Framework validation** — `validate-framework.sh` gains a `devflow-ctl integrity` section: script presence, executable bit, `bash -n`, and verification that every `devflow-ctl` subcommand referenced in skill files exists in the CLI dispatcher.
+
+### 🔄 Changed
+
+- **Orchestrator (`devflow`)** — Step 0 uses `devflow-ctl init`; the Validation and Confirmation Gates persist state via `gate set`; phase entries verify via `gate check`; loops route through `iterate`; checkpoints through `checkpoint set/get`.
+- **Implementer** — verifies the Confirmation Gate with `gate check confirmation` before writing any code, and runs `scope check` before each file edit (Flow Artifacts always pass).
+- **`rules.md`** — new canonical section "Deterministic Enforcement (`devflow-ctl`)" with the command table and execution policy: the CLI only touches session state, so it may be auto-executed in all modes, including Pair mode.
+- **`memory-conventions.md`** — `phase-state.md` format documents the frontmatter schema; iteration counters and checkpoint tables moved from markdown into the frontmatter.
+- **`install.sh`** — files under `shared/bin/` are copied verbatim (no tool/path substitutions, which would corrupt shell code) and keep their executable bit.
+
 ---
 
 ## [2.7.0] — 2026-04-29

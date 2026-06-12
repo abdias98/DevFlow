@@ -59,11 +59,13 @@ If recommending `/devflow`, tell the user:
 5. **STOP after sending the questions**. Wait for the user to answer before proceeding.
 6. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
 
-### Step 2 — Load Stack Profile
+### Step 2 — Load Stack Profile & Initialize Session
 
-1. Read `## Stack Profile` from `context.md` in session memory.
-2. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
-3. Obtain: full Stack Profile (language, framework, test command, source root, etc.).
+1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
+2. **Initialize the standalone session:** run `devflow-ctl init --mode feature --slug {slug} --scope {glob}` with one `--scope` per file/pattern the feature will touch.
+3. Read `## Stack Profile` from `context.md` in session memory.
+4. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
+5. Obtain: full Stack Profile (language, framework, test command, source root, etc.).
 
 ### Step 3 — Analyze the Target Area
 
@@ -92,7 +94,12 @@ Explore ONLY the files relevant to this feature:
 
 **STOP. Do NOT apply any changes or create test files until the user approves.**
 
+- **✅ Approve** → run `devflow-ctl gate set plan_approval approved`, then proceed to Step 5.
+- **❌ Cancel** → run `devflow-ctl lock release` and stop.
+
 ### Step 5 — Apply Feature Implementation (TDD per task)
+
+**Entry condition:** `devflow-ctl gate check plan_approval` must pass — if it exits non-zero, return to Step 4. Before editing any production file, run `devflow-ctl scope check {file}`; on exit 1, ask the user for approval and `devflow-ctl scope add {glob}` before proceeding.
 
 For each task in the approved plan:
 
@@ -151,6 +158,7 @@ To verify:
 - [x] Standalone: Feature Agent — `docs/devflow/features/{filename}`
 ```
 3. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
+4. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the feature report is the persistent artifact).
 
 ### Step 9 — Auto-Invoke Reviewer (Standalone Mode)
 

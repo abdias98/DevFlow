@@ -71,6 +71,8 @@ See [stack mode](<{{SKILLS_DIR}}/devflow/stack-mode.md>) for stacked PR behavior
 
 You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You manage the lifecycle: verify prerequisites, invoke sub-agents, validate artifacts, enforce the Confirmation Gate, track iterations, record metrics, and handle escalation.
 
+**Enforcement:** All gate verifications, state transitions, iteration counters, locks, and checkpoints go through `devflow-ctl` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). The CLI lives at `{{SKILLS_DIR}}/shared/bin/devflow-ctl` and may be auto-executed in all modes. If a `gate check` or `iterate` exits non-zero, do NOT proceed — follow the message it prints.
+
 **Metrics:** Record the phase start timestamp BEFORE each invocation and the completion timestamp + iteration counts AFTER verification in `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`.
 
 **Progress:** After each phase completes, present a brief progress summary: phases completed, current phase, next phase, and any warnings.
@@ -79,8 +81,8 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 
 ### Step 0 — Session Initialization
 
-1. **Discover active sessions:** List subdirectories of `docs/devflow/session/`. For each subdirectory found, read its `phase-state.md` to identify the feature slug and current phase.
-2. **Check for stale locks:** If a session's `Locked Since` is >30 minutes old with no phase progress, the lock is stale. Inform the user and offer to break it: *"A stale lock from {agent} ({N} min ago) was detected. Break lock and resume?"*
+1. **Discover active sessions:** List subdirectories of `docs/devflow/session/`. For each session found, run `devflow-ctl status --slug {slug}` to identify the feature slug and current phase.
+2. **Check for stale locks:** Run `devflow-ctl lock check --slug {slug}`. If it reports a STALE lock, inform the user and offer to break it: *"A stale lock from {agent} ({N} min ago) was detected. Break lock and resume?"* (break with `devflow-ctl lock acquire Orchestrator --force`).
 3. **Detect CI mode:** Check if the environment variable `CI=true` is set. If yes, apply CI mode rules: auto-approve confirmations, fail fast (max 1 iteration per phase), auto-execute tests and git commands. Record `CI Mode: yes` in `context.md`.
 4. **If active sessions exist:**
    - Present them to the user: *"Active DevFlow sessions found: {list of slugs with phases}. Select one to continue, or start a new feature."*
@@ -88,13 +90,11 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - If the user wants a new feature → proceed to step 5.
 5. **If no active sessions (or user chose new):**
    - Extract or ask for the feature slug.
-   - Ensure `docs/devflow/session/{slug}/` directory exists.
-   - Initialize `phase-state.md` with `Current Phase: 1`, `Feature: {slug}`.
-   - **Acquire the memory lock:** Set `Locked By: Orchestrator` and `Locked Since: {current timestamp}` in `phase-state.md`.
+   - **Initialize the session:** Run `devflow-ctl init --mode lifecycle --slug {slug}`. This creates `phase-state.md` (frontmatter + log skeleton) and acquires the memory lock in one validated step.
    - Initialize `context.md` with the user's request.
    - **Initialize metrics:** Create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>). Fill the cycle header (slug, stack, started timestamp).
 6. Detect the project stack profile (or leave `[To be detected by Architect]`).
-7. **Record checkpoint:** Auto-execute `git rev-parse HEAD` (read-only — safe in all modes) and record the SHA in `phase-state.md` under `## Checkpoints` as `Pre-Phase 1`. If the command fails (e.g., not a git repo), ask the user for the SHA and explain why it could not be retrieved automatically.
+7. **Record checkpoint:** Auto-execute `git rev-parse HEAD` (read-only — safe in all modes) and record it with `devflow-ctl checkpoint set pre-phase-1 {sha}`. If the command fails (e.g., not a git repo), ask the user for the SHA and explain why it could not be retrieved automatically.
 
 ### Step 1 — Phase 1: Brainstormer
 
@@ -128,18 +128,18 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - Include sections: Assumptions Challenged, Standards Scan, Contradictions, Security Risks, Architecture Risks, Alternatives Proposed, Additional Recommendations.
 4. **Archive the validation report** — immediately copy to `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md`. This persistent copy survives Finalizer cleanup and informs future cycles for the same feature area.
 5. Update `context.md` with `## Validator Findings` (challenges, risks, alternatives). If the user accepted any BLOCK risks, add `## Accepted Risks` with timestamp, risk description, and user's rationale.
-6. Update `phase-state.md` to show `[x] Phase 1.5: Validation Gate`.
+6. Update `phase-state.md` body to show `[x] Phase 1.5: Validation Gate`.
 7. **Route decision based on findings:**
-   - **✅ CLEAR (no BLOCK)** → proceed to Step 3.
-   - **⚠️ WARNINGS ONLY** → note them, present to user, proceed to Step 3.
-   - **🔴 BLOCK (security, architectural, or contradiction issues)** → present to user, ask for resolution:
+   - **✅ CLEAR (no BLOCK)** → run `devflow-ctl gate set validation passed`, proceed to Step 3.
+   - **⚠️ WARNINGS ONLY** → note them, present to user, run `devflow-ctl gate set validation passed`, proceed to Step 3.
+   - **🔴 BLOCK (security, architectural, or contradiction issues)** → run `devflow-ctl gate set validation blocked`, present to user, ask for resolution:
      
      | header | question | type |
      |--------|----------|------|
      | `validation_block` | The Validation Gate found BLOCK issues. How to proceed? | options: ✅ Accept risks & continue, ✏️ Revise requirements, ❌ Cancel cycle |
      
-     - **✅ Accept risks** → record user's acceptance in `context.md` under `## Accepted Risks` (with timestamp and rationale). Also append the accepted risk to the archived report at `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md`. Proceed to Step 3.
-     - **✏️ Revise** → route back to Step 1 (Brainstormer).
+     - **✅ Accept risks** → run `devflow-ctl gate set validation accepted-risks` (only valid from `blocked` — the CLI enforces this). Record user's acceptance in `context.md` under `## Accepted Risks` (with timestamp and rationale). Also append the accepted risk to the archived report at `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md`. Proceed to Step 3.
+     - **✏️ Revise** → run `devflow-ctl iterate validation_brainstorm` (exit 1 = limit reached, escalate instead), then route back to Step 1 (Brainstormer).
      - **❌ Cancel** → stop cycle, release lock.
      - **CI mode:** BLOCK findings are NOT auto-accepted. Fail the pipeline immediately with exit code 1 and print the BLOCK findings to stdout.
 8. After Phase 1.5 is complete:
@@ -198,32 +198,32 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    |--------|----------|------|
    | `plan_confirmation` | Plan + Test Cases + Mockups complete. Choose implementation mode: | options: ✅ Standard — auto-complete, 🤝 Pair — review each task, ✏️ Request changes, ❌ Cancel |
 
-5. **If ✅ Standard** → record `Pair Mode: no` in `phase-state.md`. Then ask for the branch name:
+5. **If ✅ Standard** → run `devflow-ctl gate set confirmation approved` and `devflow-ctl config set pair_mode false` (the CLI rejects the approval if the Validation Gate was never resolved). Then ask for the branch name:
    > **"Standard mode selected. This will auto-execute: branch creation, test runs, commits, and git SHAs for rollback."**
    > Ask: *"Branch name? Suggested: `feat/{slug}`. Press Enter to accept or type a custom name."*
-   - Record the branch name in `phase-state.md` as `Branch: {name}`.
+   - Record the branch name with `devflow-ctl config set branch {name}`.
    - **Stack Mode or not:** A branch is ALWAYS created, even for single-task features. This provides isolated workspace, clean rollback point, and safe experimentation.
     - Standard mode auto-execution rules: see `rules.md` → Standard Mode.
     - Proceed to Step 6.
-6. **If 🤝 Pair** → record `Pair Mode: yes` in `phase-state.md`. Branch is created manually by the user. Pair mode: the user runs tests, creates branches, and confirms each task. Proceed to Step 6.
-7. **If ✏️ Request changes** → collect user feedback. Route back to Step 4 (Planner) with the feedback. Max 2 revision loops; escalate to user on the 3rd.
-8. **If ❌ Cancel** → stop the cycle. Release the memory lock (`Locked By: none`, `Locked Since: —`). Present the rollback option:
+6. **If 🤝 Pair** → run `devflow-ctl gate set confirmation approved` and `devflow-ctl config set pair_mode true`. Branch is created manually by the user. Pair mode: the user runs tests, creates branches, and confirms each task. Proceed to Step 6.
+7. **If ✏️ Request changes** → collect user feedback. Run `devflow-ctl iterate plan_revision` (exit 1 = revision limit reached, escalate to the user instead). Route back to Step 4 (Planner) with the feedback.
+8. **If ❌ Cancel** → stop the cycle. Release the memory lock with `devflow-ctl lock release`. Present the rollback option:
    > "Cycle cancelled. To revert all DevFlow artifacts created so far, run: `git reset --hard {pre-phase-1-sha}`"
    Update `phase-state.md` noting cancellation. Do NOT clean session memory (preserve artifacts for reference).
 
 ### Step 6 — Phase 5: Implementer
 
-1. Verify entry condition: Confirmation Gate approved (check `phase-state.md`).
-2. **Check `Pair Mode`** in `phase-state.md`:
+1. Verify entry condition: run `devflow-ctl gate check confirmation`. If it exits non-zero, do NOT invoke the Implementer — return to the Confirmation Gate.
+2. **Check Pair Mode** via `devflow-ctl config get pair_mode`:
    - **If `Pair Mode: no` (Standard):** The Implementer auto-executes tests, creates branches, commits, and records git SHAs. See `rules.md` → Standard Mode.
    - **If `Pair Mode: yes` (Pair):** The Implementer tells the user each command and waits for confirmation.
 3. **Create the branch** (Standard mode auto-executes, Pair mode tells user):
    - Standard: auto-execute `git checkout -b {branch-name}`.
    - Pair: ask user to run `git checkout -b {branch-name}`.
 4. **Record Pre-Phase 5 checkpoint:**
-   - Standard: auto-execute `git rev-parse HEAD` and record the SHA.
+   - Standard: auto-execute `git rev-parse HEAD`.
    - Pair: ask user to run `git rev-parse HEAD` and report the SHA.
-   Record it in `phase-state.md` under `## Checkpoints` as `Pre-Phase 5`.
+   Record it with `devflow-ctl checkpoint set pre-phase-5 {sha}`.
 5. Invoke `devflow-implement`.
 6. **Wait** for completion. Verify:
    - `test-registry.md` updated with all test files and statuses.
@@ -245,7 +245,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - Verdict recorded in `phase-state.md`.
 4. **Route decision based on verdict:**
    - **APPROVED (no BLOCK)** → record metrics (review timing + findings count). Progress: *"✅ Phase 6 complete. Review passed. Next: Phase 8 — Finalizer."* Proceed to Step 9.
-   - **CHANGES REQUESTED (BLOCK findings)** → check iteration counter. If ≤ 3, route back to Step 6 (Implementer) with the Reviewer's findings. If > 3, escalate.
+   - **CHANGES REQUESTED (BLOCK findings)** → run `devflow-ctl iterate implement_review`. If it succeeds, route back to Step 6 (Implementer) with the Reviewer's findings. If it exits 1 (limit exceeded), escalate.
    - **Architecture flaw** → route back to Step 3 (Architect).
    - **Plan gap** → route back to Step 4 (Planner).
 
@@ -255,10 +255,10 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
 
 1. Verify entry condition: test failure or runtime error reported.
 2. **Record Pre-Phase 7 checkpoint:**
-   - **Standard mode:** Auto-execute `git rev-parse HEAD` and record the SHA.
+   - **Standard mode:** Auto-execute `git rev-parse HEAD`.
    - **Pair mode:** Ask the user to run `git rev-parse HEAD` and report the SHA.
-   Record it in `phase-state.md` under `## Checkpoints` as `Pre-Phase 7`.
-3. Invoke `devflow-debug`.
+   Record it with `devflow-ctl checkpoint set pre-phase-7 {sha}`.
+3. Invoke `devflow-debug`. On each Debugger retry loop, run `devflow-ctl iterate implement_debug` first — exit 1 means the limit is exhausted: present the structured triage instead of looping again.
 4. **Wait** for completion. Verify:
    - Debug log saved at `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md`.
    - Root cause identified and fix applied.
@@ -274,7 +274,13 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
    - [ ] All Definition of Done criteria from `context.md` are met.
    - [ ] Traceability coverage ≥ 100% on DoD and Edge Cases (check `traceability.md`).
    - [ ] Dependency audit passed — no critical/high vulnerabilities (if `Audit Command` is configured).
-   - [ ] All persistent artifacts exist on disk (spec, plan, validation report, review, mockups if UI).
+   - [ ] All persistent artifacts exist on disk and are complete — verify with:
+     ```
+     devflow-ctl artifacts check spec docs/devflow/specs/{file}
+     devflow-ctl artifacts check plan docs/devflow/plans/{file}
+     devflow-ctl artifacts check review docs/devflow/reviews/{file}
+     devflow-ctl artifacts check validation docs/devflow/validations/{file}
+     ```
    - **If any check fails** → route to the appropriate phase (Debugger or Implementer). Do NOT proceed.
 2. Invoke `devflow-finalize`.
 3. **Wait** for completion. Verify:
@@ -288,7 +294,7 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
 
 ## Iteration Tracking
 
-The Orchestrator enforces the iteration limit. Update `phase-state.md` on every loop:
+The Orchestrator enforces the iteration limit through `devflow-ctl iterate {loop}` — the CLI increments the counter in the frontmatter and **exits 1 when the limit is exceeded**, at which point you MUST escalate instead of looping. Loop names: `validation_brainstorm`, `implement_review`, `implement_debug`, `plan_revision`.
 
 | Phase Loop | Max Loops | Loop Trigger | Escalation After |
 |-----------|:---------:|--------------|------------------|
@@ -334,7 +340,7 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 
 ### Rollback procedure
 
-1. Identify the appropriate checkpoint SHA from `phase-state.md` → `## Checkpoints`.
+1. Identify the appropriate checkpoint SHA with `devflow-ctl checkpoint get {pre-phase-1|pre-phase-5|pre-phase-7}`.
 2. Present the rollback command to the user:
    > "To rollback to {phase}, run:
    > ```bash

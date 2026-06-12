@@ -183,6 +183,37 @@ done
 
 [[ $WARNINGS -eq 0 && $ERRORS -eq 0 ]] && green "Artifact paths look consistent"
 
+# ── 8. devflow-ctl integrity ─────────────────────────────────────────────────
+header "8. devflow-ctl integrity"
+
+CTL="$SKILLS_DIR/shared/bin/devflow-ctl"
+
+if [[ ! -f "$CTL" ]]; then
+  fail "shared/bin/devflow-ctl — script not found"
+elif [[ ! -x "$CTL" ]]; then
+  fail "shared/bin/devflow-ctl — not executable (run: chmod +x $CTL)"
+  $FIX_MODE && echo "       FIX: chmod +x $CTL"
+elif ! bash -n "$CTL" 2>/dev/null; then
+  fail "shared/bin/devflow-ctl — bash syntax check failed (bash -n)"
+else
+  green "devflow-ctl exists, is executable, and passes bash -n"
+fi
+
+# Every `devflow-ctl <subcommand>` referenced in skill files must exist in the CLI dispatcher.
+if [[ -f "$CTL" ]]; then
+  VALID_SUBCOMMANDS=$(awk '/^case "\$CMD" in/,/^esac/' "$CTL" | grep -oP '^\s+\K[a-z|-]+(?=\))' | tr '|' '\n')
+  bad_refs=0
+  while IFS= read -r file <&3; do
+    while IFS= read -r sub; do
+      if ! grep -qx "$sub" <<<"$VALID_SUBCOMMANDS"; then
+        fail "$file — references unknown devflow-ctl subcommand: '$sub'"
+        ((bad_refs++)) || true
+      fi
+    done < <(grep -oP 'devflow-ctl \K[a-z-]+' "$file" 2>/dev/null | sort -u || true)
+  done 3< <(find "$SKILLS_DIR" -name "*.md" -type f)
+  [[ $bad_refs -eq 0 ]] && green "All devflow-ctl subcommand references in skills are valid"
+fi
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""
 echo "════════════════════════════════════════"

@@ -52,11 +52,13 @@ Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.m
 
 Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|INFO`) and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
 
-### Step 2 — Load Stack Profile
+### Step 2 — Load Stack Profile & Initialize Session
 
-1. Read `## Stack Profile` from `context.md` in session memory.
-2. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
-3. Obtain: `Test Command`, `Test Command (single file)`, `Test Root`, `Test Utilities`.
+1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
+2. **Initialize the standalone session:** run `devflow-ctl init --mode refactor --slug {slug} --scope {glob}` with one `--scope` per file/pattern in the Approved Scope List.
+3. Read `## Stack Profile` from `context.md` in session memory.
+4. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
+5. Obtain: `Test Command`, `Test Command (single file)`, `Test Root`, `Test Utilities`.
 
 ### Step 3 — Analyze the Target Code
 
@@ -90,7 +92,12 @@ Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|IN
 
 **STOP. Do NOT apply any changes or create test files until the user approves.**
 
+- **✅ Approve** → run `devflow-ctl gate set plan_approval approved`, then proceed to Step 6.
+- **❌ Cancel** → run `devflow-ctl lock release` and stop.
+
 ### Step 6 — Apply Refactoring
+
+**Entry condition:** `devflow-ctl gate check plan_approval` must pass — if it exits non-zero, return to Step 5.
 
 0. **If the approved plan includes a regression test** (and tests exist in the project):
    - Create the test file at the agreed path.
@@ -98,7 +105,7 @@ Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|IN
    - The test file is considered part of the approved scope for this refactoring.
 
 For each file in the approved scope:
-1. Verify the file is in the Approved Scope List — if not, STOP.
+1. Run `devflow-ctl scope check {file}` — if it exits 1, STOP and ask the user for explicit approval (then `devflow-ctl scope add {glob}`).
 2. Apply the change using `replace_file_content` or `multi_replace_file_content`.
 3. Keep each change minimal and focused on what was planned.
 
@@ -125,6 +132,7 @@ To verify no behavior changed:
 - [x] Standalone: Refactorer — `docs/devflow/refactors/{filename}`
 ```
 3. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
+4. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the refactor report is the persistent artifact).
 
 ### Step 9 — Auto-Invoke Reviewer
 

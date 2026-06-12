@@ -380,7 +380,14 @@ if [ -d "$SOURCE_DIR/.agents/skills/shared" ]; then
     rel_path="${shared_file#"$SOURCE_DIR/.agents/skills/shared/"}"
     dest="$SKILLS_DIR/shared/$rel_path"
     mkdir -p "$(dirname "$dest")"
-    copy_devflow_file "$shared_file" "$dest"
+    # bin/ holds executable scripts (devflow-ctl): copy verbatim — tool/path
+    # substitutions would corrupt shell code — and preserve the executable bit.
+    if [[ "$rel_path" == bin/* ]]; then
+      cp "$shared_file" "$dest"
+      chmod +x "$dest"
+    else
+      copy_devflow_file "$shared_file" "$dest"
+    fi
   done < <(find "$SOURCE_DIR/.agents/skills/shared" -type f -print0)
   echo "  ✓ Installed shared rules (global): shared/"
 fi

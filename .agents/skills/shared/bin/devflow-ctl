@@ -1,0 +1,511 @@
+#!/usr/bin/env bash
+# devflow-ctl — Deterministic enforcement CLI for the DevFlow framework.
+#
+# Agents invoke this script at gate transitions instead of self-verifying
+# session state. All checks are binary (exit codes), so the result is
+# incontestable regardless of which editor or model is driving the session.
+#
+# Session state lives in the YAML frontmatter of:
+#   docs/devflow/session/{slug}/phase-state.md
+# (override the root with DEVFLOW_SESSION_ROOT)
+#
+# Exit codes: 0 = check passed / action done
+#             1 = check FAILED (gate closed, scope violation, limit exceeded)
+#             2 = usage or state error (missing session, bad arguments)
+#
+# Usage: devflow-ctl <command> [args] [--slug <slug>]
+#
+#   init --mode <m> --slug <s> [--scope <glob>]...   Create session + acquire lock
+#   status                                           Print session summary
+#   phase get | set <N>                              Read / record current phase
+#   gate check <name>                                Exit 1 unless gate is open
+#   gate set <name> <value>                          Validated state transition
+#   scope check <file>                               Exit 1 if file outside scope
+#   scope add <glob>                                 Append a glob to the scope
+#   iterate <loop> [--max <N>]                       Increment loop counter; exit 1 over limit
+#   lock check | acquire <agent> [--force] | release Manage the session lock
+#   config set <key> <value> | get <key>             Session settings (branch, pair_mode, mode, phase)
+#   checkpoint set <name> <sha> | get <name>         Record / read rollback SHAs
+#   artifacts check <type> <path>                    Validate required sections
+#
+# Gates:    validation (pending|passed|blocked|accepted-risks)
+#           confirmation, plan_approval (pending|approved|rejected)
+# Loops:    implement_review, implement_debug (max 3); plan_revision,
+#           validation_brainstorm (max 2). DEVFLOW_MAX_ITERATIONS overrides all.
+
+set -euo pipefail
+
+SESSION_ROOT="${DEVFLOW_SESSION_ROOT:-docs/devflow/session}"
+SCHEMA_VERSION=1
+STALE_LOCK_MINUTES=30
+
+# ── Output helpers ────────────────────────────────────────────────────────────
+
+ok()   { echo "[devflow-ctl] OK: $*"; }
+fail() { echo "[devflow-ctl] FAIL: $*" >&2; exit 1; }
+die()  { echo "[devflow-ctl] ERROR: $*" >&2; exit 2; }
+
+now_iso() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+# Convert ISO-8601 UTC timestamp to epoch seconds (GNU date, then BSD fallback).
+to_epoch() {
+  local ts="$1"
+  date -d "$ts" +%s 2>/dev/null \
+    || date -j -u -f "%Y-%m-%dT%H:%M:%SZ" "$ts" +%s 2>/dev/null \
+    || echo 0
+}
+
+# ── Session resolution ────────────────────────────────────────────────────────
+
+SLUG=""
+STATE_FILE=""
+
+# Extract a global --slug flag from anywhere in the argument list.
+ARGS=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --slug) SLUG="${2:-}"; shift 2 ;;
+    *) ARGS+=("$1"); shift ;;
+  esac
+done
+set -- "${ARGS[@]+"${ARGS[@]}"}"
+
+resolve_session() {
+  if [[ -z "$SLUG" ]]; then
+    local sessions=()
+    if [[ -d "$SESSION_ROOT" ]]; then
+      while IFS= read -r f; do
+        sessions+=("$(basename "$(dirname "$f")")")
+      done < <(find "$SESSION_ROOT" -mindepth 2 -maxdepth 2 -name phase-state.md 2>/dev/null)
+    fi
+    case "${#sessions[@]}" in
+      0) die "no active session found under $SESSION_ROOT — run 'devflow-ctl init' first" ;;
+      1) SLUG="${sessions[0]}" ;;
+      *) die "multiple active sessions (${sessions[*]}) — disambiguate with --slug" ;;
+    esac
+  fi
+  STATE_FILE="$SESSION_ROOT/$SLUG/phase-state.md"
+  [[ -f "$STATE_FILE" ]] || die "no phase-state.md for slug '$SLUG' at $STATE_FILE"
+  head -1 "$STATE_FILE" | grep -q '^---$' \
+    || die "$STATE_FILE has no YAML frontmatter — created by an older DevFlow version? Re-run 'devflow-ctl init'"
+}
+
+# ── Frontmatter primitives ────────────────────────────────────────────────────
+# The frontmatter is a restricted YAML subset: flat keys, one level of nesting
+# (gates:, iterations:, checkpoints:), and one list (scope:). Values are plain
+# scalars — no quoting, anchors, or multi-line values.
+
+fm_get() { # fm_get <key>  (dotted for nested, e.g. gates.confirmation)
+  local key="$1"
+  awk -v key="$key" '
+    BEGIN { n = split(key, p, "."); infm = 0; sect = "" }
+    NR == 1 && $0 == "---" { infm = 1; next }
+    infm && $0 == "---"    { exit }
+    !infm                  { next }
+    /^[A-Za-z_][A-Za-z0-9_-]*:/ {
+      k = $0; sub(/:.*/, "", k)
+      if (n == 1 && k == key) { v = $0; sub(/^[^:]*:[[:space:]]*/, "", v); print v; exit }
+      sect = ($0 ~ /:[[:space:]]*$/) ? k : ""
+      next
+    }
+    n == 2 && sect == p[1] && /^  [A-Za-z_][A-Za-z0-9_-]*:/ {
+      k = $0; sub(/^  /, "", k); sub(/:.*/, "", k)
+      if (k == p[2]) { v = $0; sub(/^[^:]*:[[:space:]]*/, "", v); print v; exit }
+    }
+  ' "$STATE_FILE"
+}
+
+fm_set() { # fm_set <key> <value> — replace in place, or append (creating the section if nested)
+  local key="$1" value="$2" tmp
+  tmp="$(mktemp)"
+  awk -v key="$key" -v val="$value" '
+    BEGIN { n = split(key, p, "."); infm = 0; sect = ""; done = 0 }
+    NR == 1 && $0 == "---" { infm = 1; print; next }
+    infm && $0 == "---" && !closed {
+      if (!done) {
+        if (n == 1) print key ": " val
+        else if (sect == p[1]) print "  " p[2] ": " val
+        else { print p[1] ":"; print "  " p[2] ": " val }
+      }
+      closed = 1; infm = 0; print; next
+    }
+    !infm { print; next }
+    /^[A-Za-z_][A-Za-z0-9_-]*:/ {
+      k = $0; sub(/:.*/, "", k)
+      # Leaving the target section without finding the subkey: append it now.
+      if (n == 2 && sect == p[1] && k != p[1] && !done) { print "  " p[2] ": " val; done = 1 }
+      if (n == 1 && k == key && !done) { print key ": " val; done = 1; sect = ""; next }
+      sect = ($0 ~ /:[[:space:]]*$/) ? k : ""
+      if (n == 2 && sect == p[1]) sect_seen = 1
+      print; next
+    }
+    n == 2 && sect == p[1] && /^  [A-Za-z_][A-Za-z0-9_-]*:/ {
+      k = $0; sub(/^  /, "", k); sub(/:.*/, "", k)
+      if (k == p[2] && !done) { print "  " p[2] ": " val; done = 1; next }
+    }
+    { print }
+  ' "$STATE_FILE" > "$tmp" && mv "$tmp" "$STATE_FILE"
+}
+
+fm_list() { # fm_list <key> — print one list item per line
+  local key="$1"
+  awk -v key="$key" '
+    BEGIN { infm = 0; insect = 0 }
+    NR == 1 && $0 == "---" { infm = 1; next }
+    infm && $0 == "---"    { exit }
+    !infm                  { next }
+    /^[A-Za-z_][A-Za-z0-9_-]*:/ {
+      k = $0; sub(/:.*/, "", k)
+      insect = (k == key)
+      next
+    }
+    insect && /^  - / { v = $0; sub(/^  - /, "", v); print v }
+  ' "$STATE_FILE"
+}
+
+fm_list_add() { # fm_list_add <key> <item> — append to a list, creating the section if missing
+  local key="$1" item="$2" tmp
+  tmp="$(mktemp)"
+  awk -v key="$key" -v item="$item" '
+    BEGIN { infm = 0; insect = 0; done = 0 }
+    NR == 1 && $0 == "---" { infm = 1; print; next }
+    infm && $0 == "---" {
+      if (!done) { print key ":"; print "  - " item }
+      infm = 0; print; next
+    }
+    !infm { print; next }
+    /^[A-Za-z_][A-Za-z0-9_-]*:/ {
+      k = $0; sub(/:.*/, "", k)
+      if (insect && !done) { print "  - " item; done = 1 }
+      insect = (k == key && !done)
+      print; next
+    }
+    { print }
+  ' "$STATE_FILE" > "$tmp" && mv "$tmp" "$STATE_FILE"
+}
+
+# ── Commands ──────────────────────────────────────────────────────────────────
+
+cmd_init() {
+  local mode="" scope_globs=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --mode)  mode="${2:-}"; shift 2 ;;
+      --scope) scope_globs+=("${2:-}"); shift 2 ;;
+      *) die "init: unknown argument '$1'" ;;
+    esac
+  done
+  [[ -n "$mode" ]] || die "init: --mode is required (lifecycle|feature|refactor|bug-fix|...)"
+  [[ -n "$SLUG" ]] || die "init: --slug is required"
+  STATE_FILE="$SESSION_ROOT/$SLUG/phase-state.md"
+  [[ -f "$STATE_FILE" ]] && die "session '$SLUG' already exists at $STATE_FILE — resume it or pick another slug"
+
+  mkdir -p "$SESSION_ROOT/$SLUG"
+  {
+    echo "---"
+    echo "devflow: $SCHEMA_VERSION"
+    echo "slug: $SLUG"
+    echo "mode: $mode"
+    echo "phase: 1"
+    echo "pair_mode: false"
+    echo "branch: none"
+    echo "locked_by: Orchestrator"
+    echo "locked_since: $(now_iso)"
+    echo "gates:"
+    if [[ "$mode" == "lifecycle" ]]; then
+      echo "  validation: pending"
+      echo "  confirmation: pending"
+    else
+      echo "  plan_approval: pending"
+    fi
+    if [[ ${#scope_globs[@]} -gt 0 ]]; then
+      echo "scope:"
+      for g in "${scope_globs[@]}"; do echo "  - $g"; done
+    fi
+    echo "iterations:"
+    echo "checkpoints:"
+    echo "---"
+    echo ""
+    echo "# DevFlow Phase State"
+    echo ""
+    echo "> Machine-readable state lives in the frontmatter above — manage it with \`devflow-ctl\`."
+    echo "> The sections below are the human-readable session log."
+    echo ""
+    echo "## Iteration Log"
+    echo "| # | From | To | Reason |"
+    echo "|---|------|----|--------|"
+    echo ""
+    echo "## Escalation Log"
+    echo "| # | Phases | Trigger | Attempts | Root Cause | User Decision |"
+    echo "|---|--------|---------|:--------:|------------|---------------|"
+  } > "$STATE_FILE"
+  ok "session '$SLUG' initialized (mode: $mode, lock acquired) at $STATE_FILE"
+}
+
+cmd_status() {
+  resolve_session
+  echo "Session:   $SLUG (schema v$(fm_get devflow))"
+  echo "Mode:      $(fm_get mode)"
+  echo "Phase:     $(fm_get phase)"
+  echo "Branch:    $(fm_get branch)"
+  echo "Pair mode: $(fm_get pair_mode)"
+  echo "Lock:      $(fm_get locked_by) (since $(fm_get locked_since))"
+  echo "Gates:"
+  for g in validation confirmation plan_approval; do
+    local v; v="$(fm_get "gates.$g")"
+    [[ -n "$v" ]] && echo "  $g: $v"
+  done
+  local scope; scope="$(fm_list scope)"
+  if [[ -n "$scope" ]]; then
+    echo "Scope:"
+    while IFS= read -r g; do echo "  - $g"; done <<< "$scope"
+  else
+    echo "Scope:     (not declared)"
+  fi
+}
+
+cmd_phase() {
+  resolve_session
+  case "${1:-}" in
+    get) fm_get phase ;;
+    set)
+      [[ "${2:-}" =~ ^[0-9]+(\.[0-9]+)?$ ]] || die "phase set: numeric phase required"
+      fm_set phase "$2"
+      ok "phase set to $2"
+      ;;
+    *) die "usage: devflow-ctl phase get|set <N>" ;;
+  esac
+}
+
+gate_allowed_values() {
+  case "$1" in
+    validation)                 echo "pending passed blocked accepted-risks" ;;
+    confirmation|plan_approval) echo "pending approved rejected" ;;
+    *) return 1 ;;
+  esac
+}
+
+cmd_gate() {
+  resolve_session
+  local action="${1:-}" gate="${2:-}" value="${3:-}"
+  [[ -n "$gate" ]] || die "usage: devflow-ctl gate check|set <gate> [value]"
+  gate_allowed_values "$gate" >/dev/null || die "unknown gate '$gate' (validation|confirmation|plan_approval)"
+  local current; current="$(fm_get "gates.$gate")"
+
+  case "$action" in
+    check)
+      [[ -n "$current" ]] || fail "gate '$gate' is not declared for this session (mode: $(fm_get mode))"
+      case "$gate:$current" in
+        validation:passed|validation:accepted-risks) ok "gate '$gate' is open ($current)" ;;
+        confirmation:approved|plan_approval:approved) ok "gate '$gate' is open ($current)" ;;
+        *) fail "gate '$gate' is CLOSED (state: $current) — do not proceed past this gate" ;;
+      esac
+      ;;
+    set)
+      [[ -n "$value" ]] || die "gate set: value required"
+      local allowed; allowed="$(gate_allowed_values "$gate")"
+      [[ " $allowed " == *" $value "* ]] || die "invalid value '$value' for gate '$gate' (allowed: $allowed)"
+      # Transition invariants — illegal states are rejected no matter what the agent intends.
+      if [[ "$gate" == "validation" && "$value" == "accepted-risks" && "$current" != "blocked" ]]; then
+        die "validation can only move to 'accepted-risks' from 'blocked' (current: ${current:-unset}) — accepted-risks records a user decision over BLOCK findings"
+      fi
+      if [[ "$gate" == "confirmation" && "$value" == "approved" ]]; then
+        local val_state; val_state="$(fm_get gates.validation)"
+        if [[ -n "$val_state" && "$val_state" != "passed" && "$val_state" != "accepted-risks" ]]; then
+          die "cannot approve confirmation while validation gate is '$val_state' — resolve the Validation Gate first"
+        fi
+      fi
+      fm_set "gates.$gate" "$value"
+      ok "gate '$gate': ${current:-unset} → $value"
+      ;;
+    *) die "usage: devflow-ctl gate check|set <gate> [value]" ;;
+  esac
+}
+
+cmd_scope() {
+  resolve_session
+  case "${1:-}" in
+    check)
+      local file="${2:-}"
+      [[ -n "$file" ]] || die "usage: devflow-ctl scope check <file>"
+      file="${file#./}"
+      # Flow Artifacts Exception (rules.md): DevFlow's own artifacts are always in scope.
+      [[ "$file" == docs/devflow/* ]] && { ok "'$file' is a DevFlow artifact (always allowed)"; return; }
+      local globs; globs="$(fm_list scope)"
+      [[ -n "$globs" ]] || fail "no scope declared for session '$SLUG' — declare it with 'scope add' before editing files"
+      while IFS= read -r glob; do
+        # `**` and `*` both match across `/` in bash [[ == ]] pattern matching.
+        local pattern="${glob//\*\*/*}"
+        # shellcheck disable=SC2053
+        if [[ "$file" == $pattern ]]; then
+          ok "'$file' matches scope glob '$glob'"
+          return
+        fi
+      done <<< "$globs"
+      fail "'$file' is OUTSIDE the declared scope — ask the user for explicit approval, then 'scope add' it"
+      ;;
+    add)
+      [[ -n "${2:-}" ]] || die "usage: devflow-ctl scope add <glob>"
+      fm_list_add scope "$2"
+      ok "scope extended with '$2'"
+      ;;
+    list) fm_list scope ;;
+    *) die "usage: devflow-ctl scope check <file> | add <glob> | list" ;;
+  esac
+}
+
+iterate_default_max() {
+  case "$1" in
+    implement_review|implement_debug) echo 3 ;;
+    plan_revision|validation_brainstorm) echo 2 ;;
+    *) echo 3 ;;
+  esac
+}
+
+cmd_iterate() {
+  resolve_session
+  local loop="${1:-}"; shift || true
+  [[ -n "$loop" ]] || die "usage: devflow-ctl iterate <loop> [--max <N>]"
+  local max=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --max) max="${2:-}"; shift 2 ;;
+      *) die "iterate: unknown argument '$1'" ;;
+    esac
+  done
+  max="${max:-${DEVFLOW_MAX_ITERATIONS:-$(iterate_default_max "$loop")}}"
+  local count; count="$(fm_get "iterations.$loop")"
+  count=$(( ${count:-0} + 1 ))
+  fm_set "iterations.$loop" "$count"
+  if (( count > max )); then
+    fail "loop '$loop' exceeded its limit ($count > $max) — STOP iterating and escalate to the user with the structured triage"
+  fi
+  ok "loop '$loop' iteration $count of $max"
+}
+
+cmd_lock() {
+  resolve_session
+  local holder since
+  holder="$(fm_get locked_by)"
+  since="$(fm_get locked_since)"
+  case "${1:-}" in
+    check)
+      if [[ -z "$holder" || "$holder" == "none" ]]; then
+        ok "no active lock"
+        return
+      fi
+      local age_min=-1 epoch; epoch="$(to_epoch "$since")"
+      [[ "$epoch" != 0 ]] && age_min=$(( ($(date +%s) - epoch) / 60 ))
+      if (( age_min >= STALE_LOCK_MINUTES )); then
+        echo "[devflow-ctl] WARN: lock held by $holder is STALE (${age_min} min old) — it may be broken after informing the user"
+        return 0
+      fi
+      fail "session locked by $holder since $since (${age_min} min ago) — do not write to this session"
+      ;;
+    acquire)
+      local agent="${2:-}" force="${3:-}"
+      [[ -n "$agent" ]] || die "usage: devflow-ctl lock acquire <agent> [--force]"
+      if [[ -n "$holder" && "$holder" != "none" && "$holder" != "$agent" && "$force" != "--force" ]]; then
+        local epoch; epoch="$(to_epoch "$since")"
+        local age_min=$(( ($(date +%s) - epoch) / 60 ))
+        (( age_min >= STALE_LOCK_MINUTES )) \
+          || fail "lock held by $holder (${age_min} min ago) — wait, or pass --force to break a stale lock"
+      fi
+      fm_set locked_by "$agent"
+      fm_set locked_since "$(now_iso)"
+      ok "lock acquired by $agent"
+      ;;
+    release)
+      fm_set locked_by "none"
+      fm_set locked_since "—"
+      ok "lock released"
+      ;;
+    *) die "usage: devflow-ctl lock check | acquire <agent> [--force] | release" ;;
+  esac
+}
+
+cmd_config() {
+  resolve_session
+  local action="${1:-}" key="${2:-}" value="${3:-}"
+  case "$key" in
+    branch|pair_mode|mode|phase) ;;
+    *) die "config: key must be one of branch|pair_mode|mode|phase (gates and counters have their own commands)" ;;
+  esac
+  case "$action" in
+    get) fm_get "$key" ;;
+    set)
+      [[ -n "$value" ]] || die "usage: devflow-ctl config set <key> <value>"
+      if [[ "$key" == "pair_mode" && "$value" != "true" && "$value" != "false" ]]; then
+        die "config: pair_mode must be 'true' or 'false'"
+      fi
+      fm_set "$key" "$value"
+      ok "$key set to $value"
+      ;;
+    *) die "usage: devflow-ctl config set <key> <value> | get <key>" ;;
+  esac
+}
+
+cmd_checkpoint() {
+  resolve_session
+  case "${1:-}" in
+    set)
+      [[ -n "${2:-}" && -n "${3:-}" ]] || die "usage: devflow-ctl checkpoint set <name> <sha>"
+      fm_set "checkpoints.$2" "$3"
+      ok "checkpoint '$2' = $3"
+      ;;
+    get)
+      [[ -n "${2:-}" ]] || die "usage: devflow-ctl checkpoint get <name>"
+      local v; v="$(fm_get "checkpoints.$2")"
+      [[ -n "$v" ]] || die "checkpoint '$2' not recorded"
+      echo "$v"
+      ;;
+    *) die "usage: devflow-ctl checkpoint set <name> <sha> | get <name>" ;;
+  esac
+}
+
+# Required section patterns per artifact type (case-insensitive, matched
+# against markdown headings). Kept in sync with shared/artifact-checklist.md.
+artifacts_required() {
+  case "$1" in
+    spec)       printf '%s\n' "Context" "Architecture" "Data Structures" "Reusability" "Test Architecture" "Risk" "Design Decisions" "Constraints" ;;
+    plan)       printf '%s\n' "File Map" "Task" "Self-Review" ;;
+    review)     printf '%s\n' "Summary" "Findings" "Verdict" ;;
+    validation) printf '%s\n' "Assumptions" "Standards Scan" "Contradictions" "Security" "Architecture Risks" "Alternatives" ;;
+    *) return 1 ;;
+  esac
+}
+
+cmd_artifacts() {
+  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation> <path>"
+  local type="${2:-}" path="${3:-}"
+  [[ -n "$type" && -n "$path" ]] || die "usage: devflow-ctl artifacts check <type> <path>"
+  [[ -f "$path" ]] || fail "artifact not found at $path — it was never saved with create_file"
+  local required missing=()
+  required="$(artifacts_required "$type")" || die "unknown artifact type '$type' (spec|plan|review|validation)"
+  while IFS= read -r section; do
+    grep -qiE "^#{1,4} .*${section}" "$path" || missing+=("$section")
+  done <<< "$required"
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    fail "artifact '$path' is missing required section(s): ${missing[*]} — complete it before proceeding (see shared/artifact-checklist.md)"
+  fi
+  ok "artifact '$path' has all required $type sections"
+}
+
+# ── Dispatch ──────────────────────────────────────────────────────────────────
+
+CMD="${1:-help}"; shift || true
+case "$CMD" in
+  init)       cmd_init "$@" ;;
+  status)     cmd_status "$@" ;;
+  phase)      cmd_phase "$@" ;;
+  gate)       cmd_gate "$@" ;;
+  scope)      cmd_scope "$@" ;;
+  iterate)    cmd_iterate "$@" ;;
+  lock)       cmd_lock "$@" ;;
+  config)     cmd_config "$@" ;;
+  checkpoint) cmd_checkpoint "$@" ;;
+  artifacts)  cmd_artifacts "$@" ;;
+  version)    echo "devflow-ctl schema v$SCHEMA_VERSION" ;;
+  help|--help|-h) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) die "unknown command '$CMD' — run 'devflow-ctl help'" ;;
+esac
