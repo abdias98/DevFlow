@@ -1,0 +1,7 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    "/devflow-ctl/": true,
+    "/^mkdir -p docs\\/devflow/": true,
+    "/^git (rev-parse|status|diff|log)\\b/": true
+  }
+}

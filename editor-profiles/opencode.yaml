@@ -75,6 +75,17 @@ path_mappings:
 install:
   tool_substitution: true
 
+# ── Permissions (auto-approval of DevFlow actions) ───────────────────────────
+# install.sh merges the snippet into opencode's global config so DevFlow
+# bash commands (devflow-ctl, mkdir docs/devflow, read-only git) are allowed
+# even when the user sets a stricter default permission policy.
+# Merge is non-destructive: existing user values win, arrays are unioned.
+# strategy: json-merge | manual | none
+permissions:
+  strategy: json-merge
+  config_file: "$HOME/.config/opencode/opencode.json"
+  snippet: opencode.json
+
 # ── Post-install message ─────────────────────────────────────────────────────
 post_install:
   reload_message: "Restart opencode to pick up the new agent skills"

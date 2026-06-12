@@ -214,8 +214,58 @@ if [[ -f "$CTL" ]]; then
   [[ $bad_refs -eq 0 ]] && green "All devflow-ctl subcommand references in skills are valid"
 fi
 
-# ── 9. Version sync (package.json ↔ package-lock.json ↔ CHANGELOG.md) ────────
-header "9. Version sync"
+# ── 9. Editor profile permissions ────────────────────────────────────────────
+header "9. Editor profile permissions"
+
+PROFILES_DIR="editor-profiles"
+
+if [[ -d "$PROFILES_DIR" ]]; then
+  for profile in "$PROFILES_DIR"/*.yaml; do
+    [[ -f "$profile" ]] || continue
+    strategy=$(awk '/^permissions:/{f=1;next} f&&/^[^ ]/{f=0} f&&/^  strategy:/{sub(/^  strategy: */,"");gsub(/["'"'"']/,"");print;exit}' "$profile")
+    if [[ -z "$strategy" ]]; then
+      fail "$profile — missing permissions.strategy (none|manual|json-merge)"
+      $FIX_MODE && echo "       FIX: add a 'permissions:' section with 'strategy: none|manual|json-merge'"
+      continue
+    fi
+    case "$strategy" in
+      none) ;;
+      manual)
+        note=$(awk '/^permissions:/{f=1;next} f&&/^[^ ]/{f=0} f&&/^  manual_note:/{print "x";exit}' "$profile")
+        [[ -z "$note" ]] && warn "$profile — strategy 'manual' without manual_note (nothing will be shown to the user)"
+        ;;
+      json-merge)
+        snippet=$(awk '/^permissions:/{f=1;next} f&&/^[^ ]/{f=0} f&&/^  snippet:/{sub(/^  snippet: */,"");gsub(/["'"'"']/,"");print;exit}' "$profile")
+        config=$(awk '/^permissions:/{f=1;next} f&&/^[^ ]/{f=0} f&&/^  config_file:/{print "x";exit}' "$profile")
+        if [[ -z "$snippet" || -z "$config" ]]; then
+          fail "$profile — strategy 'json-merge' requires both snippet and config_file"
+        elif [[ ! -f "$PROFILES_DIR/permissions/$snippet" ]]; then
+          fail "$profile — permission snippet not found: $PROFILES_DIR/permissions/$snippet"
+        elif command -v python3 >/dev/null 2>&1 && ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$PROFILES_DIR/permissions/$snippet" 2>/dev/null; then
+          fail "$PROFILES_DIR/permissions/$snippet — invalid JSON"
+        fi
+        ;;
+      *)
+        fail "$profile — unknown permissions.strategy: '$strategy' (expected none|manual|json-merge)"
+        ;;
+    esac
+  done
+  # Every snippet must belong to a profile
+  if [[ -d "$PROFILES_DIR/permissions" ]]; then
+    for snip in "$PROFILES_DIR/permissions"/*.json; do
+      [[ -f "$snip" ]] || continue
+      if ! grep -q "snippet: *[\"']*$(basename "$snip")" "$PROFILES_DIR"/*.yaml 2>/dev/null; then
+        warn "$snip — not referenced by any editor profile"
+      fi
+    done
+  fi
+  [[ $ERRORS -eq 0 ]] && green "All editor profiles declare a valid permissions strategy"
+else
+  warn "$PROFILES_DIR/ not found — skipping permissions check (run from the repo root)"
+fi
+
+# ── 10. Version sync (package.json ↔ package-lock.json ↔ CHANGELOG.md) ────────
+header "10. Version sync"
 
 if [[ -f package.json ]]; then
   PKG_VERSION=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' package.json | head -1)

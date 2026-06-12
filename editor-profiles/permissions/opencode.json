@@ -1,0 +1,14 @@
+{
+  "permission": {
+    "bash": {
+      "devflow-ctl *": "allow",
+      "$SKILLS_DIR/shared/bin/devflow-ctl *": "allow",
+      "bash $SKILLS_DIR/shared/bin/devflow-ctl *": "allow",
+      "mkdir -p docs/devflow*": "allow",
+      "git rev-parse *": "allow",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow"
+    }
+  }
+}
