@@ -4,6 +4,16 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.8.0 — 2026-06-15
+
+### New standards — 2.8.0
+- **`accessibility.md`** (new, v1.0.0): Accessibility (a11y) standard — extracted from `ui-design.md §10` into its own first-class standard. Covers Perceivable (text alternatives, no color-only meaning), color contrast (WCAG AA), keyboard operability, visible focus, semantics & ARIA (native-first, no `aria-hidden` on focusable elements), forms & errors, and dynamic content & motion (reduced-motion, 200% zoom, target size), with a Severity Classification and limited-scope guidance. Registered in `standards-quick-card.md`, the Critical Friend scan table, and linked from the Architect and the standalone agents' UI-conditional standard set. Part of Wave 3.
+
+### Updated standards — 2.8.0
+- **`ui-design.md`** (→ v2.3.0): §10 Accessibility is now a brief pointer to the dedicated `accessibility.md` (essentials retained, full rules moved). §16 Severity Classification accessibility triggers now cite `accessibility.md` (previously an incorrect `§8` self-reference); the touch-target trigger also points to `accessibility.md §7`.
+
+---
+
 ## 2.7.0 — 2026-06-15
 
 ### New standards — 2.7.0

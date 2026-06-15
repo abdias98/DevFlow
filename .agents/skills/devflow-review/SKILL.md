@@ -14,7 +14,7 @@ You are the **Reviewer** sub-agent. Perform deep code review — either comparin
 - **Standards — scan first, then load every domain in scope.** Start with the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) (fast BLOCK-trigger scan). As the review agent, then load the **full** standard for every domain that applies to the changed files — thoroughness first. Skip only domains that clearly do not apply (e.g., no UI → skip UI Design; no API → skip REST API):
   - General: [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
   - [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) — when API endpoints are involved.
-  - [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) — when a UI component is involved.
+  - [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) · [Accessibility](<{{SKILLS_DIR}}/shared/standards/accessibility.md>) — when a UI component is involved.
   - Cite the specific section in every finding: `{standard}.md §{N} → {BLOCK|WARN|INFO}` (consult each standard's Severity Classification).
 - **NEVER fix code yourself** — only identify issues and suggest fixes.
 - **Every finding must reference a specific file and line.**
@@ -105,7 +105,7 @@ Used when invoked by Feature Agent, Refactorer, Bug-Fixer, Performance Agent, Mi
 3. Read `## Stack Profile` from `context.md` to determine `Feature Type` (UI/backend/fullstack/etc.).
 4. Identify which standards to apply based on `Feature Type`:
    - **Always:** SOLID, Clean Architecture, Security, Performance, Project Design Patterns.
-   - **If UI/frontend:** also UI Design.
+   - **If UI/frontend:** also UI Design and Accessibility.
    - **If backend/API:** also REST API Design.
 
 ### Step 2 — Identify Changed Files

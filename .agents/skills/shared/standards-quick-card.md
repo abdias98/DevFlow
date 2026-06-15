@@ -69,8 +69,13 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 - Circular dependency between modules with no resolution path → §3
 
 ## ui-design.md — Red Flags (BLOCK)
-- Interactive element (button, link, form field) not keyboard-accessible or missing ARIA → §8
-- Hardcoded secret or sensitive data rendered in UI template → §3 + security.md §3
+- Hardcoded secret or sensitive data rendered in UI template → §16 + security.md §3
+
+## accessibility.md — Red Flags (BLOCK)
+- Interactive element (button, link, form field, control) not keyboard-operable, or missing accessible name/role, blocking a core flow → §3, §5
+- `aria-hidden="true"` (or equivalent) on a focusable element — unreachable focus trap → §5
+- Keyboard trap with no exit → §3
+- Critical form input with no programmatic label → §6
 
 ---
 
