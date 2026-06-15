@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✨ Added
 
+- **New engineering standard: Error Handling** (`shared/standards/error-handling.md`, v1.0.0) — a technology-agnostic standard covering fail-fast, **never swallowing errors**, catching specifically while preserving the cause, translating errors at layer boundaries, **safe error surfaces** (no stack traces/internals to external callers), resource cleanup & consistency, errors vs. control flow, and retries & idempotency, with a Severity Classification and limited-scope guidance. Complements `logging.md`. Registered in `standards-quick-card.md`, the Critical Friend scan table, and linked from the Architect and the standalone agents' loadable standard set. Standards changelog → 2.5.0. Second standard of Wave 3.
 - **New engineering standard: Logging & Observability** (`shared/standards/logging.md`, v1.0.0) — a technology-agnostic standard covering structured logging, log levels, **sensitive-data redaction** (no secrets/PII in logs), correlation/trace context, error logging (**no silent exception swallowing**), performance & volume, and log management, with a Severity Classification and limited-scope guidance. Registered in `standards-quick-card.md`, added to the Critical Friend scan table, and linked from the Architect and the standalone agents' (Feature, Bug-Fix, Refactor, Reviewer) loadable standard set. Standards changelog → 2.4.0. First standard of Wave 3.
 
 ## [2.11.0] — 2026-06-15

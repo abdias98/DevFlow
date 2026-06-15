@@ -27,6 +27,7 @@ Execute all four checks. If any check raises a concern, present it to the user w
 | `project-design.md` | New files, modules, or architectural decisions |
 | `testing.md` | Any test creation, bug fix, or TDD task |
 | `logging.md` | Code that emits logs/traces/metrics, handles errors, or touches sensitive data |
+| `error-handling.md` | Any code that can fail — catches, throws, error surfaces, resource cleanup, retries |
 
 For each violation found, cite the specific section using this format:
 
