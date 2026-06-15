@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 💥 Changed (BREAKING)
+
+- **Sequential phase numbering (no reserved Phase 4)** — the lifecycle phases are now numbered consecutively with no gap. The Validation Gate becomes **Phase 2**, the Architect **Phase 3**, and the Planner **Phase 4**; Implementer (5), Reviewer (6), Debugger (7), and Finalizer (8) are unchanged. The previous scheme left **Phase 4 reserved/empty** (Validation was 1.5, Architect 2, Planner 3, Implementer 5). Updated across the orchestrator, lifecycle, stack-mode, metrics & output-format tables, i18n, memory-conventions schema comment, traceability matrix, the cycle/architect/plan prompt descriptions, and the conventions instructions. Rollback checkpoints (`pre-phase-1/5/7`) and the Implementer→Reviewer/Debugger loops are unchanged. **Breaking:** any external automation or notes that reference DevFlow phase numbers 1.5/2/3 for Validation/Architect/Planner must update to 2/3/4. Wave 4 (final) of the framework improvement roadmap.
+
 ## [2.12.0] — 2026-06-15
 
 > Wave 3 of the framework improvement roadmap — standards evolution: five new technology-agnostic engineering standards (Logging, Error Handling, Concurrency, Dependencies, Accessibility), each with Severity Classification, registered in the quick card and Critical Friend scan, and wired into the Architect and standalone agents.

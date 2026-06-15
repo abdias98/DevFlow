@@ -5,7 +5,7 @@ This document provides a quick reference for the DevFlow lifecycle phases. For t
 ## Phase Flow
 
 ```
-Phase 1: Brainstormer → ⏸️ Phase 1.5: Validation Gate → Phase 2: Architect → Phase 3: Planner → ⏸️ Confirmation Gate → Phase 5: Implementer → Phase 6: Reviewer → Phase 7: Debugger (conditional) → Phase 8: Finalizer
+Phase 1: Brainstormer → ⏸️ Phase 2: Validation Gate → Phase 3: Architect → Phase 4: Planner → ⏸️ Confirmation Gate → Phase 5: Implementer → Phase 6: Reviewer → Phase 7: Debugger (conditional) → Phase 8: Finalizer
 ```
 
 ---
@@ -15,9 +15,9 @@ Phase 1: Brainstormer → ⏸️ Phase 1.5: Validation Gate → Phase 2: Archite
 | Phase | Agent | Input | Output | Key Rule |
 |-------|-------|-------|--------|----------|
 | 1 | Brainstormer | User request | `context.md` (session memory) | NEVER write code or design |
-| ⏸️ | **Validation Gate** | Problem Statement | Validation report, challenged assumptions | Challenge & scan standards before architecting |
-| 2 | Architect | `context.md`, codebase | Spec at `docs/devflow/specs/` | Explore before designing |
-| 3 | Planner | Spec, codebase | Plan at `docs/devflow/plans/` + mockups (UI) | Stack Mode gate (conditional) |
+| 2 ⏸️ | **Validation Gate** | Problem Statement | Validation report, challenged assumptions | Challenge & scan standards before architecting |
+| 3 | Architect | `context.md`, codebase | Spec at `docs/devflow/specs/` | Explore before designing |
+| 4 | Planner | Spec, codebase | Plan at `docs/devflow/plans/` + mockups (UI) | Stack Mode gate (conditional) |
 | ⏸️ | **Confirmation Gate** | Plan + mockups | User approval | NEVER proceed without explicit approval |
 | 5 | Implementer | Plan | Code + tests (committed) | Red→Green TDD per task |
 | 6 | Reviewer | Diff, spec, plan | Review at `docs/devflow/reviews/` | BLOCK findings → back to Phase 5 |
@@ -26,7 +26,7 @@ Phase 1: Brainstormer → ⏸️ Phase 1.5: Validation Gate → Phase 2: Archite
 
 ---
 
-## Validation Gate (Phase 1.5)
+## Validation Gate (Phase 2)
 
 After Phase 1 (Brainstormer), the Orchestrator MUST invoke the Validator:
 
@@ -40,13 +40,13 @@ After Phase 1 (Brainstormer), the Orchestrator MUST invoke the Validator:
 |--------|----------|------|
 | `validation_block` | The Validation Gate found BLOCK issues. How to proceed? | options: ✅ Accept risks & continue, ✏️ Revise requirements, ❌ Cancel |
 
-**Do NOT proceed to Phase 2 if BLOCK issues are unresolved without user acceptance.**
+**Do NOT proceed to Phase 3 if BLOCK issues are unresolved without user acceptance.**
 
 ---
 
 ## Confirmation Gate
 
-After Phase 3 (Planner), the Orchestrator MUST:
+After Phase 4 (Planner), the Orchestrator MUST:
 
 1. Present the plan summary and mockup paths.
 2. If multiple mockups exist → ask the user to select one.
@@ -66,8 +66,8 @@ After Phase 3 (Planner), the Orchestrator MUST:
 Validation finds BLOCK issues    → Phase 1 (Brainstormer — revise requirements)
 Tests FAIL after implementation  → Phase 7 (Debugger) → Phase 5 (retry)
 Reviewer finds BLOCK issues      → Phase 5 (fix findings)
-Architecture flaw discovered     → Phase 2 (redesign)
-Plan incomplete or ambiguous     → Phase 3 (revise)
+Architecture flaw discovered     → Phase 3 (redesign)
+Plan incomplete or ambiguous     → Phase 4 (revise)
 Finalizer finds failing tests    → Phase 7 (Debugger)
 ```
 
@@ -93,7 +93,7 @@ See the Orchestrator's `SKILL.md` → `## Rollback` for the complete procedure.
 
 ## Standalone Agents
 
-The following agents operate **independently** of the Phase 1–7 lifecycle. They are invoked directly by the user.
+The following agents operate **independently** of the Phase 1–8 lifecycle. They are invoked directly by the user.
 
 | Agent | Command | Use Case |
 |-------|---------|----------|

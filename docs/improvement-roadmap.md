@@ -58,8 +58,8 @@ and `standards/CHANGELOG.md`, and link from the `Rules` of applicable agents.
 
 | PR | Branch | Finding | Status |
 |----|--------|---------|--------|
-| PR16 | `refactor/phase-renumber` | Sequential phase numbering (no reserved Phase 4). Major bump. Supersedes PR1/PR2 scheme | ☐ |
-| — | `chore/release-major` | major release | ☐ |
+| PR16 | `refactor/phase-renumber` | Sequential phase numbering (no reserved Phase 4) — Validation→2, Architect→3, Planner→4. Major bump | 🟢 open |
+| — | `chore/release-major` | major release 3.0.0 | ☐ |
 
 ---
 

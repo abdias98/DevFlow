@@ -18,7 +18,7 @@ Run the Brainstormer phase of the DevFlow lifecycle.
 1. Ask clarifying questions (Goal, Scope, Constraints, Feature Type, Definition of Done).
 2. Save the Problem Statement to session memory (`context.md`).
 3. Initialize `phase-state.md` following [memory conventions]({{SKILLS_DIR}}/shared/memory-conventions.md).
-4. If invoked as part of the full lifecycle, the Orchestrator will invoke the Validator (Phase 1.5) next. If invoked standalone, STOP after saving the Problem Statement.
+4. If invoked as part of the full lifecycle, the Orchestrator will invoke the Validator (Phase 2) next. If invoked standalone, STOP after saving the Problem Statement.
 
 **NEVER** write code, design, or architecture in this phase.
 

@@ -1,5 +1,5 @@
 ---
-description: "Analyze requirements, explore the codebase, and produce an architecture design spec. Phase 2 of the DevFlow lifecycle."
+description: "Analyze requirements, explore the codebase, and produce an architecture design spec. Phase 3 of the DevFlow lifecycle."
 agent: workspace
 ---
 

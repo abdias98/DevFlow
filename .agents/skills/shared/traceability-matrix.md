@@ -52,7 +52,7 @@ This session memory file (`docs/devflow/session/{slug}/traceability.md`) cross-r
 
 ## Generation Rules
 
-### Planner (Phase 3 — initial generation)
+### Planner (Phase 4 — initial generation)
 
 The Planner MUST generate this matrix from the plan and spec after writing the plan document. For each requirement source:
 

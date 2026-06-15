@@ -17,8 +17,9 @@ Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) for language detection, to
 | Agent | Skill | Phase |
 |-------|-------|-------|
 | Brainstormer | `devflow-brainstorm` | 1 |
-| Architect | `devflow-architect` | 2 |
-| Planner | `devflow-plan` | 3 |
+| Validation Gate | *(Orchestrator)* | 2 |
+| Architect | `devflow-architect` | 3 |
+| Planner | `devflow-plan` | 4 |
 | Implementer | `devflow-implement` | 5 |
 | Reviewer | `devflow-review` | 6 |
 | Debugger | `devflow-debug` | 7 (conditional) |
@@ -51,9 +52,9 @@ See [lifecycle details](<{{SKILLS_DIR}}/devflow/lifecycle.md>) for the complete 
 
 **Essential flow:**
 1. **Phase 1: Brainstormer** → Ask questions, identify goal/constraints → save Problem Statement
-2. **⏸️ Phase 1.5: Validation Gate** → Challenge assumptions, scan standards, flag risks → save Validation Report. **Do NOT proceed if BLOCK issues found without user resolution.**
-3. **Phase 2: Architect** → Explore codebase, define architecture → save Spec
-4. **Phase 3: Planner** → Stack Mode gate (conditional), create mockups (UI), write plan → save Plan
+2. **⏸️ Phase 2: Validation Gate** → Challenge assumptions, scan standards, flag risks → save Validation Report. **Do NOT proceed if BLOCK issues found without user resolution.**
+3. **Phase 3: Architect** → Explore codebase, define architecture → save Spec
+4. **Phase 4: Planner** → Stack Mode gate (conditional), create mockups (UI), write plan → save Plan
 5. **⏸️ Confirmation Gate — STOP HERE**
    - Present the plan summary and mockup paths.
    - If multiple mockups exist → ask the user to select one.
@@ -107,10 +108,10 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 5. After Phase 1 is verified complete:
    - **Validate artifact:** Check `context.md` has `## Goal`, `## Definition of Done`, `## Constraints`.
    - **Record metrics:** Save phase timing to metrics file.
-   - **Progress:** *"✅ Phase 1 complete. Context saved. Next: Phase 2 — Architect."*
+   - **Progress:** *"✅ Phase 1 complete. Context saved. Next: Phase 3 — Architect."*
    - Proceed to Step 2.
 
-### Step 2 — Phase 1.5: Validation Gate ⏸️
+### Step 2 — Phase 2: Validation Gate ⏸️
 
 **Critical:** This gate is the AI's OPPORTUNITY and RESPONSIBILITY to challenge. Do NOT skip it. Do NOT rubber-stamp.
 
@@ -128,7 +129,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - Include sections: Assumptions Challenged, Standards Scan, Contradictions, Security Risks, Architecture Risks, Alternatives Proposed, Additional Recommendations.
 4. **Archive the validation report** — immediately copy to `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md`. This persistent copy survives Finalizer cleanup and informs future cycles for the same feature area.
 5. Update `context.md` with `## Validator Findings` (challenges, risks, alternatives). If the user accepted any BLOCK risks, add `## Accepted Risks` with timestamp, risk description, and user's rationale.
-6. Update `phase-state.md` body to show `[x] Phase 1.5: Validation Gate`.
+6. Update `phase-state.md` body to show `[x] Phase 2: Validation Gate`.
 7. **Route decision based on findings:**
    - **✅ CLEAR (no BLOCK)** → run `devflow-ctl gate set validation passed`, proceed to Step 3.
    - **⚠️ WARNINGS ONLY** → note them, present to user, run `devflow-ctl gate set validation passed`, proceed to Step 3.
@@ -142,44 +143,44 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
      - **✏️ Revise** → run `devflow-ctl iterate validation_brainstorm` (exit 1 = limit reached, escalate instead), then route back to Step 1 (Brainstormer).
      - **❌ Cancel** → stop cycle, release lock.
      - **CI mode:** BLOCK findings are NOT auto-accepted. Fail the pipeline immediately with exit code 1 and print the BLOCK findings to stdout.
-8. After Phase 1.5 is complete:
+8. After Phase 2 is complete:
    - **Validate artifact:** Check validation report against [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Validation Gate section.
    - **Record metrics:** Save phase timing + findings count + blockers count.
-   - **Progress:** *"✅ Phase 1.5 complete. {N} findings ({B} blockers). Next: Phase 2 — Architect."*
+   - **Progress:** *"✅ Phase 2 complete. {N} findings ({B} blockers). Next: Phase 3 — Architect."*
    - Proceed to Step 3.
 
-### Step 3 — Phase 2: Architect
+### Step 3 — Phase 3: Architect
 
 1. Verify entry condition: `context.md` exists with Goal + DoD + Validator Findings.
 2. Invoke `devflow-architect`.
 3. **Wait** for completion. Verify:
    - Spec saved at `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`.
    - `## Stack Profile` populated in `context.md`.
-   - `phase-state.md` shows `[x] Phase 2: Architect`.
+   - `phase-state.md` shows `[x] Phase 3: Architect`.
 4. If the Architect asks for spec approval → relay to user, wait for response.
-5. After Phase 2 is verified complete:
+5. After Phase 3 is verified complete:
    - **Validate artifact:** Check spec against [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Spec Document section.
    - **Record metrics:** Save phase timing + Stack Profile fields populated count.
-   - **Progress:** *"✅ Phase 2 complete. Spec saved + Stack Profile populated. Next: Phase 3 — Planner."*
+   - **Progress:** *"✅ Phase 3 complete. Spec saved + Stack Profile populated. Next: Phase 4 — Planner."*
    - Proceed to Step 4.
 
-### Step 4 — Phase 3: Planner
+### Step 4 — Phase 4: Planner
 
 1. Verify entry condition: spec exists at `docs/devflow/specs/`.
 2. Invoke `devflow-plan` (full lifecycle mode — the Planner hands back after saving the plan).
 3. **Wait** for completion. Verify:
    - Plan saved at `docs/devflow/plans/YYYY-MM-DD-{slug}.md`.
    - Mockups saved at `docs/devflow/mockups/` (if UI feature).
-   - `phase-state.md` shows `[x] Phase 3: Planner`.
-4. After Phase 3 is verified complete:
+   - `phase-state.md` shows `[x] Phase 4: Planner`.
+4. After Phase 4 is verified complete:
    - **Validate artifact:** Check plan against [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Plan Document section.
    - **Record metrics:** Save phase timing + tasks count.
-   - **Progress:** *"✅ Phase 3 complete. Plan saved ({N} tasks). Proceeding to Confirmation Gate."*
+   - **Progress:** *"✅ Phase 4 complete. Plan saved ({N} tasks). Proceeding to Confirmation Gate."*
    - Proceed to the **Confirmation Gate**.
 
 ### Step 5 — Confirmation Gate ⏸️
 
-**In CI mode:** Auto-approve the plan and proceed directly to Step 6. Log: "CI mode: plan auto-approved." **Exception:** CI mode does NOT auto-accept 🔴 BLOCK findings from the Validation Gate (Phase 1.5). A BLOCK in CI mode causes the pipeline to fail and exit immediately — do not auto-accept security or architectural violations.
+**In CI mode:** Auto-approve the plan and proceed directly to Step 6. Log: "CI mode: plan auto-approved." **Exception:** CI mode does NOT auto-accept 🔴 BLOCK findings from the Validation Gate (Phase 2). A BLOCK in CI mode causes the pipeline to fail and exit immediately — do not auto-accept security or architectural violations.
 
 **In normal mode, STOP HERE. Do NOT invoke the Implementer until the user explicitly approves.**
 
@@ -298,12 +299,12 @@ The Orchestrator enforces the iteration limit through `devflow-ctl iterate {loop
 
 | Phase Loop | Max Loops | Loop Trigger | Escalation After |
 |-----------|:---------:|--------------|------------------|
-| 1.5 → 1 (Validation → Brainstormer) | 2 | BLOCK findings unresolved | Route to user with triage |
+| 2 → 1 (Validation → Brainstormer) | 2 | BLOCK findings unresolved | Route to user with triage |
 | 5 ↔ 6 (Implementer ↔ Reviewer) | 3 | BLOCK findings (either direction) | Route to user with structured triage |
 | 5 ↔ 7 (Implementer ↔ Debugger) | 3 | Test still failing after fix | Route to user with 5-option triage |
-| 3 revision (Planner) | 2 | User requests changes | Escalate to user |
+| 4 revision (Planner) | 2 | User requests changes | Escalate to user |
 
-> **Note on Phase numbering:** The sequence is 1 → 1.5 → 2 → 3 → Confirmation Gate → 5 → 6 → 7 → 8. Phase 4 is intentionally reserved (originally Planner was Phase 4; renaming to Phase 3 was a deliberate simplification). The gap is documented, not an error.
+> **Note on Phase numbering:** The sequence is fully sequential — 1 → 2 → 3 → 4 → Confirmation Gate → 5 → 6 → 7 → 8 — with no gaps. (Phases: 1 Brainstormer, 2 Validation Gate, 3 Architect, 4 Planner, 5 Implementer, 6 Reviewer, 7 Debugger, 8 Finalizer. The Confirmation Gate sits between Phase 4 and Phase 5 and is a gate, not a numbered phase.)
 
 Update the `## Iteration Log` in `phase-state.md` with each loop:
 ```
@@ -380,8 +381,8 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 |---------|--------|
 | `/devflow` | Execute **full lifecycle** (Phase 1 → 8) |
 | `/devflow-brainstorm` | Only Phase 1 |
-| `/devflow-architect` | Only Phase 2 |
-| `/devflow-plan` | Only Phase 3 |
+| `/devflow-architect` | Only Phase 3 |
+| `/devflow-plan` | Only Phase 4 |
 | `/devflow-implement` | Only Phase 5 |
 | `/devflow-review` | Only Phase 6 (or standalone) |
 | `/devflow-debug` | Only Phase 7 (or standalone) |

@@ -70,14 +70,14 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 ```markdown
 # DevFlow Phase State
 
-**Current Phase:** {1-7}
+**Current Phase:** {1-8}
 **Feature:** {slug}
 
 ## Completed Phases
 - [x] Phase 1: Brainstormer — context saved
-- [x] Phase 1.5: Validation Gate — `validation-report.md`
-- [x] Phase 2: Architect — `docs/devflow/specs/{filename}`
-- [x] Phase 3: Planner — `docs/devflow/plans/{filename}`
+- [x] Phase 2: Validation Gate — `validation-report.md`
+- [x] Phase 3: Architect — `docs/devflow/specs/{filename}`
+- [x] Phase 4: Planner — `docs/devflow/plans/{filename}`
 - [ ] Phase 5: Implementer
 - [ ] Phase 6: Reviewer
 - [ ] Phase 7: Debugger (conditional)
@@ -86,7 +86,7 @@ During an active DevFlow cycle, session memory lives in `/memories/session/devfl
 ## Iteration Counter
 | Phase | Count | Max |
 |-------|-------|-----|
-| Phase 1.5 (Validation Gate) | 0 | 2 |
+| Phase 2 (Validation Gate) | 0 | 2 |
 | Phase 5 (Implementer) | 0 | 3 |
 | Phase 6 (Reviewer) | 0 | 3 |
 | Phase 7 (Debugger) | 0 | 3 |
@@ -329,7 +329,7 @@ The agent reads these files to determine:
 
 ## AGENTS.md Structure
 
-An `AGENTS.md` file in the project root (or `docs/AGENTS.md`) is the primary source of project metadata for DevFlow. When present, the Architect reads it at the start of Phase 2 and skips general codebase exploration. The Planner reads the extracted data from session memory in Phase 3 to avoid re-discovering test conventions.
+An `AGENTS.md` file in the project root (or `docs/AGENTS.md`) is the primary source of project metadata for DevFlow. When present, the Architect reads it at the start of Phase 3 and skips general codebase exploration. The Planner reads the extracted data from session memory in Phase 4 to avoid re-discovering test conventions.
 
 ### Valid locations (searched automatically)
 - `AGENTS.md` — project root (preferred)
