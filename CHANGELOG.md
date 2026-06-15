@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🔄 Changed
 
+- **Unified "skip questions when context rich" in the cycle Brainstormer** — the full-cycle Brainstormer's skip exception now matches the standalone agents (Feature, Bug-Fix, Refactor): when the request already covers Goal, Scope, Feature Type, and Definition of Done, it skips redundant questions and goes straight to the Understanding Summary (the approval loop still applies). Also fixed a duplicate list-numbering bug in Step 2 (two items labeled "2").
 - **Standalone agents load standards on demand (quick-card-first)** — the Feature, Bug-Fix, Refactor, and Reviewer agents previously mandated reading all six-to-seven full engineering standards (~50–70 KB) upfront on every invocation, contradicting the context-saving design of `standards-quick-card.md` / `critical-friend.md`. Their Rules now instruct: scan the Standards Quick Card first (fast BLOCK-trigger scan) and load a full standard only when a red flag matches or the change falls in its domain. The Reviewer keeps full depth (loads every standard that applies to the changed files, skipping only clearly-irrelevant domains). Also standardized the loadable set across all four agents and added `testing.md` to it. Frees context for the agents to reason about the actual code.
 
 ---
