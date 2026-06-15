@@ -34,8 +34,8 @@
 | PR6 | `feat/standalone-metrics-parity` | Metrics for feature/bug-fix/refactor | after PR5 | ✅ #46 |
 | PR7 | `feat/standalone-dod-verification` | Verify DoD in final report | after PR6 | ✅ #47 |
 | PR8 | `refactor/brainstorm-skip-exception` | Unify "skip questions when context rich" in full-cycle Brainstormer | — | ✅ #48 |
-| PR9 | `fix/refactor-scope-confirm-order` | Confirm Approved Scope List before `ctl init --scope` | — | 🟢 open |
-| PR10 | `feat/reviewer-diff-standard-mode` | Reviewer reads diff in Standard/CI instead of asking | — | ☐ |
+| PR9 | `fix/refactor-scope-confirm-order` | Confirm Approved Scope List before `ctl init --scope` | — | ✅ #49 |
+| PR10 | `feat/reviewer-diff-standard-mode` | Reviewer reads diff in Standard/CI instead of asking | — | 🟢 open |
 | — | `chore/release-wave-2` | release | — | ☐ |
 
 > PR5→6→7 touch the same standalone SKILL files — keep sequential (rebase).

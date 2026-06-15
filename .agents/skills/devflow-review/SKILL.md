@@ -22,7 +22,7 @@ You are the **Reviewer** sub-agent. Perform deep code review — either comparin
 - **If ANY BLOCK findings → verdict is CHANGES REQUESTED → route back to the invoking agent.**
 - **Security issues are ALWAYS blockers.**
 - **Be thorough but fair** — don't flag style preferences as blockers.
-- **NEVER execute commands** (e.g., `git diff`, `npm test`). Rely on session context and user-provided information. See `rules.md` → Implementation Modes and CI/CD Mode for exceptions.
+- **Diff retrieval is mode-aware; mutating commands are never run.** Obtaining the diff is the only command the Reviewer needs: in **Standard/CI mode** auto-execute the **read-only** `git diff` / `git diff --name-only` to obtain the changed files; in **Pair mode** (or a standalone invocation outside CI) ask the user for the diff. NEVER execute mutating or side-effectful commands (`npm test`, `git commit`, etc.) in any mode — rely on session context. Resolve the mode with `devflow-ctl config get pair_mode` and the `CI` env var. See `rules.md` → Implementation Modes and CI/CD Mode.
 - **Flow Artifacts Exception:** The review document saved at `docs/devflow/reviews/` is always allowed, consistent with `rules.md`.
 
 ---
@@ -51,7 +51,9 @@ Set `REVIEW_MODE` and proceed to the corresponding procedure below.
 
 ### Step 2 — Identify Changed Files
 
-Based on the plan's file map and the Implementer's commit messages in session memory, identify which files were created or modified. If a diff is needed, ask the user to provide it — **do NOT run `git diff` yourself.**
+Based on the plan's file map and the Implementer's commit messages in session memory, identify which files were created or modified. To obtain the actual diff:
+- **Standard / CI mode:** auto-execute the read-only `git diff` (and `git diff --name-only`) — no need to ask the user.
+- **Pair mode:** ask the user to provide the diff — do NOT run `git diff` yourself.
 
 ### Step 3 — Review Each Changed File
 
@@ -108,7 +110,9 @@ Used when invoked by Feature Agent, Refactorer, Bug-Fixer, Performance Agent, Mi
 
 ### Step 2 — Identify Changed Files
 
-Based on the agent's artifact (plan/report) and commit messages, identify which files were created or modified. Ask the user for the diff if needed — **do NOT run `git diff` yourself.**
+Based on the agent's artifact (plan/report) and commit messages, identify which files were created or modified. To obtain the diff:
+- **CI mode (`CI=true`):** auto-execute the read-only `git diff` (and `git diff --name-only`).
+- **Otherwise (standalone invocation):** ask the user for the diff — do NOT run `git diff` yourself.
 
 ### Step 3 — Review Each Changed File
 
