@@ -52,6 +52,12 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 - Failure path leaks a resource or leaves data in an inconsistent/partially-written state → §6
 - Non-idempotent operation retried with no idempotency guard → §8
 
+## concurrency.md — Red Flags (BLOCK)
+- Non-atomic check-then-act / read-modify-write on shared state (oversell, double-spend, corruption) → §2
+- Fire-and-forget async task with no error handling where failure = data loss → §4
+- Non-idempotent side effect with no dedup under at-least-once delivery → §5
+- Blocking I/O / external call while holding a lock, or inconsistent lock ordering (deadlock) → §3
+
 ## project-design.md — Red Flags (BLOCK)
 - Business logic in entry point (main/index) → §3
 - Circular dependency between modules with no resolution path → §3

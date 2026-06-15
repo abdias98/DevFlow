@@ -48,8 +48,8 @@ and `standards/CHANGELOG.md`, and link from the `Rules` of applicable agents.
 | PR | Branch | Standard | Status |
 |----|--------|----------|--------|
 | PR11 | `feat/standard-logging` | `logging.md` | ✅ #52 |
-| PR12 | `feat/standard-error-handling` | `error-handling.md` | 🟢 open |
-| PR13 | `feat/standard-concurrency` | `concurrency.md` | ☐ |
+| PR12 | `feat/standard-error-handling` | `error-handling.md` | ✅ #53 |
+| PR13 | `feat/standard-concurrency` | `concurrency.md` | 🟢 open |
 | PR14 | `feat/standard-dependencies` | `dependencies.md` | ☐ |
 | PR15 | `feat/standard-accessibility` | `accessibility.md` (extract from ui-design §8) | ☐ |
 | — | `chore/release-wave-3` | release | ☐ |

@@ -4,6 +4,13 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.6.0 — 2026-06-15
+
+### New standards — 2.6.0
+- **`concurrency.md`** (new, v1.0.0): Concurrency & Async standard — shared mutable state, atomicity & race conditions, locking discipline (deadlock avoidance), async discipline (no data-loss fire-and-forget, no sync-over-async), idempotency under at-least-once delivery, safe publication & memory visibility, background-task lifecycle, Severity Classification, and limited-scope guidance. Registered in `standards-quick-card.md`, the Critical Friend scan table, and linked from the Architect and the standalone agents' loadable standard set. Part of Wave 3.
+
+---
+
 ## 2.5.0 — 2026-06-15
 
 ### New standards — 2.5.0
