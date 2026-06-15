@@ -4,6 +4,13 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.7.0 — 2026-06-15
+
+### New standards — 2.7.0
+- **`dependencies.md`** (new, v1.0.0): Dependency Management & Supply Chain standard — minimize the dependency surface, pin versions & commit lockfiles, **vulnerability auditing** (critical/high = release blocker — backs the Finalizer's `Audit Command`), integrity & source trust (typosquatting/dependency confusion), license compliance, deliberate updates, and transitive footprint, with a Severity Classification and limited-scope guidance. Registered in `standards-quick-card.md`, the Critical Friend scan table, and linked from the Architect and the standalone agents' loadable standard set. Part of Wave 3.
+
+---
+
 ## 2.6.0 — 2026-06-15
 
 ### New standards — 2.6.0

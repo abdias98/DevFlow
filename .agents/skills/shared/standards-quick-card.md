@@ -58,6 +58,12 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 - Non-idempotent side effect with no dedup under at-least-once delivery → §5
 - Blocking I/O / external call while holding a lock, or inconsistent lock ordering (deadlock) → §3
 
+## dependencies.md — Red Flags (BLOCK)
+- Release with a known critical/high dependency vulnerability and no documented mitigation → §3
+- Dependency installed from an untrusted source or with integrity verification disabled → §4
+- Dependency with a license incompatible with the product's distribution model → §5
+- Lockfile removed/ignored so builds are non-reproducible → §2
+
 ## project-design.md — Red Flags (BLOCK)
 - Business logic in entry point (main/index) → §3
 - Circular dependency between modules with no resolution path → §3
