@@ -51,8 +51,8 @@ and `standards/CHANGELOG.md`, and link from the `Rules` of applicable agents.
 | PR12 | `feat/standard-error-handling` | `error-handling.md` | ✅ #53 |
 | PR13 | `feat/standard-concurrency` | `concurrency.md` | ✅ #54 |
 | PR14 | `feat/standard-dependencies` | `dependencies.md` | ✅ #55 |
-| PR15 | `feat/standard-accessibility` | `accessibility.md` (extracted from ui-design **§10**) | 🟢 open |
-| — | `chore/release-wave-3` | release 2.12.0 | ☐ |
+| PR15 | `feat/standard-accessibility` | `accessibility.md` (extracted from ui-design **§10**) | ✅ #56 |
+| — | `chore/release-wave-3` | release 2.12.0 | 🟢 open |
 
 ## Wave 4 — Major change
 
