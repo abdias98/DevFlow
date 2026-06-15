@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [3.0.0] — 2026-06-15
+
+> Wave 4 (final) of the framework improvement roadmap — a single breaking change: the lifecycle phases are now numbered consecutively (no reserved Phase 4). Major bump.
 
 ### 💥 Changed (BREAKING)
 
