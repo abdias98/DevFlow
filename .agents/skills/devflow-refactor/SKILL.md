@@ -51,14 +51,24 @@ Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.m
 
 Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|INFO`) and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
 
-### Step 2 — Load Stack Profile & Initialize Session
+### Step 2 — Confirm Scope & Initialize Session
 
 1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
-2. **Initialize the standalone session:** run `devflow-ctl init --mode refactor --slug {slug} --scope {glob}` with one `--scope` per file/pattern in the Approved Scope List.
-3. Read `## Stack Profile` from `context.md` in session memory.
-4. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
-5. Obtain: `Test Command`, `Test Command (single file)`, `Test Root`, `Test Utilities`.
-6. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Refactorer`, slug, and stack. Leave quality values empty (filled in Step 10).
+2. **Confirm the Approved Scope List** — the exact files/globs the refactor may modify, derived from the Understanding Summary. `devflow-ctl init --scope` **locks** this list as the enforced scope for the rest of the flow, so it must be confirmed *before* init. Present it and ask:
+
+   | header | question | type |
+   |--------|----------|------|
+   | `scope_confirmation` | Refactor scope — these files/globs will be modifiable: {list}. Confirm before I lock it? | options: ✅ Confirm, ✏️ Adjust, ❌ Cancel |
+
+   - **✅ Confirm** → proceed to init with this list.
+   - **✏️ Adjust** → update the list per the user's edits, then re-present.
+   - **❌ Cancel** → stop (no session created).
+   - *Exception:* if the user's Step 1 answer already enumerated the exact files to modify (and only those), treat that as the confirmed list — state the locked scope explicitly in your next message and proceed.
+3. **Initialize the standalone session:** run `devflow-ctl init --mode refactor --slug {slug} --scope {glob}` with one `--scope` per confirmed entry in the Approved Scope List.
+4. Read `## Stack Profile` from `context.md` in session memory.
+5. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
+6. Obtain: `Test Command`, `Test Command (single file)`, `Test Root`, `Test Utilities`.
+7. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Refactorer`, slug, and stack. Leave quality values empty (filled in Step 10).
 
 ### Step 3 — Analyze the Target Code
 

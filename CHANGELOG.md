@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🐛 Fixed
+
+- **Refactorer confirms scope before locking it** — the Refactorer ran `devflow-ctl init --scope` (which *locks* the enforced scope for the rest of the flow) using an "Approved Scope List" that was never explicitly confirmed with the user. For an agent whose first rule is "only touch what the user requested", the scope was being fixed without a confirmation gate. Step 2 now presents the Approved Scope List and requires confirmation (✅ Confirm / ✏️ Adjust / ❌ Cancel) before init — with a lightweight exception when the user's Step 1 answer already enumerated the exact files.
+
 ### ✨ Added
 
 - **Definition of Done verification for standalone agents** — the Feature, Bug-Fix, and Refactor agents captured a Definition of Done during understanding but never verified it was met, unlike the full cycle (which enforces DoD + traceability at the Finalizer). Their report templates now include a **Definition of Done** section with a per-criterion verification table (Met ✅/❌ + Evidence), and each agent's finalize step verifies every criterion against the implemented work before persisting the report — flagging any unmet criterion to the user instead of silently claiming completion. For refactors the central criterion is "observable behavior unchanged".
