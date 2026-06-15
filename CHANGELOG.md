@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 🐛 Fixed
+
+- **Bug-Fixer step numbering** — `devflow-bug-fix/SKILL.md` had two steps labeled "Step 9" (Finalize Document and Auto-Invoke Reviewer), making the procedure order ambiguous. Renumbered the Reviewer step to Step 10 and corrected the stale "Step 8 MUST overwrite" cross-reference (now Step 9) so each step is unique and sequential.
+
+---
+
 ## [2.10.0] — 2026-06-12
 
 ### ⚙️ Deterministic Enforcement — `devflow-ctl`

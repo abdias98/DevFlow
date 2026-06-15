@@ -90,7 +90,7 @@ If recommending `/devflow`, tell the user:
 2. **IMMEDIATELY after generating the plan content**, execute `create_file` to save it.
    - **Path**: `docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md`
    - This action MUST happen **before** you present anything to the user.
-   - This is the canonical artifact path for this flow; Step 8 MUST overwrite this same file with the final bug-fix report.
+   - This is the canonical artifact path for this flow; Step 9 MUST overwrite this same file with the final bug-fix report.
 3. **Confirm the file was saved successfully.** If `create_file` fails, STOP and report the error — do NOT proceed.
 4. Only **after** the file is confirmed saved, present a brief summary of the plan and explicitly state the file path.
 5. Then ask:
@@ -171,7 +171,7 @@ Include an `### Additional Recommendations` section in your response with:
 5. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
 6. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the bug-fix report is the persistent artifact).
 
-### Step 9 — Auto-Invoke Reviewer (Standalone Mode)
+### Step 10 — Auto-Invoke Reviewer (Standalone Mode)
 
 After the artifact is persisted, **automatically invoke `devflow-review`** in Standalone Mode.
 
