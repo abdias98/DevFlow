@@ -57,9 +57,21 @@ Check for `docs/devflow/templates/project-architecture.md`. If found:
 - Read it and extract: layer structure, design decisions, common patterns, anti-patterns.
 - Use as the primary reference for architecture decisions.
 - Skip re-exploring patterns already documented.
-- Load the matching pre-defined template from `shared/templates/{type}.md` as a reference checklist.
 
-If none found → proceed to full Step 2.
+**Load the matching reference template.** Based on the detected `Feature Type` (from `context.md` → `## Stack Profile`; if not yet known, defer this load until Step 2 establishes it), read the corresponding pre-defined template from `shared/templates/` and use it as an architecture checklist for the expected project shape, layers, and conventions:
+
+| Feature Type | Reference template |
+|--------------|--------------------|
+| web frontend | [web-frontend.md](<{{SKILLS_DIR}}/shared/templates/web-frontend.md>) |
+| backend / API | [api-rest.md](<{{SKILLS_DIR}}/shared/templates/api-rest.md>) |
+| fullstack | [fullstack.md](<{{SKILLS_DIR}}/shared/templates/fullstack.md>) |
+| mobile | [mobile-app.md](<{{SKILLS_DIR}}/shared/templates/mobile-app.md>) |
+| CLI | [cli-tool.md](<{{SKILLS_DIR}}/shared/templates/cli-tool.md>) |
+| library / SDK | [library-sdk.md](<{{SKILLS_DIR}}/shared/templates/library-sdk.md>) |
+
+This template load is **independent** of AGENTS.md / DESIGN.md / project-template presence — the reference checklist applies in all cases.
+
+If no AGENTS.md, DESIGN.md, or project template is found → proceed to full Step 2.
 
 ### Step 2 — Explore the Codebase
 

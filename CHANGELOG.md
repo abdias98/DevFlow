@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🐛 Fixed
 
-- **Bug-Fixer step numbering** — `devflow-bug-fix/SKILL.md` had two steps labeled "Step 9" (Finalize Document and Auto-Invoke Reviewer), making the procedure order ambiguous. Renumbered the Reviewer step to Step 10 and corrected the stale "Step 8 MUST overwrite" cross-reference (now Step 9) so each step is unique and sequential.
+- **Reference template library wired into the Architect** — the six pre-defined architecture templates in `shared/templates/` (`web-frontend`, `api-rest`, `fullstack`, `mobile-app`, `cli-tool`, `library-sdk`) were effectively orphaned: the Architect referenced them only via a generic `shared/templates/{type}.md` glob buried inside the "project template found" conditional, so four of them were unreachable and `validate-framework.sh` flagged them as unreferenced. Replaced the glob with an explicit `Feature Type → template` mapping table (literal filenames) that loads the matching reference checklist unconditionally, based on the detected stack. Validator now passes with zero warnings.
 
 ---
 
