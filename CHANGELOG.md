@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 🔄 Changed
+
+- **Standalone agents load standards on demand (quick-card-first)** — the Feature, Bug-Fix, Refactor, and Reviewer agents previously mandated reading all six-to-seven full engineering standards (~50–70 KB) upfront on every invocation, contradicting the context-saving design of `standards-quick-card.md` / `critical-friend.md`. Their Rules now instruct: scan the Standards Quick Card first (fast BLOCK-trigger scan) and load a full standard only when a red flag matches or the change falls in its domain. The Reviewer keeps full depth (loads every standard that applies to the changed files, skipping only clearly-irrelevant domains). Also standardized the loadable set across all four agents and added `testing.md` to it. Frees context for the agents to reason about the actual code.
+
+---
+
 ## [2.10.1] — 2026-06-15
 
 > Wave 1 of the framework improvement roadmap — correctness fixes to lifecycle consistency and mode-aware test execution. No behavior change to public commands.
