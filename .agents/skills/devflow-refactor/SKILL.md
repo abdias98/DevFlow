@@ -58,6 +58,7 @@ Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|IN
 3. Read `## Stack Profile` from `context.md` in session memory.
 4. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
 5. Obtain: `Test Command`, `Test Command (single file)`, `Test Root`, `Test Utilities`.
+6. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Refactorer`, slug, and stack. Leave quality values empty (filled in Step 10).
 
 ### Step 3 — Analyze the Target Code
 
@@ -149,6 +150,10 @@ Pass to the Reviewer:
 
 **If the Reviewer returns APPROVED:**
 > ✅ Refactoring complete and approved. All standards verified.
+
+### Step 10 — Record Metrics
+
+After the Reviewer concludes (APPROVED, or BLOCKs resolved/escalated), finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 2): set the completed timestamp; fill files modified, tests created (regression test, if any), the Reviewer's BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions (`scope add` count). Then append a row to `docs/devflow/metrics/_aggregate.md` (create if missing) with `Type = refactor`, Tasks = tests created, Test Pass % = `—`, Iterations = Reviewer loops; recalculate averages. See the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) → Generation Rules → Standalone agents.
 
 ---
 
