@@ -31,6 +31,17 @@ Save to `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`:
 - **Verify with:** `{Test Command}`
 - **Single file:** `{Test Command (single file)}`
 
+## Definition of Done
+
+Verify each criterion captured during understanding (Step 1). For a refactor, the central criterion is **observable behavior unchanged**. Mark **Met** only when evidenced.
+
+| # | Criterion | Met? | Evidence |
+|---|-----------|:----:|----------|
+| 1 | External behavior unchanged | ✅ / ❌ | {regression test · manual check} |
+| 2 | {target improvement, e.g., duplication removed} | ✅ / ❌ | {file:line} |
+
+**Result:** {N}/{M} criteria met. {If any ❌ → list what remains and why.}
+
 ## Observations (Out of Scope)
 
 > These items were noticed but NOT changed. They may be addressed in a separate refactoring request.

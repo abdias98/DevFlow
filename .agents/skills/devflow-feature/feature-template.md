@@ -13,9 +13,16 @@ Save to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`:
 
 **Goal:** {one sentence}
 
-**Definition of Done:**
-- [x] {criterion 1}
-- [x] {criterion 2}
+## Definition of Done
+
+Verify each criterion captured during understanding (Step 1). Mark **Met** only when evidenced by a test, file, or observed behavior.
+
+| # | Criterion | Met? | Evidence |
+|---|-----------|:----:|----------|
+| 1 | {criterion 1} | ✅ / ❌ | {test name · file:line · manual check} |
+| 2 | {criterion 2} | ✅ / ❌ | {evidence} |
+
+**Result:** {N}/{M} criteria met. {If any ❌ → list what remains and why.}
 
 ## Files Changed
 

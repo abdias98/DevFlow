@@ -156,19 +156,20 @@ Include an `### Additional Recommendations` section in your response with:
 
 ### Step 9 — Finalize Bug-Fix Document (MANDATORY)
 
-1. **MANDATORY**: Execute `create_file` to persist the final report (overwrite the plan file) using the [bugfix template](<{{SKILLS_DIR}}/devflow-bug-fix/bugfix-template.md>).
+1. **Verify the Definition of Done.** Check each DoD criterion captured in Step 1 against the applied fix. Fill the report's **Definition of Done** section (Met ✅/❌ + Evidence: reproduction test, file:line, or manual check). If any criterion is unmet, state it explicitly to the user and do NOT claim the bug is fully resolved.
+2. **MANDATORY**: Execute `create_file` to persist the final report (overwrite the plan file) using the [bugfix template](<{{SKILLS_DIR}}/devflow-bug-fix/bugfix-template.md>).
    - **Path**: `docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md`
-2. Append the root cause pattern to `/memories/repo/debug-patterns.md` (if the pattern is reusable):
+3. Append the root cause pattern to `/memories/repo/debug-patterns.md` (if the pattern is reusable):
    ```markdown
    | {Stack} | {Error type} | {Root cause pattern} | {Fix strategy} |
    ```
-3. Update `test-registry.md`: add the reproduction test (status: FAIL → should be PASS after fix).
-4. Update session memory:
+4. Update `test-registry.md`: add the reproduction test (status: FAIL → should be PASS after fix).
+5. Update session memory:
    ```markdown
    - [x] Standalone: Bug-Fixer — `docs/devflow/bug-fixes/{filename}`
    ```
-5. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
-6. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the bug-fix report is the persistent artifact).
+6. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
+7. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the bug-fix report is the persistent artifact).
 
 ### Step 10 — Auto-Invoke Reviewer (Standalone Mode)
 
