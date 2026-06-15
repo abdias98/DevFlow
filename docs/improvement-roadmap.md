@@ -58,8 +58,10 @@ and `standards/CHANGELOG.md`, and link from the `Rules` of applicable agents.
 
 | PR | Branch | Finding | Status |
 |----|--------|---------|--------|
-| PR16 | `refactor/phase-renumber` | Sequential phase numbering (no reserved Phase 4) — Validation→2, Architect→3, Planner→4. Major bump | 🟢 open |
-| — | `chore/release-major` | major release 3.0.0 | ☐ |
+| PR16 | `refactor/phase-renumber` | Sequential phase numbering (no reserved Phase 4) — Validation→2, Architect→3, Planner→4. Major bump | ✅ #58 |
+| — | `chore/release-major` | major release 3.0.0 | 🟢 open |
+
+> **🎉 Roadmap complete.** Waves 1–4 delivered across 16 improvement PRs + 4 releases (2.10.1, 2.11.0, 2.12.0, 3.0.0).
 
 ---
 
