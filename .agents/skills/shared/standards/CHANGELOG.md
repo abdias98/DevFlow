@@ -4,6 +4,13 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.4.0 — 2026-06-15
+
+### New standards — 2.4.0
+- **`logging.md`** (new, v1.0.0): Logging & Observability standard — structured logging, log levels, sensitive-data redaction (no secrets/PII in logs), correlation/trace context, error logging (no silent swallowing), performance & volume, log management, Severity Classification, and limited-scope guidance. Registered in `standards-quick-card.md` and linked from the Architect and the standalone agents' loadable standard set. Part of Wave 3 of the framework improvement roadmap.
+
+---
+
 ## 2.3.0 — 2026-06-10
 
 ### New standards — 2.3.0

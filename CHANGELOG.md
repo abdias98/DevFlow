@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **New engineering standard: Logging & Observability** (`shared/standards/logging.md`, v1.0.0) — a technology-agnostic standard covering structured logging, log levels, **sensitive-data redaction** (no secrets/PII in logs), correlation/trace context, error logging (**no silent exception swallowing**), performance & volume, and log management, with a Severity Classification and limited-scope guidance. Registered in `standards-quick-card.md`, added to the Critical Friend scan table, and linked from the Architect and the standalone agents' (Feature, Bug-Fix, Refactor, Reviewer) loadable standard set. Standards changelog → 2.4.0. First standard of Wave 3.
+
 ## [2.11.0] — 2026-06-15
 
 > Wave 2 of the framework improvement roadmap — structural agent improvements: context-efficient standard loading, metrics & DoD parity for standalone agents, and mode-aware diff/scope handling.

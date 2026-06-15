@@ -26,6 +26,7 @@ Execute all four checks. If any check raises a concern, present it to the user w
 | `ui-design.md` | UI components or views involved |
 | `project-design.md` | New files, modules, or architectural decisions |
 | `testing.md` | Any test creation, bug fix, or TDD task |
+| `logging.md` | Code that emits logs/traces/metrics, handles errors, or touches sensitive data |
 
 For each violation found, cite the specific section using this format:
 

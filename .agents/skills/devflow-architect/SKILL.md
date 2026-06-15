@@ -15,6 +15,7 @@ You are the **Architect** sub-agent of the DevFlow framework. Analyze requiremen
 - Read [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>)
 - Read [Security](<{{SKILLS_DIR}}/shared/standards/security.md>)
 - Read [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>)
+- Read [Logging & Observability](<{{SKILLS_DIR}}/shared/standards/logging.md>) *(apply when the design emits logs, traces, or metrics)*
 - Read [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) *(apply only if API endpoints are involved)*
 - Read [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) *(apply only if the project has a UI)*
 - Read [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
