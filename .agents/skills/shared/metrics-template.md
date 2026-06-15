@@ -6,6 +6,8 @@ Metrics are recorded per cycle and saved to `docs/devflow/metrics/YYYY-MM-DD-{sl
 **Updated by:** Orchestrator (phase completions — timing + iteration counts)
 **Finalized by:** Finalizer (quality metrics + aggregate update)
 
+**Standalone agents** (Feature, Bug-Fix, Refactor) create and finalize their own lightweight metrics file — see *Standalone Agent Metrics Format* below — and append to the same `_aggregate.md`.
+
 ## Per-Cycle Metrics Format
 
 ```markdown
@@ -77,10 +79,12 @@ Metrics are recorded per cycle and saved to `docs/devflow/metrics/YYYY-MM-DD-{sl
 
 ## Cycle History
 
-| # | Date | Feature | Duration | Tasks | BLOCKs | Test Pass % | Iterations |
-|---|------|---------|:--------:|:-----:|:------:|:----------:|:----------:|
-| 1 | {date} | {slug} | {min} | {N} | {N} | {N}% | {N} |
-| 2 | {date} | {slug} | {min} | {N} | {N} | {N}% | {N} |
+| # | Date | Type | Feature | Duration | Tasks | BLOCKs | Test Pass % | Iterations |
+|---|------|------|---------|:--------:|:-----:|:------:|:----------:|:----------:|
+| 1 | {date} | full | {slug} | {min} | {N} | {N} | {N}% | {N} |
+| 2 | {date} | feature | {slug} | {min} | {tests} | {N} | — | {N} |
+
+> **Type** = `full` (lifecycle cycle) or the standalone agent: `feature`, `bug-fix`, `refactor`. For standalone rows, **Tasks** = tests created and **Test Pass %** = `—` (standalone agents do not run tests).
 
 ## Averages (last {N} cycles)
 
@@ -92,6 +96,36 @@ Metrics are recorded per cycle and saved to `docs/devflow/metrics/YYYY-MM-DD-{sl
 | Most frequent BLOCK category | {category} |
 | Phase with most retries | {phase} |
 | Total cycles completed | {N} |
+```
+
+## Standalone Agent Metrics Format
+
+Standalone agents (Feature, Bug-Fix, Refactor) record a **lightweight** metrics file at `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (same path and aggregate as the cycle). They have no multi-phase timing — only start/end and quality.
+
+```markdown
+# DevFlow Metrics — {slug} (standalone: {feature|bug-fix|refactor})
+
+**Started:** {ISO timestamp}
+**Completed:** {ISO timestamp}
+**Agent:** {Feature Agent | Bug-Fixer | Refactorer}
+**Stack:** {Language} · {Framework} · {Test Runner}
+
+## Quality
+
+| Metric | Value |
+|--------|-------|
+| Files created | {N} |
+| Files modified | {N} |
+| Tests created | {N} |
+| BLOCK findings (Reviewer) | {N} |
+| WARN findings (Reviewer) | {N} |
+| INFO findings (Reviewer) | {N} |
+| Reviewer iterations | {N} |
+| Scope additions (`scope add`) | {N} |
+
+## Notes
+
+{Any run-specific observations}
 ```
 
 ## Generation Rules
@@ -114,5 +148,10 @@ Metrics are recorded per cycle and saved to `docs/devflow/metrics/YYYY-MM-DD-{sl
 
 ### Finalizer (after metrics saved)
 1. Read `docs/devflow/metrics/_aggregate.md` (create if missing).
-2. Append a new row to the Cycle History table.
+2. Append a new row to the Cycle History table (Type = `full`).
 3. Recalculate averages across all cycles.
+
+### Standalone agents (Feature / Bug-Fix / Refactor)
+1. **At session init** (right after `devflow-ctl init`): create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the *Standalone Agent Metrics Format* with the header (slug, agent, stack, started timestamp). Leave quality values empty.
+2. **After the auto-invoked Reviewer returns:** fill files created/modified, tests created, the Reviewer's BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions (`scope add` count); set the completed timestamp. Save the file.
+3. Append a row to `_aggregate.md` (create if missing) with Type = the agent name (`feature` | `bug-fix` | `refactor`); Tasks = tests created, Test Pass % = `—`, Iterations = Reviewer loops. Recalculate averages.

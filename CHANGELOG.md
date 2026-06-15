@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ✨ Added
+
+- **Metrics parity for standalone agents** — the Feature, Bug-Fix, and Refactor agents now record a lightweight metrics file (`docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`) and append to the shared `_aggregate.md`, just like the full cycle. They initialize the file at session start and finalize it after the auto-invoked Reviewer with: files created/modified, tests created, Reviewer BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions. The metrics template gains a *Standalone Agent Metrics Format* and matching generation rules; the aggregate Cycle History gains a `Type` column (`full` | `feature` | `bug-fix` | `refactor`) so single-agent runs and full cycles share one trend table.
+
 ### 🔄 Changed
 
 - **Standalone agents load standards on demand (quick-card-first)** — the Feature, Bug-Fix, Refactor, and Reviewer agents previously mandated reading all six-to-seven full engineering standards (~50–70 KB) upfront on every invocation, contradicting the context-saving design of `standards-quick-card.md` / `critical-friend.md`. Their Rules now instruct: scan the Standards Quick Card first (fast BLOCK-trigger scan) and load a full standard only when a red flag matches or the change falls in its domain. The Reviewer keeps full depth (loads every standard that applies to the changed files, skipping only clearly-irrelevant domains). Also standardized the loadable set across all four agents and added `testing.md` to it. Frees context for the agents to reason about the actual code.
