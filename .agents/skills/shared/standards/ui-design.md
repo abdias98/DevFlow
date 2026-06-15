@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: UI Design (Technology-Agnostic)
 
-> **Version:** 2.2.0 | **Last Updated:** 2026-06-10
+> **Version:** 2.3.0 | **Last Updated:** 2026-06-15
 
 > **Apply only if:** the project has a user interface (web frontend, mobile app, desktop app, or server-rendered views).
 > If this is a pure API, CLI tool, library, or background worker, skip this standard entirely.
@@ -202,16 +202,14 @@ Forms are the primary conversation between user and application. Poor forms = po
 
 ## 10. Accessibility
 
-Accessibility is not a feature — it is a requirement.
+Accessibility is not a feature — it is a requirement. **It now has its own dedicated standard: [accessibility.md](./accessibility.md)** — apply that standard whenever a UI is involved, and cite it (`accessibility.md §N`) for accessibility findings.
 
-- **DO:** Ensure all interactive elements are keyboard-navigable in a logical tab order. Users must be able to complete all tasks without a mouse.
-- **DO:** Use semantic elements (`button`, `a`, `input`, `select`, `textarea`) for all interactive controls. Use ARIA (`role`, `aria-label`, `aria-describedby`, `aria-expanded`) only when the platform's native semantics are insufficient.
-- **DO:** Maintain a minimum contrast ratio of 4.5:1 for normal text and 3:1 for large text (WCAG AA). Check with a contrast analyzer — don't guess.
-- **DO:** Provide visible focus indicators with a contrast ratio of at least 3:1 against the background.
-- **DO:** Respect user preferences: `prefers-reduced-motion`, `prefers-contrast`, `prefers-color-scheme`, and zoom levels up to 200%.
-- **DON'T:** Use generic containers (`div`, `span`) as interactive elements unless no native semantic control can represent the interaction. In that rare fallback, add proper ARIA role, keyboard handlers, and focus management.
-- **DON'T:** Use `aria-hidden="true"` on focusable elements — it creates an unreachable focus trap.
-- **DON'T:** Rely on color alone to convey meaning (see § 4). Always pair with an icon, text label, or pattern.
+UI-relevant essentials (see `accessibility.md` for the full rules and severity):
+- Keyboard-operate every interactive element in a logical tab order; users complete all tasks without a mouse (`accessibility.md §3`).
+- Prefer native semantic controls; use ARIA only when native semantics are insufficient, and never put `aria-hidden` on a focusable element (`accessibility.md §5`).
+- Meet WCAG AA contrast (4.5:1 normal text, 3:1 large text / UI) and provide a visible focus indicator (≥3:1) (`accessibility.md §2, §4`).
+- Respect reduced-motion / contrast / color-scheme preferences and zoom up to 200% (`accessibility.md §7`).
+- Never rely on color alone to convey meaning (see also §4) (`accessibility.md §1`).
 
 ## 11. Performance
 
@@ -328,12 +326,12 @@ When reviewing UI code, verify:
 
 ## 16. Severity Classification
 
-Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `ui-design.md §8`).
+Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `ui-design.md §5`). **Accessibility findings are cited against `accessibility.md`** (its own standard).
 
 | Severity | Triggers |
 |----------|---------|
-| 🔴 **BLOCK** | Interactive element (button, link, form field) not keyboard-accessible or missing ARIA role/label, blocking core user flows (§8); hardcoded secret or sensitive data rendered in UI/template (→ security.md §3) |
-| 🟡 **WARN** | Component introduced without checking for an existing reusable equivalent — duplication confirmed (§3); hardcoded color, spacing, or font value instead of design token (§4); missing interaction state (focus, error, loading, disabled) on an interactive element (§6); no responsive behavior on a new UI component expected to render on mobile (§9); touch target smaller than 44×44 px on a mobile screen (§8) |
+| 🔴 **BLOCK** | Interactive element (button, link, form field) not keyboard-accessible or missing ARIA role/label, blocking core user flows (→ accessibility.md §3, §5); hardcoded secret or sensitive data rendered in UI/template (→ security.md §3) |
+| 🟡 **WARN** | Component introduced without checking for an existing reusable equivalent — duplication confirmed (§3); hardcoded color, spacing, or font value instead of design token (§4); missing interaction state (focus, error, loading, disabled) on an interactive element (§6); no responsive behavior on a new UI component expected to render on mobile (§9); touch target smaller than 44×44 px on a mobile screen (→ accessibility.md §7) |
 | 🟢 **INFO** | Minor inconsistency in naming relative to the design system conventions (§4); large list not virtualized but data set is currently small and bounded (§15); component slightly outside the design system pattern but not causing duplication or accessibility issues (§3) |
 
 ## 17. Applying This Standard with a Limited Scope
