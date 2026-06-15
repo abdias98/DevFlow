@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [2.11.0] — 2026-06-15
+
+> Wave 2 of the framework improvement roadmap — structural agent improvements: context-efficient standard loading, metrics & DoD parity for standalone agents, and mode-aware diff/scope handling.
 
 ### 🐛 Fixed
 
