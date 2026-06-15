@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✨ Added
 
+- **Definition of Done verification for standalone agents** — the Feature, Bug-Fix, and Refactor agents captured a Definition of Done during understanding but never verified it was met, unlike the full cycle (which enforces DoD + traceability at the Finalizer). Their report templates now include a **Definition of Done** section with a per-criterion verification table (Met ✅/❌ + Evidence), and each agent's finalize step verifies every criterion against the implemented work before persisting the report — flagging any unmet criterion to the user instead of silently claiming completion. For refactors the central criterion is "observable behavior unchanged".
 - **Metrics parity for standalone agents** — the Feature, Bug-Fix, and Refactor agents now record a lightweight metrics file (`docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`) and append to the shared `_aggregate.md`, just like the full cycle. They initialize the file at session start and finalize it after the auto-invoked Reviewer with: files created/modified, tests created, Reviewer BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions. The metrics template gains a *Standalone Agent Metrics Format* and matching generation rules; the aggregate Cycle History gains a `Type` column (`full` | `feature` | `bug-fix` | `refactor`) so single-agent runs and full cycles share one trend table.
 
 ### 🔄 Changed

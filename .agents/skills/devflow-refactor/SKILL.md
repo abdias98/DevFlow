@@ -125,14 +125,15 @@ To verify no behavior changed:
 
 ### Step 8 — Finalize Refactor Document (MANDATORY)
 
-1. **MANDATORY**: Execute `create_file` to persist the final report (overwrite prior draft if needed) using the [refactor template](<{{SKILLS_DIR}}/devflow-refactor/refactor-template.md>).
+1. **Verify the Definition of Done.** Check each DoD criterion captured in Step 1 against the applied refactoring — the central criterion being **observable behavior unchanged**. Fill the report's **Definition of Done** section (Met ✅/❌ + Evidence: regression test or manual check). If any criterion is unmet, state it explicitly to the user and do NOT claim the refactor is complete.
+2. **MANDATORY**: Execute `create_file` to persist the final report (overwrite prior draft if needed) using the [refactor template](<{{SKILLS_DIR}}/devflow-refactor/refactor-template.md>).
    - **Path**: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`
-2. Update session memory:
+3. Update session memory:
 ```markdown
 - [x] Standalone: Refactorer — `docs/devflow/refactors/{filename}`
 ```
-3. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
-4. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the refactor report is the persistent artifact).
+4. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
+5. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the refactor report is the persistent artifact).
 
 ### Step 9 — Auto-Invoke Reviewer
 

@@ -150,14 +150,15 @@ To verify:
 
 ### Step 8 — Finalize Feature Document (MANDATORY)
 
-1. **MANDATORY**: Execute `create_file` to persist the final report (overwrite the plan file) using the [feature template](<{{SKILLS_DIR}}/devflow-feature/feature-template.md>).
+1. **Verify the Definition of Done.** Check each DoD criterion captured in Step 1 against the implemented work. Fill the report's **Definition of Done** section (Met ✅/❌ + Evidence: test name, file:line, or manual check). If any criterion is unmet, state it explicitly to the user and do NOT claim the feature is complete — recommend the remaining work or a follow-up.
+2. **MANDATORY**: Execute `create_file` to persist the final report (overwrite the plan file) using the [feature template](<{{SKILLS_DIR}}/devflow-feature/feature-template.md>).
    - **Path**: `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`
-2. Update session memory:
+3. Update session memory:
 ```markdown
 - [x] Standalone: Feature Agent — `docs/devflow/features/{filename}`
 ```
-3. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
-4. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the feature report is the persistent artifact).
+4. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
+5. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the feature report is the persistent artifact).
 
 ### Step 9 — Auto-Invoke Reviewer (Standalone Mode)
 

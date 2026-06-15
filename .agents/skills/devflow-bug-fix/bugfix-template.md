@@ -49,6 +49,17 @@ Save to `docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md`:
 - **Reproduction test passes:** `{Test Command (single file)} {test path}`
 - **Full suite:** `{Test Command}`
 
+## Definition of Done
+
+Verify each criterion captured during understanding (Step 1). Mark **Met** only when evidenced by the reproduction test, suite, or observed behavior.
+
+| # | Criterion | Met? | Evidence |
+|---|-----------|:----:|----------|
+| 1 | {e.g., reported error no longer occurs} | ✅ / ❌ | {reproduction test · file:line} |
+| 2 | {e.g., no regressions in related tests} | ✅ / ❌ | {evidence} |
+
+**Result:** {N}/{M} criteria met. {If any ❌ → list what remains and why.}
+
 ## Pattern (for debug-patterns.md)
 
 | Stack | Error Type | Root Cause Pattern | Fix Strategy |
