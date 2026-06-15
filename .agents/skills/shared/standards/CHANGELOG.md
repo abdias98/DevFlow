@@ -4,6 +4,13 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.5.0 — 2026-06-15
+
+### New standards — 2.5.0
+- **`error-handling.md`** (new, v1.0.0): Error Handling standard — fail fast, **never swallow errors**, catch specifically & preserve cause, translate at layer boundaries, **safe error surfaces** (no internal leaks to callers), resource cleanup & consistency, errors vs. control flow, retries & idempotency, Severity Classification, and limited-scope guidance. Complements `logging.md` (how errors are recorded). Registered in `standards-quick-card.md`, the Critical Friend scan table, and linked from the Architect and the standalone agents' loadable standard set. Part of Wave 3.
+
+---
+
 ## 2.4.0 — 2026-06-15
 
 ### New standards — 2.4.0

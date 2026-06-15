@@ -46,6 +46,12 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 - Exception caught and silently swallowed — neither logged nor rethrown → §5
 - Full auth headers / request bodies logged on a sensitive-data path → §3
 
+## error-handling.md — Red Flags (BLOCK)
+- Empty catch / catch-and-continue that discards the error (no log, no rethrow) → §2
+- Raw stack trace, exception message, or internal detail returned to an external caller → §5
+- Failure path leaks a resource or leaves data in an inconsistent/partially-written state → §6
+- Non-idempotent operation retried with no idempotency guard → §8
+
 ## project-design.md — Red Flags (BLOCK)
 - Business logic in entry point (main/index) → §3
 - Circular dependency between modules with no resolution path → §3
