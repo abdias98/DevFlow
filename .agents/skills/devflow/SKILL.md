@@ -270,7 +270,7 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
 
 1. **Pre-finalization health check.** Verify ALL entry conditions:
    - [ ] No unresolved BLOCK findings (check latest review in `docs/devflow/reviews/`).
-   - [ ] No failing tests (user confirmed full suite passes).
+   - [ ] No failing tests (Standard/CI: Finalizer auto-runs the full suite and it passes; Pair: user confirms the full suite passes).
    - [ ] All Definition of Done criteria from `context.md` are met.
    - [ ] Traceability coverage ≥ 100% on DoD and Edge Cases (check `traceability.md`).
    - [ ] Dependency audit passed — no critical/high vulnerabilities (if `Audit Command` is configured).
