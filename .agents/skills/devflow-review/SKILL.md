@@ -70,7 +70,7 @@ For each changed file:
 
 | Findings | Action |
 |----------|--------|
-| No BLOCK | ✅ APPROVED → Route to Phase 7 (Finalizer) |
+| No BLOCK | ✅ APPROVED → Route to Phase 8 (Finalizer) |
 | BLOCK exists | 🔄 CHANGES REQUESTED → Route to Implementer with specific fixes |
 | Plan gap | 🔄 Route to Planner for revision |
 | Architecture flaw | 🔄 Route to Architect for redesign |
@@ -79,7 +79,7 @@ For each changed file:
 
 Update `phase-state.md`:
 ```markdown
-- [x] Phase 5: Reviewer — {APPROVED | CHANGES REQUESTED (N blockers)}
+- [x] Phase 6: Reviewer — {APPROVED | CHANGES REQUESTED (N blockers)}
 ```
 
 ---

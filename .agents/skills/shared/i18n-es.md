@@ -31,9 +31,9 @@ Si el usuario escribe en español → responder en español. Si escribe en ingl�
 | Phase 2: Architect | Fase 2: Diseño de arquitectura |
 | Phase 3: Planner | Fase 3: Plan de implementación |
 | Phase 5: Implementer | Fase 5: Implementación (TDD) |
-| Phase 5: Reviewer | Fase 5: Revisión de código |
-| Phase 6: Debugger | Fase 6: Depuración |
-| Phase 7: Finalizer | Fase 7: Finalización |
+| Phase 6: Reviewer | Fase 6: Revisión de código |
+| Phase 7: Debugger | Fase 7: Depuración |
+| Phase 8: Finalizer | Fase 8: Finalización |
 | Confirmation Gate | Puerta de Confirmación |
 
 ## Mensajes de confirmación
