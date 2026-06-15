@@ -136,7 +136,7 @@ The file has two parts: a **machine-readable YAML frontmatter** managed exclusiv
 devflow: 1                      # schema version
 slug: {feature-slug}
 mode: lifecycle                 # lifecycle | feature | refactor | bug-fix | ...
-phase: 1                        # current phase (lifecycle: 1, 1.5, 2, 3, 5-8)
+phase: 1                        # current phase (lifecycle: 1-8, sequential)
 pair_mode: false
 branch: none                    # set at the Confirmation Gate
 locked_by: Orchestrator         # agent name | none
@@ -164,9 +164,9 @@ checkpoints:                    # rollback SHAs, recorded via `devflow-ctl check
 
 ## Completed Phases
 - [x] Phase 1: Brainstormer — context saved
-- [x] Phase 1.5: Validation Gate — validation-report.md
-- [x] Phase 2: Architect — `docs/devflow/specs/{filename}`
-- [x] Phase 3: Planner — `docs/devflow/plans/{filename}`
+- [x] Phase 2: Validation Gate — validation-report.md
+- [x] Phase 3: Architect — `docs/devflow/specs/{filename}`
+- [x] Phase 4: Planner — `docs/devflow/plans/{filename}`
 - [ ] Phase 5: Implementer
 - [ ] Phase 6: Reviewer
 - [ ] Phase 7: Debugger (conditional)

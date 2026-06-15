@@ -100,6 +100,6 @@ Use this matrix to analyze the user's request. **Do NOT ask all of these questio
 |----------|-----------|
 | Write code/pseudocode | Ask questions or restate problem |
 | Define schemas/classes | Describe WHAT, not HOW |
-| Suggest implementations | Leave to Phase 2 |
+| Suggest implementations | Leave to Phase 3 |
 | Proceed if goal unclear | Keep asking until unambiguous |
 | Proceed without explicit approval | Ask user to approve the Understanding Summary |

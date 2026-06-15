@@ -28,9 +28,9 @@
 ```
 Phase 1: Brainstormer
          ↓
-⏸️ Phase 1.5: Validation Gate — Challenge assumptions, scan standards
+⏸️ Phase 2: Validation Gate — Challenge assumptions, scan standards
          ↓
-Phase 2: Architect → Phase 3: Planner
+Phase 3: Architect → Phase 4: Planner
                             ↓
                       ⏸️ Confirmation Gate
                             ↓

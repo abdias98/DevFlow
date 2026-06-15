@@ -28,8 +28,9 @@ Every DevFlow agent response MUST be structured as follows:
 | Agent | Emoji | Phase |
 |-------|-------|-------|
 | Brainstormer | 🧠 | Phase 1 |
-| Architect | 🧩 | Phase 2 |
-| Planner | 📋 | Phase 3 |
+| Validation Gate | ⏸️ | Phase 2 |
+| Architect | 🧩 | Phase 3 |
+| Planner | 📋 | Phase 4 |
 | Implementer | ⚙️ | Phase 5 |
 | Reviewer | 🔍 | Phase 6 |
 | Debugger | 🐞 | Phase 7 |

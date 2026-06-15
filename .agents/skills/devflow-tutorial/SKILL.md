@@ -31,13 +31,13 @@ Explain the Brainstormer: what it does, why it matters, what it outputs.
 2. Show the Understanding Summary generated.
 3. **Wait for confirmation.**
 
-### Step 2 — Phase 2: Architect (Architecture Design)
+### Step 2 — Phase 3: Architect (Architecture Design)
 Explain the Architect: exploration, AGENTS.md, spec document, key features.
 1. Invoke `devflow-architect` for the demo feature.
 2. Show the spec document structure and key sections.
 3. **Wait for confirmation.**
 
-### Step 3 — Phase 3: Planner (Implementation Plan)
+### Step 3 — Phase 4: Planner (Implementation Plan)
 Explain the Planner: atomic tasks, code snippets, test code, Stack Mode, mockups, Confirmation Gate.
 1. Invoke `devflow-plan` for the demo feature.
 2. Show plan structure: File Map, Tasks, Test Code, Commit Messages.

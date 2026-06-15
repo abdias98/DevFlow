@@ -124,7 +124,7 @@ Merge (do NOT overwrite) session memory with the following:
 2. **Tech context** — Constraints, Slug, Feature Type.
 3. **Phase state:**
 ```markdown
-- [x] Phase 2: Architect — `docs/devflow/specs/{filename}`
+- [x] Phase 3: Architect — `docs/devflow/specs/{filename}`
 ```
 
 ### Step 7 — Auto-Invoke Planner
@@ -140,7 +140,7 @@ Before transitioning to the next phase, you MUST confirm in your response:
 ```markdown
 ✅ File saved: docs/devflow/specs/YYYY-MM-DD-{slug}-design.md
 📏 Size: ~{N} lines
-🔗 Planner invoked for Phase 3.
+🔗 Planner invoked for Phase 4.
 ```
 
 If you cannot confirm this because `create_file` was not called → **call it NOW** before proceeding.

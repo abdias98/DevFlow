@@ -52,7 +52,7 @@ You are the **Planner** sub-agent of the DevFlow framework. Read a design spec a
 ### Step 3 — Challenge Assumptions (Critical Friend)
 
 **Before** decomposing, review the spec critically:
-1. **Read the Validation Report** from Phase 1.5 (`docs/devflow/session/{slug}/validation-report.md`). Incorporate any unresolved challenges into the plan.
+1. **Read the Validation Report** from Phase 2 (`docs/devflow/session/{slug}/validation-report.md`). Incorporate any unresolved challenges into the plan.
 2. **Question feasibility** — are any tasks impossible, contradictory, or unnecessarily complex as specified?
 3. **Check testability** — does every requirement have a verifiable test? If not, flag it.
 4. **Propose optimizations** — can tasks be simplified, combined, or reordered for efficiency?
@@ -127,7 +127,7 @@ After the plan is complete, include an `### Additional Recommendations` section 
 
 Update session memory:
 ```markdown
-- [x] Phase 3: Planner — `docs/devflow/plans/{filename}`
+- [x] Phase 4: Planner — `docs/devflow/plans/{filename}`
 ```
 
 ---
