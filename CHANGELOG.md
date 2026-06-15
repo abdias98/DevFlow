@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [2.12.0] — 2026-06-15
+
+> Wave 3 of the framework improvement roadmap — standards evolution: five new technology-agnostic engineering standards (Logging, Error Handling, Concurrency, Dependencies, Accessibility), each with Severity Classification, registered in the quick card and Critical Friend scan, and wired into the Architect and standalone agents.
 
 ### ✨ Added
 
