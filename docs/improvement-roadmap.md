@@ -30,7 +30,7 @@
 
 | PR | Branch | Finding | Dependency | Status |
 |----|--------|---------|------------|--------|
-| PR5 | `refactor/standalone-quick-card-first` | Load quick-card first, full standard only on red flag | — | ☐ |
+| PR5 | `refactor/standalone-quick-card-first` | Load quick-card first, full standard only on red flag | — | 🟢 open |
 | PR6 | `feat/standalone-metrics-parity` | Metrics for feature/bug-fix/refactor | after PR5 | ☐ |
 | PR7 | `feat/standalone-dod-verification` | Verify DoD in final report | after PR6 | ☐ |
 | PR8 | `refactor/brainstorm-skip-exception` | Unify "skip questions when context rich" in full-cycle Brainstormer | — | ☐ |
