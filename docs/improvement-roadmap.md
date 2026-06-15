@@ -20,10 +20,10 @@
 
 | PR | Branch | Finding | Files | Status |
 |----|--------|---------|-------|--------|
-| PR1 | `fix/review-phase-numbering` | Reviewer labeled Phase 5 (should be 6); routing to "Phase 7 (Finalizer)" (should be 8) | `devflow-review/SKILL.md` | ☐ |
-| PR2 | `fix/bugfix-duplicate-step9` | Duplicate "Step 9" heading | `devflow-bug-fix/SKILL.md` | ☐ |
-| PR3 | `fix/orphan-reference-templates` | 4 templates unreferenced → wire into Architect/Planner stack flow | `devflow-architect/SKILL.md`, `devflow-plan/SKILL.md` | ☐ |
-| PR4 | `fix/debugger-mode-alignment` | Debugger ignores Standard/Pair/CI mode (always asks user) | `devflow-debug/SKILL.md` | ☐ |
+| PR1 | `fix/review-phase-numbering` | Reviewer labeled Phase 5 (should be 6); routing to "Phase 7 (Finalizer)" (should be 8) | `devflow-review/SKILL.md` | ✅ #40 |
+| PR2 | `fix/bugfix-duplicate-step9` | Duplicate "Step 9" heading | `devflow-bug-fix/SKILL.md` | ✅ #41 |
+| PR3 | `fix/orphan-reference-templates` | 4 templates unreferenced → wire into Architect/Planner stack flow | `devflow-architect/SKILL.md`, `devflow-plan/SKILL.md` | ✅ #42 |
+| PR4 | `fix/debugger-mode-alignment` | Debugger ignores Standard/Pair/CI mode (always asks user) | `devflow-debug/SKILL.md` | ✅ #43 |
 | — | `chore/release-wave-1` | Bump + sync package.json/lock/CHANGELOG | release | ☐ |
 
 ## Wave 2 — Structural agent improvements
