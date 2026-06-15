@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 🐛 Fixed
+
+- **Phase numbering consistency** — corrected a systemic off-by-one in lifecycle phase labels across the framework. The canonical scheme (Orchestrator) is Reviewer = Phase 6, Debugger = Phase 7, Finalizer = Phase 8; several files labeled them 5/6/7. Aligned: `devflow-review/SKILL.md` (routing target and memory-update label), `devflow-tutorial/SKILL.md`, `shared/i18n-es.md`, `shared/output-format.md`, `shared/traceability-matrix.md`, `devflow/stack-mode.md`, `docs/devflow/knowledge-base/learnings.md`, and the `devflow-review` / `devflow-debug` / `devflow-finalize` prompt descriptions.
+
+---
+
 ## [2.10.0] — 2026-06-12
 
 ### ⚙️ Deterministic Enforcement — `devflow-ctl`

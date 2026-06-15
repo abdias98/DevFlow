@@ -8,7 +8,7 @@
 
 - **Brainstormer (Phase 1):** Read this file before asking questions. Check if a similar feature was built before — reuse the patterns.
 - **Architect (Phase 2):** Read this file during exploration. Avoid re-exploring patterns already documented.
-- **Finalizer (Phase 7):** Append new learnings after each cycle completes.
+- **Finalizer (Phase 8):** Append new learnings after each cycle completes.
 
 ## Format
 

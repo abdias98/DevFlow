@@ -1,5 +1,5 @@
 ---
-description: "Systematic debugging with root cause analysis. Reproduces errors, isolates causes, applies fixes, and documents everything. Never executes tests — asks the user to run them. Phase 6 of the DevFlow lifecycle."
+description: "Systematic debugging with root cause analysis. Reproduces errors, isolates causes, applies fixes, and documents everything. Never executes tests — asks the user to run them. Phase 7 of the DevFlow lifecycle."
 agent: workspace
 ---
 

@@ -50,13 +50,13 @@ Explain the Implementer: Red→Green TDD, test-first, minimal code, Pair Mode, c
 2. Show test code → production code → commit messages.
 3. **Wait for confirmation.**
 
-### Step 5 — Phase 5: Reviewer (Code Review)
+### Step 5 — Phase 6: Reviewer (Code Review)
 Explain the Reviewer: automated review, BLOCK/WARN/INFO, 7 standards, security always blockers.
 1. Invoke `devflow-review` for the demo feature.
 2. Show review document findings.
 3. **Wait for confirmation.**
 
-### Step 6 — Phase 7: Finalizer (Completion)
+### Step 6 — Phase 8: Finalizer (Completion)
 Explain the Finalizer: test verification, DoD, metrics, knowledge base, project template, session cleanup.
 1. Invoke `devflow-finalize` for the demo feature.
 2. Show the final summary: files, tests, metrics, how to run.
