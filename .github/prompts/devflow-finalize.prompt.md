@@ -1,5 +1,5 @@
 ---
-description: "Finalization phase — verifies all tests pass and BLOCK findings are resolved, produces clean final summary, explains how to run/test, lists possible improvements, and cleans session memory. Phase 7 of the DevFlow lifecycle. Never executes tests."
+description: "Finalization phase — verifies all tests pass and BLOCK findings are resolved, produces clean final summary, explains how to run/test, lists possible improvements, and cleans session memory. Phase 8 of the DevFlow lifecycle. Never executes tests."
 agent: workspace
 ---
 

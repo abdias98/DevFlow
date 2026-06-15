@@ -1,5 +1,5 @@
 ---
-description: "Perform automated code review against the spec and plan (cycle mode) or against engineering standards directly (standalone mode). Checks quality, security, performance. Classifies findings as BLOCK/WARN/INFO. Phase 5 of the DevFlow lifecycle."
+description: "Perform automated code review against the spec and plan (cycle mode) or against engineering standards directly (standalone mode). Checks quality, security, performance. Classifies findings as BLOCK/WARN/INFO. Phase 6 of the DevFlow lifecycle."
 agent: workspace
 ---
 

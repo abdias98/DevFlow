@@ -31,9 +31,9 @@ Every DevFlow agent response MUST be structured as follows:
 | Architect | 🧩 | Phase 2 |
 | Planner | 📋 | Phase 3 |
 | Implementer | ⚙️ | Phase 5 |
-| Reviewer | 🔍 | Phase 5 |
-| Debugger | 🐞 | Phase 6 |
-| Finalizer | 🚀 | Phase 7 |
+| Reviewer | 🔍 | Phase 6 |
+| Debugger | 🐞 | Phase 7 |
+| Finalizer | 🚀 | Phase 8 |
 | Tester | 🧪 | Manual |
 | Refactorer | 🔧 | Standalone |
 | Bug-Fixer | 🩹 | Standalone |
