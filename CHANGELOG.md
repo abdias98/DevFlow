@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [2.10.1] — 2026-06-15
+
+> Wave 1 of the framework improvement roadmap — correctness fixes to lifecycle consistency and mode-aware test execution. No behavior change to public commands.
 
 ### 🐛 Fixed
 
