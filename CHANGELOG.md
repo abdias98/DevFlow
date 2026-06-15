@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🐛 Fixed
 
-- **Phase numbering consistency** — corrected a systemic off-by-one in lifecycle phase labels across the framework. The canonical scheme (Orchestrator) is Reviewer = Phase 6, Debugger = Phase 7, Finalizer = Phase 8; several files labeled them 5/6/7. Aligned: `devflow-review/SKILL.md` (routing target and memory-update label), `devflow-tutorial/SKILL.md`, `shared/i18n-es.md`, `shared/output-format.md`, `shared/traceability-matrix.md`, `devflow/stack-mode.md`, `docs/devflow/knowledge-base/learnings.md`, and the `devflow-review` / `devflow-debug` / `devflow-finalize` prompt descriptions.
+- **Bug-Fixer step numbering** — `devflow-bug-fix/SKILL.md` had two steps labeled "Step 9" (Finalize Document and Auto-Invoke Reviewer), making the procedure order ambiguous. Renumbered the Reviewer step to Step 10 and corrected the stale "Step 8 MUST overwrite" cross-reference (now Step 9) so each step is unique and sequential.
 
 ---
 
