@@ -71,13 +71,13 @@ After each task's Green Phase completes successfully:
 2. Fill in the `Impl File` column with the actual file path.
 3. Update `Status` to `✅ DONE`.
 
-### Reviewer (Phase 5 — validation)
+### Reviewer (Phase 6 — validation)
 
 1. Check: every requirement row has Status `✅ DONE`.
 2. Any `⬜ PENDING` or `🟡 IN PROGRESS` rows → WARN or BLOCK (if critical requirement).
 3. Flag requirements with no test coverage as BLOCK.
 
-### Finalizer (Phase 7 — reporting)
+### Finalizer (Phase 8 — reporting)
 
 1. Read the matrix and include the Coverage Summary in the final report.
 2. List any uncovered items with justification.
