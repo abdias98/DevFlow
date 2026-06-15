@@ -41,6 +41,11 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 - Test always passes regardless of production code behavior (empty assertion) → §4
 - New feature with domain logic and no test file → §4
 
+## logging.md — Red Flags (BLOCK)
+- Secret, credential, token, password, or PII written to a log (any level) → §3
+- Exception caught and silently swallowed — neither logged nor rethrown → §5
+- Full auth headers / request bodies logged on a sensitive-data path → §3
+
 ## project-design.md — Red Flags (BLOCK)
 - Business logic in entry point (main/index) → §3
 - Circular dependency between modules with no resolution path → §3
