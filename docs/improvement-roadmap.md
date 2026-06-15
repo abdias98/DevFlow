@@ -31,8 +31,8 @@
 | PR | Branch | Finding | Dependency | Status |
 |----|--------|---------|------------|--------|
 | PR5 | `refactor/standalone-quick-card-first` | Load quick-card first, full standard only on red flag | — | ✅ #45 |
-| PR6 | `feat/standalone-metrics-parity` | Metrics for feature/bug-fix/refactor | after PR5 | 🟢 open |
-| PR7 | `feat/standalone-dod-verification` | Verify DoD in final report | after PR6 | ☐ |
+| PR6 | `feat/standalone-metrics-parity` | Metrics for feature/bug-fix/refactor | after PR5 | ✅ #46 |
+| PR7 | `feat/standalone-dod-verification` | Verify DoD in final report | after PR6 | 🟢 open |
 | PR8 | `refactor/brainstorm-skip-exception` | Unify "skip questions when context rich" in full-cycle Brainstormer | — | ☐ |
 | PR9 | `fix/refactor-scope-confirm-order` | Confirm Approved Scope List before `ctl init --scope` | — | ☐ |
 | PR10 | `feat/reviewer-diff-standard-mode` | Reviewer reads diff in Standard/CI instead of asking | — | ☐ |
