@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.2] — 2026-06-16
+
+> Permissions patch — auto-approval of read-only search utilities per editor profile so agents can read installed framework files without prompts. No behavior change.
+
+### 🔄 Changed
+
+- **Editor permission profiles auto-approve read-only search utilities** — DevFlow agents read installed framework files (`rules.md`, standards, templates under the install dir) and explore the user's codebase using common shell utilities; previously only `devflow-ctl`, `mkdir docs/devflow`, and read-only git were allowlisted, so opencode (and others) prompted on every `cat`/`grep`/`ls`/`find` of a framework file. The `claude-code`, `opencode`, and `vscode` permission snippets now also allow the **read-only search/util set** `grep`, `rg`, `find`, `ls`, `cat`, `head`, `tail`, `wc`, and `cp`; `claude-code` additionally allows `Read($SKILLS_DIR/**)` and `Read(docs/devflow/**)`. Destructive commands (`rm`, `mv`, `sed -i`) are intentionally **not** allowlisted. The Antigravity manual note and the per-profile descriptions were updated to match.
+
 ## [3.0.1] — 2026-06-16
 
 > Documentation-only release — refreshes the framework docs to match the current state after the improvement roadmap. No behavior change.
