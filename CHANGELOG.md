@@ -13,9 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Refreshed the framework documentation** to match the current state after the improvement roadmap (a staleness gap exposed by the phase renumbering, #58):
   - **`AGENTS.md`** — agent inventory + folder-structure phase labels to the sequential scheme (Validation Gate 2, Architect 3, Planner 4, …, Finalizer 8); added the missing standalone-agent directories and a Validation Gate row; standards count 7 → 14 (full list); lifecycle 7-phase → 8-phase; documented the `npm run validate` self-check.
-  - **`README.md`** — Validation Gate "Phase 1.5" → "Phase 2"; corrected the skill inventory ("12 total / 3 standalone" → 19 total / 10 standalone, accurately listed); standards count 7 → 14; version-neutral "What's new" heading.
-  - **`docs/ARCHITECTURE.md`** — removed the non-existent `devflow-validation/` directory entry (the Validation Gate is run by the Orchestrator); Validation Gate "Phase 1.5" → "Phase 2"; Architect AGENTS.md read at "Phase 2" → "Phase 3".
-  - **`CONTRIBUTING.md`** — version banner `v2.7.0` → `v3.0.0`.
+  - **`README.md`** — renumbered the "What Is DevFlow?" lifecycle table to the sequential scheme and added the Validation Gate row (Phase 2); fixed "8 roles across 7 phases" → 8 phases; Validation Gate "Phase 1.5" → "Phase 2"; corrected the skill inventory ("12 total / 3 standalone" → 19 total / 10 standalone, accurately listed); standards count 7 → 14; version-neutral "What's new" heading.
+  - **`docs/ARCHITECTURE.md`** — removed the non-existent `devflow-validation/` directory entry (the Validation Gate is run by the Orchestrator); Validation Gate "Phase 1.5" → "Phase 2"; Architect AGENTS.md read at "Phase 2" → "Phase 3"; completed the standards file tree (7 → 14).
+  - **`CONTRIBUTING.md`** — version banner `v2.7.0` → `v3.0.0`; completed the project-layout tree (added the missing standalone agents, `bin/devflow-ctl`, and the 7 newer standards).
 
 ## [3.0.0] — 2026-06-15
 

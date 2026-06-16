@@ -33,7 +33,7 @@ Installs the `@devflow` agent globally — available in **every workspace** with
 @devflow Implement user authentication with JWT tokens
 ```
 
-✅ Done. DevFlow orchestrates 8 specialized roles across **7 phases**: Brainstormer → Architect → Planner → Implementer (Red→Green TDD per task) → Reviewer → Debugger → Finalizer. A manual Tester helper is available on-demand for mid-implementation resume.
+✅ Done. DevFlow orchestrates specialized roles across **8 phases**: Brainstormer → Validation Gate → Architect → Planner → Implementer (Red→Green TDD per task) → Reviewer → Debugger → Finalizer. A manual Tester helper is available on-demand for mid-implementation resume.
 
 ---
 
@@ -94,13 +94,14 @@ DevFlow is a **multi-agent framework** that simulates a professional engineering
 | Phase | Agent / Role | Responsibility | Output |
 |-------|--------------|----------------|--------|
 | 1 | 🧠 **Brainstormer** | Clarifying questions, goals, constraints, edge cases | Problem Statement |
-| 2 | 🧩 **Architect** | Requirements analysis, system design, **Stack Profile** | Architecture spec |
-| 3 | 📋 **Planner** | Task breakdown + **complete test code per task** + HTML mockups (UI) | Plan with ready-to-paste tests |
+| 2 | ⏸️ **Validation Gate** *(Orchestrator)* | Challenge assumptions, scan standards, flag risks before design | Validation report |
+| 3 | 🧩 **Architect** | Requirements analysis, system design, **Stack Profile** | Architecture spec |
+| 4 | 📋 **Planner** | Task breakdown + **complete test code per task** + HTML mockups (UI) | Plan with ready-to-paste tests |
 | ⏸️ | — | **Confirmation Gate** — waits for user approval | — |
-| 4 | ⚙️ **Implementer** | 🔴→🟢 Red→Green TDD cycle per task (creates tests, writes production code, informs user) | Production code + test files |
-| 5 | 🔍 **Reviewer** | Code quality, security (OWASP), architecture validation | Code review findings |
-| 6 | 🐞 **Debugger** | Root cause analysis (never guesses) | Debug logs + fixes |
-| 7 | 🚀 **Finalizer** | Verifies completion, generates summary, cleans memory | Final report |
+| 5 | ⚙️ **Implementer** | 🔴→🟢 Red→Green TDD cycle per task (creates tests, writes production code, informs user) | Production code + test files |
+| 6 | 🔍 **Reviewer** | Code quality, security (OWASP), architecture validation | Code review findings |
+| 7 | 🐞 **Debugger** | Root cause analysis (never guesses) | Debug logs + fixes |
+| 8 | 🚀 **Finalizer** | Verifies completion, generates summary, cleans memory | Final report |
 | — | 🧪 **Tester** *(manual helper)* | Creates a specific failing test from the plan on demand | Failing test file |
 | — | 🔧 **Refactorer** *(standalone)* | Scope-locked code improvement without behavior change | Refactor report |
 | — | 🩹 **Bug-Fixer** *(standalone)* | Reproduce → Isolate → Fix reported bugs | Bug-fix report |

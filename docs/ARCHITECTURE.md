@@ -40,7 +40,14 @@ DevFlow/
 │           ├── performance.md
 │           ├── rest-api.md
 │           ├── project-design.md
-│           └── ui-design.md
+│           ├── ui-design.md
+│           ├── testing.md
+│           ├── git-conventions.md
+│           ├── logging.md
+│           ├── error-handling.md
+│           ├── concurrency.md
+│           ├── dependencies.md
+│           └── accessibility.md
 ├── .github/
 │   ├── prompts/                 # Slash command prompts
 │   │   ├── devflow.prompt.md   # Full lifecycle

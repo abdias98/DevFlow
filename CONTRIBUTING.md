@@ -50,19 +50,34 @@ DevFlow/
 │   ├── devflow-bug-fix/         # Standalone bug fixing agent
 │   ├── devflow-feature/         # Standalone feature agent
 │   ├── devflow-refactor/        # Standalone refactoring agent
+│   ├── devflow-perf/            # Standalone performance agent
+│   ├── devflow-migrate/         # Standalone migration agent
+│   ├── devflow-contract/        # Standalone contract testing agent
+│   ├── devflow-docs/            # Standalone documentation agent
+│   ├── devflow-templates/       # Standalone template agent
+│   ├── devflow-tutorial/        # Standalone tutorial agent
+│   ├── devflow-reverse/         # Standalone reverse engineering agent
 │   └── shared/                  # Common rules, conventions, and standards
 │       ├── rules.md
 │       ├── memory-conventions.md
 │       ├── output-format.md
 │       ├── stack-detection.md
-│       └── standards/           # Engineering standards (Private Library)
+│       ├── bin/devflow-ctl      # Deterministic enforcement CLI (gates, scope, iterations, locks)
+│       └── standards/           # Engineering standards (Private Library — 14 standards)
 │           ├── solid.md
 │           ├── clean-architecture.md
 │           ├── security.md
 │           ├── performance.md
 │           ├── rest-api.md
 │           ├── project-design.md
-│           └── ui-design.md
+│           ├── ui-design.md
+│           ├── testing.md
+│           ├── git-conventions.md
+│           ├── logging.md
+│           ├── error-handling.md
+│           ├── concurrency.md
+│           ├── dependencies.md
+│           └── accessibility.md
 ├── .github/
 │   ├── prompts/                 # Slash command prompts
 │   │   ├── devflow.prompt.md   # Full lifecycle
