@@ -8,7 +8,16 @@
       "git rev-parse *": "allow",
       "git status*": "allow",
       "git diff*": "allow",
-      "git log*": "allow"
+      "git log*": "allow",
+      "grep *": "allow",
+      "rg *": "allow",
+      "find *": "allow",
+      "ls *": "allow",
+      "cat *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "wc *": "allow",
+      "cp *": "allow"
     }
   }
 }
