@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [3.0.2] — 2026-06-16
+
+> Permissions patch — auto-approval of read-only search utilities per editor profile so agents can read installed framework files without prompts. No behavior change.
 
 ### 🔄 Changed
 
