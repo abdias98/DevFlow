@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 📝 Docs
+
+- **Refreshed `AGENTS.md`** to match the current framework after the improvement roadmap. Corrected the agent inventory and folder-structure phase labels to the sequential scheme (Validation Gate 2, Architect 3, Planner 4, Implementer 5, Reviewer 6, Debugger 7, Finalizer 8); added the missing standalone-agent directories (migrate, contract, docs, templates, tutorial, reverse) and a Validation Gate row; updated the standards count (7 → 14, with the full list) and the lifecycle description (7-phase → 8-phase); and documented the `npm run validate` self-check. Closes a staleness gap left by the phase renumbering (#58).
+
 ## [3.0.0] — 2026-06-15
 
 > Wave 4 (final) of the framework improvement roadmap — a single breaking change: the lifecycle phases are now numbered consecutively (no reserved Phase 4). Major bump.
