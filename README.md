@@ -33,7 +33,7 @@ Installs the `@devflow` agent globally — available in **every workspace** with
 @devflow Implement user authentication with JWT tokens
 ```
 
-✅ Done. DevFlow orchestrates 8 specialized roles across **7 phases**: Brainstormer → Architect → Planner → Implementer (Red→Green TDD per task) → Reviewer → Debugger → Finalizer. A manual Tester helper is available on-demand for mid-implementation resume.
+✅ Done. DevFlow orchestrates specialized roles across **8 phases**: Brainstormer → Validation Gate → Architect → Planner → Implementer (Red→Green TDD per task) → Reviewer → Debugger → Finalizer. A manual Tester helper is available on-demand for mid-implementation resume.
 
 ---
 
@@ -52,9 +52,9 @@ bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/instal
 irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
 ```
 
-**What's new in v2.9.0:**
+**What's new:**
 - 🤖 **Claude Code editor profile** — Install DevFlow as global slash commands in Claude Code (`~/.claude/commands/`), alongside the existing VS Code, opencode, Antigravity, and generic profiles.
-- ⏸️ **Validation Gate (Phase 1.5)** — Before any design work, the Orchestrator challenges assumptions, scans against engineering standards, and raises BLOCK/WARN findings that you must resolve explicitly.
+- ⏸️ **Validation Gate (Phase 2)** — Before any design work, the Orchestrator challenges assumptions, scans against engineering standards, and raises BLOCK/WARN findings that you must resolve explicitly.
 - ⚙️ **Standard vs. Pair mode** — At the Confirmation Gate you choose: Standard mode auto-executes branches, tests, and commits; Pair mode keeps every command in your hands. Push and PR creation are **never** auto-executed in either mode.
 - 🧰 **Six new standalone agents** — Reverse Engineering, Tutorial, Templates, Documentation, Contract, and Migration agents join Refactorer, Bug-Fixer, Feature, and Performance.
 - 🔁 **Cross-cycle learning loop** — Deterministic standards application with explicit BLOCK/WARN triggers, agent self-validation, and a knowledge base that accumulates learnings per cycle.
@@ -94,13 +94,14 @@ DevFlow is a **multi-agent framework** that simulates a professional engineering
 | Phase | Agent / Role | Responsibility | Output |
 |-------|--------------|----------------|--------|
 | 1 | 🧠 **Brainstormer** | Clarifying questions, goals, constraints, edge cases | Problem Statement |
-| 2 | 🧩 **Architect** | Requirements analysis, system design, **Stack Profile** | Architecture spec |
-| 3 | 📋 **Planner** | Task breakdown + **complete test code per task** + HTML mockups (UI) | Plan with ready-to-paste tests |
+| 2 | ⏸️ **Validation Gate** *(Orchestrator)* | Challenge assumptions, scan standards, flag risks before design | Validation report |
+| 3 | 🧩 **Architect** | Requirements analysis, system design, **Stack Profile** | Architecture spec |
+| 4 | 📋 **Planner** | Task breakdown + **complete test code per task** + HTML mockups (UI) | Plan with ready-to-paste tests |
 | ⏸️ | — | **Confirmation Gate** — waits for user approval | — |
-| 4 | ⚙️ **Implementer** | 🔴→🟢 Red→Green TDD cycle per task (creates tests, writes production code, informs user) | Production code + test files |
-| 5 | 🔍 **Reviewer** | Code quality, security (OWASP), architecture validation | Code review findings |
-| 6 | 🐞 **Debugger** | Root cause analysis (never guesses) | Debug logs + fixes |
-| 7 | 🚀 **Finalizer** | Verifies completion, generates summary, cleans memory | Final report |
+| 5 | ⚙️ **Implementer** | 🔴→🟢 Red→Green TDD cycle per task (creates tests, writes production code, informs user) | Production code + test files |
+| 6 | 🔍 **Reviewer** | Code quality, security (OWASP), architecture validation | Code review findings |
+| 7 | 🐞 **Debugger** | Root cause analysis (never guesses) | Debug logs + fixes |
+| 8 | 🚀 **Finalizer** | Verifies completion, generates summary, cleans memory | Final report |
 | — | 🧪 **Tester** *(manual helper)* | Creates a specific failing test from the plan on demand | Failing test file |
 | — | 🔧 **Refactorer** *(standalone)* | Scope-locked code improvement without behavior change | Refactor report |
 | — | 🩹 **Bug-Fixer** *(standalone)* | Reproduce → Isolate → Fix reported bugs | Bug-fix report |
@@ -250,7 +251,7 @@ DevFlow is installed **globally** in VS Code, available in **all workspaces**:
 | Windows | `%APPDATA%\Code\User\` |
 
 **Installed items:**
-- 12 specialized sub-agent skills total: 8 phase-based lifecycle roles (Brainstormer, Architect, Planner, Tester, Implementer, Reviewer, Debugger, Finalizer) + 1 orchestration role (Orchestrator) + 3 standalone agents (Refactorer, Bug-Fixer, Feature Agent)
+- 19 specialized sub-agent skills total: 1 orchestration role (Orchestrator) + 7 lifecycle phase agents (Brainstormer, Architect, Planner, Implementer, Reviewer, Debugger, Finalizer) + Tester (manual helper) + 10 standalone agents (Refactorer, Bug-Fixer, Feature, Performance, Migration, Contract, Documentation, Template, Tutorial, Reverse). The Validation Gate (Phase 2) is run by the Orchestrator.
 - Prompt templates for all lifecycle phases and standalone workflows
 - ~200 KB total (highly optimized)
 
@@ -262,7 +263,7 @@ DevFlow is installed **globally** in VS Code, available in **all workspaces**:
 |-----------|-------------|
 | [`.agents/skills/`](.agents/skills/) | Core logic and workflows for each agent. Each agent has its own `SKILL.md`. |
 | [`.agents/skills/shared/`](.agents/skills/shared/) | Shared rules (`rules.md`), memory conventions, stack detection, and output format. |
-| [`.agents/skills/shared/standards/`](.agents/skills/shared/standards/) | Private engineering standards library — 7 standards with conditional loading. |
+| [`.agents/skills/shared/standards/`](.agents/skills/shared/standards/) | Private engineering standards library — 14 standards with conditional loading. |
 | [`.github/prompts/`](.github/prompts/) | Prompt templates for the agents, used by the editor to trigger specific behaviors. |
 | [`editor-profiles/`](editor-profiles/) | YAML definitions for supported editors, including path and tool mappings. |
 | [`docs/`](docs/) | Architecture diagrams, flow definitions, and internal documentation. |
