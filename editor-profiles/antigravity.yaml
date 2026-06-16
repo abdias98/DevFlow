@@ -67,7 +67,7 @@ install:
 # strategy: json-merge | manual | none
 permissions:
   strategy: manual
-  manual_note: "In Antigravity Settings > Agent > Terminal Auto Execution, add 'devflow-ctl', 'mkdir' and read-only git (rev-parse/status/diff/log) to the allowlist so DevFlow runs without prompts."
+  manual_note: "In Antigravity Settings > Agent > Terminal Auto Execution, add 'devflow-ctl', 'mkdir', read-only git (rev-parse/status/diff/log) and the read-only search utilities (grep, rg, find, ls, cat, head, tail, wc, cp) to the allowlist so DevFlow reads framework files and explores the codebase without prompts."
 
 # ── Post-install message ─────────────────────────────────────────────────────
 post_install:
