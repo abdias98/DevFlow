@@ -7,9 +7,8 @@ Internal design documentation for contributors and advanced users.
 ```
 DevFlow/
 ├── .agents/skills/              # AI Sub-agents (Copilot skills)
-│   ├── devflow/                 # Main orchestrator agent
+│   ├── devflow/                 # Main orchestrator agent (also runs the Validation Gate = Phase 2)
 │   ├── devflow-brainstorm/
-│   ├── devflow-validation/      # Phase 1.5 — Challenge assumptions, scan standards
 │   ├── devflow-architect/
 │   ├── devflow-plan/
 │   ├── devflow-test/            # Manual helper only (not an automatic phase)
@@ -65,7 +64,7 @@ DevFlow/
 ### Orchestrator (`devflow` skill)
 - Entry point for full lifecycle
 - Manages state and iteration logic
-- Coordinates sub-agents (including Validator for Phase 1.5)
+- Coordinates sub-agents (including the Validation Gate for Phase 2)
 - Enforces strict phase ordering
 - Reads `rules.md` and `lifecycle.md`
 - Enforces the **Critical Friend Principle** — ensures all agents challenge assumptions before proceeding
@@ -80,7 +79,7 @@ DevFlow/
   - Initialize `phase-state.md`
 - **Restriction:** NEVER writes code, schema, or architecture
 
-### Validation Gate (Phase 1.5 — Handled by Orchestrator)
+### Validation Gate (Phase 2 — Handled by Orchestrator)
 - **Input:** Problem Statement from session memory + engineering standards
 - **Output:** Validation report at `docs/devflow/session/{slug}/validation-report.md`
 - **Actions (performed by Orchestrator directly):**
@@ -306,7 +305,7 @@ Standards live in `shared/standards/` and are read directly by each agent via ex
 
 ## AGENTS.md Skip Optimization
 
-When a project has an `AGENTS.md` file, the Architect reads it at the start of Phase 2 and skips general exploration sub-steps (folder structure, naming conventions, tech stack details, architecture patterns, conventions for similar features). Sub-steps for reference implementation, reusability inventory, and deep test architecture analysis still run.
+When a project has an `AGENTS.md` file, the Architect reads it at the start of Phase 3 and skips general exploration sub-steps (folder structure, naming conventions, tech stack details, architecture patterns, conventions for similar features). Sub-steps for reference implementation, reusability inventory, and deep test architecture analysis still run.
 
 The Architect stores extracted AGENTS.md data in session memory so the Planner can reuse it without re-discovering conventions.
 

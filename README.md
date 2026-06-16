@@ -52,9 +52,9 @@ bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/instal
 irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
 ```
 
-**What's new in v2.9.0:**
+**What's new:**
 - 🤖 **Claude Code editor profile** — Install DevFlow as global slash commands in Claude Code (`~/.claude/commands/`), alongside the existing VS Code, opencode, Antigravity, and generic profiles.
-- ⏸️ **Validation Gate (Phase 1.5)** — Before any design work, the Orchestrator challenges assumptions, scans against engineering standards, and raises BLOCK/WARN findings that you must resolve explicitly.
+- ⏸️ **Validation Gate (Phase 2)** — Before any design work, the Orchestrator challenges assumptions, scans against engineering standards, and raises BLOCK/WARN findings that you must resolve explicitly.
 - ⚙️ **Standard vs. Pair mode** — At the Confirmation Gate you choose: Standard mode auto-executes branches, tests, and commits; Pair mode keeps every command in your hands. Push and PR creation are **never** auto-executed in either mode.
 - 🧰 **Six new standalone agents** — Reverse Engineering, Tutorial, Templates, Documentation, Contract, and Migration agents join Refactorer, Bug-Fixer, Feature, and Performance.
 - 🔁 **Cross-cycle learning loop** — Deterministic standards application with explicit BLOCK/WARN triggers, agent self-validation, and a knowledge base that accumulates learnings per cycle.
@@ -250,7 +250,7 @@ DevFlow is installed **globally** in VS Code, available in **all workspaces**:
 | Windows | `%APPDATA%\Code\User\` |
 
 **Installed items:**
-- 12 specialized sub-agent skills total: 8 phase-based lifecycle roles (Brainstormer, Architect, Planner, Tester, Implementer, Reviewer, Debugger, Finalizer) + 1 orchestration role (Orchestrator) + 3 standalone agents (Refactorer, Bug-Fixer, Feature Agent)
+- 19 specialized sub-agent skills total: 1 orchestration role (Orchestrator) + 7 lifecycle phase agents (Brainstormer, Architect, Planner, Implementer, Reviewer, Debugger, Finalizer) + Tester (manual helper) + 10 standalone agents (Refactorer, Bug-Fixer, Feature, Performance, Migration, Contract, Documentation, Template, Tutorial, Reverse). The Validation Gate (Phase 2) is run by the Orchestrator.
 - Prompt templates for all lifecycle phases and standalone workflows
 - ~200 KB total (highly optimized)
 
@@ -262,7 +262,7 @@ DevFlow is installed **globally** in VS Code, available in **all workspaces**:
 |-----------|-------------|
 | [`.agents/skills/`](.agents/skills/) | Core logic and workflows for each agent. Each agent has its own `SKILL.md`. |
 | [`.agents/skills/shared/`](.agents/skills/shared/) | Shared rules (`rules.md`), memory conventions, stack detection, and output format. |
-| [`.agents/skills/shared/standards/`](.agents/skills/shared/standards/) | Private engineering standards library — 7 standards with conditional loading. |
+| [`.agents/skills/shared/standards/`](.agents/skills/shared/standards/) | Private engineering standards library — 14 standards with conditional loading. |
 | [`.github/prompts/`](.github/prompts/) | Prompt templates for the agents, used by the editor to trigger specific behaviors. |
 | [`editor-profiles/`](editor-profiles/) | YAML definitions for supported editors, including path and tool mappings. |
 | [`docs/`](docs/) | Architecture diagrams, flow definitions, and internal documentation. |
