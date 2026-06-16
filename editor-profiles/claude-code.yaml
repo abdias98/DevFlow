@@ -91,8 +91,9 @@ install:
 
 # ── Permissions (auto-approval of DevFlow actions) ───────────────────────────
 # install.sh merges the snippet into the editor's settings file so DevFlow
-# actions (reading installed skills, writing docs/devflow/*, running
-# devflow-ctl and read-only git) do not prompt for confirmation.
+# actions (reading installed skills + docs/devflow/*, writing docs/devflow/*,
+# running devflow-ctl, read-only git, and read-only search utilities
+# grep/rg/find/ls/cat/head/tail/wc/cp) do not prompt for confirmation.
 # Merge is non-destructive: existing user values win, arrays are unioned.
 # strategy: json-merge | manual | none
 permissions:

@@ -77,8 +77,10 @@ install:
 
 # ── Permissions (auto-approval of DevFlow actions) ───────────────────────────
 # install.sh merges the snippet into opencode's global config so DevFlow
-# bash commands (devflow-ctl, mkdir docs/devflow, read-only git) are allowed
-# even when the user sets a stricter default permission policy.
+# bash commands (devflow-ctl, mkdir docs/devflow, read-only git, and read-only
+# search utilities grep/rg/find/ls/cat/head/tail/wc/cp) are allowed even when
+# the user sets a stricter default permission policy. This stops opencode from
+# prompting when agents read installed framework files or explore the codebase.
 # Merge is non-destructive: existing user values win, arrays are unioned.
 # strategy: json-merge | manual | none
 permissions:
