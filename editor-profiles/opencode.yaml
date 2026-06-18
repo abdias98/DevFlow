@@ -75,12 +75,14 @@ path_mappings:
 install:
   tool_substitution: true
 
-# ── Permissions (auto-approval of DevFlow actions) ───────────────────────────
+# ── Permissions (3-tier auto-approval model) ──────────────────────────────────
 # install.sh merges the snippet into opencode's global config so DevFlow
-# bash commands (devflow-ctl, mkdir docs/devflow, read-only git, and read-only
-# search utilities grep/rg/find/ls/cat/head/tail/wc/cp) are allowed even when
-# the user sets a stricter default permission policy. This stops opencode from
-# prompting when agents read installed framework files or explore the codebase.
+# Standard-mode actions do not prompt. Three tiers (see permissions/README.md):
+#   allow → auto-approve: search utils, file ops, git checkout/add/commit,
+#           build/test/lint, devflow-ctl
+#   ask   → confirm user: rm, git push, git reset --hard, sudo, npm install
+#   deny  → prohibit:     git push --force, git commit --no-verify
+# Deny patterns listed first in the bash map for first-match precedence.
 # Merge is non-destructive: existing user values win, arrays are unioned.
 # strategy: json-merge | manual | none
 permissions:

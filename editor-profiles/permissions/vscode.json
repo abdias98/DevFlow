@@ -1,8 +1,20 @@
 {
   "chat.tools.terminal.autoApprove": {
     "/devflow-ctl/": true,
-    "/^mkdir -p docs\\/devflow/": true,
-    "/^git (rev-parse|status|diff|log)\\b/": true,
-    "/^(grep|rg|find|ls|cat|head|tail|wc|cp)\\b/": true
+    "/^mkdir\\b/": true,
+    "/^touch\\b/": true,
+    "/^cp\\b/": true,
+    "/^mv\\b/": true,
+    "/^git (rev-parse|status|diff|log|branch|checkout -b|add|commit)\\b/": true,
+    "/^(grep|rg|find|ls|cat|head|tail|wc|tree|du|stat|file|which|pwd|diff|sort|uniq|awk|sed|echo|printf|test)\\b/": true,
+    "/^npm (run|test|ci)\\b/": true,
+    "/^npx\\b/": true,
+    "/^(pnpm|yarn)\\b/": true,
+    "/^python3?\\b/": true,
+    "/^pytest\\b/": true,
+    "/^(ruff|mypy|node|tsc)\\b/": true,
+    "/^go (test|build|vet)\\b/": true,
+    "/^cargo (test|build|check)\\b/": true,
+    "/^make\\b/": true
   }
 }
