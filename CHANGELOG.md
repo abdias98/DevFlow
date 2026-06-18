@@ -9,9 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### ✨ Added
+### 🔄 Changed
 
-- **Progress Honesty & Brevity rules** (`rules.md` → new section) — three framework-wide rules that improve output quality for any model: (1) **ground every progress claim in evidence** — audit each claim against a tool result before reporting; never state work is complete unless confirmed; (2) **lead with the outcome** — first sentence answers "what happened," supporting detail comes after; (3) **act when ready** — do not re-derive established facts, re-litigate user decisions, or narrate unpursued options. These patterns eliminate fabricated status reports, reduce latency, and let capable models operate without unnecessary narration.
+- **Output format: `### Reasoning` → `### Summary`** (`output-format.md`) — the agent output template previously asked agents to transcribe "why this agent is active, what it's doing, key decisions" in every response. Capable models do their reasoning internally; asking them to transcribe it degrades output quality and, in some models, triggers reasoning-extraction refusals. The section is now `### Summary` with the instruction: "state what you did and why it matters, do not transcribe internal reasoning."
+- **Orchestrator rule 5 reframed** (`devflow/SKILL.md`) — "ALWAYS justify decisions — every choice needs reasoning" → "ALWAYS state what and why, not how you thought." Design decisions with rationale still belong in artifacts (specs, plans, reviews); internal reasoning does not belong in chat output.
 
 ## [3.1.0] — 2026-06-18
 
