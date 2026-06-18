@@ -72,7 +72,8 @@ Follow the [stack planning rules](<{{SKILLS_DIR}}/devflow-plan/stack-planning.md
 
 1. **Read AGENTS.md directly** — search for `AGENTS.md` in the workspace. Extract: tech stack, folder structure, naming conventions, test framework, test file locations, utilities, assertion style, naming conventions, and run commands.
 2. **Check session memory** — read `context.md` for `## AGENTS.md Context` and `## Architect Findings`.
-3. **Explore directly** — for anything not covered above, explore the codebase (read-only).
+3. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for planning patterns, anti-patterns, and architectural decisions from previous cycles relevant to this feature. Reuse documented patterns and avoid known pitfalls.
+4. **Explore directly** — for anything not covered above, explore the codebase (read-only).
 
 Ensure you understand: file conventions, import patterns, test framework + assertion style, build/run/test commands, and reference implementations for similar features.
 

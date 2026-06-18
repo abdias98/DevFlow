@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **Knowledge base reads for mid-cycle agents** — the knowledge base (`docs/devflow/knowledge-base/learnings.md`) was already written by the Finalizer and read by the Brainstormer and Architect. Now the **Planner** (Step 6), **Implementer** (Step 1), **Reviewer** (Step 1, both Cycle and Standalone mode), and **Debugger** (Step 1) also read it at the start of their procedure. This closes the learning loop: every phase that makes decisions now benefits from accumulated patterns and anti-patterns from previous cycles. The `learnings.md` "How to Use" section was updated to list all seven agents and their read points.
+
 ## [3.1.0] — 2026-06-18
 
 > Permissions minor — 3-tier permission model (allow/ask/deny) that aligns editor snippets with `rules.md` Standard mode, plus a validation guardrail against destructive patterns in the allow tier.
