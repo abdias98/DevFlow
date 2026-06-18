@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **Progress Honesty & Brevity rules** (`rules.md` → new section) — three framework-wide rules that improve output quality for any model: (1) **ground every progress claim in evidence** — audit each claim against a tool result before reporting; never state work is complete unless confirmed; (2) **lead with the outcome** — first sentence answers "what happened," supporting detail comes after; (3) **act when ready** — do not re-derive established facts, re-litigate user decisions, or narrate unpursued options. These patterns eliminate fabricated status reports, reduce latency, and let capable models operate without unnecessary narration.
+
 ## [3.1.0] — 2026-06-18
 
 > Permissions minor — 3-tier permission model (allow/ask/deny) that aligns editor snippets with `rules.md` Standard mode, plus a validation guardrail against destructive patterns in the allow tier.
