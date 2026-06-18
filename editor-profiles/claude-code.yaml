@@ -89,11 +89,13 @@ path_mappings:
 install:
   tool_substitution: true
 
-# ── Permissions (auto-approval of DevFlow actions) ───────────────────────────
-# install.sh merges the snippet into the editor's settings file so DevFlow
-# actions (reading installed skills + docs/devflow/*, writing docs/devflow/*,
-# running devflow-ctl, read-only git, and read-only search utilities
-# grep/rg/find/ls/cat/head/tail/wc/cp) do not prompt for confirmation.
+# ── Permissions (3-tier auto-approval model) ──────────────────────────────────
+# install.sh merges the snippet into Claude Code's settings.json so DevFlow
+# Standard-mode actions do not prompt. Three tiers (see permissions/README.md):
+#   allow → auto-approve: search utils, file ops, git checkout/add/commit,
+#           build/test/lint, devflow-ctl
+#   ask   → confirm user: rm, git push, git reset --hard, sudo, npm install
+#   deny  → prohibit:     git push --force, git commit --no-verify
 # Merge is non-destructive: existing user values win, arrays are unioned.
 # strategy: json-merge | manual | none
 permissions:

@@ -243,6 +243,50 @@ if [[ -d "$PROFILES_DIR" ]]; then
           fail "$profile — permission snippet not found: $PROFILES_DIR/permissions/$snippet"
         elif command -v python3 >/dev/null 2>&1 && ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$PROFILES_DIR/permissions/$snippet" 2>/dev/null; then
           fail "$PROFILES_DIR/permissions/$snippet — invalid JSON"
+        elif command -v python3 >/dev/null 2>&1; then
+          # Guardrail: no destructive/sensitive patterns in the allow tier.
+          # See editor-profiles/permissions/README.md for the tier model.
+          guardrail_out=$(python3 - "$PROFILES_DIR/permissions/$snippet" <<'GUARDEOF'
+import json, sys
+
+FORBIDDEN = ["rm ", "rmdir", "git push", "--force", "--no-verify",
+             "--amend", "sudo ", "chmod ", "chown ", "kill ", "pkill ",
+             "npm install", "yarn add", "pip install"]
+
+with open(sys.argv[1]) as fh:
+    data = json.load(fh)
+
+violations = []
+
+# Claude Code: permissions.allow is a list of "Bash(...)" / "Read(...)" patterns
+for entry in data.get("permissions", {}).get("allow", []):
+    low = entry.lower()
+    violations.extend(entry for bad in FORBIDDEN if bad in low)
+
+# opencode: permission.bash is a map of pattern -> "allow"|"ask"|"deny"
+for pattern, verdict in data.get("permission", {}).get("bash", {}).items():
+    if verdict == "allow":
+        low = pattern.lower()
+        violations.extend(pattern for bad in FORBIDDEN if bad in low)
+
+# VS Code: chat.tools.terminal.autoApprove is a map of regex -> true
+node = data
+for key in ("chat", "tools", "terminal", "autoApprove"):
+    node = node.get(key, {}) if isinstance(node, dict) else {}
+if isinstance(node, dict):
+    for regex in node:
+        low = regex.lower()
+        violations.extend(regex for bad in FORBIDDEN if bad in low)
+
+print("\n".join(violations))
+GUARDEOF
+          )
+          if [[ -n "$guardrail_out" ]]; then
+            fail "$PROFILES_DIR/permissions/$snippet — destructive patterns in allow tier (move to ask/deny):"
+            while IFS= read -r line; do
+              [[ -n "$line" ]] && echo "         • $line"
+            done <<< "$guardrail_out"
+          fi
         fi
         ;;
       *)
