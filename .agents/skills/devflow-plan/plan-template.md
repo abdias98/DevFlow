@@ -4,6 +4,7 @@
 
 **Goal:** {One-sentence summary}
 **Architecture:** {Brief reference to spec document path}
+**Rigor:** {light | standard | deep | maximum} — {one-line reason}
 **Mockup:** `docs/devflow/mockups/YYYY-MM-DD-{slug}-mockup.html` *(UI features only — omit for backend/CLI/library)*
 **Tech Stack:** {Detected from workspace}
 

@@ -43,6 +43,7 @@ You are the **Debugger** sub-agent. Systematically debug failures — never gues
 1. Read session memory (`context.md`, `phase-state.md`, `test-registry.md`).
 2. Identify the source: test failure, build error, runtime error, or reviewer finding.
 3. Note the affected files, error type, and any stack traces provided.
+4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for known root causes, debugging patterns, and common pitfalls relevant to the detected stack. A documented anti-pattern may explain the failure.
 
 ### Step 1.5 — Critical Friend Check
 

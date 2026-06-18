@@ -138,6 +138,7 @@ slug: {feature-slug}
 mode: lifecycle                 # lifecycle | feature | refactor | bug-fix | ...
 phase: 1                        # current phase (lifecycle: 1-8, sequential)
 pair_mode: false
+rigor: standard                 # light | standard | deep | maximum — set by the Planner based on task complexity
 branch: none                    # set at the Confirmation Gate
 locked_by: Orchestrator         # agent name | none
 locked_since: 2026-06-11T10:30:00Z

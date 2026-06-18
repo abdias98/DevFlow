@@ -5,8 +5,8 @@ Every DevFlow agent response MUST be structured as follows:
 ```markdown
 ## {emoji} Active Agent: {Agent Name}
 
-### Reasoning
-{Why this agent is active, what it's doing, key decisions}
+### Summary
+{One-sentence outcome first: what happened or what was found. Then key context only if the user needs it. Do not transcribe internal reasoning — state what you did and why it matters.}
 
 ### Output
 {The actual deliverable — code, spec, plan, review, etc.}

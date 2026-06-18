@@ -24,7 +24,7 @@
 #   scope add <glob>                                 Append a glob to the scope
 #   iterate <loop> [--max <N>]                       Increment loop counter; exit 1 over limit
 #   lock check | acquire <agent> [--force] | release Manage the session lock
-#   config set <key> <value> | get <key>             Session settings (branch, pair_mode, mode, phase)
+#   config set <key> <value> | get <key>             Session settings (branch, pair_mode, mode, phase, rigor)
 #   checkpoint set <name> <sha> | get <name>         Record / read rollback SHAs
 #   artifacts check <type> <path>                    Validate required sections
 #
@@ -208,6 +208,7 @@ cmd_init() {
     echo "mode: $mode"
     echo "phase: 1"
     echo "pair_mode: false"
+    echo "rigor: standard"
     echo "branch: none"
     echo "locked_by: Orchestrator"
     echo "locked_since: $(now_iso)"
@@ -249,6 +250,7 @@ cmd_status() {
   echo "Phase:     $(fm_get phase)"
   echo "Branch:    $(fm_get branch)"
   echo "Pair mode: $(fm_get pair_mode)"
+  echo "Rigor:     $(fm_get rigor)"
   echo "Lock:      $(fm_get locked_by) (since $(fm_get locked_since))"
   echo "Gates:"
   for g in validation confirmation plan_approval; do
@@ -428,8 +430,8 @@ cmd_config() {
   resolve_session
   local action="${1:-}" key="${2:-}" value="${3:-}"
   case "$key" in
-    branch|pair_mode|mode|phase) ;;
-    *) die "config: key must be one of branch|pair_mode|mode|phase (gates and counters have their own commands)" ;;
+    branch|pair_mode|mode|phase|rigor) ;;
+    *) die "config: key must be one of branch|pair_mode|mode|phase|rigor (gates and counters have their own commands)" ;;
   esac
   case "$action" in
     get) fm_get "$key" ;;
@@ -437,6 +439,12 @@ cmd_config() {
       [[ -n "$value" ]] || die "usage: devflow-ctl config set <key> <value>"
       if [[ "$key" == "pair_mode" && "$value" != "true" && "$value" != "false" ]]; then
         die "config: pair_mode must be 'true' or 'false'"
+      fi
+      if [[ "$key" == "rigor" ]]; then
+        case "$value" in
+          light|standard|deep|maximum) ;;
+          *) die "config: rigor must be 'light', 'standard', 'deep', or 'maximum'" ;;
+        esac
       fi
       fm_set "$key" "$value"
       ok "$key set to $value"
