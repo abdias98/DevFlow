@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.0] — 2026-06-18
+
+> Permissions minor — 3-tier permission model (allow/ask/deny) that aligns editor snippets with `rules.md` Standard mode, plus a validation guardrail against destructive patterns in the allow tier.
+
+### ✨ Added
+
+- **3-tier permission model (allow/ask/deny) for editor profiles** — the permission snippets previously only allowlisted read-only utilities (PR #63 / v3.0.2), but `rules.md` Standard mode also auto-executes `git checkout -b`, `git add`, `git commit`, and the project's `{Test Command}` — so the editor re-prompted for actions DevFlow already authorized, breaking the auto-execute contract. The snippets now implement three tiers (documented in the new `editor-profiles/permissions/README.md`, the single source of truth):
+  - **Tier A — Allow (auto-approve):** search utils (`grep`, `rg`, `find`, `ls`, `cat`, `head`, `tail`, `wc`, `tree`, `du`, `stat`, `file`, `which`, `pwd`, `diff`, `sort`, `uniq`, `awk`, `sed`, `echo`, `printf`, `test`), file ops (`mkdir`, `touch`, `cp`, `mv`), git non-destructive + Standard-mode (`rev-parse`, `status`, `diff`, `log`, `checkout -b`, `add`, `commit`, `branch`), build/test/lint (`npm run/test/ci`, `npx`, `pnpm`, `yarn`, `python`, `pytest`, `ruff`, `mypy`, `node`, `tsc`, `go test/build/vet`, `cargo test/build/check`, `make`), and `devflow-ctl`.
+  - **Tier B — Ask (confirm with user):** `rm`, `rmdir`, `git push`, `git reset --hard`, `git clean`, `git rebase`, `git commit --amend`, `git cherry-pick`, `sudo`, `chmod`, `chown`, `kill`, `pkill`, `killall`, `npm install`, `yarn add`, `pip install`. The user is prompted even in Standard mode.
+  - **Tier C — Deny (prohibited by `rules.md`):** `git push --force`, `git push -f`, `git commit --no-verify`. The agent cannot run them; the user still can manually.
+  - **Per-editor implementation:** `claude-code.json` uses `permissions.allow[]`/`ask[]`/`deny[]` arrays; `opencode.json` uses a `permission.bash` map with deny patterns listed first for first-match precedence; `vscode.json` carries Tier A in `chat.tools.terminal.autoApprove` (this key has no ask/deny mechanism, so Tier B/C fall through to the editor default prompt).
+- **`editor-profiles/permissions/README.md`** — new file, the single source of truth for the 3-tier model, the per-editor mechanism table, precedence rules, and the alignment table mapping each `rules.md` Standard-mode action to its snippet enforcement.
+- **Validation guardrail against destructive patterns in the allow tier** — `scripts/validate-framework.sh` (section 9) now fails if a permission snippet places any destructive/sensitive pattern (`rm`, `rmdir`, `git push`, `--force`, `--no-verify`, `--amend`, `sudo`, `chmod`, `chown`, `kill`, `pkill`, `npm install`, `yarn add`, `pip install`) in the Tier A (allow) section. Prevents future regressions where a snippet accidentally auto-approves a destructive command.
+
+### 🔄 Changed
+
+- **Editor profile YAML `permissions:` comments** (`claude-code.yaml`, `opencode.yaml`, `vscode.yaml`) — updated from the v3.0.2 read-only-utilities description to the 3-tier (allow/ask/deny) model summary with a pointer to `permissions/README.md`.
+
 ## [3.0.2] — 2026-06-16
 
 > Permissions patch — auto-approval of read-only search utilities per editor profile so agents can read installed framework files without prompts. No behavior change.
