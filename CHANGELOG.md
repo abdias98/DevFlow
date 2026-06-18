@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **Rigor adaptativo** — the framework now adjusts its own rigor based on task complexity. The Planner classifies each feature into one of four levels (`light`, `standard`, `deep`, `maximum`) during Phase 4 and records it via `devflow-ctl config set rigor {level}`. The Orchestrator reads the rigor level at the Confirmation Gate and includes it in the plan summary. The `devflow-ctl` CLI validates the value, prints it in `status`, and initializes it to `standard` on session creation. The `phase-state.md` frontmatter now includes a `rigor` field (documented in `memory-conventions.md`). The plan template includes a `**Rigor:**` header line. This is a framework-level feature — it adjusts the scaffolding DevFlow applies, not a model parameter. Future waves will use the rigor level to control verification intervals, review depth, and checkpoint frequency.
+
 ## [3.1.0] — 2026-06-18
 
 > Permissions minor — 3-tier permission model (allow/ask/deny) that aligns editor snippets with `rules.md` Standard mode, plus a validation guardrail against destructive patterns in the allow tier.

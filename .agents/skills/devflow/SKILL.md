@@ -188,6 +188,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 2. Read the plan from `docs/devflow/plans/` and present a summary:
    - **Feature:** {slug}
    - **Tasks:** {count}
+   - **Rigor:** {level} — {reason} *(read from `devflow-ctl config get rigor`)*
    - **Files to create:** {list}
    - **Files to modify:** {list}
    - **Stack Mode:** {yes/no} — {branch plan if stacked}
