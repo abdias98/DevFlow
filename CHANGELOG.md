@@ -7,10 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [3.2.0] — 2026-06-18
+
+> Foundation minor — Wave 5 of the Mythos-class improvement roadmap. Five model-agnostic features that let the framework extract more potential from any AI: progress honesty rules, reasoning-echo correction, cross-cycle knowledge sharing, adaptive rigor, and work packet format.
+
+### ✨ Added
+
+- **Progress Honesty & Brevity rules** (`rules.md` → new section) — three framework-wide rules that improve output quality for any model: (1) **ground every progress claim in evidence** — audit each claim against a tool result before reporting; never state work is complete unless confirmed; (2) **lead with the outcome** — first sentence answers "what happened," supporting detail comes after; (3) **act when ready** — do not re-derive established facts, re-litigate user decisions, or narrate unpursued options. These patterns eliminate fabricated status reports, reduce latency, and let capable models operate without unnecessary narration.
+- **Knowledge base reads for mid-cycle agents** — the knowledge base (`docs/devflow/knowledge-base/learnings.md`) was already written by the Finalizer and read by the Brainstormer and Architect. Now the **Planner** (Step 6), **Implementer** (Step 1), **Reviewer** (Step 1, both Cycle and Standalone mode), and **Debugger** (Step 1) also read it at the start of their procedure. This closes the learning loop: every phase that makes decisions now benefits from accumulated patterns and anti-patterns from previous cycles. The `learnings.md` "How to Use" section was updated to list all seven agents and their read points.
+- **Rigor adaptativo** — the framework now adjusts its own rigor based on task complexity. The Planner classifies each feature into one of four levels (`light`, `standard`, `deep`, `maximum`) during Phase 4 and records it via `devflow-ctl config set rigor {level}`. The Orchestrator reads the rigor level at the Confirmation Gate and includes it in the plan summary. The `devflow-ctl` CLI validates the value, prints it in `status`, and initializes it to `standard` on session creation. The `phase-state.md` frontmatter now includes a `rigor` field (documented in `memory-conventions.md`). The plan template includes a `**Rigor:**` header line. This is a framework-level feature — it adjusts the scaffolding DevFlow applies, not a model parameter. Future waves will use the rigor level to control verification intervals, review depth, and checkpoint frequency.
 
 ### 🔄 Changed
 
+- **Output format: `### Reasoning` → `### Summary`** (`output-format.md`) — the agent output template previously asked agents to transcribe "why this agent is active, what it's doing, key decisions" in every response. Capable models do their reasoning internally; asking them to transcribe it degrades output quality and, in some models, triggers reasoning-extraction refusals. The section is now `### Summary` with the instruction: "state what you did and why it matters, do not transcribe internal reasoning."
+- **Orchestrator rule 5 reframed** (`devflow/SKILL.md`) — "ALWAYS justify decisions — every choice needs reasoning" → "ALWAYS state what and why, not how you thought." Design decisions with rationale still belong in artifacts (specs, plans, reviews); internal reasoning does not belong in chat output.
 - **Plan template: work packet format** (`plan-template.md`) — each task in the plan is now structured as a **work packet** with `**Goal**`, `**Context**`, `**Constraints**`, `**Acceptance criteria**`, and `**Deliverables**` sections, replacing the previous "Step 1 / Step 2 / Step N" micro-step format. The implementation code snippets are now under a single `**Implementation guide**` header that the Implementer follows as a guide but may adapt if a justified improvement exists. This lets capable models operate with more autonomy (they receive a structured work packet to fill, not a paste-and-go script) while still providing enough structure for less capable models to follow. The `artifact-checklist.md` Plan Document section was updated to validate the new work packet fields. The Planner SKILL.md rule was reframed from "Every step must include complete, ready-to-paste code snippets" to "Each task is a work packet" with an implementation guide.
 
 ## [3.1.0] — 2026-06-18
