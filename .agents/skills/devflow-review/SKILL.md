@@ -48,6 +48,7 @@ Set `REVIEW_MODE` and proceed to the corresponding procedure below.
 1. Read session memory: spec path, plan path, test results, Stack Mode.
 2. Read spec and plan documents.
 3. Read Definition of Done from `context.md` — cross-reference each criterion.
+4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for known anti-patterns from previous cycles. If any documented anti-patterns match the changed files, flag them as findings.
 
 ### Step 2 — Identify Changed Files
 
@@ -103,7 +104,8 @@ Used when invoked by Feature Agent, Refactorer, Bug-Fixer, Performance Agent, Mi
    - Tutorial: `docs/devflow/tutorial/...`
    - Reverse: `docs/devflow/reverse/...`
 3. Read `## Stack Profile` from `context.md` to determine `Feature Type` (UI/backend/fullstack/etc.).
-4. Identify which standards to apply based on `Feature Type`:
+4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for known anti-patterns from previous cycles relevant to the changed files.
+5. Identify which standards to apply based on `Feature Type`:
    - **Always:** SOLID, Clean Architecture, Security, Performance, Project Design Patterns.
    - **If UI/frontend:** also UI Design and Accessibility.
    - **If backend/API:** also REST API Design.

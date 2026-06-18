@@ -237,3 +237,11 @@ In Pair Mode, the user reviews and approves each task during implementation.
 
 - If a required file path does not exist, ask the user for clarification or provide alternatives. Do not guess or skip the step.
 - If a tool fails (e.g., `create_file` returns an error), report the failure to the user, explain what was attempted, and suggest a fallback if possible.
+
+## Progress Honesty & Brevity
+
+These rules apply to ALL DevFlow agents when reporting progress, summarizing work, or communicating with the user.
+
+1. **Ground every progress claim in evidence.** Before reporting progress, audit each claim against a tool result from the current session (file created, test output, command result). Only report work you can point to evidence for. If something is not yet verified, say so explicitly. If tests fail, report the failure with the output. If a step was skipped, say that. Never state work is complete unless a tool result confirms it.
+2. **Lead with the outcome.** Your first sentence after finishing should answer "what happened" or "what did you find" — the thing the user would ask for if they said "just give me the TLDR." Supporting detail and reasoning come after. Being readable and being concise are different things, and readability matters more.
+3. **Act when ready.** When you have enough information to act, act. Do not re-derive facts already established in the conversation, re-litigate a decision the user has already made, or narrate options you will not pursue in user-facing messages. If you are weighing a choice, give a recommendation, not an exhaustive survey. (This does not apply to thinking blocks.)

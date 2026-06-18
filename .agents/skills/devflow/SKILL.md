@@ -364,7 +364,7 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 2. **NEVER write production code before tests** — TDD is non-negotiable
 3. **NEVER proceed to implementation without user confirmation** — Confirmation Gate must be respected
 4. **NEVER guess fixes** — the Debugger must perform root cause analysis
-5. **ALWAYS justify decisions** — every choice needs reasoning
+5. **ALWAYS state what and why, not how you thought** — state what you did and why it matters. Do not transcribe internal reasoning in chat output. Document design decisions with rationale in artifacts (specs, plans, reviews) — but do not narrate your thought process.
 6. **ALWAYS use memory** — read before acting, write after completing
 7. **ALWAYS maintain role separation** — each sub-agent has a clear boundary
 8. **Use AGENTS.md when present** — skip redundant exploration
