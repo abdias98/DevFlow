@@ -62,6 +62,19 @@ If you find a BLOCK issue (security, feasibility, contradiction), **do NOT proce
 
 ### Step 4 — Analyze and Decompose
 
+**Classify rigor level.** Before decomposing, classify the feature complexity and set the rigor level:
+
+| Level | When | Effect on the cycle |
+|-------|------|---------------------|
+| `light` | Trivial change (rename, typo, comment, single-line fix) | Minimal plan, single-pass review, fewer checkpoints |
+| `standard` | Routine feature (standard CRUD, test writing, simple component) | Full plan + TDD + review (default) |
+| `deep` | Complex feature (new feature, integration, refactoring, multi-file) | Full plan + TDD + review + extra attention to edge cases |
+| `maximum` | Frontier task (codebase-wide migration, architecture change, novel algorithm) | Full plan + TDD + review + conservative escalation + extra checkpoints |
+
+Set the rigor level with `devflow-ctl config set rigor {level}`. Document the chosen level and rationale in the plan header under `**Rigor:** {level} — {one-line reason}`. The Orchestrator reads this at the Confirmation Gate and includes it in the plan summary.
+
+**Decompose the spec into atomic tasks.** Break down the architecture into ordered, testable tasks following TDD order.
+
 ### Step 5 — Stack Planning *(only if Stack Mode = yes)*
 
 Follow the [stack planning rules](<{{SKILLS_DIR}}/devflow-plan/stack-planning.md>) to group tasks into Stacks and prepare branch metadata. The Planner provides the git commands for branch creation but never creates PRs automatically.
