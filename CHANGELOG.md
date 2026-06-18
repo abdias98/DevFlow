@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 🔄 Changed
+
+- **Plan template: work packet format** (`plan-template.md`) — each task in the plan is now structured as a **work packet** with `**Goal**`, `**Context**`, `**Constraints**`, `**Acceptance criteria**`, and `**Deliverables**` sections, replacing the previous "Step 1 / Step 2 / Step N" micro-step format. The implementation code snippets are now under a single `**Implementation guide**` header that the Implementer follows as a guide but may adapt if a justified improvement exists. This lets capable models operate with more autonomy (they receive a structured work packet to fill, not a paste-and-go script) while still providing enough structure for less capable models to follow. The `artifact-checklist.md` Plan Document section was updated to validate the new work packet fields. The Planner SKILL.md rule was reframed from "Every step must include complete, ready-to-paste code snippets" to "Each task is a work packet" with an implementation guide.
+
 ## [3.1.0] — 2026-06-18
 
 > Permissions minor — 3-tier permission model (allow/ask/deny) that aligns editor snippets with `rules.md` Standard mode, plus a validation guardrail against destructive patterns in the allow tier.
