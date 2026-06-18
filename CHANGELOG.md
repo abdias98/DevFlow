@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 🔄 Changed
+
+- **Output format: `### Reasoning` → `### Summary`** (`output-format.md`) — the agent output template previously asked agents to transcribe "why this agent is active, what it's doing, key decisions" in every response. Capable models do their reasoning internally; asking them to transcribe it degrades output quality and, in some models, triggers reasoning-extraction refusals. The section is now `### Summary` with the instruction: "state what you did and why it matters, do not transcribe internal reasoning."
+- **Orchestrator rule 5 reframed** (`devflow/SKILL.md`) — "ALWAYS justify decisions — every choice needs reasoning" → "ALWAYS state what and why, not how you thought." Design decisions with rationale still belong in artifacts (specs, plans, reviews); internal reasoning does not belong in chat output.
+
 ## [3.1.0] — 2026-06-18
 
 > Permissions minor — 3-tier permission model (allow/ask/deny) that aligns editor snippets with `rules.md` Standard mode, plus a validation guardrail against destructive patterns in the allow tier.
