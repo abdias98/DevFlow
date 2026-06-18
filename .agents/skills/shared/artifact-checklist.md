@@ -65,8 +65,11 @@ Validated by: **Planner** (before Step 8 — persist)
 
 - [ ] **Goal** stated — one-sentence summary
 - [ ] **Architecture reference** — path to spec document
+- [ ] **Rigor** level stated — `light | standard | deep | maximum`
 - [ ] **File Map** section present — Modify: + Create: lists
 - [ ] **At least 1 task** defined with numbered title
+- [ ] **Each task is a work packet** — has **Goal**, **Context**, **Constraints**, **Acceptance criteria**, and **Deliverables**
+- [ ] **Each task has an Implementation guide** with complete code snippets
 - [ ] **Each task has commit checkpoint** — `git commit -m "..."` message
 - [ ] **Each task has test code** — `🧪 Tests for this Task` with complete, runnable code
 - [ ] **Each test has happy path, edge case, and failure scenario**

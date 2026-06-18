@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### ✨ Added
+### 🔄 Changed
 
-- **Rigor adaptativo** — the framework now adjusts its own rigor based on task complexity. The Planner classifies each feature into one of four levels (`light`, `standard`, `deep`, `maximum`) during Phase 4 and records it via `devflow-ctl config set rigor {level}`. The Orchestrator reads the rigor level at the Confirmation Gate and includes it in the plan summary. The `devflow-ctl` CLI validates the value, prints it in `status`, and initializes it to `standard` on session creation. The `phase-state.md` frontmatter now includes a `rigor` field (documented in `memory-conventions.md`). The plan template includes a `**Rigor:**` header line. This is a framework-level feature — it adjusts the scaffolding DevFlow applies, not a model parameter. Future waves will use the rigor level to control verification intervals, review depth, and checkpoint frequency.
+- **Plan template: work packet format** (`plan-template.md`) — each task in the plan is now structured as a **work packet** with `**Goal**`, `**Context**`, `**Constraints**`, `**Acceptance criteria**`, and `**Deliverables**` sections, replacing the previous "Step 1 / Step 2 / Step N" micro-step format. The implementation code snippets are now under a single `**Implementation guide**` header that the Implementer follows as a guide but may adapt if a justified improvement exists. This lets capable models operate with more autonomy (they receive a structured work packet to fill, not a paste-and-go script) while still providing enough structure for less capable models to follow. The `artifact-checklist.md` Plan Document section was updated to validate the new work packet fields. The Planner SKILL.md rule was reframed from "Every step must include complete, ready-to-paste code snippets" to "Each task is a work packet" with an implementation guide.
 
 ## [3.1.0] — 2026-06-18
 

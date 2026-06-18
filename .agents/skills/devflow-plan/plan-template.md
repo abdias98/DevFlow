@@ -30,17 +30,19 @@
 > **Affects existing:** {list of features/files that currently use what this task modifies, or "None"} *(include if Impact flag set in context.md)*
 > **Reference implementation:** `{path/to/similar-existing-file}` — {what to replicate from it} *(from codebase exploration)*
 
-**Files:**
-- Modify: `path/to/file`
-- Create: `path/to/new-file`
+**Goal:** {What should exist at the end of this task — one sentence}
+**Context:** {Relevant files, prior decisions, spec sections, and knowledge-base patterns that inform this task}
+**Constraints:** {What not to touch, assume, or expose — scope boundaries for this task}
+**Acceptance criteria:** {How success will be judged — verifiable conditions, not implementation steps}
 
-- [ ] **Step 1: {Action}**
-{Clear instructions + complete code snippet}
+**Deliverables:**
+- Modify: `path/to/file` — {description of change}
+- Create: `path/to/new-file` — {purpose}
 
-- [ ] **Step 2: {Action}**
-{Clear instructions + complete code snippet}
+**Implementation guide:**
+{Complete code snippets for each file change. The Implementer follows these as a guide and may adapt the approach if a justified improvement exists — any deviation must be documented and flagged to the user per the Implementer's deviation policy.}
 
-- [ ] **Step N: Commit**
+- [ ] **Commit checkpoint**
 ```bash
 git add {specific files}
 git commit -m "{conventional commit message}"
@@ -99,8 +101,9 @@ Example structure varies by stack:
 
 ### Self-Review Checklist
 - [ ] All spec requirements are covered
+- [ ] Each task has a **Goal**, **Context**, **Constraints**, **Acceptance criteria**, and **Deliverables** section
 - [ ] Each task has a commit checkpoint
-- [ ] Code snippets are complete (not partial)
+- [ ] Code snippets in the Implementation guide are complete (not partial)
 - [ ] Each task has a `🧪 Tests for this Task` section with complete, runnable test code
 - [ ] Each test section has at least one happy path, one edge case, one failure scenario
 - [ ] Each test section includes the exact run command
@@ -109,3 +112,4 @@ Example structure varies by stack:
 - [ ] No orphan files (everything referenced exists)
 - [ ] Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format: `type(scope): description` (types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `perf`, `ci`)
 - [ ] HTML wireframe mockup generated (UI features only) — saved to `docs/devflow/mockups/`
+- [ ] **Rigor** level classified and set via `devflow-ctl config set rigor {level}`
