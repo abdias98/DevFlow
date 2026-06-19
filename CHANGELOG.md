@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **Parallel subagents canonical pattern** (`shared/parallel-subagents.md`) — new shared file documenting the framework-orchestrated pattern for dispatching parallel subagents. Covers: when to parallelize (independent, bounded, synthesizable subtasks), when NOT to (dependencies, trivial, shared mutable state), the subagent brief format (Goal/Context/Constraints/Output), synthesis as the orchestrating agent's responsibility, automatic sequential fallback when the editor doesn't support parallel invocation, context freshness for verification, and anti-patterns. Referenced from `rules.md` so all agents know the pattern exists. Application to specific agents (Architect, Implementer, Reviewer, standalone) comes in subsequent Wave 6 PRs.
+
 ## [3.2.0] — 2026-06-18
 
 > Foundation minor — Wave 5 of the Mythos-class improvement roadmap. Five model-agnostic features that let the framework extract more potential from any AI: progress honesty rules, reasoning-echo correction, cross-cycle knowledge sharing, adaptive rigor, and work packet format.
