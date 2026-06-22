@@ -95,7 +95,11 @@ The verifier reports back with a findings list:
 
 ## Fallback: Sequential Execution
 
-If the editor does not support subagent invocation, the Implementer performs the verification **inline** with a deliberate context reset:
+If the editor does not support subagent invocation:
+
+> **Check first:** the Orchestrator records environment capabilities in `context.md` → `## Environment Capabilities` at Step 0 (see [environment-probe.md](./environment-probe.md)). If `subagents: no`, inline verification is the **default path**, not a fallback — the Implementer performs the verification inline from the start.
+
+the Implementer performs the verification **inline** with a deliberate context reset:
 
 1. Set aside the implementation reasoning.
 2. Re-read the plan's File Map and task list.

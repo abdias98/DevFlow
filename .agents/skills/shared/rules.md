@@ -236,6 +236,12 @@ The Implementer dispatches a **fresh-context verifier** between implementation a
 
 See [verifier-subagent.md](./verifier-subagent.md) for the canonical pattern: when to dispatch, the verifier brief, four verification axes (structural, scope, plan compliance, obvious issues), findings format, sequential fallback, and anti-patterns. The Implementer references this file at Step 5 of its procedure.
 
+## Environment Capability Probe
+
+DevFlow detects whether the **environment** (editor + tools) supports the primitives its features need: subagent invocation, vision tools, terminal/bash, persistent filesystem. This is **environment** detection, not model detection — DevFlow never classifies, routes, or recommends models. When a primitive is unavailable, the framework degrades gracefully to the equivalent sequential/manual/code-only mode — the cycle never breaks.
+
+See [environment-probe.md](./environment-probe.md) for the canonical pattern: the four primitives, how the probe works (declaration in editor profiles → recording at install time → reading at runtime via `devflow-ctl capabilities` → recording in `context.md`), graceful degradation for each missing primitive, when to re-probe, and anti-patterns. The Orchestrator runs the probe at Step 0 and all agents that use environment-dependent features check `context.md` → `## Environment Capabilities` before using them.
+
 ## INFO Notes & Violation Reporting
 
 - When a code smell, architectural violation, or potential improvement is found in a file outside the scope, add an INFO note following this format:

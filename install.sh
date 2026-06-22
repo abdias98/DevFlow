@@ -90,6 +90,7 @@ parse_yaml_section() {
 #   EDITOR_ID, EDITOR_NAME, USER_DIR,
 #   SKILLS_DIR, PROMPTS_DIR, INSTR_DIR, AGENTS_DIR,
 #   TOOL_SUBSTITUTION, RELOAD_MSG, USAGE_CMD, PROFILE_FILE
+#   CAP_SUBAGENTS, CAP_VISION, CAP_TERMINAL, CAP_FILESYSTEM
 # USER_DIR is resolved from user_dir.<OS_NAME> in the YAML.
 # All other paths are expanded by substituting $HOME, $APPDATA, and $USER_DIR.
 load_editor_profile() {
@@ -138,6 +139,13 @@ load_editor_profile() {
   TOOL_SUBSTITUTION="$(parse_yaml_value "$yaml" "install" "tool_substitution")"
   RELOAD_MSG="$(parse_yaml_value "$yaml" "post_install" "reload_message")"
   USAGE_CMD="$(parse_yaml_value "$yaml" "post_install" "usage_command")"
+
+  # Read capabilities (environment probe — see shared/environment-probe.md).
+  # Defaults to "unknown" if the profile does not declare a capability.
+  CAP_SUBAGENTS="$(parse_yaml_value "$yaml" "capabilities" "subagents")"
+  CAP_VISION="$(parse_yaml_value "$yaml" "capabilities" "vision")"
+  CAP_TERMINAL="$(parse_yaml_value "$yaml" "capabilities" "terminal")"
+  CAP_FILESYSTEM="$(parse_yaml_value "$yaml" "capabilities" "filesystem")"
 }
 
 # copy_devflow_file <src> <dst>
@@ -486,6 +494,19 @@ if [ -d "$SOURCE_DIR/.agents/skills/shared" ]; then
     fi
   done < <(find "$SOURCE_DIR/.agents/skills/shared" -type f -print0)
   echo "  ✓ Installed shared rules (global): shared/"
+
+  # Write .devflow-environment marker (environment capability probe).
+  # devflow-ctl capabilities reads this at runtime; the Orchestrator records
+  # results in context.md → ## Environment Capabilities. See shared/environment-probe.md.
+  ENV_MARKER="$SKILLS_DIR/shared/.devflow-environment"
+  cat > "$ENV_MARKER" <<EOF
+profile: $EDITOR_ID
+subagents: ${CAP_SUBAGENTS:-unknown}
+vision: ${CAP_VISION:-unknown}
+terminal: ${CAP_TERMINAL:-unknown}
+filesystem: ${CAP_FILESYSTEM:-unknown}
+EOF
+  echo "  ✓ Wrote environment marker: shared/.devflow-environment (profile: $EDITOR_ID)"
 fi
 
 # ── Global: instructions → editor instructions dir (with tool/path substitutions) ──

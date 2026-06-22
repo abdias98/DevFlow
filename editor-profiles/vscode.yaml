@@ -17,6 +17,13 @@
 id: vscode
 display_name: "Visual Studio Code"
 
+# ── Capabilities (environment probe — see shared/environment-probe.md) ───────
+capabilities:
+  subagents: true
+  vision: false
+  terminal: true
+  filesystem: true
+
 # ── User directory per OS ─────────────────────────────────────────────────────
 # install.sh reads user_dir.<OS_NAME> and exposes it as $USER_DIR for path resolution.
 # This is the single source of truth for where VS Code stores its user config.

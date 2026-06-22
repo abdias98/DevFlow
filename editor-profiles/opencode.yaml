@@ -28,6 +28,16 @@
 id: opencode
 display_name: "opencode (CLI AI Agent)"
 
+# ── Capabilities (environment probe — see shared/environment-probe.md) ───────
+# Declares what primitives this editor supports. install.sh writes these to a
+# .devflow-environment marker file at install time; devflow-ctl capabilities
+# reads it at runtime; the Orchestrator records results in context.md.
+capabilities:
+  subagents: true
+  vision: true
+  terminal: true
+  filesystem: true
+
 # ── User directory per OS ─────────────────────────────────────────────────────
 # opencode loads global skills from ~/.agents/skills/ on all platforms.
 # install.sh reads user_dir.<OS_NAME> and exposes it as $USER_DIR for path resolution.

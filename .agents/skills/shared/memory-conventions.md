@@ -125,6 +125,17 @@ These files live only for the duration of a DevFlow session. They are not versio
 
 ## Architect Findings
 {Key discoveries from codebase exploration}
+
+## Environment Capabilities
+
+> Recorded by the Orchestrator at Step 0 from `devflow-ctl capabilities`. See [environment-probe.md](./environment-probe.md).
+
+| Primitive | Available | Impact |
+|-----------|-----------|--------|
+| subagents | {yes \| no \| unknown} | {Parallel patterns active / sequential fallback} |
+| vision | {yes \| no \| unknown} | {Visual verification active / code-only} |
+| terminal | {yes \| no \| unknown} | {Standard/CI/Autonomous modes available / Pair mode forced} |
+| filesystem | {yes \| no \| unknown} | {Knowledge base + artifacts active / hard stop if no} |
 ```
 
 ### `phase-state.md` format
