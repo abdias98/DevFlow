@@ -28,6 +28,7 @@
 #   checkpoint set <name> <sha> | get <name>         Record / read rollback SHAs
 #   artifacts check <type> <path>                    Validate required sections
 #   capabilities [get <key>]                         Print environment capabilities (from .devflow-environment)
+#   knowledge list                                   List entries in the knowledge base
 #
 # Gates:    validation (pending|passed|blocked|accepted-risks)
 #           confirmation, plan_approval (pending|approved|rejected)
@@ -544,6 +545,33 @@ cmd_capabilities() {
   esac
 }
 
+# ── Knowledge base ────────────────────────────────────────────────────────────
+# The knowledge base lives at docs/devflow/knowledge-base/learnings.md.
+# Entries are ### headings under ## Cycle History.
+
+KNOWLEDGE_FILE="${DEVFLOW_KNOWLEDGE_FILE:-docs/devflow/knowledge-base/learnings.md}"
+
+cmd_knowledge() {
+  case "${1:-}" in
+    list)
+      if [[ ! -f "$KNOWLEDGE_FILE" ]]; then
+        echo "Knowledge base not found at $KNOWLEDGE_FILE"
+        echo "Run '/devflow-templates bootstrap-knowledge' to create it from historical artifacts."
+        exit 0
+      fi
+      local entries
+      entries="$(grep -c '^### ' "$KNOWLEDGE_FILE" 2>/dev/null || echo 0)"
+      echo "Knowledge base: $KNOWLEDGE_FILE"
+      echo "Entries: $entries"
+      echo ""
+      grep '^### ' "$KNOWLEDGE_FILE" 2>/dev/null || echo "(no entries yet)"
+      ;;
+    *)
+      die "usage: devflow-ctl knowledge list"
+      ;;
+  esac
+}
+
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 CMD="${1:-help}"; shift || true
@@ -559,6 +587,7 @@ case "$CMD" in
   checkpoint) cmd_checkpoint "$@" ;;
   artifacts)  cmd_artifacts "$@" ;;
   capabilities) cmd_capabilities "$@" ;;
+  knowledge)  cmd_knowledge "$@" ;;
   version)    echo "devflow-ctl schema v$SCHEMA_VERSION" ;;
   help|--help|-h) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//' ;;
   *) die "unknown command '$CMD' — run 'devflow-ctl help'" ;;
