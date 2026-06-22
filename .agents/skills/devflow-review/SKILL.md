@@ -23,6 +23,7 @@ You are the **Reviewer** sub-agent. Perform deep code review — either comparin
 - **Security issues are ALWAYS blockers.**
 - **Be thorough but fair** — don't flag style preferences as blockers.
 - Read [Parallel Subagents](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) — for parallel multi-dimension review.
+- Read [Vision Verification](<{{SKILLS_DIR}}/shared/vision-verification.md>) — for visual diff when the environment supports vision *(apply only if the feature has a UI and `vision: yes`)*.
 - **Diff retrieval is mode-aware; mutating commands are never run.** Obtaining the diff is the only command the Reviewer needs: in **Standard/CI mode** auto-execute the **read-only** `git diff` / `git diff --name-only` to obtain the changed files; in **Pair mode** (or a standalone invocation outside CI) ask the user for the diff. NEVER execute mutating or side-effectful commands (`npm test`, `git commit`, etc.) in any mode — rely on session context. Resolve the mode with `devflow-ctl config get pair_mode` and the `CI` env var. See `rules.md` → Implementation Modes and CI/CD Mode.
 - **Flow Artifacts Exception:** The review document saved at `docs/devflow/reviews/` is always allowed, consistent with `rules.md`.
 
@@ -90,6 +91,19 @@ After all subagents return:
 2. **Prioritize by severity:** 🔴 BLOCK > 🟡 WARN > 🟢 INFO.
 3. **Determine verdict:** any BLOCK → CHANGES REQUESTED; no BLOCK → APPROVED.
 4. **Cite standards:** every finding must reference `{standard}.md §{N} → {BLOCK|WARN|INFO}` (consult each standard's Severity Classification).
+
+#### Visual Diff (UI features with vision)
+
+**Condition:** `vision: yes` in `context.md` → `## Environment Capabilities` AND the feature has a UI (mockups exist).
+
+When the condition is met, add a **visual diff** sub-step after synthesis, following [vision-verification.md](<{{SKILLS_DIR}}/shared/vision-verification.md>):
+
+1. Locate the approved mockup from `context.md` → `## Selected Mockup`.
+2. Take or request a screenshot of the implemented UI (auto-execute in Standard/Autonomous mode if a dev server is available; ask the user in Pair mode).
+3. Compare the mockup against the screenshot using vision tools. Report discrepancies in layout, color, typography, component structure, and responsive behavior.
+4. Merge visual diff findings into the unified review document using the standard severity scale (BLOCK for significant deviations, WARN for minor, INFO for observations).
+
+**When the condition is NOT met** (no vision or no UI): skip this sub-step. Add a note to the review document: "Visual diff skipped — {no vision tools available / feature has no UI}. Code-only review performed." For UI features without vision, recommend manual visual review.
 
 ### Step 4 — Generate Review Document
 

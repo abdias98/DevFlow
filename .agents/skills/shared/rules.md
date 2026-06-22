@@ -242,6 +242,12 @@ DevFlow detects whether the **environment** (editor + tools) supports the primit
 
 See [environment-probe.md](./environment-probe.md) for the canonical pattern: the four primitives, how the probe works (declaration in editor profiles → recording at install time → reading at runtime via `devflow-ctl capabilities` → recording in `context.md`), graceful degradation for each missing primitive, when to re-probe, and anti-patterns. The Orchestrator runs the probe at Step 0 and all agents that use environment-dependent features check `context.md` → `## Environment Capabilities` before using them.
 
+## Vision Verification
+
+When the environment supports vision (`vision: yes` in `context.md` → `## Environment Capabilities`), the Reviewer adds a **visual diff** sub-step for UI features (comparing the approved mockup against the implemented UI), and the Debugger can accept screenshots of error states. When vision is unavailable, the review is code-only (design tokens, accessibility attributes, layout code — but no rendered-output comparison).
+
+See [vision-verification.md](./vision-verification.md) for the canonical pattern: when to use vision, the visual diff procedure (mockup comparison, finding severity), Debugger screenshot analysis, Architect diagram reading, code-only fallback, and anti-patterns. The Reviewer, Debugger, and Architect reference this file when the environment supports vision and the feature has a UI.
+
 ## INFO Notes & Violation Reporting
 
 - When a code smell, architectural violation, or potential improvement is found in a file outside the scope, add an INFO note following this format:
