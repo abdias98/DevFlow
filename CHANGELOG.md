@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Parallel subagents canonical pattern** (`shared/parallel-subagents.md`) — new shared file documenting the framework-orchestrated pattern for dispatching parallel subagents. Covers: when to parallelize (independent, bounded, synthesizable subtasks), when NOT to (dependencies, trivial, shared mutable state), the subagent brief format (Goal/Context/Constraints/Output), synthesis as the orchestrating agent's responsibility, automatic sequential fallback when the editor doesn't support parallel invocation, context freshness for verification, and anti-patterns. Referenced from `rules.md` so all agents know the pattern exists. Application to specific agents (Architect, Implementer, Reviewer, standalone) comes in subsequent Wave 6 PRs.
 
+### 🔄 Changed
+
+- **Reviewer: parallel multi-dimension review** (`devflow-review/SKILL.md`) — Step 3 in both Cycle Mode and Standalone Mode now dispatches review as **3 parallel subagents** following the [parallel-subagents.md](./.agents/skills/shared/parallel-subagents.md) canonical pattern: **1 — Security & Safety** (OWASP, input validation, secrets, boundary errors), **2 — Performance & Concurrency** (N+1, hot paths, race conditions), **3 — Architecture, Quality & Plan Compliance** (SOLID, Clean Architecture, test coverage, spec/plan or standalone-artifact compliance, domain-specific UI/API checks). Each subagent loads only its relevant standards and returns findings; the Reviewer synthesizes by deduplicating, prioritizing by severity (BLOCK > WARN > INFO), and determining the verdict. Skip criteria for trivial changes (1-2 mechanical files, no security/performance sensitivity) fall back to inline sequential review. Sequential fallback is automatic when the editor doesn't support parallel subagent invocation.
+
 ## [3.2.0] — 2026-06-18
 
 > Foundation minor — Wave 5 of the Mythos-class improvement roadmap. Five model-agnostic features that let the framework extract more potential from any AI: progress honesty rules, reasoning-echo correction, cross-cycle knowledge sharing, adaptive rigor, and work packet format.
