@@ -27,6 +27,7 @@
 #   config set <key> <value> | get <key>             Session settings (branch, pair_mode, mode, phase, rigor)
 #   checkpoint set <name> <sha> | get <name>         Record / read rollback SHAs
 #   artifacts check <type> <path>                    Validate required sections
+#   capabilities [get <key>]                         Print environment capabilities (from .devflow-environment)
 #
 # Gates:    validation (pending|passed|blocked|accepted-risks)
 #           confirmation, plan_approval (pending|approved|rejected)
@@ -499,6 +500,50 @@ cmd_artifacts() {
   ok "artifact '$path' has all required $type sections"
 }
 
+# ── Environment capabilities ──────────────────────────────────────────────────
+# Reads from .devflow-environment marker file (written by install.sh).
+# Falls back to "unknown" for all primitives if the file is absent.
+
+ENV_FILE=""
+_detect_env_file() {
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  ENV_FILE="${script_dir}/../.devflow-environment"
+}
+
+cmd_capabilities() {
+  _detect_env_file
+  local action="${1:-print}"
+  case "$action" in
+    get)
+      local key="${2:-}"
+      [[ -n "$key" ]] || die "usage: devflow-ctl capabilities get <key> (subagents|vision|terminal|filesystem|profile)"
+      local value="unknown"
+      if [[ -f "$ENV_FILE" ]]; then
+        value="$(grep -E "^${key}:" "$ENV_FILE" 2>/dev/null | head -1 | sed "s/^${key}: *//")"
+        [[ -n "$value" ]] || value="unknown"
+      fi
+      echo "$value"
+      ;;
+    print)
+      if [[ -f "$ENV_FILE" ]]; then
+        while IFS=: read -r k v; do
+          [[ -n "$k" ]] && echo "$k: $v"
+        done < "$ENV_FILE"
+      else
+        echo "profile: unknown"
+        echo "subagents: unknown"
+        echo "vision: unknown"
+        echo "terminal: unknown"
+        echo "filesystem: unknown"
+      fi
+      ;;
+    *)
+      die "usage: devflow-ctl capabilities [get <key>]"
+      ;;
+  esac
+}
+
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 CMD="${1:-help}"; shift || true
@@ -513,6 +558,7 @@ case "$CMD" in
   config)     cmd_config "$@" ;;
   checkpoint) cmd_checkpoint "$@" ;;
   artifacts)  cmd_artifacts "$@" ;;
+  capabilities) cmd_capabilities "$@" ;;
   version)    echo "devflow-ctl schema v$SCHEMA_VERSION" ;;
   help|--help|-h) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//' ;;
   *) die "unknown command '$CMD' — run 'devflow-ctl help'" ;;

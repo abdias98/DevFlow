@@ -17,6 +17,13 @@
 id: antigravity
 display_name: "Antigravity"
 
+# ── Capabilities (environment probe — see shared/environment-probe.md) ───────
+capabilities:
+  subagents: true
+  vision: true
+  terminal: true
+  filesystem: true
+
 # ── User directory per OS ─────────────────────────────────────────────────────
 # Antigravity stores all config under ~/.gemini/antigravity/ on every platform.
 # install.sh reads user_dir.<OS_NAME> and exposes it as $USER_DIR for path resolution.

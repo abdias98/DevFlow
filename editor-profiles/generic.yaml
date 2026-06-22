@@ -23,6 +23,15 @@
 id: generic
 display_name: "Generic (CLI / Headless)"
 
+# ── Capabilities (environment probe — see shared/environment-probe.md) ───────
+# Generic/headless: conservative defaults. Subagents and vision are unknown
+# for an unspecified target; terminal and filesystem are baseline.
+capabilities:
+  subagents: false
+  vision: false
+  terminal: true
+  filesystem: true
+
 # ── User directory per OS ─────────────────────────────────────────────────────
 # install.sh reads user_dir.<OS_NAME> and exposes it as $USER_DIR for path resolution.
 # For CLI/headless use, the same directory is used on every platform.

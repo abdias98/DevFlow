@@ -51,6 +51,9 @@ Collect each subagent's output and synthesize into a unified result. The synthes
 ## Fallback: Sequential Execution
 
 If the editor or environment does not support parallel subagent invocation:
+
+> **Check first:** the Orchestrator records environment capabilities in `context.md` → `## Environment Capabilities` at Step 0 (see [environment-probe.md](./environment-probe.md)). If `subagents: no`, sequential fallback is the **default path**, not a fallback — the agent runs subtasks inline from the start.
+
 1. Execute each subtask's brief **sequentially** in any order (they are independent).
 2. Collect outputs as each completes.
 3. The synthesis step is **identical** — only the execution order changed.

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **Environment capability probe** (`shared/environment-probe.md`) — new shared file documenting the framework's mechanism for detecting what primitives the environment (editor + tools) supports. DevFlow does NOT detect or route models — it detects *environment* capabilities. Four primitives: **subagents** (parallel dispatch), **vision** (image reading for visual verification), **terminal** (bash execution for Standard/CI/Autonomous modes), **filesystem** (persistent storage — hard prerequisite). Each editor profile now declares a `capabilities:` section. `install.sh` writes a `.devflow-environment` marker file to the shared directory at install time. `devflow-ctl capabilities` (new command) reads the marker at runtime; `devflow-ctl capabilities get <key>` reads a specific primitive. The Orchestrator runs the probe at Step 0 and records results in `context.md` → `## Environment Capabilities`. All agents that use environment-dependent features (parallel-subagents.md, verifier-subagent.md) check the probe results before using them. Graceful degradation: no subagents → sequential fallback; no vision → code-only review; no terminal → Pair mode forced; no filesystem → hard stop. `memory-conventions.md` updated with the new `## Environment Capabilities` section format. `validate-framework.sh` validates the `capabilities:` section in all editor profiles.
+
 ## [3.3.0] — 2026-06-22
 
 > Parallelism minor — Wave 6 of the Mythos-class improvement roadmap. Five features that introduce framework-orchestrated parallelism to DevFlow: a canonical parallel-subagent pattern, a fresh-context verifier subagent, and parallel dispatch in the Architect, Reviewer, and Implementer. All parallel patterns include automatic sequential fallback — the framework never breaks when the editor doesn't support parallel subagent invocation.

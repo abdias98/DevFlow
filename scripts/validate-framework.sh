@@ -304,6 +304,26 @@ GUARDEOF
     done
   fi
   [[ $ERRORS -eq 0 ]] && green "All editor profiles declare a valid permissions strategy"
+
+  # ── 9b. Editor profile capabilities ──────────────────────────────────────
+  for profile in "$PROFILES_DIR"/*.yaml; do
+    [[ -f "$profile" ]] || continue
+    has_caps=$(awk '/^capabilities:/{print "x";exit}' "$profile")
+    if [[ -z "$has_caps" ]]; then
+      fail "$profile — missing capabilities section (see shared/environment-probe.md)"
+      $FIX_MODE && echo "       FIX: add a 'capabilities:' section with subagents, vision, terminal, filesystem"
+      continue
+    fi
+    for cap in subagents vision terminal filesystem; do
+      val=$(awk '/^capabilities:/{f=1;next} f&&/^[^ ]/{f=0} f&&/^  '"$cap"':/{sub(/^  '"$cap"': */,"");gsub(/["'"'"']/,"");print;exit}' "$profile")
+      if [[ -z "$val" ]]; then
+        fail "$profile — capabilities.$cap is missing (must be true or false)"
+      elif [[ "$val" != "true" && "$val" != "false" ]]; then
+        fail "$profile — capabilities.$cap must be 'true' or 'false' (got '$val')"
+      fi
+    done
+  done
+  [[ $ERRORS -eq 0 ]] && green "All editor profiles declare valid capabilities"
 else
   warn "$PROFILES_DIR/ not found — skipping permissions check (run from the repo root)"
 fi
