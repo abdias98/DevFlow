@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.0.1] — 2026-06-22
+
+> Docs patch — update ARCHITECTURE.md, README.md, and improvement-roadmap.md to reflect all features shipped in Waves 5-7 (releases 3.2.0, 3.3.0, 4.0.0). No framework changes.
+
+### 📝 Changed
+
+- **ARCHITECTURE.md** — directory structure updated with all 7 shared pattern files, 5 editor profiles, permissions directory. Agent responsibilities updated: parallel exploration (Architect), work packet format + adaptive rigor (Planner), parallel tasks + pre-review verifier (Implementer), parallel multi-dimension review + visual diff (Reviewer), screenshot analysis (Debugger). `devflow-ctl` command table added with `capabilities` and `knowledge` commands. Memory system updated with `autonomous-log.md`, `send-to-user.md`, knowledge base, validation-report, traceability, metrics. New sections: Implementation Modes (Standard/Pair/CI/Autonomous), Environment Capability Probe, Parallelism, Adaptive Rigor, Vision Verification.
+- **README.md** — header updated to multi-editor (VS Code, Claude Code, opencode, Antigravity, headless). "What's New in 4.0.0" section added. Interactive Editor Selection shows all 5 editors. Key Features split into Core Lifecycle (19 features) and Mythos-Class Features (9 features). "What Gets Installed" updated with per-editor locations and shared pattern files. Privacy and Troubleshooting sections made editor-agnostic.
+- **improvement-roadmap.md** — Wave 5 (Foundation Mythos, PRs #67-#72, release 3.2.0), Wave 6 (Paralelismo + verificación, PRs #73-#78, release 3.3.0), Wave 7 (Autonomía + vision + probe, PRs #79-#84, release 4.0.0) added. Mythos-class roadmap marked as complete.
+
 ## [4.0.0] — 2026-06-22
 
 > Mythos-class major — Wave 7 of the Mythos-class improvement roadmap. Five features that complete DevFlow's transformation into a framework that extracts maximum potential from any AI: environment capability probe (detect what the editor supports, degrade gracefully), autonomous mode (non-presential long-duration cycles), vision verification (mockup↔UI visual diff), adaptive skills (prescriptiveness scales with rigor), and knowledge base bootstrap (extract learnings from history). All features are framework-orchestrated and model-agnostic — DevFlow detects environment capabilities, never models.
