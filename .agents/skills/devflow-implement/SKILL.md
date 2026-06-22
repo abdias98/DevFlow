@@ -54,8 +54,57 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 
 **Before each file edit**, run `devflow-ctl scope check {file}`. If it exits 1, the file is outside the approved scope: STOP, ask the user for explicit approval, and only after they approve run `devflow-ctl scope add {glob}` and proceed. Test files and DevFlow artifacts from the plan always pass (Flow Artifacts Exception).
 
-- **Stack Mode = no** → Follow the [TDD procedure](<{{SKILLS_DIR}}/devflow-implement/tdd-procedure.md>) (standard flow).
-- **Stack Mode = yes** → Follow the [stacked flow](<{{SKILLS_DIR}}/devflow-implement/stack-flow.md>).
+- **Stack Mode = yes** → Follow the [stacked flow](<{{SKILLS_DIR}}/devflow-implement/stack-flow.md>) (stacked flow has its own ordering; parallel dispatch does not apply).
+- **Stack Mode = no** → Continue to task independence analysis below.
+
+#### Step 2a — Analyze Task Independence
+
+Before executing, analyze the plan's tasks for parallelization potential:
+
+1. **File scope:** For each task, identify its declared files (from the plan's File Map / task deliverables).
+2. **Dependencies:** Identify inter-task dependencies (does any task reference another task's output, or require a file another task creates?).
+3. **Group into waves:**
+   - **Wave 1:** tasks with no dependencies and non-overlapping file scopes.
+   - **Wave N:** tasks whose dependencies are all in earlier waves and whose file scopes don't overlap with each other within the wave.
+   - Tasks that share a file with another task → one goes to the next wave (sequential for that file).
+
+#### Skip criteria (execute sequentially when ANY hold)
+
+- Only 1 task in the plan.
+- All tasks share the same file(s).
+- Tasks have linear dependencies (each depends on the previous).
+- Only 1 wave with 1 task (no parallelism possible).
+
+When skip criteria are met → follow the [TDD procedure](<{{SKILLS_DIR}}/devflow-implement/tdd-procedure.md>) (standard sequential flow).
+
+#### Step 2b — Execute (Parallel or Sequential)
+
+**Sequential execution** (skip criteria met):
+
+Follow the [TDD procedure](<{{SKILLS_DIR}}/devflow-implement/tdd-procedure.md>) — Red→Green for each task, commit at each checkpoint.
+
+**Parallel execution** (multiple waves with 2+ independent tasks per wave):
+
+For each wave, dispatch tasks as **parallel subagents** following the [canonical pattern](<{{SKILLS_DIR}}/shared/parallel-subagents.md>). This does NOT skip or reorder plan tasks — it runs independent tasks concurrently while respecting wave ordering.
+
+Each subagent's brief:
+
+| Field | Content |
+|-------|---------|
+| **Goal** | Implement this task following Red→Green TDD. |
+| **Context** | The task's work packet from the plan (Goal, Context, Constraints, Acceptance, Deliverables, Implementation guide), relevant standards, Stack Profile test commands. |
+| **Constraints** | Write ONLY to the task's declared files. Follow TDD Red→Green. Do NOT commit — the Implementer handles commits after wave synthesis. Run `devflow-ctl scope check {file}` before each edit. |
+| **Output format** | Task complete — files created/modified, test command, test result (Standard mode) or test command for user (Pair mode). |
+
+After all subagents in a wave return, the Implementer **synthesizes**:
+
+1. Verify all tasks completed successfully (files exist, tests pass in Standard mode).
+2. **Standard mode:** auto-commit each task sequentially (never parallelize git commands) with the planned message from the plan.
+3. **Pair mode:** present all tasks in the wave for user approval. After approval, tell the user the commit commands.
+4. If any subagent failed → stop, diagnose, and re-dispatch the failed task (max 2 retries per task).
+5. Proceed to the next wave.
+
+**Sequential fallback:** If the editor does not support parallel subagent invocation, execute tasks sequentially within each wave (they are independent, so order doesn't matter). The synthesis step is identical — only the execution order changes. See [parallel-subagents.md](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) → Fallback.
 
 ### Step 3 — Additional Recommendations
 
