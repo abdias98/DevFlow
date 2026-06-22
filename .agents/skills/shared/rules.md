@@ -224,6 +224,12 @@ In Pair Mode, the user reviews and approves each task during implementation.
 1. **Orchestrator:** Offer mode choice at Confirmation Gate. Record `Pair Mode: yes/no` and `Branch: {name}` in `phase-state.md`.
 2. **Implementer:** In Standard mode, auto-execute branch, tests, commits, git SHAs. In Pair mode, tell user commands and wait for confirmation.
 
+## Parallel Subagents
+
+DevFlow supports parallel subagent dispatch for independent subtasks. This is a **framework-orchestrated** pattern — the framework decomposes work, dispatches subagents, and synthesizes their outputs. When the editor does not support parallel invocation, execution falls back to sequential automatically (the synthesis is identical).
+
+See [parallel-subagents.md](./parallel-subagents.md) for the canonical pattern: when to parallelize, the subagent brief format, synthesis, fallback, and anti-patterns. Agents that apply parallelism (Architect, Implementer, Reviewer, and standalone agents with independent axes) reference that file and apply it to their specific phase.
+
 ## INFO Notes & Violation Reporting
 
 - When a code smell, architectural violation, or potential improvement is found in a file outside the scope, add an INFO note following this format:
