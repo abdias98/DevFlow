@@ -230,6 +230,12 @@ DevFlow supports parallel subagent dispatch for independent subtasks. This is a 
 
 See [parallel-subagents.md](./parallel-subagents.md) for the canonical pattern: when to parallelize, the subagent brief format, synthesis, fallback, and anti-patterns. Agents that apply parallelism (Architect, Implementer, Reviewer, and standalone agents with independent axes) reference that file and apply it to their specific phase.
 
+## Verifier Subagent
+
+The Implementer dispatches a **fresh-context verifier** between implementation and review to catch low-hanging fruit (missing files, scope drift, plan deviations) before the Reviewer spends its budget on deeper analysis. The verifier does NOT replace the Reviewer — it precedes it and forwards WARN/INFO findings as inputs.
+
+See [verifier-subagent.md](./verifier-subagent.md) for the canonical pattern: when to dispatch, the verifier brief, four verification axes (structural, scope, plan compliance, obvious issues), findings format, sequential fallback, and anti-patterns. The Implementer references this file at Step 5 of its procedure.
+
 ## INFO Notes & Violation Reporting
 
 - When a code smell, architectural violation, or potential improvement is found in a file outside the scope, add an INFO note following this format:
