@@ -257,6 +257,12 @@ DevFlow detects whether the **environment** (editor + tools) supports the primit
 
 See [environment-probe.md](./environment-probe.md) for the canonical pattern: the four primitives, how the probe works (declaration in editor profiles → recording at install time → reading at runtime via `devflow-ctl capabilities` → recording in `context.md`), graceful degradation for each missing primitive, when to re-probe, and anti-patterns. The Orchestrator runs the probe at Step 0 and all agents that use environment-dependent features check `context.md` → `## Environment Capabilities` before using them.
 
+## Adaptive Skills
+
+The rigor level (set by the Planner: `light` | `standard` | `deep` | `maximum`) controls how prescriptive the skill procedures are. At `light`/`standard`, the agent treats numbered steps as objectives + checkpoints and navigates autonomously. At `deep`/`maximum`, the agent follows each step literally. This is a **framework-level** adjustment — the framework changes its own scaffolding, not the model's behavior. Non-negotiable invariants (TDD, scope-lock, gates, artifact validation, progress grounding) are always enforced regardless of rigor level.
+
+See [adaptive-skills.md](./adaptive-skills.md) for the canonical pattern: the rigor → prescriptiveness mapping, what changes with rigor (micro-step adherence, autonomy, checkpoint frequency), what does NOT change (non-negotiable invariants), how agents adapt their reading of the procedure, when to use each rigor level, relationship to other Wave 7 features, and anti-patterns. All agents read their SKILL.md procedure at the rigor level set by the Planner.
+
 ## INFO Notes & Violation Reporting
 
 - When a code smell, architectural violation, or potential improvement is found in a file outside the scope, add an INFO note following this format:
