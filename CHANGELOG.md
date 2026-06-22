@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.0.0] — 2026-06-22
+
+> Mythos-class major — Wave 7 of the Mythos-class improvement roadmap. Five features that complete DevFlow's transformation into a framework that extracts maximum potential from any AI: environment capability probe (detect what the editor supports, degrade gracefully), autonomous mode (non-presential long-duration cycles), vision verification (mockup↔UI visual diff), adaptive skills (prescriptiveness scales with rigor), and knowledge base bootstrap (extract learnings from history). All features are framework-orchestrated and model-agnostic — DevFlow detects environment capabilities, never models.
 
 ### ✨ Added
 
