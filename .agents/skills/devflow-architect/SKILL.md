@@ -23,6 +23,7 @@ You are the **Architect** sub-agent of the DevFlow framework. Analyze requiremen
 - Read [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) *(apply only if the project has a UI)*
 - Read [Accessibility](<{{SKILLS_DIR}}/shared/standards/accessibility.md>) *(apply only if the project has a UI)*
 - Read [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
+- Read [Parallel Subagents](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) — for parallel codebase exploration.
 - **NEVER** write implementation code — only architecture and design.
 - **ALWAYS** explore the codebase before making design decisions.
 - **Design decisions must be justified** with alternatives considered.
@@ -78,13 +79,45 @@ This template load is **independent** of AGENTS.md / DESIGN.md / project-templat
 
 If no AGENTS.md, DESIGN.md, or project template is found → proceed to full Step 2.
 
-### Step 2 — Explore the Codebase
+### Step 2 — Explore the Codebase (Parallel)
 
-Follow the [exploration guide](<{{SKILLS_DIR}}/devflow-architect/exploration-guide.md>) to perform deep codebase exploration. The Reusability Inventory (sub‑step 7) and Test Architecture Analysis (sub‑step 8) are **mandatory** even when AGENTS.md is present.
+Codebase exploration is dispatched as **parallel subagents** following the [canonical pattern](<{{SKILLS_DIR}}/shared/parallel-subagents.md>). The exploration axes are independent (each reads different files/patterns), bounded (each has a defined scope), and synthesizable (the Architect merges findings into `## Architect Findings` and writes Stack Profile fields).
 
 > ⚠️ Do NOT make design decisions before exploration is complete.
 
-Store findings in session memory under `## Architect Findings`.
+#### Full exploration (no AGENTS.md)
+
+Dispatch **4 parallel exploration subagents**. Each is read-only and returns findings to the Architect — subagents do NOT write to `context.md` (the Architect merges Stack Profile fields after synthesis).
+
+| Subagent | Axis | Exploration guide sub-steps | Brief |
+|----------|------|----------------------------|-------|
+| **A — Structure & Patterns** | Project shape | 1, 2, 5, 6 | Map folder hierarchy, module boundaries, naming conventions, architecture patterns, and conventions for similar features. Return a structured summary. |
+| **B — Tech Stack & Dependencies** | Stack detection | 4 | Detect frameworks, test runners, build tools, ORM, DI, state management, package manager from config files. Return the Stack Profile fields (Language, Runtime, Framework, Database, Package Manager, Build/Lint/Audit/Watch Command, Source Root). Do NOT write to `context.md` — return the fields. |
+| **C — Test Architecture** | Test patterns | 8 | Discover test file structure, frameworks, utilities, and exact commands (full suite, subset, single file, coverage). Return the Test Stack Profile fields (Test Runner, Test Command, Test Command single file, Test Root, Test Utilities). Do NOT write to `context.md` — return the fields. |
+| **D — Reusability & Reference** | What to reuse | 3, 7 | Find the closest existing feature to what will be built. Exhaustively map everything that already exists in areas the feature touches. Return a reusability inventory: for each area, "reuse X" or "create new (no match found)". |
+
+#### Reduced exploration (AGENTS.md present)
+
+When AGENTS.md was found in Step 1.5, sub-steps 1, 2, 4, 5, 6 are already covered. Dispatch only **2 parallel subagents**:
+
+| Subagent | Axis | Exploration guide sub-steps |
+|----------|------|----------------------------|
+| **C — Test Architecture** | Test patterns | 8 |
+| **D — Reusability & Reference** | What to reuse | 3, 7 |
+
+#### Synthesis
+
+After all subagents return:
+
+1. **Merge findings** into session memory under `## Architect Findings`. Resolve any conflicts (e.g., two subagents flagged the same file from different angles — consolidate).
+2. **Merge Stack Profile fields** from subagents B and C into `context.md` (single project: `## Stack Profile` table; monorepo: `## Stack Profiles` with one entry per affected package). Use `unknown` for any field that could not be detected.
+3. **Reusability rule:** for each area the feature touches, if subagent D found an existing match → reuse or extend. Create new only when exploration confirms no match.
+
+#### Sequential fallback
+
+If the editor does not support parallel subagent invocation, run the sub-steps sequentially in any order (they are independent). The synthesis step is identical — only the execution order changes. See [parallel-subagents.md](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) → Fallback.
+
+Follow the [exploration guide](<{{SKILLS_DIR}}/devflow-architect/exploration-guide.md>) for the detailed detection patterns and tech-stack-specific examples each subagent applies.
 
 ### Step 3 — Define Architecture
 

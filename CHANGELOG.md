@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Parallel subagents canonical pattern** (`shared/parallel-subagents.md`) — new shared file documenting the framework-orchestrated pattern for dispatching parallel subagents. Covers: when to parallelize (independent, bounded, synthesizable subtasks), when NOT to (dependencies, trivial, shared mutable state), the subagent brief format (Goal/Context/Constraints/Output), synthesis as the orchestrating agent's responsibility, automatic sequential fallback when the editor doesn't support parallel invocation, context freshness for verification, and anti-patterns. Referenced from `rules.md` so all agents know the pattern exists. Application to specific agents (Architect, Implementer, Reviewer, standalone) comes in subsequent Wave 6 PRs.
 
+### 🔄 Changed
+
+- **Architect: parallel codebase exploration** (`devflow-architect/SKILL.md`) — Step 2 now dispatches exploration as **parallel subagents** following the [parallel-subagents.md](./.agents/skills/shared/parallel-subagents.md) canonical pattern. When full exploration is needed (no AGENTS.md), 4 subagents run concurrently: **A — Structure & Patterns** (sub-steps 1, 2, 5, 6), **B — Tech Stack & Dependencies** (sub-step 4), **C — Test Architecture** (sub-step 8), **D — Reusability & Reference** (sub-steps 3, 7). When AGENTS.md is present, only 2 subagents run (C and D — the axes not covered by AGENTS.md). Each subagent is read-only and returns findings to the Architect, who synthesizes them into `## Architect Findings` and merges Stack Profile fields into `context.md`. The exploration guide remains the reference for what each subagent explores. Sequential fallback is automatic when the editor doesn't support parallel subagent invocation.
+
 ## [3.2.0] — 2026-06-18
 
 > Foundation minor — Wave 5 of the Mythos-class improvement roadmap. Five model-agnostic features that let the framework extract more potential from any AI: progress honesty rules, reasoning-echo correction, cross-cycle knowledge sharing, adaptive rigor, and work packet format.
