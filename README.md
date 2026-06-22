@@ -2,7 +2,7 @@
 
 A portable **framework for professional software development using multiple AI sub-agents** working as a coordinated team. Build production-quality features following the DevFlow lifecycle: Brainstorm → Architecture → Plan (with TDD test code) → Confirm → Implement (Red→Green TDD cycle) → Review → Debug → Finalize.
 
-Designed for **any tech stack**, integrated directly into **VS Code Copilot** (no external tools needed).
+Designed for **any tech stack**, installed globally in **VS Code, Claude Code, opencode, Antigravity**, or any **headless CLI** environment.
 
 ![DevFlow Lifecycle](docs/flow.png)
 
@@ -37,29 +37,22 @@ Installs the `@devflow` agent globally — available in **every workspace** with
 
 ---
 
-## ⬆️ Upgrading from v1.2.x
+## ⬆️ What's New in 4.0.0
 
-If you have an older version installed, the installer automatically detects and cleans up:
+**Wave 7 — Mythos-class major.** DevFlow is now a framework that extracts maximum potential from any AI:
 
-**macOS / Linux**
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/install.sh)
-```
+- 🔍 **Environment capability probe** — DevFlow detects what your editor supports (subagents, vision, terminal, filesystem) and activates or degrades features accordingly. Never breaks when a primitive is missing.
+- 🔄 **Autonomous mode** — `DEVFLOW_AUTONOMOUS=true` starts a non-presential long-duration cycle. The framework manages persistence, async checkpoints, resume, and escalation. You initiate and leave; it runs to completion.
+- 📸 **Vision verification** — when the environment supports vision, the Reviewer compares the approved mockup against the implemented UI (visual diff), and the Debugger can analyze screenshots of error states. Falls back to code-only review when vision is unavailable.
+- 📐 **Adaptive skills** — skill prescriptiveness scales with the rigor level (`light`/`standard`/`deep`/`maximum`). At light rigor, the agent navigates autonomously with objectives; at maximum rigor, it follows each step literally with extra verification.
+- 🧠 **Knowledge base bootstrap** — `/devflow-templates bootstrap-knowledge` retroactively populates the knowledge base by analyzing historical specs, reviews, debug-logs, and summaries. Every cycle makes the next one smarter.
 
-**Windows (PowerShell)**
-> **Prerequisite:** [Git for Windows](https://gitforwindows.org/) must be installed — the script uses Git Bash to run the installer. If you see "Git Bash not found", install Git for Windows first.
-```powershell
-irm https://raw.githubusercontent.com/abdias98/DevFlow/main/install.ps1 | iex
-```
+**Also shipped in recent releases:**
 
-**What's new:**
-- 🤖 **Claude Code editor profile** — Install DevFlow as global slash commands in Claude Code (`~/.claude/commands/`), alongside the existing VS Code, opencode, Antigravity, and generic profiles.
-- ⏸️ **Validation Gate (Phase 2)** — Before any design work, the Orchestrator challenges assumptions, scans against engineering standards, and raises BLOCK/WARN findings that you must resolve explicitly.
-- ⚙️ **Standard vs. Pair mode** — At the Confirmation Gate you choose: Standard mode auto-executes branches, tests, and commits; Pair mode keeps every command in your hands. Push and PR creation are **never** auto-executed in either mode.
-- 🧰 **Six new standalone agents** — Reverse Engineering, Tutorial, Templates, Documentation, Contract, and Migration agents join Refactorer, Bug-Fixer, Feature, and Performance.
-- 🔁 **Cross-cycle learning loop** — Deterministic standards application with explicit BLOCK/WARN triggers, agent self-validation, and a knowledge base that accumulates learnings per cycle.
+- Wave 6 (3.3.0): Parallel subagents (Architect/Reviewer/Implementer parallel dispatch), fresh-context verifier subagent before review.
+- Wave 5 (3.2.0): Progress honesty rules, reasoning-echo correction, cross-cycle knowledge base reads, adaptive rigor, work packet format.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full history, including v2.7.5 and v2.8.7.
+See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
 ### Interactive Editor Selection
 
@@ -69,9 +62,12 @@ When you run the installer, you'll see a prompt listing all available editor pro
 📍 Select installation target:
 
   1) Visual Studio Code      [installed]
-  2) CLI (Headless)          [always available]
+  2) Claude Code (CLI)       [installed]
+  3) opencode (CLI AI Agent) [installed]
+  4) Antigravity             [not detected]
+  5) Generic (CLI / Headless)[always available]
 
-Enter number [1-2]: 1
+Enter number [1-5]: 1
 📍 Selected: Visual Studio Code
 ```
 
@@ -82,8 +78,6 @@ The installer:
 - **Allows installation** for undetected editors (in case you install later)
 
 Reload or restart your selected editor if needed, then follow the installer's post-install message.
-
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 ---
 
@@ -107,7 +101,7 @@ DevFlow is a **multi-agent framework** that simulates a professional engineering
 | — | 🩹 **Bug-Fixer** *(standalone)* | Reproduce → Isolate → Fix reported bugs | Bug-fix report |
 | — | ⚡ **Feature Agent** *(standalone)* | Lightweight TDD cycle for small-medium features | Feature report |
 
-> **Important:** DevFlow agents **never execute test commands**. They create test files and tell you the exact command to run. You maintain full control over test execution. PRs are never created automatically — you decide if and when to push branches and open pull requests.
+> **Important:** DevFlow agents follow the active execution mode. In **Pair mode**, agents create test files and tell you the exact command to run — you maintain full control. In **Standard mode**, agents auto-execute tests, branches, and commits for convenience. In **CI mode**, the cycle fails fast. In **Autonomous mode**, the framework manages the cycle non-presentially with async checkpoints and resume. Push and PR creation are **never** auto-executed in any mode.
 
 Each role has **clear responsibilities**, **strict role separation**, and **persistent memory** between phases.
 
@@ -242,18 +236,22 @@ irm https://raw.githubusercontent.com/abdias98/DevFlow/main/uninstall.ps1 | iex
 
 ## 📍 What Gets Installed
 
-DevFlow is installed **globally** in VS Code, available in **all workspaces**:
+DevFlow is installed **globally** in your selected editor, available in **all workspaces**:
 
-| OS | Location |
-|----|----------|
-| macOS | `~/Library/Application Support/Code/User/` |
-| Linux | `~/.config/Code/User/` |
-| Windows | `%APPDATA%\Code\User\` |
+| Editor | Location |
+|--------|----------|
+| VS Code | `~/Library/Application Support/Code/User/` (macOS), `~/.config/Code/User/` (Linux), `%APPDATA%\Code\User\` (Windows) |
+| Claude Code | `~/.claude/commands/` (all platforms) |
+| opencode | `~/.agents/skills/` (all platforms) |
+| Antigravity | `~/.gemini/antigravity/skills/` (all platforms) |
+| Generic / Headless | `~/.agents/skills/` (all platforms) |
 
 **Installed items:**
 - 19 specialized sub-agent skills total: 1 orchestration role (Orchestrator) + 7 lifecycle phase agents (Brainstormer, Architect, Planner, Implementer, Reviewer, Debugger, Finalizer) + Tester (manual helper) + 10 standalone agents (Refactorer, Bug-Fixer, Feature, Performance, Migration, Contract, Documentation, Template, Tutorial, Reverse). The Validation Gate (Phase 2) is run by the Orchestrator.
-- Prompt templates for all lifecycle phases and standalone workflows
-- ~200 KB total (highly optimized)
+- 7 canonical pattern files in `shared/`: parallel-subagents, verifier-subagent, environment-probe, autonomous-mode, vision-verification, adaptive-skills, plus rules and memory conventions.
+- `devflow-ctl` CLI for deterministic enforcement (gates, scope, iterations, locks, capabilities, knowledge).
+- Prompt templates for all lifecycle phases and standalone workflows.
+- 3-tier permission snippets (allow/ask/deny) for editor auto-approval configuration.
 
 ---
 
@@ -356,31 +354,42 @@ tests/          # Integration and e2e tests
 
 ## 📚 Key Features
 
-✅ **TDD by Default** — Plan includes complete test code per task; Implementer executes Red→Green cycle and informs you of the exact commands to verify. You run the tests.  
-✅ **UI Mockups** — Planner generates HTML wireframes with component annotations for every frontend feature  
-✅ **API Contracts** — Every endpoint defined explicitly (method, path, request/response shapes, error codes) before any code is written; Reviewer validates the implementation against the contract  
-✅ **Risk Assessment** — Architect rates risk per design decision (HIGH/MEDIUM/LOW); Planner converts HIGH risks into task-level flags with rollback steps  
-✅ **Definition of Done** — Brainstormer captures explicit success criteria; Finalizer verifies each one before closing the cycle  
-✅ **Confirmation Gate** — Implementation never starts automatically; you approve the plan before any code is written  
-✅ **Architecture First** — No code without a design spec  
-✅ **Never Guesses** — Debugger performs systematic root cause analysis  
-✅ **Accessibility Built-in** — Planner adds a11y checklist (WCAG 2.1 AA) to every UI task; Reviewer validates it  
-✅ **Private Engineering Standards** — Operates as a Senior Engineering team applying 7 core standards (SOLID, Clean Architecture, Security, Performance, REST API, Project Design, UI Design) with conditional loading based on feature type  
-✅ **No External Tools** — Pure VS Code + Copilot (no npm packages, no docker, nothing)  
-✅ **Dynamic Stack Detection** — Tech-stack agnostic. Agents dynamically analyze your config files to extract the exact framework, ORM, and testing tools  
-✅ **AGENTS.md Support** — Place an `AGENTS.md` in your project root; DevFlow reads it and skips general exploration  
-✅ **Stacked PRs (Manual)** — Optional Stack Mode splits large features into layered branches. DevFlow prepares branches and provides commands; you create PRs manually when ready  
-✅ **Auto-Review** — Every implementation is automatically code-reviewed (includes API contract, accessibility, dependency audit)  
-✅ **Documented Decisions** — Specs, plans, reviews, debug logs, refactor reports, bug-fix reports, and feature summaries saved to `docs/devflow/`  
-✅ **Actionable Next Steps** — Finalizer outputs follow-up features as user stories, not vague suggestions  
-✅ **Role Separation** — Each agent has clear, strict boundaries  
-✅ **You Control Execution** — DevFlow never runs tests, never creates PRs automatically, and always asks for approval before applying changes  
+### Core Lifecycle
+✅ **TDD by Default** — Plan includes complete test code per task; Implementer executes Red→Green cycle and informs you of the exact commands to verify. You run the tests.
+✅ **UI Mockups** — Planner generates HTML wireframes with component annotations for every frontend feature
+✅ **API Contracts** — Every endpoint defined explicitly (method, path, request/response shapes, error codes) before any code is written; Reviewer validates the implementation against the contract
+✅ **Risk Assessment** — Architect rates risk per design decision (HIGH/MEDIUM/LOW); Planner converts HIGH risks into task-level flags with rollback steps
+✅ **Definition of Done** — Brainstormer captures explicit success criteria; Finalizer verifies each one before closing the cycle
+✅ **Confirmation Gate** — Implementation never starts automatically; you approve the plan before any code is written (auto-approved in CI/Autonomous mode)
+✅ **Architecture First** — No code without a design spec
+✅ **Never Guesses** — Debugger performs systematic root cause analysis
+✅ **Accessibility Built-in** — Planner adds a11y checklist (WCAG 2.1 AA) to every UI task; Reviewer validates it
+✅ **Private Engineering Standards** — Operates as a Senior Engineering team applying 14 standards (SOLID, Clean Architecture, Security, Performance, REST API, Project Design, UI Design, Testing, Git Conventions, Logging, Error Handling, Concurrency, Dependencies, Accessibility) with conditional loading based on feature type
+✅ **Dynamic Stack Detection** — Tech-stack agnostic. Agents dynamically analyze your config files to extract the exact framework, ORM, and testing tools
+✅ **AGENTS.md Support** — Place an `AGENTS.md` in your project root; DevFlow reads it and skips general exploration
+✅ **Stacked PRs (Manual)** — Optional Stack Mode splits large features into layered branches. DevFlow prepares branches and provides commands; you create PRs manually when ready
+✅ **Auto-Review** — Every implementation is automatically code-reviewed (includes API contract, accessibility, dependency audit)
+✅ **Documented Decisions** — Specs, plans, reviews, debug logs, refactor reports, bug-fix reports, and feature summaries saved to `docs/devflow/`
+✅ **Actionable Next Steps** — Finalizer outputs follow-up features as user stories, not vague suggestions
+✅ **Role Separation** — Each agent has clear, strict boundaries
+✅ **You Control Execution** — DevFlow never creates PRs automatically, and always asks for approval before applying changes (except in CI/Autonomous mode)
+
+### Mythos-Class Features (4.0.0)
+✅ **Parallel Subagents** — Architect explores in parallel (4 subagents), Reviewer reviews in parallel (3 dimensions: security, performance, architecture), Implementer dispatches independent tasks as parallel waves. Sequential fallback when the editor doesn't support subagents.
+✅ **Pre-Review Verifier** — A fresh-context verifier subagent catches missing files, scope drift, and plan deviations before the Reviewer spends its budget on deeper analysis.
+✅ **Environment Capability Probe** — DevFlow detects what your editor supports (subagents, vision, terminal, filesystem) and activates or degrades features accordingly. Never breaks when a primitive is missing.
+✅ **Autonomous Mode** — `DEVFLOW_AUTONOMOUS=true` starts a non-presential long-duration cycle with async checkpoints, send-to-user escalation, and resume from last incomplete phase.
+✅ **Vision Verification** — When the environment supports vision, the Reviewer compares mockups against the implemented UI (visual diff) and the Debugger analyzes screenshots of error states. Code-only fallback when vision is unavailable.
+✅ **Adaptive Rigor** — The Planner classifies feature complexity (`light`/`standard`/`deep`/`maximum`). Skill prescriptiveness scales inversely — less scaffolding for capable models on trivial tasks, full scaffolding for frontier tasks.
+✅ **Cross-Cycle Knowledge Base** — The Finalizer extracts learnings after each cycle. All mid-cycle agents read them. `/devflow-templates bootstrap-knowledge` retroactively populates from historical artifacts. Every cycle makes the next one smarter.
+✅ **Work Packet Format** — Plan tasks are structured as work packets (Goal, Context, Constraints, Acceptance, Deliverables) instead of micro-steps. Capable models operate with more autonomy.
+✅ **Progress Honesty** — Framework-wide rules that ground every progress claim in tool results, eliminate fabricated status reports, and let capable models act without unnecessary narration.
 
 ---
 
 ## 🔐 Privacy & Security
 
-- ✅ No data sent to external services (uses your local VS Code Copilot)
+- ✅ No data sent to external services (uses your local AI editor — VS Code Copilot, Claude Code, opencode, Antigravity, etc.)
 - ✅ No tracking, no analytics
 - ✅ Open source — audit the code yourself
 - ✅ Scripts are simple bash (inspect before running)
@@ -426,15 +435,12 @@ MIT License — See [LICENSE](./LICENSE)
 ## 🐛 Troubleshooting
 
 ### Commands not showing up?
-1. Reload VS Code: `Ctrl+Shift+P` → Developer: Reload Window
-2. Verify installation: `~/.config/Code/User/.agents/skills/`
-3. Restart VS Code completely
+1. Reload your editor (VS Code: `Ctrl+Shift+P` → Developer: Reload Window; Claude Code: no restart needed; opencode: restart)
+2. Verify installation in your editor's skills directory (see "What Gets Installed" above)
+3. Restart your editor completely
 
 ### "garbled" or "permission denied" on install?
-Check that the path is writable:
-```bash
-ls -la ~/.config/Code/User/.agents/skills/
-```
+Check that the target directory is writable. The installer prints the exact path it's writing to.
 
 ### Want to update?
 Run the install script again — it will overwrite with the latest version.
@@ -446,3 +452,5 @@ Run the install script again — it will overwrite with the latest version.
 ---
 
 **Built with ❤️ for developers who want to level up their AI-assisted development workflow.**
+
+**DevFlow 4.0.0 — Mythos-class.** Framework-orchestrated parallelism, environment-aware degradation, autonomous long-duration cycles, vision-based verification, adaptive prescriptiveness, and cross-cycle learning. Model-agnostic by design.
