@@ -224,6 +224,21 @@ In Pair Mode, the user reviews and approves each task during implementation.
 1. **Orchestrator:** Offer mode choice at Confirmation Gate. Record `Pair Mode: yes/no` and `Branch: {name}` in `phase-state.md`.
 2. **Implementer:** In Standard mode, auto-execute branch, tests, commits, git SHAs. In Pair mode, tell user commands and wait for confirmation.
 
+### 🔄 Autonomous Mode (Non-Presential)
+
+Autonomous mode is for long-duration cycles where the user initiates and leaves. The framework manages persistence, async checkpoints, resume, and escalation. Any model that can follow the lifecycle can operate in autonomous mode — the framework handles the long-duration concerns.
+
+**Activation:** `DEVFLOW_AUTONOMOUS=true` (detected at Step 0). Requires `terminal: yes` from the [environment probe](./environment-probe.md).
+
+**Key behaviors:**
+- Auto-approves Confirmation Gate and spec (like CI) but uses **normal iteration limits** (not fail-fast).
+- Writes async checkpoints to `docs/devflow/session/{slug}/autonomous-log.md` after each phase.
+- Writes to `docs/devflow/session/{slug}/send-to-user.md` on genuine human-required BLOCKs (not test failures or WARNs — those are handled by iterations).
+- Resume: `devflow-ctl status` shows where the cycle left off; the Orchestrator resumes from the last incomplete phase.
+- Progress grounding is obligatory — every checkpoint audited against persisted state (tool results, artifact existence, test-registry).
+
+See [autonomous-mode.md](./autonomous-mode.md) for the canonical pattern: activation, differences from CI/Standard modes, async checkpoints, send-to-user mechanism, resume capability, progress grounding, agent responsibilities, and anti-patterns.
+
 ## Parallel Subagents
 
 DevFlow supports parallel subagent dispatch for independent subtasks. This is a **framework-orchestrated** pattern — the framework decomposes work, dispatches subagents, and synthesizes their outputs. When the editor does not support parallel invocation, execution falls back to sequential automatically (the synthesis is identical).

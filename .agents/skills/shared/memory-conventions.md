@@ -17,10 +17,12 @@ These files live only for the duration of a DevFlow session. They are not versio
 
 | File | Purpose | Written by |
 |------|---------|------------|
-| `context.md` | Problem statement, constraints, DoD, tech stack, Stack Mode | Brainstormer, Architect, Planner |
+| `context.md` | Problem statement, constraints, DoD, tech stack, Stack Mode, Environment Capabilities | Brainstormer, Architect, Planner, Orchestrator |
 | `phase-state.md` | Current phase, checklist, iteration counter/log | All agents |
 | `test-registry.md` | Test names, status (FAIL/PASS), files created | Implementer, Tester |
 | `traceability.md` | Cross-reference: requirements → spec → tasks → tests → files | Planner, Implementer |
+| `autonomous-log.md` | Async checkpoints (autonomous mode only) — append-only, per-phase progress | Orchestrator |
+| `send-to-user.md` | Messages requiring user action (autonomous mode only) — BLOCKs, iteration limits, deliverable-ready | Orchestrator |
 
 ### `context.md` format
 
