@@ -47,6 +47,7 @@ The following conditions ALWAYS raise a 🔴 BLOCK regardless of user intent. Th
 
 Validated by: **Architect** (before Step 5 — save)
 
+- [ ] **Spec Digest** present — 10-20 line structured summary (components, data flow, key decisions, risk, test strategy, API/UI changes)
 - [ ] **Context** section present — explains the business problem
 - [ ] **Architecture** section present — high-level design with data flow
 - [ ] **Data Structures** section present — definitions with code snippets (stack-specific terminology)
@@ -66,6 +67,7 @@ Validated by: **Planner** (before Step 8 — persist)
 - [ ] **Goal** stated — one-sentence summary
 - [ ] **Architecture reference** — path to spec document
 - [ ] **Rigor** level stated — `light | standard | deep | maximum`
+- [ ] **Plan Digest** present — 10-20 line structured summary (tasks, files to create/modify, key dependencies, risk areas, test strategy, scope)
 - [ ] **File Map** section present — Modify: + Create: lists
 - [ ] **At least 1 task** defined with numbered title
 - [ ] **Each task is a work packet** — has **Goal**, **Context**, **Constraints**, **Acceptance criteria**, and **Deliverables**

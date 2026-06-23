@@ -477,8 +477,8 @@ cmd_checkpoint() {
 # against markdown headings). Kept in sync with shared/artifact-checklist.md.
 artifacts_required() {
   case "$1" in
-    spec)       printf '%s\n' "Context" "Architecture" "Data Structures" "Reusability" "Test Architecture" "Risk" "Design Decisions" "Constraints" ;;
-    plan)       printf '%s\n' "File Map" "Task" "Self-Review" ;;
+    spec)       printf '%s\n' "Digest" "Context" "Architecture" "Data Structures" "Reusability" "Test Architecture" "Risk" "Design Decisions" "Constraints" ;;
+    plan)       printf '%s\n' "Digest" "File Map" "Task" "Self-Review" ;;
     review)     printf '%s\n' "Summary" "Findings" "Verdict" ;;
     validation) printf '%s\n' "Assumptions" "Standards Scan" "Contradictions" "Security" "Architecture Risks" "Alternatives" ;;
     *) return 1 ;;

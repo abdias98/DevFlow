@@ -29,9 +29,12 @@ Identify the independent axes of work. Each subtask becomes a **subagent brief**
 | Field | Content |
 |-------|---------|
 | **Goal** | What this subagent should produce (one sentence) |
-| **Context** | Files to read, prior decisions, spec/plan sections relevant to this subtask |
+| **Context — READ** | Files to read, prior decisions, spec/plan sections relevant to this subtask. Be explicit — list exact paths. |
+| **Context — DO NOT READ** | Files and sections the subagent should NOT read (other tasks' sections, unrelated code, full plan when only a section is needed). Prevents over-exploration and token waste. |
 | **Constraints** | Read-only? Scope limits? Standards to apply? |
 | **Output format** | How the subagent should report back (structured summary, findings list, etc.) |
+
+> **Context isolation principle:** each subagent should load only the context it needs to complete its specific task. Explicit READ/DO NOT READ directives prevent subagents from over-exploring the codebase, loading unnecessary standards, or reading other tasks' work packets — all of which waste tokens and can bias the subagent's output. The brief is the contract — the subagent stays within its declared context.
 
 ### 2. Dispatch subagents and continue working
 

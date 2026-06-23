@@ -133,7 +133,7 @@ Based on requirements + exploration:
 1. **MANDATORY:** You **MUST** use `read_file` to load the [spec template](<{{SKILLS_DIR}}/devflow-architect/spec-template.md>) to ensure all required sections are included.
 2. Write the spec content using that structure.
 
-The spec MUST include all sections from the spec template: Context, Architecture, Data Structures, Reusability Decisions, Test Architecture, UI Mockups, API Contracts, Risk Assessment, Design Decisions, Constraints.
+The spec MUST include all sections from the spec template: Spec Digest, Context, Architecture, Data Structures, Reusability Decisions, Test Architecture, UI Mockups, API Contracts, Risk Assessment, Design Decisions, Constraints. The **Spec Digest** is a 10-20 line structured summary (components, data flow, key decisions, risk, test strategy, API/UI changes) that downstream agents read first — if it answers their questions, they skip reading the full spec, saving tokens.
 3. **Before saving**, validate the spec against the [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Spec Document section. Every required section must be present.
 
 ### Step 5 — Preview, Confirm, and Persist

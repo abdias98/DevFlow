@@ -59,6 +59,20 @@ Session state lives in the **YAML frontmatter** of `docs/devflow/session/{slug}/
 
 - Detect tech stack dynamically — read workspace config files (`package.json`, `*.csproj`, `composer.json`, `pyproject.toml`, `go.mod`, etc.).
 - **Save detected stack** to `context.md` under `## Stack Profile` so subsequent steps and other agents can reuse it.
+- **Incremental context loading:** each agent reads only the sections of `context.md` it needs, not the entire file. This avoids loading ~200 lines of session memory when only ~30-50 lines are relevant. The sections each agent reads:
+
+  | Agent | Reads from context.md |
+  |-------|----------------------|
+  | Validation Gate | Goal, Definition of Done, Constraints, Assumptions |
+  | Architect | Goal, Constraints, Stack Profile (if exists), Knowledge Base |
+  | Planner | Goal, Definition of Done, Stack Profile, Architect Findings, Validator Findings |
+  | Implementer | Goal, Stack Profile, Knowledge Base |
+  | Reviewer | Definition of Done, Stack Profile, Validator Findings |
+  | Debugger | Stack Profile (Test Commands), Knowledge Base |
+  | Finalizer | Definition of Done, all artifacts list |
+
+  If an agent needs a section outside its default list (e.g., the Reviewer needs Constraints for a specific check), it can still read it — the list is a default, not a constraint.
+- **Artifact digests:** the spec and plan each include a **Digest** section (10-20 lines) at the top. Downstream agents read the digest first. If the digest answers their questions, they skip reading the full artifact. If it raises questions, they read the specific full section. This saves ~60-80% of spec/plan read cost.
 - NEVER hardcode paths, tech stack names, or repo-specific conventions.
 - Use `AGENTS.md` when present — if the project has one, read it first and skip redundant exploration.
 - Use `DESIGN.md` when present — search for `DESIGN.md` in the workspace root. If found, read it and extract project-specific design guidelines (color systems, typography, spacing, component patterns, naming conventions, architectural rules). Store under `## DESIGN.md Guidelines` in session memory. All agents should consult it before making design-affecting decisions.
@@ -268,6 +282,12 @@ See [vision-verification.md](./vision-verification.md) for the canonical pattern
 The rigor level (set by the Planner: `light` | `standard` | `deep` | `maximum`) controls how prescriptive the skill procedures are. At `light`/`standard`, the agent treats numbered steps as objectives + checkpoints and navigates autonomously. At `deep`/`maximum`, the agent follows each step literally. This is a **framework-level** adjustment — the framework changes its own scaffolding, not the model's behavior. Non-negotiable invariants (TDD, scope-lock, gates, artifact validation, progress grounding) are always enforced regardless of rigor level.
 
 See [adaptive-skills.md](./adaptive-skills.md) for the canonical pattern: the rigor → prescriptiveness mapping, what changes with rigor (micro-step adherence, autonomy, checkpoint frequency), what does NOT change (non-negotiable invariants), how agents adapt their reading of the procedure, when to use each rigor level, relationship to other Wave 7 features, and anti-patterns. All agents read their SKILL.md procedure at the rigor level set by the Planner.
+
+## Task Supervisor
+
+When the Implementer dispatches parallel task subagents (waves), a lightweight **task supervisor** verifies each subagent's output against the plan **per-wave** — before the Implementer commits. The supervisor has fresh context (no inherited Implementer bias) and catches plan deviations, scope violations, and cross-task interface mismatches early, when fixes are cheap.
+
+See [task-supervisor.md](./task-supervisor.md) for the canonical pattern: when to dispatch (2+ tasks per wave, 3+ tasks total), the per-task check brief (plan compliance, scope, obvious issues), the cross-task consistency check (interface matching, file conflicts), the Implementer's response to findings (fix BLOCKs and re-verify, note WARNs for the Reviewer), relationship to the Verifier (per-wave vs post-waves — complementary, not redundant), sequential fallback (inline self-checks with context reset), and anti-patterns.
 
 ## INFO Notes & Violation Reporting
 
