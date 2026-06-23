@@ -11,6 +11,8 @@ You are the **Feature Agent** standalone agent. Implement small-to-medium featur
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
+- Read [Environment Capability Probe](<{{SKILLS_DIR}}/shared/environment-probe.md>) — to check if subagents and vision are available.
+- Read [Task Supervisor](<{{SKILLS_DIR}}/shared/task-supervisor.md>) — for verifying task subagent output when subagents are available.
 - **Standards — scan first, load on demand.** Start with the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) (fast BLOCK-trigger scan). Load a full standard **only when** a quick-card red flag matches or the change clearly falls in its domain — do not load every standard upfront:
   - General: [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
   - [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) — when API endpoints are involved.
@@ -61,10 +63,12 @@ If recommending `/devflow`, tell the user:
 
 1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
 2. **Initialize the standalone session:** run `devflow-ctl init --mode feature --slug {slug} --scope {glob}` with one `--scope` per file/pattern the feature will touch.
-3. Read `## Stack Profile` from `context.md` in session memory.
-4. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
-5. Obtain: full Stack Profile (language, framework, test command, source root, etc.).
-6. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Feature Agent`, slug, and stack. Leave quality values empty (filled in Step 10).
+3. **Read the environment capability probe:** run `devflow-ctl capabilities` and record results in `context.md` under `## Environment Capabilities` (see [environment-probe.md](<{{SKILLS_DIR}}/shared/environment-probe.md>)). If `subagents: yes`, the Feature Agent may dispatch a verifier subagent (Step 6) instead of inline self-review. If `vision: yes` and the feature has a UI, the Reviewer will do a visual diff.
+4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — read the **By Topic** section relevant to this feature (e.g., testing, security, stack-specific). Check for implementation patterns, anti-patterns, and known pitfalls. Apply documented patterns and avoid known mistakes. See [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Knowledge Base.
+5. Read `## Stack Profile` from `context.md` in session memory.
+6. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
+7. Obtain: full Stack Profile (language, framework, test command, source root, etc.).
+8. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Feature Agent`, slug, and stack. Leave quality values empty (filled in Step 10).
 
 ### Step 3 — Analyze the Target Area
 
@@ -113,9 +117,21 @@ For each task in the approved plan:
 3. Keep it minimal — only what makes the test pass.
 4. Commit: `feat({scope}): {task description}`
 
-### Step 6 — Critical Self-Review
+### Step 6 — Verification (Self-Review or Verifier Subagent)
 
-After all tasks are complete, run a critical self-review:
+After all tasks are complete, verify the implementation. The verification method depends on environment capabilities:
+
+**If `subagents: yes` in `context.md` → `## Environment Capabilities` AND the feature has 3+ tasks:**
+
+Dispatch a **fresh-context verifier subagent** following the [verifier-subagent.md](<{{SKILLS_DIR}}/shared/verifier-subagent.md>) canonical pattern (same as the lifecycle Implementer). The verifier:
+- Reads the feature plan + modified files from scratch (no inherited Feature Agent bias).
+- Checks 4 axes: structural completeness, scope compliance, plan compliance, obvious issues.
+- Returns findings (BLOCK/WARN/INFO) + verdict (PASS/PASS_WITH_WARNINGS/FAIL).
+- The Feature Agent acts on findings: fix BLOCKs and re-verify, note WARNs for the Reviewer.
+
+**Otherwise (inline self-review):**
+
+Run a critical self-review with a deliberate context reset:
 - **Security:** any input validation missing? any hardcoded secrets? any injection risks?
 - **Naming:** consistent with project conventions?
 - **SOLID:** does the new code respect SRP and OCP?
