@@ -7,14 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.1.1] — 2026-06-22
+
+> Standalone agent parity patch — closes gaps between standalone agents (Feature, Bug-Fix, Refactor) and lifecycle agents. Knowledge base reads, environment probe, verifier dispatch, and plan digest now apply to standalone agents.
 
 ### 🔄 Changed
 
-- **Standalone agent parity: knowledge base reads** (`devflow-feature`, `devflow-bug-fix`, `devflow-refactor`) — the three standalone agents now read the knowledge base (`docs/devflow/knowledge-base/learnings.md`) at their Step 2, reading the **By Topic** section relevant to their task. Previously only the lifecycle agents (Brainstormer, Architect, Planner, Implementer, Reviewer, Debugger) read the knowledge base — the standalone agents were left behind. Now all 9 mid-cycle agents benefit from accumulated patterns and anti-patterns from previous cycles.
-- **Standalone agent parity: environment capability probe** (`devflow-feature`, `devflow-bug-fix`, `devflow-refactor`) — the three standalone agents now run `devflow-ctl capabilities` at Step 2 and record results in `context.md` → `## Environment Capabilities`. This enables: (1) the Feature Agent to dispatch a verifier subagent instead of inline self-review when `subagents: yes`, (2) the Bug-Fixer to use screenshot analysis when `vision: yes`, (3) the Reviewer in Standalone Mode to do a visual diff when `vision: yes`.
-- **Feature Agent: verifier subagent dispatch** (`devflow-feature/SKILL.md`) — Step 6 (previously "Critical Self-Review") is now "Verification" and dispatches a fresh-context verifier subagent following the [verifier-subagent.md](./.agents/skills/shared/verifier-subagent.md) canonical pattern when `subagents: yes` AND the feature has 3+ tasks. The verifier checks structural completeness, scope compliance, plan compliance, and obvious issues — with fresh context (no Feature Agent bias). Falls back to inline self-review when subagents are unavailable or the feature is small.
-- **Feature Agent: plan digest** (`devflow-feature/plan-template.md`) — the feature plan template now includes a **Plan Digest** section (5-10 lines) at the top: tasks, files to create/modify, key dependencies, test strategy, scope. The Reviewer reads the digest first — if it answers their questions, they skip reading the full plan.
+- **Standalone agent parity: knowledge base reads** (`devflow-feature`, `devflow-bug-fix`, `devflow-refactor`) — the three standalone agents now read the knowledge base at Step 2, reading the **By Topic** section relevant to their task. All 9 mid-cycle agents now benefit from accumulated patterns and anti-patterns.
+- **Standalone agent parity: environment capability probe** (`devflow-feature`, `devflow-bug-fix`, `devflow-refactor`) — the three standalone agents now run `devflow-ctl capabilities` at Step 2 and record results in `context.md`. Enables verifier dispatch (Feature), screenshot analysis (Bug-Fix), and visual diff (Reviewer Standalone Mode) when the environment supports it.
+- **Feature Agent: verifier subagent dispatch** (`devflow-feature/SKILL.md`) — Step 6 renamed from "Critical Self-Review" to "Verification". Dispatches a fresh-context verifier subagent when `subagents: yes` AND 3+ tasks. Falls back to inline self-review otherwise.
+- **Feature Agent: plan digest** (`devflow-feature/plan-template.md`) — feature plan template now includes a Plan Digest section (5-10 lines) at the top.
 
 ## [4.1.0] — 2026-06-22
 
