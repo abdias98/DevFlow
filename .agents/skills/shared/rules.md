@@ -59,6 +59,20 @@ Session state lives in the **YAML frontmatter** of `docs/devflow/session/{slug}/
 
 - Detect tech stack dynamically — read workspace config files (`package.json`, `*.csproj`, `composer.json`, `pyproject.toml`, `go.mod`, etc.).
 - **Save detected stack** to `context.md` under `## Stack Profile` so subsequent steps and other agents can reuse it.
+- **Incremental context loading:** each agent reads only the sections of `context.md` it needs, not the entire file. This avoids loading ~200 lines of session memory when only ~30-50 lines are relevant. The sections each agent reads:
+
+  | Agent | Reads from context.md |
+  |-------|----------------------|
+  | Validation Gate | Goal, Definition of Done, Constraints, Assumptions |
+  | Architect | Goal, Constraints, Stack Profile (if exists), Knowledge Base |
+  | Planner | Goal, Definition of Done, Stack Profile, Architect Findings, Validator Findings |
+  | Implementer | Goal, Stack Profile, Knowledge Base |
+  | Reviewer | Definition of Done, Stack Profile, Validator Findings |
+  | Debugger | Stack Profile (Test Commands), Knowledge Base |
+  | Finalizer | Definition of Done, all artifacts list |
+
+  If an agent needs a section outside its default list (e.g., the Reviewer needs Constraints for a specific check), it can still read it — the list is a default, not a constraint.
+- **Artifact digests:** the spec and plan each include a **Digest** section (10-20 lines) at the top. Downstream agents read the digest first. If the digest answers their questions, they skip reading the full artifact. If it raises questions, they read the specific full section. This saves ~60-80% of spec/plan read cost.
 - NEVER hardcode paths, tech stack names, or repo-specific conventions.
 - Use `AGENTS.md` when present — if the project has one, read it first and skip redundant exploration.
 - Use `DESIGN.md` when present — search for `DESIGN.md` in the workspace root. If found, read it and extract project-specific design guidelines (color systems, typography, spacing, component patterns, naming conventions, architectural rules). Store under `## DESIGN.md Guidelines` in session memory. All agents should consult it before making design-affecting decisions.

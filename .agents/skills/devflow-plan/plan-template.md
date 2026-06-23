@@ -10,6 +10,23 @@
 
 ---
 
+## Plan Digest
+
+> **Purpose:** a 10-20 line structured summary that downstream agents (Implementer, Reviewer, Verifier, Task Supervisor) read FIRST. If the digest answers their questions, they skip reading the full plan. If it raises questions, they read the specific task's full work packet. Saves ~60-80% of plan read cost.
+
+```markdown
+## Plan Digest
+- **Tasks:** {N} tasks in {M} waves
+- **Files to create:** {list}
+- **Files to modify:** {list}
+- **Key dependencies:** {task A → task B (B needs A's output)}
+- **Risk areas:** {tasks with HIGH risk — one line each}
+- **Test strategy:** {unit per task + integration for {X} + e2e for {Y}}
+- **Scope:** {what's explicitly out of scope}
+```
+
+---
+
 ## File Map
 
 > Adapt section headings to the project's actual architecture. Examples below — use only the layers that exist in the detected stack.

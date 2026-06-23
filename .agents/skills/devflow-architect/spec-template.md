@@ -4,6 +4,21 @@ The spec document saved to `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md` MUST
 
 ## Required Sections
 
+### Spec Digest
+
+> **Purpose:** a 10-20 line structured summary that downstream agents (Planner, Implementer, Reviewer) read FIRST. If the digest answers their questions, they skip reading the full spec. If it raises questions, they read the specific full section. Saves ~60-80% of spec read cost.
+
+```markdown
+## Spec Digest
+- **Components:** {list of new/modified components}
+- **Data flow:** {Request → Middleware → Service → Repository → DB}
+- **Key decisions:** {2-3 most important design decisions with one-line rationale}
+- **Risk:** {HIGH/MEDIUM/LOW — one-line summary}
+- **Test strategy:** {unit/integration/e2e — one line}
+- **API changes:** {endpoints added/modified, or "none"}
+- **UI changes:** {components added/modified, or "none"}
+```
+
 ### Context
 Business problem and why the feature exists.
 

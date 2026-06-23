@@ -98,7 +98,7 @@ Ensure you understand: file conventions, import patterns, test framework + asser
 
 ### Step 8 — Write the Plan
 
-Using the [plan template](<{{SKILLS_DIR}}/devflow-plan/plan-template.md>), write the complete plan document. Before proceeding to Step 9, validate the plan against the [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Plan Document section: all required sections present, each task has commit checkpoint + test code.
+Using the [plan template](<{{SKILLS_DIR}}/devflow-plan/plan-template.md>), write the complete plan document. The plan MUST include the **Plan Digest** — a 10-20 line structured summary (tasks, files to create/modify, key dependencies, risk areas, test strategy, scope) that downstream agents (Implementer, Reviewer, Verifier, Task Supervisor) read first. If the digest answers their questions, they skip reading the full plan — saving tokens. Before proceeding to Step 9, validate the plan against the [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Plan Document section: all required sections present, each task has commit checkpoint + test code.
 
 ### Step 8a — Generate Traceability Matrix
 
