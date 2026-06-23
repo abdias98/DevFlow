@@ -2,6 +2,8 @@
 
 > **Framework-centric principle:** verification before review is a fresh-context sanity check, not a deep quality analysis. The verifier catches low-hanging fruit (missing files, scope drift, plan deviations) so the Reviewer can spend its budget on deeper analysis. The verifier does NOT replace the Reviewer — it precedes it.
 
+> **Relationship to the Task Supervisor:** the [Task Supervisor](./task-supervisor.md) verifies **per-wave** (after each wave's tasks, before commit). The Verifier verifies **post-waves** (after ALL waves complete, before the Reviewer). They are complementary: the supervisor catches deviations early when fixes are cheap; the verifier catches global structural issues that only visible when all tasks are done. Both run — neither replaces the other.
+
 This document defines the canonical pattern for dispatching a verifier subagent between implementation and review. The Implementer (Phase 5) references this file and dispatches a verifier when the implementation is non-trivial.
 
 ---
@@ -120,16 +122,18 @@ The inline fallback is identical in substance — the key is the **context reset
 
 ---
 
-## Relationship to the Reviewer
+## Relationship to the Reviewer and Task Supervisor
 
-The verifier and the Reviewer are complementary, not redundant:
+The verifier, task supervisor, and Reviewer are complementary, not redundant:
 
-| Aspect | Verifier | Reviewer |
-|--------|----------|----------|
-| **When** | After implementation, before review | After verifier passes |
-| **Context** | Fresh (no Implementer bias) | Fresh (reads spec/plan/code) |
-| **Depth** | Structural, scope, plan compliance | Quality, security, performance, standards |
-| **Output** | Findings list (BLOCK/WARN/INFO) | Review verdict (BLOCK/WARN/INFO) |
+| Aspect | Task Supervisor | Verifier | Reviewer |
+|--------|----------------|----------|----------|
+| **When** | After each wave (before commit) | After ALL waves (before review) | After verifier passes |
+| **Scope** | Per-wave (tasks in one wave) | Global (all tasks, all waves) | All changed files |
+| **Context** | Fresh, narrow (work packet + task files) | Fresh, broader (full plan + all files) | Fresh, full (diff + spec + plan + standards) |
+| **What it checks** | Plan compliance per task, scope per task, cross-task interfaces | Structural completeness, scope global, plan compliance global | Quality, security, performance, architecture, visual diff |
+| **Output** | Findings per task + cross-task verdict | Findings list (BLOCK/WARN/INFO) | Review verdict (BLOCK/WARN/INFO) |
+| **Action on BLOCK** | Implementer fixes, re-checks that task | Implementer fixes, re-verifies | Routes back to Implementer via Debugger |
 | **Action on BLOCK** | Implementer fixes, re-verifies | Routes back to Implementer via Debugger |
 
 The verifier's WARN/INFO findings are forwarded to the Reviewer as inputs, so the Reviewer doesn't re-discover them.

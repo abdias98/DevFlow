@@ -20,6 +20,7 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 - Read [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
 - Read [Parallel Subagents](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) — for independent task dispatch and verifier dispatch.
 - Read [Verifier Subagent](<{{SKILLS_DIR}}/shared/verifier-subagent.md>) — for the pre-review verification step.
+- Read [Task Supervisor](<{{SKILLS_DIR}}/shared/task-supervisor.md>) — for per-wave supervisor checks on task subagents.
 - Write **minimal code** to pass tests — nothing more, nothing less.
 - Follow the plan **step by step** — do not skip or reorder.
 - For each task: Red phase (create test file, inform user) → Green phase (write code to pass, inform user).
@@ -92,16 +93,43 @@ Each subagent's brief:
 | Field | Content |
 |-------|---------|
 | **Goal** | Implement this task following Red→Green TDD. |
-| **Context** | The task's work packet from the plan (Goal, Context, Constraints, Acceptance, Deliverables, Implementation guide), relevant standards, Stack Profile test commands. |
+| **Context** | **READ:** the task's work packet from the plan (Goal, Context, Constraints, Acceptance criteria, Deliverables, Implementation guide), relevant standards, Stack Profile test commands. **DO NOT READ:** other tasks' sections, the full plan, context.md, standards not relevant to this task. |
 | **Constraints** | Write ONLY to the task's declared files. Follow TDD Red→Green. Do NOT commit — the Implementer handles commits after wave synthesis. Run `devflow-ctl scope check {file}` before each edit. |
 | **Output format** | Task complete — files created/modified, test command, test result (Standard mode) or test command for user (Pair mode). |
 
-After all subagents in a wave return, the Implementer **synthesizes**:
+After all subagents in a wave return, the Implementer runs **supervisor checks** before synthesizing:
+
+#### Step 2b-i — Supervisor Checks (per-wave)
+
+**Skip supervisor when:** the wave has 1 task, OR the plan has 1-2 tasks total, OR Stack Mode = yes. In those cases, proceed directly to synthesis.
+
+**Otherwise, dispatch supervisor checks** following [task-supervisor.md](<{{SKILLS_DIR}}/shared/task-supervisor.md>):
+
+1. **Per-task checks (parallel, fresh context each):** For each task in the wave, dispatch a supervisor check subagent with:
+   - **Goal:** Verify task {N} implementation matches its work packet and stays in scope.
+   - **Context — READ:** plan.md (ONLY task {N}'s work packet), {files declared in task N's deliverables}. **DO NOT READ:** other tasks' sections, the full plan, context.md, standards, the Implementer's reasoning.
+   - **Constraints:** Read-only. Do NOT run tests. Do NOT edit files. Check against **acceptance criteria** (NOT implementation guide). Run `devflow-ctl scope check {file}` for each modified file.
+   - **Output:** Findings table (BLOCK/WARN/INFO) across 3 axes: plan compliance, scope compliance, obvious issues. Verdict: PASS / PASS_WITH_WARNINGS / FAIL.
+
+2. **Cross-task consistency check (fresh context):** Dispatch one check that verifies interfaces across all tasks in the wave:
+   - **Goal:** Verify that tasks in wave {N} produced consistent interfaces and no conflicts.
+   - **Context — READ:** plan.md (File Map + all task deliverables in wave {N}), {all files modified in wave N}. **DO NOT READ:** previous waves, context.md, standards.
+   - **Constraints:** Read-only. Check: imports resolve across tasks, no file conflicts, interfaces match (signatures, types, API contracts).
+   - **Output:** Findings table. Verdict: CONSISTENT / INCONSISTENT.
+
+3. **Act on findings:**
+   - **Any BLOCK:** fix the issue(s) in the affected task's files, re-dispatch the supervisor check for that task (fresh context) to confirm the fix. If a BLOCK cannot be fixed without plan amendment → STOP and ask the user.
+   - **Only WARN/INFO:** note WARNs in `### Additional Recommendations` for the Reviewer, note INFOs for awareness.
+   - **All PASS / CONSISTENT:** proceed to synthesis.
+
+#### Step 2b-ii — Synthesize
+
+After supervisor findings are resolved:
 
 1. Verify all tasks completed successfully (files exist, tests pass in Standard mode).
 2. **Standard mode:** auto-commit each task sequentially (never parallelize git commands) with the planned message from the plan.
 3. **Pair mode:** present all tasks in the wave for user approval. After approval, tell the user the commit commands.
-4. If any subagent failed → stop, diagnose, and re-dispatch the failed task (max 2 retries per task).
+4. If any subagent failed (before supervisor) → stop, diagnose, and re-dispatch the failed task (max 2 retries per task).
 5. Proceed to the next wave.
 
 **Sequential fallback:** If the editor does not support parallel subagent invocation, execute tasks sequentially within each wave (they are independent, so order doesn't matter). The synthesis step is identical — only the execution order changes. See [parallel-subagents.md](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) → Fallback.

@@ -269,6 +269,12 @@ The rigor level (set by the Planner: `light` | `standard` | `deep` | `maximum`) 
 
 See [adaptive-skills.md](./adaptive-skills.md) for the canonical pattern: the rigor → prescriptiveness mapping, what changes with rigor (micro-step adherence, autonomy, checkpoint frequency), what does NOT change (non-negotiable invariants), how agents adapt their reading of the procedure, when to use each rigor level, relationship to other Wave 7 features, and anti-patterns. All agents read their SKILL.md procedure at the rigor level set by the Planner.
 
+## Task Supervisor
+
+When the Implementer dispatches parallel task subagents (waves), a lightweight **task supervisor** verifies each subagent's output against the plan **per-wave** — before the Implementer commits. The supervisor has fresh context (no inherited Implementer bias) and catches plan deviations, scope violations, and cross-task interface mismatches early, when fixes are cheap.
+
+See [task-supervisor.md](./task-supervisor.md) for the canonical pattern: when to dispatch (2+ tasks per wave, 3+ tasks total), the per-task check brief (plan compliance, scope, obvious issues), the cross-task consistency check (interface matching, file conflicts), the Implementer's response to findings (fix BLOCKs and re-verify, note WARNs for the Reviewer), relationship to the Verifier (per-wave vs post-waves — complementary, not redundant), sequential fallback (inline self-checks with context reset), and anti-patterns.
+
 ## INFO Notes & Violation Reporting
 
 - When a code smell, architectural violation, or potential improvement is found in a file outside the scope, add an INFO note following this format:

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **Task Supervisor** (`shared/task-supervisor.md`) — new shared file documenting the per-wave supervisor pattern for the Implementer's parallel task subagents. When the Implementer dispatches a wave of 2+ task subagents, a lightweight supervisor with fresh context verifies each subagent's output against the plan **before** the Implementer commits. Three verification axes per task: plan compliance (acceptance criteria met?), scope compliance (`devflow-ctl scope check`), obvious issues (syntax, broken imports). Plus a cross-task consistency check that verifies interfaces match across tasks in the same wave (function signatures, type exports, API contracts, import resolution). The supervisor catches deviations early when fixes are cheap — before the code is committed and before downstream waves build on top of it. Skip criteria: waves of 1 task, plans of 1-2 tasks total, or Stack Mode = yes. Sequential fallback: inline self-checks with deliberate context reset (the value comes from fresh eyes, not from being a separate process). Relationship to existing verification layers: Task Supervisor = per-wave (granular, catches early), Verifier = post-waves (global structural), Reviewer = Phase 6 (quality/security/performance with standards). All three run — none replaces another. `rules.md` updated with the Task Supervisor section. `verifier-subagent.md` updated with a 3-layer relationship table. The Implementer SKILL.md Step 2b now has Step 2b-i (supervisor checks) and Step 2b-ii (synthesize) — supervisor checks run between task subagent completion and commit.
+
 ## [4.0.1] — 2026-06-22
 
 > Docs patch — update ARCHITECTURE.md, README.md, and improvement-roadmap.md to reflect all features shipped in Waves 5-7 (releases 3.2.0, 3.3.0, 4.0.0). No framework changes.
