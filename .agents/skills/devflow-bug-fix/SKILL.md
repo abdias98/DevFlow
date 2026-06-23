@@ -11,6 +11,7 @@ You are the **Bug-Fixer** standalone agent. Resolve reported bugs systematically
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
+- Read [Environment Capability Probe](<{{SKILLS_DIR}}/shared/environment-probe.md>) — to check if vision is available for screenshot analysis.
 - **Standards — scan first, load on demand.** Start with the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) (fast BLOCK-trigger scan). Load a full standard **only when** a quick-card red flag matches or the bug's causal chain clearly falls in its domain — do not load every standard upfront:
   - General: [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
   - [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) — when API endpoints are involved.
@@ -68,10 +69,12 @@ If recommending `/devflow`, tell the user:
 
 1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
 2. **Initialize the standalone session:** run `devflow-ctl init --mode bug-fix --slug {slug} --scope {glob}` with one `--scope` per affected file/pattern.
-3. Read `## Stack Profile` from `context.md` in session memory.
-4. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
-5. Obtain: `Test Command`, `Test Command (single file)`, `Test Root`, `Test Utilities`.
-6. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Bug-Fixer`, slug, and stack. Leave quality values empty (filled in Step 11).
+3. **Read the environment capability probe:** run `devflow-ctl capabilities` and record results in `context.md` under `## Environment Capabilities` (see [environment-probe.md](<{{SKILLS_DIR}}/shared/environment-probe.md>)). If `vision: yes` and the user provides a screenshot of the error, use it in Step 3.
+4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — read the **By Topic** section relevant to the bug (e.g., testing, security, stack-specific). Check for known root causes, debugging patterns, and common pitfalls. A documented anti-pattern may explain the failure. See [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Knowledge Base.
+5. Read `## Stack Profile` from `context.md` in session memory.
+6. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
+7. Obtain: `Test Command`, `Test Command (single file)`, `Test Root`, `Test Utilities`.
+8. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Bug-Fixer`, slug, and stack. Leave quality values empty (filled in Step 11).
 
 ### Step 3 — Analyze the Target Code
 

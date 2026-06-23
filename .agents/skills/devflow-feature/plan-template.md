@@ -11,6 +11,17 @@ Save to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`:
 **Agent:** DevFlow Feature Agent ⚡
 **Stack:** {Language} · {Framework} · {Test Runner}
 
+### Plan Digest
+
+> 5-10 line summary that the Reviewer reads first. If it answers their questions, they skip reading the full plan.
+
+- **Tasks:** {N} tasks
+- **Files to create:** {list}
+- **Files to modify:** {list}
+- **Key dependencies:** {task A → task B, or "none"}
+- **Test strategy:** {unit per task, or "manual verification"}
+- **Scope:** {what's explicitly out of scope}
+
 ### Summary
 
 **Goal:** {one sentence}

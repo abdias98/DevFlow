@@ -11,6 +11,7 @@ You are the **Refactorer** standalone agent. Improve existing code without chang
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
+- Read [Environment Capability Probe](<{{SKILLS_DIR}}/shared/environment-probe.md>) — to check if subagents are available for verification.
 - **Standards — scan first, load on demand.** Start with the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) (fast BLOCK-trigger scan). Load a full standard **only when** a quick-card red flag matches or the target code clearly falls in its domain — do not load every standard upfront:
   - General: [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
   - [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) — when API endpoints are involved.
@@ -65,10 +66,12 @@ Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|IN
    - **❌ Cancel** → stop (no session created).
    - *Exception:* if the user's Step 1 answer already enumerated the exact files to modify (and only those), treat that as the confirmed list — state the locked scope explicitly in your next message and proceed.
 3. **Initialize the standalone session:** run `devflow-ctl init --mode refactor --slug {slug} --scope {glob}` with one `--scope` per confirmed entry in the Approved Scope List.
-4. Read `## Stack Profile` from `context.md` in session memory.
-5. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
-6. Obtain: `Test Command`, `Test Command (single file)`, `Test Root`, `Test Utilities`.
-7. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Refactorer`, slug, and stack. Leave quality values empty (filled in Step 10).
+4. **Read the environment capability probe:** run `devflow-ctl capabilities` and record results in `context.md` under `## Environment Capabilities` (see [environment-probe.md](<{{SKILLS_DIR}}/shared/environment-probe.md>)). If `subagents: yes`, the Refactorer may dispatch a verifier subagent for the post-refactor verification step.
+5. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — read the **By Topic** section relevant to the refactoring (e.g., architecture, performance, stack-specific). Check for documented patterns and anti-patterns. Apply documented patterns and avoid known mistakes. See [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Knowledge Base.
+6. Read `## Stack Profile` from `context.md` in session memory.
+7. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write it to `context.md`.
+8. Obtain: `Test Command`, `Test Command (single file)`, `Test Root`, `Test Utilities`.
+9. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Refactorer`, slug, and stack. Leave quality values empty (filled in Step 10).
 
 ### Step 3 — Analyze the Target Code
 
