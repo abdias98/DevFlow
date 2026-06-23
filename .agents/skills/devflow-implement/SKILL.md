@@ -45,11 +45,11 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 
 1. **Verify the Confirmation Gate:** run `devflow-ctl gate check confirmation` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If it exits non-zero, STOP — the user has not approved the plan. Do not write any code.
 2. Read session memory: `context.md` (tech stack, constraints, Stack Mode) and run `devflow-ctl status` for the session state.
-3. Read the plan document from `docs/devflow/plans/`.
+3. **Read the plan** — load the plan document from `docs/devflow/plans/`. Read the **File Map** and **task list overview** to understand the full scope. For each task during execution (Step 2), read only that task's **work packet** section — not the entire plan repeatedly. This avoids loading N × (full plan) tokens when only N × (work packet) is needed.
 4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for implementation patterns, anti-patterns, and known pitfalls relevant to the detected stack and the tasks ahead. Apply documented patterns and avoid known mistakes.
-4. **Declare the scope:** register the plan's File Map (Create + Modify lists) with `devflow-ctl scope add {glob}` for each path, if not already declared.
-5. Note Stack Mode: `no` → standard flow, `yes` → stacked flow.
-6. Identify where to start (first unchecked task or resume from checkpoint).
+5. **Declare the scope:** register the plan's File Map (Create + Modify lists) with `devflow-ctl scope add {glob}` for each path, if not already declared.
+6. Note Stack Mode: `no` → standard flow, `yes` → stacked flow.
+7. Identify where to start (first unchecked task or resume from checkpoint).
 
 ### Step 2 — Execute Plan
 
