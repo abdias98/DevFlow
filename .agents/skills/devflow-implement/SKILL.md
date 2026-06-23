@@ -101,7 +101,7 @@ After all subagents in a wave return, the Implementer runs **supervisor checks**
 
 #### Step 2b-i — Supervisor Checks (per-wave)
 
-**Skip supervisor when:** the wave has 1 task, OR the plan has 1-2 tasks total, OR Stack Mode = yes. In those cases, proceed directly to synthesis.
+**Skip supervisor when:** the wave has 1 task, OR the plan has 1-2 tasks total, OR Stack Mode = yes, OR **rigor is `light` or `standard` (unless 5+ tasks)**. At `light` rigor, all per-wave verification is skipped — the Reviewer is the only verification layer. At `standard` rigor, skip unless 5+ tasks. At `deep`/`maximum` rigor, run for any wave with 2+ tasks. See [adaptive-skills.md](<{{SKILLS_DIR}}/shared/adaptive-skills.md>) → Rigor → Verification Layers.
 
 **Otherwise, dispatch supervisor checks** following [task-supervisor.md](<{{SKILLS_DIR}}/shared/task-supervisor.md>):
 
@@ -156,6 +156,7 @@ Before invoking the Reviewer, run a fresh-context verification pass to catch low
 - The plan has 1-2 tasks and modified ≤ 2 files.
 - No deviations from the plan.
 - The implementation is mechanical (single utility function with a test).
+- **Rigor is `light`** (at light rigor, the Verifier is always skipped — the Reviewer is the only verification layer). At `standard` rigor, skip unless 3+ tasks. At `deep`/`maximum` rigor, run for any implementation with 3+ tasks (at maximum, run always). See [adaptive-skills.md](<{{SKILLS_DIR}}/shared/adaptive-skills.md>) → Rigor → Verification Layers.
 
 If the skip criteria are met, proceed directly to Step 6.
 

@@ -75,6 +75,8 @@ When the skip criteria are met, review the files inline using the [review checkl
 
 Each subagent reads the complete changed files (not just diff) for context, applies its subset of the [review checklist](<{{SKILLS_DIR}}/devflow-review/review-checklist.md>) and standards, and returns findings as a list: Severity, File+Line, Issue, Suggestion. Subagents do NOT write the review document — the Reviewer synthesizes after all return.
 
+**Standards loading per subagent (quick-card gate):** each subagent loads the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) first (~50 lines) and scans for red flags in its dimension. Only if a red flag matches (or the change clearly falls in the standard's domain) does the subagent load the full standard (~200-500 lines). This saves ~60-80% of standards loading cost when no red flags are present. The subagent cites the full standard section in every finding.
+
 | Subagent | Dimension | Checklist sections | Standards loaded |
 |----------|-----------|-------------------|------------------|
 | **1 — Security & Safety** | Security, input validation, secrets | Security (OWASP), Error Handling (boundary errors) | [Security](<{{SKILLS_DIR}}/shared/standards/security.md>), [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) |

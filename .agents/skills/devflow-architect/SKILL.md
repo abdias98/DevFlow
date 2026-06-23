@@ -60,9 +60,12 @@ Search for `DESIGN.md` in the workspace root. If found:
 - If DESIGN.md conflicts with a DevFlow standard, flag the conflict to the user and ask which takes precedence.
 
 Check for `docs/devflow/templates/project-architecture.md`. If found:
-- Read it and extract: layer structure, design decisions, common patterns, anti-patterns.
-- Use as the primary reference for architecture decisions.
-- Skip re-exploring patterns already documented.
+- Read it FIRST — it is the **codebase index** from previous DevFlow cycles. It contains: tech stack, layer structure, data flow, design decisions, common patterns, anti-patterns, test conventions, and commands.
+- Use it as the **primary reference** for architecture decisions — skip re-exploring patterns already documented there.
+- In Step 2 (Explore the Codebase), only explore what is NOT covered by the project template. If the template has the Stack Profile, skip subagent B. If the template has test conventions, skip subagent C. Only dispatch subagents for axes where the template is stale or missing data.
+- This can reduce exploration from 4 subagents to 1-2, saving ~10-20K tokens.
+
+If NOT found → full exploration (all subagents). The Architect may suggest running `/devflow-templates` after the spec is saved to generate the index for future cycles.
 
 **Load the matching reference template.** Based on the detected `Feature Type` (from `context.md` → `## Stack Profile`; if not yet known, defer this load until Step 2 establishes it), read the corresponding pre-defined template from `shared/templates/` and use it as an architecture checklist for the expected project shape, layers, and conventions:
 

@@ -45,6 +45,25 @@ The [rigor level](./rules.md) (set by the Planner in Phase 4: `light` | `standar
 
 These invariants are the floor — they apply at every rigor level. The rigor level adjusts the ceiling (how much scaffolding surrounds the invariants), not the floor.
 
+### Rigor → Verification Layers
+
+The rigor level controls which verification layers run during Phase 5 (Implementer) and Phase 6 (Reviewer):
+
+| Rigor | Task Supervisor (per-wave) | Verifier (post-waves) | Reviewer | Extra checkpoints |
+|-------|:---:|:---:|:---:|:---:|
+| **light** | Skip | Skip | ✅ (inline, skip criteria relaxed) | None |
+| **standard** | Skip (unless 5+ tasks) | Skip (unless 3+ tasks) | ✅ (normal) | None |
+| **deep** | ✅ (2+ tasks per wave) | ✅ (3+ tasks) | ✅ (parallel multi-dimension) | Per-task checkpoint |
+| **maximum** | ✅ (always) | ✅ (always) | ✅ (parallel + visual diff if available) | Per-task + conservative escalation (2 attempts instead of 3) |
+
+**At `light` rigor:** the Implementer skips the Task Supervisor and Verifier — the Reviewer is the only verification layer. This is appropriate for trivial tasks (rename, typo, comment) where 3 layers of verification is overhead. The Reviewer's own skip criteria are relaxed (review inline even for 3-4 files if changes are mechanical).
+
+**At `standard` rigor:** the Implementer skips the Task Supervisor unless there are 5+ tasks, and skips the Verifier unless there are 3+ tasks. The Reviewer runs normally (parallel multi-dimension for non-trivial changes, inline for trivial).
+
+**At `deep` rigor:** all 3 verification layers run. Task Supervisor for any wave with 2+ tasks. Verifier for any implementation with 3+ tasks. Reviewer runs parallel multi-dimension. Per-task checkpoints in the Implementer.
+
+**At `maximum` rigor:** all 3 verification layers always run, regardless of task count. The Reviewer also does a visual diff if vision is available. Conservative escalation: 2 failed attempts instead of 3 before escalating to the user. Extra checkpoints at every task boundary.
+
 ---
 
 ## The Pattern
