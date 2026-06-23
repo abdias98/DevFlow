@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **`devflow-ctl sessions` command** — new CLI command that lists all active DevFlow sessions with slug, phase, mode, rigor, and lock state. Lets the user see what sessions exist and where they are without starting a new cycle.
+- **PR description generation** (`devflow-finalize/SKILL.md`) — the Finalizer now generates a ready-to-use PR description from the cycle artifacts (summary, files changed, tasks, tests, quality metrics, artifacts list, test plan). Present it to the user for copying — DevFlow never creates the PR automatically.
+
+### 🔄 Changed
+
+- **Standalone agent parity: complete KB reads + env probe** (`devflow-perf`, `devflow-migrate`, `devflow-contract`, `devflow-reverse`) — the remaining 4 standalone agents now read the knowledge base (By Topic section) and run the environment capability probe at Step 2. All 13 mid-cycle agents (7 lifecycle + 6 standalone) now benefit from accumulated patterns and environment-aware degradation. The Reverse Agent can dispatch parallel exploration subagents when `subagents: yes`.
+- **Finalizer: writes to KB By Topic** (`devflow-finalize/SKILL.md`) — the Finalizer now appends learnings to BOTH sections of the knowledge base: **By Topic** (the primary section agents read — patterns grouped by topic) and **Cycle History** (chronological log). Previously it only wrote to Cycle History, which meant the By Topic section stayed empty and the W8-5 optimization was unused. Includes a deduplication rule: if a pattern already exists in By Topic, append the new cycle slug to the existing entry instead of duplicating.
+- **Refactorer: verifier subagent dispatch** (`devflow-refactor/SKILL.md`) — Step 7 renamed from "Inform Verification" to "Verification". Dispatches a fresh-context verifier subagent when `subagents: yes` AND the refactor touches 3+ files. The verifier checks behavior preservation (the key refactoring invariant — imports, exports, public APIs unchanged) in addition to structural/scope/plan compliance. Falls back to inline self-review when subagents are unavailable or the refactor is small.
+
 ## [4.1.1] — 2026-06-22
 
 > Standalone agent parity patch — closes gaps between standalone agents (Feature, Bug-Fix, Refactor) and lifecycle agents. Knowledge base reads, environment probe, verifier dispatch, and plan digest now apply to standalone agents.

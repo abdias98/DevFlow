@@ -29,6 +29,7 @@
 #   artifacts check <type> <path>                    Validate required sections
 #   capabilities [get <key>]                         Print environment capabilities (from .devflow-environment)
 #   knowledge list                                   List entries in the knowledge base
+#   sessions                                         List all active DevFlow sessions with phase and state
 #
 # Gates:    validation (pending|passed|blocked|accepted-risks)
 #           confirmation, plan_approval (pending|approved|rejected)
@@ -572,6 +573,36 @@ cmd_knowledge() {
   esac
 }
 
+# ── Sessions list ─────────────────────────────────────────────────────────────
+# Lists all active DevFlow sessions with phase, mode, and lock state.
+
+cmd_sessions() {
+  if [[ ! -d "$SESSION_ROOT" ]]; then
+    echo "No sessions found ($SESSION_ROOT does not exist)"
+    exit 0
+  fi
+  local found=0
+  while IFS= read -r -d '' statefile; do
+    local slug phase mode lock locked_by
+    slug="$(basename "$(dirname "$statefile")")"
+    # Read frontmatter fields without resolving a single session
+    phase="$(awk '/^phase:/{print $2;exit}' "$statefile" 2>/dev/null || echo "?")"
+    mode="$(awk '/^mode:/{print $2;exit}' "$statefile" 2>/dev/null || echo "?")"
+    locked_by="$(awk '/^locked_by:/{sub(/^locked_by: */,"");print;exit}' "$statefile" 2>/dev/null || echo "?")"
+    rigor="$(awk '/^rigor:/{print $2;exit}' "$statefile" 2>/dev/null || echo "?")"
+    if [[ "$locked_by" == "none" || -z "$locked_by" ]]; then
+      lock="unlocked"
+    else
+      lock="locked by $locked_by"
+    fi
+    printf "%-20s  Phase: %-6s  Mode: %-10s  Rigor: %-8s  %s\n" "$slug" "$phase" "$mode" "$rigor" "$lock"
+    found=1
+  done < <(find "$SESSION_ROOT" -mindepth 2 -maxdepth 2 -name phase-state.md -print0 2>/dev/null)
+  if [[ $found -eq 0 ]]; then
+    echo "No active sessions found"
+  fi
+}
+
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 CMD="${1:-help}"; shift || true
@@ -588,6 +619,7 @@ case "$CMD" in
   artifacts)  cmd_artifacts "$@" ;;
   capabilities) cmd_capabilities "$@" ;;
   knowledge)  cmd_knowledge "$@" ;;
+  sessions)   cmd_sessions "$@" ;;
   version)    echo "devflow-ctl schema v$SCHEMA_VERSION" ;;
   help|--help|-h) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//' ;;
   *) die "unknown command '$CMD' — run 'devflow-ctl help'" ;;

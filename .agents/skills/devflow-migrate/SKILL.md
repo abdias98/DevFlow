@@ -11,6 +11,7 @@ You are the **Migration Agent** standalone agent. Analyze schema changes, genera
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
+- Read [Environment Capability Probe](<{{SKILLS_DIR}}/shared/environment-probe.md>) — to check available primitives.
 - Read [Security standard](<{{SKILLS_DIR}}/shared/standards/security.md>)
 - **NEVER execute migrations** — generate files and provide commands. The user runs them.
 - **NEVER modify existing migration files** — only create new ones.
@@ -43,9 +44,11 @@ Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|IN
 
 ### Step 2 — Load Stack Profile
 
-1. Read `## Stack Profile` from `context.md`.
-2. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>).
-3. Obtain: Database type (PostgreSQL, MySQL, SQLite, MongoDB...), ORM/Framework, migration tool.
+1. **Read the environment capability probe:** run `devflow-ctl capabilities` and record results in `context.md` under `## Environment Capabilities` (see [environment-probe.md](<{{SKILLS_DIR}}/shared/environment-probe.md>)).
+2. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — read the **By Topic** → **Stack-Specific** section for the detected database/ORM. Check for documented migration patterns and anti-patterns from previous cycles. See [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Knowledge Base.
+3. Read `## Stack Profile` from `context.md`.
+4. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>).
+5. Obtain: Database type (PostgreSQL, MySQL, SQLite, MongoDB...), ORM/Framework, migration tool.
 
 ### Step 3 — Analyze Migration Impact
 

@@ -124,9 +124,20 @@ For each file in the approved scope:
 
 Commit message: `refactor({scope}): {description}`
 
-### Step 7 — Inform Verification
+### Step 7 — Verification (Self-Review or Verifier Subagent)
 
-After all changes are applied, tell the user:
+After all changes are applied, verify the refactoring. The verification method depends on environment capabilities:
+
+**If `subagents: yes` in `context.md` → `## Environment Capabilities` AND the refactor touches 3+ files:**
+
+Dispatch a **fresh-context verifier subagent** following the [verifier-subagent.md](<{{SKILLS_DIR}}/shared/verifier-subagent.md>) canonical pattern. The verifier:
+- Reads the refactor plan + modified files from scratch (no inherited Refactorer bias).
+- Checks: structural completeness (all planned changes applied?), scope compliance, plan compliance, and **behavior preservation** (imports, exports, public APIs unchanged — the key refactoring invariant).
+- Returns findings (BLOCK/WARN/INFO) + verdict.
+
+**Otherwise (inline self-review):**
+
+Tell the user:
 
 ```
 ✅ Refactoring applied to: {list of files}
@@ -135,6 +146,16 @@ To verify no behavior changed:
   Regression test/Manual check: {path or instructions}
   Full suite (if applicable):  {Test Command}
 ```
+
+Run a critical self-review:
+- **Behavior preservation:** are all public APIs (exports, signatures, return types) unchanged?
+- **Naming:** consistent with project conventions?
+- **SOLID:** did the refactoring improve SRP and OCP, or did it introduce new violations?
+- **Clean Architecture:** are dependencies still pointing inward?
+- **Honesty check:** Is there anything about this refactoring that you would critique if a colleague did it?
+
+If a BLOCK issue is found **that can be fixed within the approved scope** → fix it before continuing.
+If the fix would require editing a file outside the scope → **do NOT fix it.** Add an INFO comment and mention it in the final report.
 
 ### Step 8 — Finalize Refactor Document (MANDATORY)
 
