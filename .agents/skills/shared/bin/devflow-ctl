@@ -29,7 +29,9 @@
 #   artifacts check <type> <path>                    Validate required sections
 #   capabilities [get <key>]                         Print environment capabilities (from .devflow-environment)
 #   knowledge list                                   List entries in the knowledge base
+#   knowledge add <file>                             Add a knowledge base entry from a file
 #   sessions                                         List all active DevFlow sessions with phase and state
+#   clean [--force]                                  Remove stale sessions (unlocked >30 min, or all with --force)
 #
 # Gates:    validation (pending|passed|blocked|accepted-risks)
 #           confirmation, plan_approval (pending|approved|rejected)
@@ -567,8 +569,28 @@ cmd_knowledge() {
       echo ""
       grep '^### ' "$KNOWLEDGE_FILE" 2>/dev/null || echo "(no entries yet)"
       ;;
+    add)
+      local entry_file="${2:-}"
+      [[ -n "$entry_file" ]] || die "usage: devflow-ctl knowledge add <file>"
+      [[ -f "$entry_file" ]] || die "knowledge add: file not found at $entry_file"
+      # Ensure KB directory exists
+      mkdir -p "$(dirname "$KNOWLEDGE_FILE")"
+      # If KB doesn't exist, create it with the header
+      if [[ ! -f "$KNOWLEDGE_FILE" ]]; then
+        echo "# DevFlow Knowledge Base" > "$KNOWLEDGE_FILE"
+        echo "" >> "$KNOWLEDGE_FILE"
+        echo "## By Topic" >> "$KNOWLEDGE_FILE"
+        echo "" >> "$KNOWLEDGE_FILE"
+        echo "## Cycle History" >> "$KNOWLEDGE_FILE"
+        echo "" >> "$KNOWLEDGE_FILE"
+      fi
+      # Append the entry file content to the KB
+      echo "" >> "$KNOWLEDGE_FILE"
+      cat "$entry_file" >> "$KNOWLEDGE_FILE"
+      ok "knowledge entry from $entry_file appended to $KNOWLEDGE_FILE"
+      ;;
     *)
-      die "usage: devflow-ctl knowledge list"
+      die "usage: devflow-ctl knowledge list | add <file>"
       ;;
   esac
 }
@@ -603,6 +625,50 @@ cmd_sessions() {
   fi
 }
 
+# ── Clean stale sessions ──────────────────────────────────────────────────────
+# Removes sessions that are unlocked or stale (locked >30 min without activity).
+
+cmd_clean() {
+  if [[ ! -d "$SESSION_ROOT" ]]; then
+    echo "No sessions to clean ($SESSION_ROOT does not exist)"
+    exit 0
+  fi
+  local force=false removed=0
+  [[ "${1:-}" == "--force" ]] && force=true
+  while IFS= read -r -d '' statefile; do
+    local slug locked_by locked_since epoch_now epoch_lock age
+    slug="$(basename "$(dirname "$statefile")")"
+    locked_by="$(awk '/^locked_by:/{sub(/^locked_by: */,"");print;exit}' "$statefile" 2>/dev/null || echo "none")"
+    if $force; then
+      rm -rf "$SESSION_ROOT/$slug"
+      echo "  removed: $slug (--force)"
+      ((removed++)) || true
+      continue
+    fi
+    if [[ "$locked_by" == "none" || -z "$locked_by" ]]; then
+      rm -rf "$SESSION_ROOT/$slug"
+      echo "  removed: $slug (unlocked)"
+      ((removed++)) || true
+      continue
+    fi
+    # Check stale lock
+    locked_since="$(awk '/^locked_since:/{sub(/^locked_since: */,"");print;exit}' "$statefile" 2>/dev/null || echo "")"
+    epoch_now="$(date -u +%s)"
+    epoch_lock="$(to_epoch "$locked_since")"
+    age=$(( (epoch_now - epoch_lock) / 60 ))
+    if [[ $age -ge $STALE_LOCK_MINUTES ]]; then
+      rm -rf "$SESSION_ROOT/$slug"
+      echo "  removed: $slug (stale lock, ${age} min)"
+      ((removed++)) || true
+    fi
+  done < <(find "$SESSION_ROOT" -mindepth 2 -maxdepth 2 -name phase-state.md -print0 2>/dev/null)
+  if [[ $removed -eq 0 ]]; then
+    ok "no stale sessions to clean"
+  else
+    ok "cleaned $removed session(s)"
+  fi
+}
+
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 CMD="${1:-help}"; shift || true
@@ -620,6 +686,7 @@ case "$CMD" in
   capabilities) cmd_capabilities "$@" ;;
   knowledge)  cmd_knowledge "$@" ;;
   sessions)   cmd_sessions "$@" ;;
+  clean)      cmd_clean "$@" ;;
   version)    echo "devflow-ctl schema v$SCHEMA_VERSION" ;;
   help|--help|-h) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//' ;;
   *) die "unknown command '$CMD' — run 'devflow-ctl help'" ;;

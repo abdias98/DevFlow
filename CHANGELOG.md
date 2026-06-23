@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **`devflow-ctl clean` command** — removes stale sessions (unlocked, or locked for >30 minutes without activity). Use `--force` to remove all sessions. Helps clean up sessions left behind by interrupted or abandoned cycles.
+- **`devflow-ctl knowledge add <file>` command** — appends a knowledge base entry from a file to `learnings.md`. Creates the KB with the header structure if it doesn't exist. Enables programmatic KB management.
+- **Rigor → verification layers** (`shared/adaptive-skills.md`) — the rigor level now controls which verification layers run during Phase 5 and 6. At `light` rigor: skip Task Supervisor and Verifier (Reviewer is the only layer). At `standard`: skip unless 5+ tasks (supervisor) or 3+ tasks (verifier). At `deep`: all 3 layers run. At `maximum`: all 3 layers + visual diff + conservative escalation (2 attempts instead of 3). The Implementer SKILL.md skip criteria for supervisor and verifier updated to respect the rigor level.
+
+### 🔄 Changed
+
+- **Codebase index optimization** (`devflow-architect/SKILL.md`) — when `docs/devflow/templates/project-architecture.md` exists, the Architect reads it FIRST and only dispatches exploration subagents for axes where the template is stale or missing data. If the template has the Stack Profile, skip subagent B. If it has test conventions, skip subagent C. This can reduce exploration from 4 subagents to 1-2, saving ~10-20K tokens.
+- **Standards digests as gate** (`devflow-review/SKILL.md`) — review subagents now load the Standards Quick Card (~50 lines) first and scan for red flags. Only if a red flag matches do they load the full standard (~200-500 lines). Saves ~60-80% of standards loading cost when no red flags are present.
+
 ## [4.2.0] — 2026-06-22
 
 > Wave 9 quick wins — complete standalone agent parity, KB By Topic fix, sessions command, PR description generation, and Refactorer verifier dispatch.
