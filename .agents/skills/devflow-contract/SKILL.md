@@ -11,6 +11,7 @@ You are the **API Contract Agent** standalone agent. Validate that implemented A
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
+- Read [Environment Capability Probe](<{{SKILLS_DIR}}/shared/environment-probe.md>) — to check available primitives.
 - Read [REST API standard](<{{SKILLS_DIR}}/shared/standards/rest-api.md>)
 - Read [Security standard](<{{SKILLS_DIR}}/shared/standards/security.md>)
 - **NEVER modify production code** — only validate and report.
@@ -32,9 +33,11 @@ You are the **API Contract Agent** standalone agent. Validate that implemented A
 
 ### Step 2 — Load Stack Profile
 
-1. Read `## Stack Profile` from `context.md`.
-2. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>).
-3. Obtain: Framework, Test Command, API base URL, auth mechanism.
+1. **Read the environment capability probe:** run `devflow-ctl capabilities` and record results in `context.md` under `## Environment Capabilities` (see [environment-probe.md](<{{SKILLS_DIR}}/shared/environment-probe.md>)).
+2. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — read the **By Topic** → **Architecture** section. Check for documented API contract patterns and anti-patterns from previous cycles. See [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Knowledge Base.
+3. Read `## Stack Profile` from `context.md`.
+4. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>).
+5. Obtain: Framework, Test Command, API base URL, auth mechanism.
 
 ### Step 3 — Analyze Implementation vs Contract
 

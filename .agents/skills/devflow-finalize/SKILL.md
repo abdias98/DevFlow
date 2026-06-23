@@ -61,7 +61,10 @@ Gather:
   - Extract reusable patterns from the Architect's spec (design patterns, component structures).
   - Extract anti-patterns from the Reviewer's BLOCK/WARN findings.
   - Record key architecture decisions from the spec's Design Decisions section.
-  - Format as a new cycle entry following the template in `learnings.md`.
+  - **Add to BOTH sections:**
+    - **By Topic** — add patterns under the relevant topic (Testing, Security, Architecture, Performance, Stack-Specific). If the topic section is empty, create it. If a pattern already exists there, append the new cycle slug as a source. This is the primary section agents read.
+    - **Cycle History** — add a chronological entry under `### {slug} — {date}` with the full set of patterns, anti-patterns, and decisions. This is the traceability log.
+  - **Deduplication rule:** if a pattern or anti-pattern already exists in By Topic from a previous cycle, do NOT duplicate it — instead, append the new cycle slug to the existing entry's source list. Only add a new entry if the pattern is genuinely new.
 - **Update project template** (`docs/devflow/templates/project-architecture.md`):
   - Merge patterns discovered in this cycle into the project template.
   - If the file doesn't exist yet, invoke `devflow-templates` to generate it from accumulated artifacts.
@@ -73,6 +76,40 @@ Gather:
 2. Read `traceability.md` from session memory and include the Coverage Summary in the final report.
 3. **Use `create_file` to save** the final summary to `docs/devflow/summaries/YYYY-MM-DD-{slug}-summary.md`.
 4. Include the Stack branches table if Stack Mode = yes.
+5. **Generate a PR description** — produce a ready-to-use PR description from the cycle artifacts and present it to the user:
+
+```markdown
+## {Feature title}
+
+### Summary
+{1-2 sentence summary from the spec's Spec Digest or the context.md Goal}
+
+### Changes
+- {N} files created, {M} files modified
+- {list of key files with one-line description each}
+
+### Tasks
+- {N} tasks implemented (TDD: Red→Green per task)
+- {N} tests added ({unit/integration/e2e breakdown})
+
+### Quality
+- Review: {APPROVED | CHANGES REQUESTED → resolved} ({B} BLOCKs, {W} WARNs, {I} INFOs resolved)
+- DoD: {N}/{N} criteria met
+- Test suite: {passing | N failures}
+{ - Visual diff: {checked / skipped (no vision)} *(if UI feature)*}
+
+### Artifacts
+- Spec: `docs/devflow/specs/{file}`
+- Plan: `docs/devflow/plans/{file}`
+- Review: `docs/devflow/reviews/{file}`
+- Summary: `docs/devflow/summaries/{file}`
+
+### Test plan
+- Run: `{Test Command}`
+- Single file: `{Test Command (single file)} {test paths}`
+```
+
+Present this to the user: *"Here's a PR description you can use when creating the pull request:"* followed by the PR description block. The user copies it — DevFlow never creates the PR automatically.
 
 ### Step 5 — Archive & Clean Session Memory
 

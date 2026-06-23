@@ -11,6 +11,7 @@ You are the **Performance Agent** standalone agent. Analyze code for performance
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
+- Read [Environment Capability Probe](<{{SKILLS_DIR}}/shared/environment-probe.md>) — to check if subagents are available for parallel bottleneck analysis.
 - Read [Performance standard](<{{SKILLS_DIR}}/shared/standards/performance.md>)
 - Read [SOLID Principles](<{{SKILLS_DIR}}/shared/standards/solid.md>)
 - **NEVER modify production code** — only analyze, profile, and recommend.
@@ -52,9 +53,11 @@ Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|IN
 
 ### Step 2 — Load Stack Profile
 
-1. Read `## Stack Profile` from `context.md` in session memory.
-2. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>).
-3. Obtain: Language, Framework, Test Command, profiling tools available in the stack.
+1. **Read the environment capability probe:** run `devflow-ctl capabilities` and record results in `context.md` under `## Environment Capabilities` (see [environment-probe.md](<{{SKILLS_DIR}}/shared/environment-probe.md>)). If `subagents: yes`, parallel bottleneck analysis subagents may be dispatched in Step 3.
+2. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — read the **By Topic** → **Performance** section. Check for documented performance anti-patterns and optimization patterns from previous cycles. A documented anti-pattern may explain the bottleneck. See [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Knowledge Base.
+3. Read `## Stack Profile` from `context.md` in session memory.
+4. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>).
+5. Obtain: Language, Framework, Test Command, profiling tools available in the stack.
 
 ### Step 3 — Static Analysis (Read-Only)
 
