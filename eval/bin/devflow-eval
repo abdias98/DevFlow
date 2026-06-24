@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+# devflow-eval — deterministic scoring engine for DevFlow golden tasks.
+#
+# The framework ships nine waves of scaffolding but has no way to answer the
+# only question that matters: does a feature built with /devflow come out
+# better than one built with a bare prompt — and did the latest wave improve
+# anything or just add cost? This engine is the measurement substrate.
+#
+# It does NOT run the model. It scores the RESULT of a run. A golden task
+# declares weighted, executable checks (Definition of Done as assertions).
+# Point the engine at a task and a result workspace; it runs each check and
+# emits a scorecard plus an overall percentage. Run the same task through
+# /devflow and through a bare prompt, score both, compare. That comparison
+# is the regression signal across waves and the honest baseline vs the model.
+#
+# Usage:
+#   devflow-eval list
+#   devflow-eval score <task-dir> <result-dir>
+#
+# Exit: 0 = score >= task threshold; 1 = below threshold; 2 = usage error.
+
+set -uo pipefail
+
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EVAL_ROOT="$(cd "$SELF_DIR/.." && pwd)"
+TASKS_DIR="${DEVFLOW_EVAL_TASKS:-$EVAL_ROOT/tasks}"
+
+die() { echo "[devflow-eval] ERROR: $*" >&2; exit 2; }
+
+# Read a `key: value` field from a task.md frontmatter-style header.
+task_meta() { # task_meta <task.md> <key>
+  awk -v k="$2" '
+    $0 ~ "^"k":" { sub("^"k":[[:space:]]*", ""); print; exit }
+  ' "$1"
+}
+
+# ── Check DSL (injected into checks.sh) ───────────────────────────────────────
+# checks.sh runs with CWD = result workspace and calls:
+#   check <weight> "<description>" <command...>
+# A command that exits 0 earns the weight. Commands are expected to fail when
+# the deliverable is incomplete — that is the point, so failures are captured,
+# never fatal.
+
+EVAL_TOTAL=0
+EVAL_EARNED=0
+EVAL_ROWS=()
+
+check() {
+  local weight="$1" desc="$2"; shift 2
+  EVAL_TOTAL=$(( EVAL_TOTAL + weight ))
+  if "$@" >/dev/null 2>&1; then
+    EVAL_EARNED=$(( EVAL_EARNED + weight ))
+    EVAL_ROWS+=("PASS|$weight|$desc")
+  else
+    EVAL_ROWS+=("FAIL|$weight|$desc")
+  fi
+}
+
+# Helper checks usable inside checks.sh.
+
+# A DevFlow artifact of <type> exists under docs/devflow/<dir>/.
+devflow_artifact() { # devflow_artifact spec|plan|review|validation|summary
+  local dir
+  case "$1" in
+    spec)       dir="docs/devflow/specs" ;;
+    plan)       dir="docs/devflow/plans" ;;
+    review)     dir="docs/devflow/reviews" ;;
+    validation) dir="docs/devflow/validations" ;;
+    summary)    dir="docs/devflow/summaries" ;;
+    *) return 2 ;;
+  esac
+  compgen -G "$dir/*.md" >/dev/null 2>&1
+}
+
+# A file exists and matches an extended regex (-- guards patterns starting '-').
+file_matches() { # file_matches <path> <ere>
+  [[ -f "$1" ]] && grep -Eq -- "$2" "$1"
+}
+
+# ── Commands ──────────────────────────────────────────────────────────────────
+
+cmd_list() {
+  [[ -d "$TASKS_DIR" ]] || die "no tasks directory at $TASKS_DIR"
+  local found=0
+  for t in "$TASKS_DIR"/*/; do
+    [[ -f "$t/task.md" ]] || continue
+    found=1
+    local id title complexity
+    id="$(task_meta "$t/task.md" id)"
+    title="$(task_meta "$t/task.md" title)"
+    complexity="$(task_meta "$t/task.md" complexity)"
+    printf '%-24s [%-8s] %s\n' "${id:-$(basename "$t")}" "${complexity:-?}" "$title"
+  done
+  [[ $found -eq 1 ]] || echo "(no golden tasks found in $TASKS_DIR)"
+}
+
+cmd_score() {
+  local task_dir="${1:-}" result_dir="${2:-}"
+  [[ -n "$task_dir" && -n "$result_dir" ]] || die "usage: devflow-eval score <task-dir> <result-dir>"
+  # Allow passing a task id instead of a full path.
+  [[ -d "$task_dir" ]] || task_dir="$TASKS_DIR/$task_dir"
+  [[ -f "$task_dir/task.md" ]]  || die "no task.md in $task_dir"
+  [[ -f "$task_dir/checks.sh" ]] || die "no checks.sh in $task_dir"
+  [[ -d "$result_dir" ]]        || die "result workspace not found: $result_dir"
+
+  local id title threshold
+  id="$(task_meta "$task_dir/task.md" id)"
+  title="$(task_meta "$task_dir/task.md" title)"
+  threshold="$(task_meta "$task_dir/task.md" threshold)"
+  threshold="${threshold:-80}"
+
+  local checks_abs; checks_abs="$(cd "$task_dir" && pwd)/checks.sh"
+
+  # Run the checks from inside the result workspace in a subshell so a stray
+  # `cd` or variable in checks.sh cannot leak. The subshell prints a marker
+  # line per result that the parent tallies — keeps state crossing cleanly.
+  local results
+  results="$(
+    cd "$result_dir" || exit 3
+    EVAL_TOTAL=0; EVAL_EARNED=0; EVAL_ROWS=()
+    # shellcheck disable=SC1090
+    source "$checks_abs"
+    printf '%s\n' "${EVAL_ROWS[@]+"${EVAL_ROWS[@]}"}"
+  )" || die "failed to execute checks for $id"
+
+  local total=0 earned=0 npass=0 nfail=0
+  while IFS='|' read -r status weight desc; do
+    [[ -n "$status" ]] || continue
+    total=$(( total + weight ))
+    if [[ "$status" == "PASS" ]]; then
+      earned=$(( earned + weight )); npass=$(( npass + 1 ))
+    else
+      nfail=$(( nfail + 1 ))
+    fi
+  done <<< "$results"
+
+  local pct=0
+  (( total > 0 )) && pct=$(( earned * 100 / total ))
+
+  # ── Scorecard (markdown to stdout) ──
+  echo "# Eval Scorecard — ${id:-$(basename "$task_dir")}"
+  echo
+  echo "**Task:** ${title:-(untitled)}  "
+  echo "**Result workspace:** $result_dir  "
+  echo "**Score:** ${earned}/${total} = **${pct}%** (threshold ${threshold}%)  "
+  echo "**Checks:** ${npass} passed, ${nfail} failed"
+  echo
+  echo "| Result | Weight | Check |"
+  echo "|:------:|:------:|-------|"
+  while IFS='|' read -r status weight desc; do
+    [[ -n "$status" ]] || continue
+    local mark; [[ "$status" == "PASS" ]] && mark="✅" || mark="❌"
+    echo "| $mark | $weight | $desc |"
+  done <<< "$results"
+  echo
+
+  # ── Machine-readable scorecard (JSON to the result workspace) ──
+  local json="$result_dir/scorecard.json"
+  {
+    echo "{"
+    echo "  \"task\": \"${id:-$(basename "$task_dir")}\","
+    echo "  \"score_earned\": $earned,"
+    echo "  \"score_total\": $total,"
+    echo "  \"percent\": $pct,"
+    echo "  \"threshold\": $threshold,"
+    echo "  \"passed\": $( (( pct >= threshold )) && echo true || echo false ),"
+    echo "  \"checks_passed\": $npass,"
+    echo "  \"checks_failed\": $nfail"
+    echo "}"
+  } > "$json"
+  echo "_Wrote ${json}_"
+
+  (( pct >= threshold ))
+}
+
+main() {
+  local cmd="${1:-}"; shift || true
+  case "$cmd" in
+    list)  cmd_list "$@" ;;
+    score) cmd_score "$@" ;;
+    ""|-h|--help|help)
+      grep '^#' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' | sed '/^!/d'
+      ;;
+    *) die "unknown command '$cmd' (list|score)" ;;
+  esac
+}
+
+main "$@"
