@@ -24,7 +24,11 @@
     "install": "bash install.sh",
     "uninstall": "bash uninstall.sh",
     "validate": "bash scripts/validate-framework.sh",
-    "validate:fix": "bash scripts/validate-framework.sh --fix"
+    "validate:fix": "bash scripts/validate-framework.sh --fix",
+    "test": "bats tests/devflow-ctl.bats"
+  },
+  "devDependencies": {
+    "bats": "^1.13.0"
   },
   "engines": {
     "vscode": "^1.85.0"
