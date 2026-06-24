@@ -532,6 +532,7 @@ cmd_capabilities() {
     print)
       if [[ -f "$ENV_FILE" ]]; then
         while IFS=: read -r k v; do
+          v="${v#"${v%%[![:space:]]*}"}"
           [[ -n "$k" ]] && echo "$k: $v"
         done < "$ENV_FILE"
       else
