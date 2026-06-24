@@ -50,6 +50,18 @@ ok()   { echo "[devflow-ctl] OK: $*"; }
 fail() { echo "[devflow-ctl] FAIL: $*" >&2; exit 1; }
 die()  { echo "[devflow-ctl] ERROR: $*" >&2; exit 2; }
 
+# A slug names a directory under SESSION_ROOT and is interpolated into paths.
+# Reject path separators, traversal, and shell metacharacters so a crafted
+# --slug can never escape SESSION_ROOT or reach a shell context.
+validate_slug() {
+  local s="$1"
+  case "$s" in
+    */*|*..*) die "invalid slug '$s' — '/' and '..' are not allowed (path traversal)" ;;
+  esac
+  [[ "$s" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] \
+    || die "invalid slug '$s' — must start alphanumeric; allowed chars: letters, digits, '.', '_', '-'"
+}
+
 now_iso() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 
 # Convert ISO-8601 UTC timestamp to epoch seconds (GNU date, then BSD fallback).
@@ -74,6 +86,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 set -- "${ARGS[@]+"${ARGS[@]}"}"
+
+# Validate any explicitly supplied slug at the input boundary (covers init and
+# every command that takes --slug). Auto-resolved slugs come from directory
+# basenames and are already trusted.
+[[ -n "$SLUG" ]] && validate_slug "$SLUG"
 
 resolve_session() {
   if [[ -z "$SLUG" ]]; then
