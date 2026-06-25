@@ -141,7 +141,10 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - **Challenge assumptions** — question every unstated or stated assumption. Is this really necessary? Is this the best approach?
    - **Scan standards** — check against SOLID, Security, Clean Architecture, Performance, REST API (if applicable), UI Design (if applicable).
    - **Flag contradictions** — any internal inconsistencies in the requirements?
-   - **Security scan** — any input validation, auth, injection, or secrets management risks?
+   - **Security scan** — establish a deterministic baseline first, then reason about what a scanner cannot see:
+     - **Standard/CI mode:** auto-execute the read-only `devflow-ctl scan all` (committed secrets + dependency CVEs). **Pair mode:** ask the user to run it and report the output. The command **skips gracefully** when a scanner is absent — note any skipped scan.
+     - Fold results into `## Security Risks`: a committed secret or a high/critical CVE is a **🔴 BLOCK** (deterministic, incontestable), cited as `devflow-ctl scan → {secrets|sca}`.
+     - Then reason about the semantic gaps the scanner misses: input validation, auth, injection, and authorization / business-logic flaws.
    - **Architecture risks** — will this scale? Any coupling concerns?
    - **Propose alternatives** — if a better approach exists, document it. Do not just agree.
    - **Be honest** — if something is a bad idea, say so directly with reasoning.
