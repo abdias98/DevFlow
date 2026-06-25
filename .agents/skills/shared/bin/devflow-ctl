@@ -32,7 +32,7 @@
 #   knowledge add <file>                             Add a knowledge base entry from a file
 #   sessions                                         List all active DevFlow sessions with phase and state
 #   clean [--force]                                  Remove stale sessions (unlocked >30 min, or all with --force)
-#   scan [secrets|sca|all]                           Deterministic security scan (exit 1 on findings)
+#   scan [secrets|sca|sast|all]                      Deterministic security scan (exit 1 on findings)
 #
 # Gates:    validation (pending|passed|blocked|accepted-risks)
 #           confirmation, plan_approval (pending|approved|rejected)
@@ -772,14 +772,38 @@ scan_sca() {
   echo "  skipped: no supported manifest found (Node package.json)"; return 0
 }
 
+# SAST: dangerous code patterns (injection, unsafe sinks) via semgrep.
+# No built-in regex fallback by design — a regex SAST produces false BLOCKs,
+# the exact noise this deterministic approach exists to avoid. SAST needs a
+# real engine, so without semgrep it skips and the gap is reported honestly.
+scan_sast() {
+  echo "== scan: code patterns (SAST) =="
+  if command -v semgrep >/dev/null 2>&1; then
+    local out n
+    out="$(semgrep --config auto --json --quiet 2>/dev/null || true)"
+    if [[ -z "$out" ]]; then
+      echo "  skipped: semgrep produced no output (offline rule fetch?)"; return 0
+    fi
+    n="$(printf '%s' "$out" | jq '[.results[] | select(.extra.severity=="ERROR")] | length' 2>/dev/null || echo 0)"
+    n="${n:-0}"
+    if (( n > 0 )); then
+      echo "  [$n ERROR-severity finding(s)] semgrep — run 'semgrep --config auto' for detail"
+      SCAN_FINDINGS=$(( SCAN_FINDINGS + n )); return 1
+    fi
+    echo "  clean (no ERROR-severity semgrep findings)"; return 0
+  fi
+  echo "  skipped: semgrep not installed (install for SAST coverage: pipx install semgrep)"; return 0
+}
+
 cmd_scan() {
   local kind="${1:-all}"
   SCAN_FINDINGS=0
   case "$kind" in
     secrets)  scan_secrets || true ;;
     sca|deps) scan_sca || true ;;
-    all)      scan_secrets || true; echo; scan_sca || true ;;
-    *) die "usage: devflow-ctl scan [secrets|sca|all]" ;;
+    sast)     scan_sast || true ;;
+    all)      scan_secrets || true; echo; scan_sca || true; echo; scan_sast || true ;;
+    *) die "usage: devflow-ctl scan [secrets|sca|sast|all]" ;;
   esac
   echo
   if (( SCAN_FINDINGS > 0 )); then

@@ -246,3 +246,19 @@ setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
   run bash -c "cd '$SCANDIR' && '$CTL' scan secrets"
   [ "$status" -eq 0 ]
 }
+
+@test "scan sast: skips gracefully when semgrep is absent" {
+  if command -v semgrep >/dev/null 2>&1; then skip "semgrep is installed"; fi
+  setup_scan
+  printf 'const x = 1;\n' > "$SCANDIR/app.js"
+  run bash -c "cd '$SCANDIR' && '$CTL' scan sast"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"semgrep not installed"* ]]
+}
+
+@test "scan all: includes the SAST dimension" {
+  setup_scan
+  printf 'ok\n' > "$SCANDIR/readme.md"
+  run bash -c "cd '$SCANDIR' && '$CTL' scan all"
+  [[ "$output" == *"code patterns (SAST)"* ]]
+}
