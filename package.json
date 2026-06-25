@@ -25,7 +25,7 @@
     "uninstall": "bash uninstall.sh",
     "validate": "bash scripts/validate-framework.sh",
     "validate:fix": "bash scripts/validate-framework.sh --fix",
-    "test": "bats tests/devflow-ctl.bats"
+    "test": "bats tests/"
   },
   "devDependencies": {
     "bats": "^1.13.0"

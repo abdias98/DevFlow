@@ -1,0 +1,265 @@
+#!/usr/bin/env bash
+# devflow-eval — deterministic scoring engine for DevFlow golden tasks.
+#
+# The framework ships nine waves of scaffolding but has no way to answer the
+# only question that matters: does a feature built with /devflow come out
+# better than one built with a bare prompt — and did the latest wave improve
+# anything or just add cost? This engine is the measurement substrate.
+#
+# It does NOT run the model. It scores the RESULT of a run. A golden task
+# declares weighted, executable checks (Definition of Done as assertions).
+# Point the engine at a task and a result workspace; it runs each check and
+# emits a scorecard plus an overall percentage. Run the same task through
+# /devflow and through a bare prompt, score both, compare. That comparison
+# is the regression signal across waves and the honest baseline vs the model.
+#
+# Usage:
+#   devflow-eval list
+#   devflow-eval score <task-dir> <result-dir>
+#
+# Exit: 0 = score >= task threshold; 1 = below threshold; 2 = usage error.
+
+set -uo pipefail
+
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EVAL_ROOT="$(cd "$SELF_DIR/.." && pwd)"
+TASKS_DIR="${DEVFLOW_EVAL_TASKS:-$EVAL_ROOT/tasks}"
+
+die() { echo "[devflow-eval] ERROR: $*" >&2; exit 2; }
+
+# Read a `key: value` field from a task.md frontmatter-style header.
+task_meta() { # task_meta <task.md> <key>
+  awk -v k="$2" '
+    $0 ~ "^"k":" { sub("^"k":[[:space:]]*", ""); print; exit }
+  ' "$1"
+}
+
+# ── Check DSL (injected into checks.sh) ───────────────────────────────────────
+# checks.sh runs with CWD = result workspace and calls:
+#   check <weight> "<description>" <command...>
+# A command that exits 0 earns the weight. Commands are expected to fail when
+# the deliverable is incomplete — that is the point, so failures are captured,
+# never fatal.
+
+EVAL_ROWS=()
+
+# Core: record a check under a category so outcome and process never blend.
+#   outcome — did the deliverable actually work? (the thing that matters)
+#   process — did the run produce DevFlow artifacts? (only a /devflow run earns)
+# A blended score hides the case where two runs produce an identical deliverable
+# and the framework "wins" only on paperwork. The split makes that visible.
+_eval_check() { # _eval_check <category> <weight> <desc> <cmd...>
+  local cat="$1" weight="$2" desc="$3"; shift 3
+  if "$@" >/dev/null 2>&1; then
+    EVAL_ROWS+=("PASS|$cat|$weight|$desc")
+  else
+    EVAL_ROWS+=("FAIL|$cat|$weight|$desc")
+  fi
+}
+
+# Public DSL for checks.sh. `check` defaults to outcome — the deliverable is
+# what a check is about unless it explicitly concerns process artifacts.
+check()         { _eval_check outcome "$@"; }
+check_outcome() { _eval_check outcome "$@"; }
+check_process() { _eval_check process "$@"; }
+
+# Helper checks usable inside checks.sh.
+
+# A DevFlow artifact of <type> exists under docs/devflow/<dir>/.
+# Call this DIRECTLY as a check command — never wrap it in `bash -c`, which
+# spawns a subshell where this function is undefined and the check silently fails.
+devflow_artifact() { # devflow_artifact spec|plan|review|validation|summary
+  local dir
+  case "$1" in
+    spec)       dir="docs/devflow/specs" ;;
+    plan)       dir="docs/devflow/plans" ;;
+    review)     dir="docs/devflow/reviews" ;;
+    validation) dir="docs/devflow/validations" ;;
+    summary)    dir="docs/devflow/summaries" ;;
+    *) return 2 ;;
+  esac
+  compgen -G "$dir/*.md" >/dev/null 2>&1
+}
+
+# Pass if ANY of the named artifact types exist (for "spec OR plan" style checks)
+# without resorting to `bash -c`.
+devflow_artifact_any() { # devflow_artifact_any spec plan ...
+  local t; for t in "$@"; do devflow_artifact "$t" && return 0; done; return 1
+}
+
+# A file exists and matches an extended regex (-- guards patterns starting '-').
+file_matches() { # file_matches <path> <ere>
+  [[ -f "$1" ]] && grep -Eq -- "$2" "$1"
+}
+
+# ── Managed service lifecycle (for probe-style outcome checks) ─────────────────
+# A check that starts a service must not leak the process or fight over a fixed
+# port — a leaked node grandchild squatting on :3000 silently corrupts later
+# runs. These helpers run the service in its OWN process group on an isolated
+# port and guarantee teardown of the whole group. Usage inside checks.sh:
+#
+#   eval_serve_start "npm start" /        # start on $EVAL_PORT, wait for readiness
+#   [[ "$(eval_http GET /health)" == 200 ]]
+#   eval_serve_stop
+#
+# Port defaults to a random high port; override with EVAL_PORT for a fixed one.
+EVAL_PORT="${EVAL_PORT:-$(( 30000 + RANDOM % 10000 ))}"
+_EVAL_SERVE_PID=""
+
+eval_serve_start() { # eval_serve_start <serve-cmd> [ready-path]
+  local cmd="$1" ready="${2:-/}" i
+  PORT="$EVAL_PORT" setsid bash -c "$cmd" >"/tmp/eval-serve-$EVAL_PORT.log" 2>&1 &
+  _EVAL_SERVE_PID=$!
+  for i in $(seq 1 40); do
+    curl -s -o /dev/null --max-time 1 "http://127.0.0.1:$EVAL_PORT$ready" 2>/dev/null && return 0
+    sleep 0.25
+  done
+  return 1
+}
+
+eval_serve_stop() {
+  [[ -n "$_EVAL_SERVE_PID" ]] && kill -- "-$_EVAL_SERVE_PID" 2>/dev/null
+  _EVAL_SERVE_PID=""
+}
+
+eval_http() { # eval_http <METHOD> <path> [json-body] -> echoes HTTP status code
+  local method="$1" path="$2" body="${3:-}"
+  if [[ -n "$body" ]]; then
+    curl -s -o /dev/null -w '%{http_code}' --max-time 5 -X "$method" \
+      -H 'Content-Type: application/json' -d "$body" \
+      "http://127.0.0.1:$EVAL_PORT$path" 2>/dev/null
+  else
+    curl -s -o /dev/null -w '%{http_code}' --max-time 5 -X "$method" \
+      "http://127.0.0.1:$EVAL_PORT$path" 2>/dev/null
+  fi
+}
+
+# ── Commands ──────────────────────────────────────────────────────────────────
+
+cmd_list() {
+  [[ -d "$TASKS_DIR" ]] || die "no tasks directory at $TASKS_DIR"
+  local found=0
+  for t in "$TASKS_DIR"/*/; do
+    [[ -f "$t/task.md" ]] || continue
+    found=1
+    local id title complexity
+    id="$(task_meta "$t/task.md" id)"
+    title="$(task_meta "$t/task.md" title)"
+    complexity="$(task_meta "$t/task.md" complexity)"
+    printf '%-24s [%-8s] %s\n' "${id:-$(basename "$t")}" "${complexity:-?}" "$title"
+  done
+  [[ $found -eq 1 ]] || echo "(no golden tasks found in $TASKS_DIR)"
+}
+
+cmd_score() {
+  local task_dir="${1:-}" result_dir="${2:-}"
+  [[ -n "$task_dir" && -n "$result_dir" ]] || die "usage: devflow-eval score <task-dir> <result-dir>"
+  # Allow passing a task id instead of a full path.
+  [[ -d "$task_dir" ]] || task_dir="$TASKS_DIR/$task_dir"
+  [[ -f "$task_dir/task.md" ]]  || die "no task.md in $task_dir"
+  [[ -f "$task_dir/checks.sh" ]] || die "no checks.sh in $task_dir"
+  [[ -d "$result_dir" ]]        || die "result workspace not found: $result_dir"
+
+  local id title threshold
+  id="$(task_meta "$task_dir/task.md" id)"
+  title="$(task_meta "$task_dir/task.md" title)"
+  threshold="$(task_meta "$task_dir/task.md" threshold)"
+  threshold="${threshold:-80}"
+
+  local checks_abs; checks_abs="$(cd "$task_dir" && pwd)/checks.sh"
+
+  # Run the checks from inside the result workspace in a subshell so a stray
+  # `cd` or variable in checks.sh cannot leak. The subshell prints a marker
+  # line per result that the parent tallies — keeps state crossing cleanly.
+  local results
+  results="$(
+    cd "$result_dir" || exit 3
+    EVAL_ROWS=()
+    # shellcheck disable=SC1090
+    source "$checks_abs"
+    printf '%s\n' "${EVAL_ROWS[@]+"${EVAL_ROWS[@]}"}"
+  )" || die "failed to execute checks for $id"
+
+  local total=0 earned=0 npass=0 nfail=0
+  local o_total=0 o_earned=0 p_total=0 p_earned=0
+  while IFS='|' read -r status cat weight desc; do
+    [[ -n "$status" ]] || continue
+    total=$(( total + weight ))
+    if [[ "$cat" == "process" ]]; then p_total=$(( p_total + weight )); else o_total=$(( o_total + weight )); fi
+    if [[ "$status" == "PASS" ]]; then
+      earned=$(( earned + weight )); npass=$(( npass + 1 ))
+      if [[ "$cat" == "process" ]]; then p_earned=$(( p_earned + weight )); else o_earned=$(( o_earned + weight )); fi
+    else
+      nfail=$(( nfail + 1 ))
+    fi
+  done <<< "$results"
+
+  local pct=0;   (( total   > 0 )) && pct=$((   earned   * 100 / total   ))
+  local o_pct=0; (( o_total > 0 )) && o_pct=$(( o_earned * 100 / o_total ))
+  local p_pct=0; (( p_total > 0 )) && p_pct=$(( p_earned * 100 / p_total ))
+
+  # Pass/fail is judged on OUTCOME — the deliverable — not the blended score.
+  # Process artifacts are reported but never decide success, so a run cannot
+  # "win" on paperwork while shipping a worse deliverable.
+  local passed="false"; (( o_total == 0 || o_pct >= threshold )) && passed="true"
+  local o_label p_label
+  o_label="$( (( o_total > 0 )) && echo "${o_pct}%" || echo "n/a" )"
+  p_label="$( (( p_total > 0 )) && echo "${p_pct}%" || echo "n/a" )"
+
+  # ── Scorecard (markdown to stdout) ──
+  echo "# Eval Scorecard — ${id:-$(basename "$task_dir")}"
+  echo
+  echo "**Task:** ${title:-(untitled)}  "
+  echo "**Result workspace:** $result_dir  "
+  echo "**Outcome:** ${o_earned}/${o_total} = **${o_label}** — the deliverable (threshold ${threshold}%, **decides pass/fail**)  "
+  echo "**Process:** ${p_earned}/${p_total} = **${p_label}** — DevFlow artifacts (reported, does not gate)  "
+  echo "**Score:** ${earned}/${total} = **${pct}%** (blended, for reference)  "
+  echo "**Verdict:** $( [[ "$passed" == "true" ]] && echo "✅ PASS" || echo "❌ FAIL" ) · ${npass} passed, ${nfail} failed"
+  echo
+  echo "| Result | Category | Weight | Check |"
+  echo "|:------:|:--------:|:------:|-------|"
+  while IFS='|' read -r status cat weight desc; do
+    [[ -n "$status" ]] || continue
+    local mark; [[ "$status" == "PASS" ]] && mark="✅" || mark="❌"
+    echo "| $mark | $cat | $weight | $desc |"
+  done <<< "$results"
+  echo
+
+  # ── Machine-readable scorecard (JSON to the result workspace) ──
+  local json="$result_dir/scorecard.json"
+  {
+    echo "{"
+    echo "  \"task\": \"${id:-$(basename "$task_dir")}\","
+    echo "  \"score_earned\": $earned,"
+    echo "  \"score_total\": $total,"
+    echo "  \"percent\": $pct,"
+    echo "  \"outcome_earned\": $o_earned,"
+    echo "  \"outcome_total\": $o_total,"
+    echo "  \"outcome_percent\": $o_pct,"
+    echo "  \"process_earned\": $p_earned,"
+    echo "  \"process_total\": $p_total,"
+    echo "  \"process_percent\": $p_pct,"
+    echo "  \"threshold\": $threshold,"
+    echo "  \"passed\": $passed,"
+    echo "  \"checks_passed\": $npass,"
+    echo "  \"checks_failed\": $nfail"
+    echo "}"
+  } > "$json"
+  echo "_Wrote ${json}_"
+
+  [[ "$passed" == "true" ]]
+}
+
+main() {
+  local cmd="${1:-}"; shift || true
+  case "$cmd" in
+    list)  cmd_list "$@" ;;
+    score) cmd_score "$@" ;;
+    ""|-h|--help|help)
+      grep '^#' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' | sed '/^!/d'
+      ;;
+    *) die "unknown command '$cmd' (list|score)" ;;
+  esac
+}
+
+main "$@"
