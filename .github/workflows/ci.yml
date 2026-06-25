@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same ref to save minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: validate + tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # --ignore-scripts: the package's own "install" script is `bash install.sh`
+      # (the DevFlow editor installer), which must NOT run in CI. We only need the
+      # bats dev dependency. No lockfile with dev deps is committed, so not `npm ci`.
+      - name: Install dependencies (bats)
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      # Structural consistency: template vars, cross-refs, required sections,
+      # devflow-ctl integrity, version sync.
+      - name: Validate framework consistency
+        run: npm run validate
+
+      # Behavioral suites: devflow-ctl state machine + eval scoring engine.
+      - name: Run test suites
+        run: npm test
