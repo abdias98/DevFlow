@@ -134,6 +134,17 @@ After supervisor findings are resolved:
 
 **Sequential fallback:** If the editor does not support parallel subagent invocation, execute tasks sequentially within each wave (they are independent, so order doesn't matter). The synthesis step is identical — only the execution order changes. See [parallel-subagents.md](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) → Fallback.
 
+#### Step 2c — Security-TDD Remediation (deterministic-scan BLOCKs)
+
+When a `devflow-ctl scan` finding routes back to you (from the Validation Gate or the Reviewer), do NOT just patch and assume it's gone — the scanner is the oracle, so close the loop with TDD discipline:
+
+1. **Red — capture the vulnerability.** Write a failing test (or minimal reproduction) that exercises the exact weakness the scanner flagged: the rejected input, the leaked value, the vulnerable code path. For dependency CVEs (`scan sca`), the "test" is pinning/upgrading to the fixed version. Inform the user of the test command — do not execute tests yourself (same rule as the Red→Green cycle).
+2. **Fix — minimal change.** Remediate within the scope-locked files: move the secret to config/env and rotate it, add the missing validation, bump the dependency.
+3. **Re-scan — the verification.** Re-run the relevant scan (`devflow-ctl scan {secrets|sca|all}`, auto-execute in Standard/CI; ask the user in Pair). The BLOCK is cleared **only when scan exits 0**. A still-failing scan means the fix is incomplete — iterate.
+4. **Record — make the next cycle smarter.** Append the pattern to `docs/devflow/knowledge-base/learnings.md` as a security anti-pattern (what was vulnerable, why, how it was fixed) so future runs avoid it.
+
+A committed secret must be treated as compromised: remediation includes **rotating** it, not just removing it from the diff. Note this in the response so the user rotates the credential.
+
 ### Step 3 — Additional Recommendations
 
 After completing all tasks, review the implementation holistically:
