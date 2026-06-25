@@ -62,6 +62,15 @@ Based on the plan's file map and the Implementer's commit messages in session me
 
 The review is dispatched as **parallel subagents** following the [canonical pattern](<{{SKILLS_DIR}}/shared/parallel-subagents.md>). The review dimensions are independent (each reviews with a different lens), bounded (each has a defined set of standards and checklist sections), and synthesizable (the Reviewer merges findings into a unified review document).
 
+#### Deterministic scan first (ground truth before judgement)
+
+Before any LLM review — and regardless of the skip criteria below — run the deterministic scanner. Its findings are **facts, not opinions**, and they seed the Security dimension so the LLM never has to *detect* mechanical vulnerabilities from memory (unreliable); it only has to *explain and fix* what the tool reports.
+
+- **Standard/CI mode:** auto-execute the read-only `devflow-ctl scan all` (committed secrets + dependency CVEs).
+- **Pair mode / standalone outside CI:** ask the user to run `devflow-ctl scan all` and paste the output.
+
+Treat every scanner finding as a **🔴 BLOCK** in synthesis (a committed secret or a high/critical CVE is never optional), cited as `devflow-ctl scan → {secrets|sca}`. If the scanner exits non-zero, the verdict is **CHANGES REQUESTED** no matter how clean the LLM dimensions look. If a scanner is unavailable the command **skips gracefully** — note the skipped scan in the review so the coverage gap is visible. The scanner *finds*; subagent 1 and the Implementer *explain and fix*.
+
 #### Skip criteria (review inline when ALL hold)
 
 - Only 1-2 files changed.
@@ -89,7 +98,7 @@ Each subagent reads the complete changed files (not just diff) for context, appl
 
 After all subagents return:
 
-1. **Merge findings** into the unified review document. Deduplicate — if two subagents flagged the same file+line from different angles, consolidate into a single finding with the higher severity.
+1. **Merge findings** into the unified review document — including the deterministic scan findings (each a BLOCK). Deduplicate — if two subagents flagged the same file+line from different angles, consolidate into a single finding with the higher severity.
 2. **Prioritize by severity:** 🔴 BLOCK > 🟡 WARN > 🟢 INFO.
 3. **Determine verdict:** any BLOCK → CHANGES REQUESTED; no BLOCK → APPROVED.
 4. **Cite standards:** every finding must reference `{standard}.md §{N} → {BLOCK|WARN|INFO}` (consult each standard's Severity Classification).
