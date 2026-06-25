@@ -129,6 +129,8 @@ When the condition is met, add a **visual diff** sub-step after synthesis, follo
 | Plan gap | 🔄 Route to Planner for revision |
 | Architecture flaw | 🔄 Route to Architect for redesign |
 
+**Deterministic-scan BLOCKs have a verification oracle.** A finding from `devflow-ctl scan` is not cleared by the LLM judging the fix "looks right" — it is cleared **only when a re-run of `devflow-ctl scan` exits 0** for that finding. On re-review, the scan runs again (it always runs first); a scan that still reports the issue keeps the verdict at CHANGES REQUESTED no matter what else changed. The Implementer follows the [Security-TDD remediation loop](<{{SKILLS_DIR}}/devflow-implement/SKILL.md>) (Red→fix→re-scan→record) to resolve these.
+
 ### Step 6 — Update Memory
 
 Update `phase-state.md`:

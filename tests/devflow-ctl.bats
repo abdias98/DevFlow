@@ -234,3 +234,15 @@ setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
   [ "$status" -eq 2 ]
   [[ "$output" == *"usage"* ]]
 }
+
+@test "scan: re-scan is a clean oracle for the remediation loop" {
+  setup_scan
+  # Red: a committed secret -> scan FAILS (exit 1).
+  printf 'const k = "AKIAIOSFODNN7EXAMPLE";\n' > "$SCANDIR/config.js"
+  run bash -c "cd '$SCANDIR' && '$CTL' scan secrets"
+  [ "$status" -eq 1 ]
+  # Fix: move the secret to env. Re-scan -> clean (exit 0). BLOCK is cleared.
+  printf 'const k = process.env.AWS_KEY;\n' > "$SCANDIR/config.js"
+  run bash -c "cd '$SCANDIR' && '$CTL' scan secrets"
+  [ "$status" -eq 0 ]
+}
