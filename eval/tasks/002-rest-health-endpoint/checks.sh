@@ -2,9 +2,9 @@
 PORT="${EVAL_PORT:-3000}"
 SERVE="${EVAL_SERVE:-npm start}"
 
-# Process artifacts (a /devflow run produces these; a bare baseline will not).
-check 1 "Spec artifact produced (process)"   devflow_artifact spec
-check 1 "Plan artifact produced (process)"    devflow_artifact plan
+# Process — reported, but does not gate pass/fail (a bare baseline won't earn it).
+check_process 1 "Spec artifact produced"   devflow_artifact spec
+check_process 1 "Plan artifact produced"   devflow_artifact plan
 
 # Outcome — start the service, probe /health, tear down.
 probe_health() {

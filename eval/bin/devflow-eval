@@ -41,20 +41,27 @@ task_meta() { # task_meta <task.md> <key>
 # the deliverable is incomplete — that is the point, so failures are captured,
 # never fatal.
 
-EVAL_TOTAL=0
-EVAL_EARNED=0
 EVAL_ROWS=()
 
-check() {
-  local weight="$1" desc="$2"; shift 2
-  EVAL_TOTAL=$(( EVAL_TOTAL + weight ))
+# Core: record a check under a category so outcome and process never blend.
+#   outcome — did the deliverable actually work? (the thing that matters)
+#   process — did the run produce DevFlow artifacts? (only a /devflow run earns)
+# A blended score hides the case where two runs produce an identical deliverable
+# and the framework "wins" only on paperwork. The split makes that visible.
+_eval_check() { # _eval_check <category> <weight> <desc> <cmd...>
+  local cat="$1" weight="$2" desc="$3"; shift 3
   if "$@" >/dev/null 2>&1; then
-    EVAL_EARNED=$(( EVAL_EARNED + weight ))
-    EVAL_ROWS+=("PASS|$weight|$desc")
+    EVAL_ROWS+=("PASS|$cat|$weight|$desc")
   else
-    EVAL_ROWS+=("FAIL|$weight|$desc")
+    EVAL_ROWS+=("FAIL|$cat|$weight|$desc")
   fi
 }
+
+# Public DSL for checks.sh. `check` defaults to outcome — the deliverable is
+# what a check is about unless it explicitly concerns process artifacts.
+check()         { _eval_check outcome "$@"; }
+check_outcome() { _eval_check outcome "$@"; }
+check_process() { _eval_check process "$@"; }
 
 # Helper checks usable inside checks.sh.
 
@@ -117,40 +124,54 @@ cmd_score() {
   local results
   results="$(
     cd "$result_dir" || exit 3
-    EVAL_TOTAL=0; EVAL_EARNED=0; EVAL_ROWS=()
+    EVAL_ROWS=()
     # shellcheck disable=SC1090
     source "$checks_abs"
     printf '%s\n' "${EVAL_ROWS[@]+"${EVAL_ROWS[@]}"}"
   )" || die "failed to execute checks for $id"
 
   local total=0 earned=0 npass=0 nfail=0
-  while IFS='|' read -r status weight desc; do
+  local o_total=0 o_earned=0 p_total=0 p_earned=0
+  while IFS='|' read -r status cat weight desc; do
     [[ -n "$status" ]] || continue
     total=$(( total + weight ))
+    if [[ "$cat" == "process" ]]; then p_total=$(( p_total + weight )); else o_total=$(( o_total + weight )); fi
     if [[ "$status" == "PASS" ]]; then
       earned=$(( earned + weight )); npass=$(( npass + 1 ))
+      if [[ "$cat" == "process" ]]; then p_earned=$(( p_earned + weight )); else o_earned=$(( o_earned + weight )); fi
     else
       nfail=$(( nfail + 1 ))
     fi
   done <<< "$results"
 
-  local pct=0
-  (( total > 0 )) && pct=$(( earned * 100 / total ))
+  local pct=0;   (( total   > 0 )) && pct=$((   earned   * 100 / total   ))
+  local o_pct=0; (( o_total > 0 )) && o_pct=$(( o_earned * 100 / o_total ))
+  local p_pct=0; (( p_total > 0 )) && p_pct=$(( p_earned * 100 / p_total ))
+
+  # Pass/fail is judged on OUTCOME — the deliverable — not the blended score.
+  # Process artifacts are reported but never decide success, so a run cannot
+  # "win" on paperwork while shipping a worse deliverable.
+  local passed="false"; (( o_total == 0 || o_pct >= threshold )) && passed="true"
+  local o_label p_label
+  o_label="$( (( o_total > 0 )) && echo "${o_pct}%" || echo "n/a" )"
+  p_label="$( (( p_total > 0 )) && echo "${p_pct}%" || echo "n/a" )"
 
   # ── Scorecard (markdown to stdout) ──
   echo "# Eval Scorecard — ${id:-$(basename "$task_dir")}"
   echo
   echo "**Task:** ${title:-(untitled)}  "
   echo "**Result workspace:** $result_dir  "
-  echo "**Score:** ${earned}/${total} = **${pct}%** (threshold ${threshold}%)  "
-  echo "**Checks:** ${npass} passed, ${nfail} failed"
+  echo "**Outcome:** ${o_earned}/${o_total} = **${o_label}** — the deliverable (threshold ${threshold}%, **decides pass/fail**)  "
+  echo "**Process:** ${p_earned}/${p_total} = **${p_label}** — DevFlow artifacts (reported, does not gate)  "
+  echo "**Score:** ${earned}/${total} = **${pct}%** (blended, for reference)  "
+  echo "**Verdict:** $( [[ "$passed" == "true" ]] && echo "✅ PASS" || echo "❌ FAIL" ) · ${npass} passed, ${nfail} failed"
   echo
-  echo "| Result | Weight | Check |"
-  echo "|:------:|:------:|-------|"
-  while IFS='|' read -r status weight desc; do
+  echo "| Result | Category | Weight | Check |"
+  echo "|:------:|:--------:|:------:|-------|"
+  while IFS='|' read -r status cat weight desc; do
     [[ -n "$status" ]] || continue
     local mark; [[ "$status" == "PASS" ]] && mark="✅" || mark="❌"
-    echo "| $mark | $weight | $desc |"
+    echo "| $mark | $cat | $weight | $desc |"
   done <<< "$results"
   echo
 
@@ -162,15 +183,21 @@ cmd_score() {
     echo "  \"score_earned\": $earned,"
     echo "  \"score_total\": $total,"
     echo "  \"percent\": $pct,"
+    echo "  \"outcome_earned\": $o_earned,"
+    echo "  \"outcome_total\": $o_total,"
+    echo "  \"outcome_percent\": $o_pct,"
+    echo "  \"process_earned\": $p_earned,"
+    echo "  \"process_total\": $p_total,"
+    echo "  \"process_percent\": $p_pct,"
     echo "  \"threshold\": $threshold,"
-    echo "  \"passed\": $( (( pct >= threshold )) && echo true || echo false ),"
+    echo "  \"passed\": $passed,"
     echo "  \"checks_passed\": $npass,"
     echo "  \"checks_failed\": $nfail"
     echo "}"
   } > "$json"
   echo "_Wrote ${json}_"
 
-  (( pct >= threshold ))
+  [[ "$passed" == "true" ]]
 }
 
 main() {

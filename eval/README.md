@@ -30,13 +30,36 @@ it's better" into a number you can regress against.
 5. Compare the two scorecards.
 ```
 
-The **outcome** checks (does the deliverable work? do tests pass?) are
-framework-agnostic and apply to both runs. The **process** checks (was a spec /
-review produced?) only a `/devflow` run can earn — that asymmetry is part of
-what you are measuring. Tune the weights to reflect what you actually value.
+## Outcome vs process — and why pass/fail ignores paperwork
 
-Run the same task across DevFlow versions (or models) and watch the percentage.
-A wave that doesn't move it is cost without benefit.
+Checks fall into two buckets, scored **separately** so they never blend into a
+misleading single number:
+
+- **`check`** / **`check_outcome`** — does the deliverable actually work? (the
+  endpoint responds, tests pass). Framework-agnostic; both runs are judged here.
+- **`check_process`** — did the run produce DevFlow artifacts (spec, plan,
+  review)? Only a `/devflow` run earns these.
+
+**Pass/fail is decided by `outcome` alone.** Process is reported but never
+gates. This is deliberate: if two runs ship an identical deliverable, the
+framework must not "win" the verdict on paperwork — and a `/devflow` run with a
+broken deliverable must not pass just because it wrote a spec. The scorecard
+shows `Outcome`, `Process`, and a blended `Score` (reference only), e.g.:
+
+```
+Outcome: 13/13 = 100%   ← decides pass/fail
+Process:  2/2  = 100%   ← /devflow earned its artifacts
+Score:   15/15 = 100%   (blended, for reference)
+```
+
+If the same task scores `Outcome 100%` on both the `/devflow` and the bare run,
+that is the honest signal that **on this task the framework added documentation,
+not a better outcome** — exactly the conflation this split exists to expose.
+Look for value where process can change the outcome (security, ambiguity,
+multi-run reliability), not on first-shot-correct routine tasks.
+
+Run the same task across DevFlow versions (or models) and watch the **outcome**
+percentage. A wave that doesn't move it is cost without benefit.
 
 ## Usage
 

@@ -104,3 +104,51 @@ check 1 "has --xml" file_matches help.txt --xml'
   run "$EVAL" score "$BATS_TEST_TMPDIR/nope" "$RESULT"
   [ "$status" -eq 2 ]
 }
+
+# ── Outcome / process split ───────────────────────────────────────────────────
+
+@test "split: reports outcome and process subscores separately" {
+  make_task 50 'check_outcome 4 "works" true
+check_process 1 "spec produced" false'
+  run "$EVAL" score "$TASK" "$RESULT"
+  [[ "$output" == *"Outcome:** 4/4 = **100%**"* ]]
+  [[ "$output" == *"Process:** 0/1 = **0%**"* ]]
+}
+
+@test "split: pass is decided by outcome, not by process paperwork" {
+  # Deliverable works, zero process artifacts — must still PASS.
+  make_task 50 'check_outcome 4 "works" true
+check_process 1 "spec produced" false'
+  run "$EVAL" score "$TASK" "$RESULT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"✅ PASS"* ]]
+}
+
+@test "split: perfect process cannot rescue a failing outcome" {
+  make_task 80 'check_outcome 1 "works" false
+check_outcome 1 "other" true
+check_process 5 "spec produced" true'
+  run "$EVAL" score "$TASK" "$RESULT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"❌ FAIL"* ]]
+}
+
+@test "split: JSON carries outcome_percent and process_percent" {
+  make_task 50 'check_outcome 3 "works" true
+check_process 2 "spec produced" false'
+  run "$EVAL" score "$TASK" "$RESULT"
+  run jq -r '.outcome_percent' "$RESULT/scorecard.json"
+  [ "$output" = "100" ]
+  run jq -r '.process_percent' "$RESULT/scorecard.json"
+  [ "$output" = "0" ]
+  run jq -r '.passed' "$RESULT/scorecard.json"
+  [ "$output" = "true" ]
+}
+
+@test "split: a plain check counts as outcome (back-compat)" {
+  make_task 50 'check 1 "a" true
+check 1 "b" false'
+  run "$EVAL" score "$TASK" "$RESULT"
+  [[ "$output" == *"Process:** 0/0 = **n/a**"* ]]
+  [[ "$output" == *"Outcome:** 1/2 = **50%**"* ]]
+}
