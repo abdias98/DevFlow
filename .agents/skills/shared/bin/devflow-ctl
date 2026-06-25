@@ -32,6 +32,7 @@
 #   knowledge add <file>                             Add a knowledge base entry from a file
 #   sessions                                         List all active DevFlow sessions with phase and state
 #   clean [--force]                                  Remove stale sessions (unlocked >30 min, or all with --force)
+#   scan [secrets|sca|all]                           Deterministic security scan (exit 1 on findings)
 #
 # Gates:    validation (pending|passed|blocked|accepted-risks)
 #           confirmation, plan_approval (pending|approved|rejected)
@@ -687,6 +688,107 @@ cmd_clean() {
   fi
 }
 
+# ── Security scanning (deterministic) ─────────────────────────────────────────
+# Move vulnerability detection from "the LLM judges" to "a tool verifies". Each
+# sub-scanner is best-effort: it runs a real scanner when present, falls back to
+# a built-in detector where one exists, and skips gracefully (without failing)
+# when neither applies — the same graceful-degradation contract as capabilities.
+# The result is incontestable: the LLM's job shifts from FINDING vulnerabilities
+# (unreliable) to FIXING the ones a tool deterministically reports.
+
+SCAN_FINDINGS=0   # accumulated across sub-scanners in one invocation
+
+# Files to scan: tracked text files in a git repo, else a filtered find.
+_scan_files() {
+  if [[ -d .git ]] && command -v git >/dev/null 2>&1; then
+    git ls-files 2>/dev/null
+  else
+    find . -type f -not -path './.git/*' -not -path '*/node_modules/*' \
+      -not -name '.devflow-environment' 2>/dev/null | sed 's|^\./||'
+  fi
+}
+
+# Secrets: gitleaks if present, else a built-in high-signal regex detector.
+scan_secrets() {
+  echo "== scan: secrets =="
+  if command -v gitleaks >/dev/null 2>&1; then
+    if gitleaks detect --no-banner --redact -r /tmp/devflow-gitleaks.json >/dev/null 2>&1; then
+      echo "  clean (gitleaks)"; return 0
+    fi
+    local n; n="$(jq 'length' /tmp/devflow-gitleaks.json 2>/dev/null || echo '?')"
+    echo "  [HIGH] gitleaks reported $n potential secret(s) — see /tmp/devflow-gitleaks.json"
+    SCAN_FINDINGS=$(( SCAN_FINDINGS + 1 )); return 1
+  fi
+
+  # Built-in fallback — high-signal, low-false-positive patterns.
+  local -a rules=(
+    "AWS access key|AKIA[0-9A-Z]{16}"
+    "Private key block|-----BEGIN ([A-Z]+ )?PRIVATE KEY-----"
+    "GitHub token|ghp_[A-Za-z0-9]{36}"
+    "Slack token|xox[baprs]-[A-Za-z0-9-]{10,}"
+    "Google API key|AIza[0-9A-Za-z_-]{35}"
+    "Hardcoded secret assignment|(api[_-]?key|secret|token|passwd|password)['\"]?[[:space:]]*[:=][[:space:]]*['\"][A-Za-z0-9_-]{16,}['\"]"
+  )
+  local found=0 f rule name re lineno
+  while IFS= read -r f; do
+    [[ -f "$f" ]] || continue
+    for rule in "${rules[@]}"; do
+      name="${rule%%|*}"; re="${rule#*|}"
+      while IFS= read -r lineno; do
+        [[ -n "$lineno" ]] || continue
+        echo "  [HIGH] $f:$lineno — $name"
+        found=$(( found + 1 ))
+      done < <(grep -nIE -e "$re" "$f" 2>/dev/null | cut -d: -f1)
+    done
+  done < <(_scan_files)
+
+  if (( found > 0 )); then
+    SCAN_FINDINGS=$(( SCAN_FINDINGS + found ))
+    echo "  $found potential secret(s) (built-in detector; install gitleaks for deeper coverage)"
+    return 1
+  fi
+  echo "  clean (built-in detector; install gitleaks for deeper coverage)"
+  return 0
+}
+
+# SCA: known CVEs in dependencies (npm audit for Node; skips otherwise).
+scan_sca() {
+  echo "== scan: dependencies (SCA) =="
+  if [[ -f package.json ]] && command -v npm >/dev/null 2>&1; then
+    local out crit hi
+    out="$(npm audit --audit-level=high --json 2>/dev/null || true)"
+    if [[ -z "$out" ]]; then
+      echo "  skipped: npm audit produced no output (offline or no lockfile)"; return 0
+    fi
+    crit="$(printf '%s' "$out" | jq -r '.metadata.vulnerabilities.critical // 0' 2>/dev/null || echo 0)"
+    hi="$(printf '%s' "$out" | jq -r '.metadata.vulnerabilities.high // 0' 2>/dev/null || echo 0)"
+    crit="${crit:-0}"; hi="${hi:-0}"
+    if (( crit + hi > 0 )); then
+      echo "  [${crit} critical, ${hi} high] npm dependencies — run 'npm audit' for detail"
+      SCAN_FINDINGS=$(( SCAN_FINDINGS + crit + hi )); return 1
+    fi
+    echo "  clean (no high/critical npm vulnerabilities)"; return 0
+  fi
+  echo "  skipped: no supported manifest found (Node package.json)"; return 0
+}
+
+cmd_scan() {
+  local kind="${1:-all}"
+  SCAN_FINDINGS=0
+  case "$kind" in
+    secrets)  scan_secrets || true ;;
+    sca|deps) scan_sca || true ;;
+    all)      scan_secrets || true; echo; scan_sca || true ;;
+    *) die "usage: devflow-ctl scan [secrets|sca|all]" ;;
+  esac
+  echo
+  if (( SCAN_FINDINGS > 0 )); then
+    echo "[devflow-ctl] FAIL: scan found $SCAN_FINDINGS potential issue(s) — remediate before proceeding" >&2
+    exit 1
+  fi
+  ok "scan: clean (no findings from the scanners that ran)"
+}
+
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 CMD="${1:-help}"; shift || true
@@ -705,6 +807,7 @@ case "$CMD" in
   knowledge)  cmd_knowledge "$@" ;;
   sessions)   cmd_sessions "$@" ;;
   clean)      cmd_clean "$@" ;;
+  scan)       cmd_scan "$@" ;;
   version)    echo "devflow-ctl schema v$SCHEMA_VERSION" ;;
   help|--help|-h) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//' ;;
   *) die "unknown command '$CMD' — run 'devflow-ctl help'" ;;

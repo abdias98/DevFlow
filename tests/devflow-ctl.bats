@@ -183,3 +183,54 @@ setup() {
   [ "$status" -eq 0 ]
   [ "$output" = "true" ]
 }
+
+# ── Deterministic security scan ───────────────────────────────────────────────
+
+setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
+
+@test "scan secrets: detects a hardcoded AWS access key" {
+  setup_scan
+  printf 'const k = "AKIAIOSFODNN7EXAMPLE";\n' > "$SCANDIR/config.js"
+  run bash -c "cd '$SCANDIR' && '$CTL' scan secrets"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"AWS access key"* ]]
+  [[ "$output" == *"config.js:1"* ]]
+}
+
+@test "scan secrets: detects a private key block" {
+  setup_scan
+  printf -- '-----BEGIN RSA PRIVATE KEY-----\nMIIabc\n-----END RSA PRIVATE KEY-----\n' > "$SCANDIR/id_rsa"
+  run bash -c "cd '$SCANDIR' && '$CTL' scan secrets"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Private key block"* ]]
+}
+
+@test "scan secrets: clean tree passes" {
+  setup_scan
+  printf 'export const greet = () => "hello world";\n' > "$SCANDIR/app.js"
+  run bash -c "cd '$SCANDIR' && '$CTL' scan secrets"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"clean"* ]]
+}
+
+@test "scan sca: skips gracefully without a manifest" {
+  setup_scan
+  printf 'just text\n' > "$SCANDIR/notes.txt"
+  run bash -c "cd '$SCANDIR' && '$CTL' scan sca"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"skipped"* ]]
+}
+
+@test "scan all: clean tree with no manifest passes" {
+  setup_scan
+  printf 'ok\n' > "$SCANDIR/readme.md"
+  run bash -c "cd '$SCANDIR' && '$CTL' scan all"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"scan: clean"* ]]
+}
+
+@test "scan: unknown kind is a usage error" {
+  run "$CTL" scan bogus
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"usage"* ]]
+}
