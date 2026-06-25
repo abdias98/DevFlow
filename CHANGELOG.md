@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.4.0] — 2026-06-25
+
+> Deterministic security & framework hardening — vulnerability scanning wired into the lifecycle, a self-verifying remediation loop, install/session diagnostics, an eval harness to measure the framework, and CI plus behavioral test suites for the enforcement engine.
+
+### ✨ Added
+
+- **`devflow-ctl scan [secrets|sca|sast|all]`** — deterministic security scanning. Vulnerability detection moves from "the LLM judges" to "a tool verifies" (exit 1 on findings): **secrets** (gitleaks + a zero-dependency built-in detector for AWS keys, private-key blocks, GitHub/Slack/Google tokens, hardcoded secret assignments), **SCA** (`npm audit` for known dependency CVEs), and **SAST** (semgrep for dangerous code patterns). Each degrades gracefully when its tool is absent — never breaks the cycle.
+- **`devflow-ctl doctor`** — one command to diagnose "why isn't this working?": environment marker, required tooling, scanner coverage, and every session's integrity (valid frontmatter, required keys, stale locks) with an actionable fix per problem. Exit 1 on hard failures.
+- **Eval harness** (`eval/`) — golden-task scoring engine (`devflow-eval`) that measures the framework against a Definition of Done expressed as weighted, executable checks. **Outcome and process subscores are scored separately**, so pass/fail is judged on the deliverable, never on documentation produced. Ships with seed golden tasks and a README documenting the `/devflow`-vs-bare-prompt measurement loop.
+- **Behavioral test suites** (`tests/*.bats`) — bats coverage of the `devflow-ctl` state machine (gates, scope, iteration limits, slug validation, capabilities, scan, doctor) and the eval scoring engine.
+- **Continuous integration** (`.github/workflows/ci.yml`) — runs `npm run validate` and the bats suites on every push to `main` and every PR.
+
+### 🔄 Changed
+
+- **Validation Gate (Phase 2) and Reviewer (Phase 6) run `devflow-ctl scan all`** — deterministic findings (committed secrets, dependency CVEs, dangerous code) are folded in as 🔴 BLOCK, not LLM opinion. The scanner *finds*; the LLM *explains and fixes*.
+- **Security-TDD remediation loop** — a deterministic-scan BLOCK is cleared only when a re-run of `devflow-ctl scan` exits 0. The Implementer follows Red (failing test/repro) → fix → re-scan (the verification oracle) → record the anti-pattern; committed secrets must be rotated, not just removed.
+
+### 🔒 Security
+
+- **Slug input validation** (`devflow-ctl`) — explicitly supplied `--slug` values are validated at the input boundary, rejecting `/`, `..`, and shell metacharacters (path-traversal class).
+
+### 🐛 Fixed
+
+- **`devflow-ctl capabilities`** — trimmed a leading space that rendered a double space in the print output (e.g. `subagents:  true`).
+
 ## [4.3.0] — 2026-06-22
 
 > Wave 9 context optimization & framework maturity — codebase index, standards digests as gate, rigor-controlled verification layers, clean command, and KB management commands.
