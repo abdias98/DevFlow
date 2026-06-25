@@ -66,6 +66,8 @@ check_process() { _eval_check process "$@"; }
 # Helper checks usable inside checks.sh.
 
 # A DevFlow artifact of <type> exists under docs/devflow/<dir>/.
+# Call this DIRECTLY as a check command — never wrap it in `bash -c`, which
+# spawns a subshell where this function is undefined and the check silently fails.
 devflow_artifact() { # devflow_artifact spec|plan|review|validation|summary
   local dir
   case "$1" in
@@ -79,9 +81,57 @@ devflow_artifact() { # devflow_artifact spec|plan|review|validation|summary
   compgen -G "$dir/*.md" >/dev/null 2>&1
 }
 
+# Pass if ANY of the named artifact types exist (for "spec OR plan" style checks)
+# without resorting to `bash -c`.
+devflow_artifact_any() { # devflow_artifact_any spec plan ...
+  local t; for t in "$@"; do devflow_artifact "$t" && return 0; done; return 1
+}
+
 # A file exists and matches an extended regex (-- guards patterns starting '-').
 file_matches() { # file_matches <path> <ere>
   [[ -f "$1" ]] && grep -Eq -- "$2" "$1"
+}
+
+# ── Managed service lifecycle (for probe-style outcome checks) ─────────────────
+# A check that starts a service must not leak the process or fight over a fixed
+# port — a leaked node grandchild squatting on :3000 silently corrupts later
+# runs. These helpers run the service in its OWN process group on an isolated
+# port and guarantee teardown of the whole group. Usage inside checks.sh:
+#
+#   eval_serve_start "npm start" /        # start on $EVAL_PORT, wait for readiness
+#   [[ "$(eval_http GET /health)" == 200 ]]
+#   eval_serve_stop
+#
+# Port defaults to a random high port; override with EVAL_PORT for a fixed one.
+EVAL_PORT="${EVAL_PORT:-$(( 30000 + RANDOM % 10000 ))}"
+_EVAL_SERVE_PID=""
+
+eval_serve_start() { # eval_serve_start <serve-cmd> [ready-path]
+  local cmd="$1" ready="${2:-/}" i
+  PORT="$EVAL_PORT" setsid bash -c "$cmd" >"/tmp/eval-serve-$EVAL_PORT.log" 2>&1 &
+  _EVAL_SERVE_PID=$!
+  for i in $(seq 1 40); do
+    curl -s -o /dev/null --max-time 1 "http://127.0.0.1:$EVAL_PORT$ready" 2>/dev/null && return 0
+    sleep 0.25
+  done
+  return 1
+}
+
+eval_serve_stop() {
+  [[ -n "$_EVAL_SERVE_PID" ]] && kill -- "-$_EVAL_SERVE_PID" 2>/dev/null
+  _EVAL_SERVE_PID=""
+}
+
+eval_http() { # eval_http <METHOD> <path> [json-body] -> echoes HTTP status code
+  local method="$1" path="$2" body="${3:-}"
+  if [[ -n "$body" ]]; then
+    curl -s -o /dev/null -w '%{http_code}' --max-time 5 -X "$method" \
+      -H 'Content-Type: application/json' -d "$body" \
+      "http://127.0.0.1:$EVAL_PORT$path" 2>/dev/null
+  else
+    curl -s -o /dev/null -w '%{http_code}' --max-time 5 -X "$method" \
+      "http://127.0.0.1:$EVAL_PORT$path" 2>/dev/null
+  fi
 }
 
 # ── Commands ──────────────────────────────────────────────────────────────────

@@ -152,3 +152,29 @@ check 1 "b" false'
   [[ "$output" == *"Process:** 0/0 = **n/a**"* ]]
   [[ "$output" == *"Outcome:** 1/2 = **50%**"* ]]
 }
+
+# ── Helpers: artifact-any and managed server lifecycle ────────────────────────
+
+@test "helper: devflow_artifact_any passes if any named type exists" {
+  mkdir -p "$RESULT/docs/devflow/reviews"
+  echo x > "$RESULT/docs/devflow/reviews/r.md"
+  make_task 50 'check_process 1 "validation or review" devflow_artifact_any validation review
+check_process 1 "summary only" devflow_artifact_any summary'
+  run "$EVAL" score "$TASK" "$RESULT"
+  [[ "$output" == *"Process:** 1/2 = **50%**"* ]]
+}
+
+@test "helper: eval_serve manages a server and leaves no leaked process" {
+  printf 'require("http").createServer((q,s)=>{s.writeHead(200);s.end("ok");}).listen(process.env.PORT);\n' \
+    > "$RESULT/server.js"
+  make_task 50 'eval_serve_start "node server.js evalbats-leakcheck" /
+check 1 "server answers 200" test "$(eval_http GET /)" = 200
+eval_serve_stop'
+  run "$EVAL" score "$TASK" "$RESULT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"1/1 = **100%**"* ]]
+  # The managed server must be torn down — its whole process group killed.
+  sleep 1
+  run pgrep -f evalbats-leakcheck
+  [ "$status" -ne 0 ]
+}
