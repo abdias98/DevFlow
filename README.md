@@ -1,5 +1,7 @@
 # DevFlow — Multi-Agent AI Engineering Framework
 
+[![CI](https://github.com/abdias98/DevFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/abdias98/DevFlow/actions/workflows/ci.yml)
+
 A portable **framework for professional software development using multiple AI sub-agents** working as a coordinated team. Build production-quality features following the DevFlow lifecycle: Brainstorm → Architecture → Plan (with TDD test code) → Confirm → Implement (Red→Green TDD cycle) → Review → Debug → Finalize.
 
 Designed for **any tech stack**, installed globally in **VS Code, Claude Code, opencode, Antigravity**, or any **headless CLI** environment.
