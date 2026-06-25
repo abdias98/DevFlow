@@ -262,3 +262,44 @@ setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
   run bash -c "cd '$SCANDIR' && '$CTL' scan all"
   [[ "$output" == *"code patterns (SAST)"* ]]
 }
+
+# ── Doctor (install / session diagnostics) ────────────────────────────────────
+
+@test "doctor: clean environment reports no failures" {
+  run "$CTL" doctor
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Summary: 0 failure(s)"* ]]
+}
+
+@test "doctor: a healthy session is reported healthy" {
+  "$CTL" init --mode feature --slug ok >/dev/null
+  run "$CTL" doctor
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"session 'ok': healthy"* ]]
+}
+
+@test "doctor: a phase-state with no frontmatter is a FAIL" {
+  mkdir -p "$DEVFLOW_SESSION_ROOT/bad"
+  printf 'garbage, no frontmatter\n' > "$DEVFLOW_SESSION_ROOT/bad/phase-state.md"
+  run "$CTL" doctor
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"[FAIL]"* ]]
+  [[ "$output" == *"no YAML frontmatter"* ]]
+}
+
+@test "doctor: a session missing required keys is a FAIL" {
+  mkdir -p "$DEVFLOW_SESSION_ROOT/incomplete"
+  printf -- '---\ndevflow: 1\nslug: incomplete\n---\n' > "$DEVFLOW_SESSION_ROOT/incomplete/phase-state.md"
+  run "$CTL" doctor
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing frontmatter key"* ]]
+}
+
+@test "doctor: a stale lock is a warning, not a failure" {
+  mkdir -p "$DEVFLOW_SESSION_ROOT/stuck"
+  printf -- '---\ndevflow: 1\nslug: stuck\nmode: feature\nphase: 3\nlocked_by: Architect\nlocked_since: 2020-01-01T00:00:00Z\n---\n' \
+    > "$DEVFLOW_SESSION_ROOT/stuck/phase-state.md"
+  run "$CTL" doctor
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STALE lock"* ]]
+}

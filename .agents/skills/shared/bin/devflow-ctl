@@ -33,6 +33,7 @@
 #   sessions                                         List all active DevFlow sessions with phase and state
 #   clean [--force]                                  Remove stale sessions (unlocked >30 min, or all with --force)
 #   scan [secrets|sca|sast|all]                      Deterministic security scan (exit 1 on findings)
+#   doctor                                           Diagnose install/session health (exit 1 on failures)
 #
 # Gates:    validation (pending|passed|blocked|accepted-risks)
 #           confirmation, plan_approval (pending|approved|rejected)
@@ -813,6 +814,87 @@ cmd_scan() {
   ok "scan: clean (no findings from the scanners that ran)"
 }
 
+# ── Doctor (diagnose install / session health) ────────────────────────────────
+# One command to answer "why isn't this working?" — checks the environment
+# marker, required tooling, scanner coverage, and every session's integrity,
+# with an actionable fix per problem. Exit 1 if any hard failure, else 0.
+
+DOC_FAILS=0
+DOC_WARNS=0
+_doc_ok()   { echo "  [ OK ] $*"; }
+_doc_warn() { echo "  [WARN] $*"; DOC_WARNS=$(( DOC_WARNS + 1 )); }
+_doc_fail() { echo "  [FAIL] $*"; DOC_FAILS=$(( DOC_FAILS + 1 )); }
+
+cmd_doctor() {
+  DOC_FAILS=0; DOC_WARNS=0
+  echo "DevFlow Doctor"
+  echo
+
+  echo "Environment:"
+  _detect_env_file
+  if [[ -f "$ENV_FILE" ]]; then
+    _doc_ok "environment marker present (profile: $(grep '^profile:' "$ENV_FILE" 2>/dev/null | sed 's/profile:[[:space:]]*//'))"
+  else
+    _doc_warn "no environment marker — run install.sh to enable capability detection"
+  fi
+
+  echo "Tooling:"
+  if command -v git >/dev/null 2>&1; then _doc_ok "git available"; else _doc_warn "git not found — checkpoints/rollback unavailable"; fi
+  if command -v jq  >/dev/null 2>&1; then _doc_ok "jq available";  else _doc_warn "jq not found — scan sca/sast parsing degraded"; fi
+  local scanners=()
+  command -v gitleaks >/dev/null 2>&1 && scanners+=("gitleaks")
+  command -v semgrep  >/dev/null 2>&1 && scanners+=("semgrep")
+  command -v npm      >/dev/null 2>&1 && scanners+=("npm-audit")
+  if (( ${#scanners[@]} > 0 )); then
+    _doc_ok "scanners: ${scanners[*]} (+ built-in secrets always on)"
+  else
+    _doc_warn "no external scanners — only the built-in secrets scan is active (install gitleaks/semgrep for deeper coverage)"
+  fi
+
+  echo "Sessions:"
+  if [[ -d "$SESSION_ROOT" ]]; then
+    local any=0 sf slug
+    while IFS= read -r sf; do
+      any=1
+      slug="$(basename "$(dirname "$sf")")"
+      if ! head -1 "$sf" | grep -q '^---$'; then
+        _doc_fail "session '$slug': phase-state.md has no YAML frontmatter (corrupt or pre-1.0) — re-run 'devflow-ctl init'"
+        continue
+      fi
+      local k missing=()
+      for k in devflow slug mode phase; do
+        grep -qE "^${k}:" "$sf" || missing+=("$k")
+      done
+      if (( ${#missing[@]} > 0 )); then
+        _doc_fail "session '$slug': missing frontmatter key(s): ${missing[*]} — state is corrupt"
+        continue
+      fi
+      local phase lb ls epoch age
+      phase="$(grep -E '^phase:' "$sf" | head -1 | sed 's/phase:[[:space:]]*//')"
+      lb="$(awk '/^locked_by:/{sub(/^locked_by:[[:space:]]*/,"");print;exit}' "$sf" 2>/dev/null)"
+      ls="$(awk '/^locked_since:/{sub(/^locked_since:[[:space:]]*/,"");print;exit}' "$sf" 2>/dev/null)"
+      if [[ -n "$lb" && "$lb" != "none" ]]; then
+        epoch="$(to_epoch "$ls")"; age=$(( ($(date -u +%s) - epoch) / 60 ))
+        if (( age >= STALE_LOCK_MINUTES )); then
+          _doc_warn "session '$slug' (phase $phase): STALE lock by $lb (${age} min) — break with 'devflow-ctl lock acquire Orchestrator --force --slug $slug'"
+        else
+          _doc_ok "session '$slug': healthy (phase $phase, locked by $lb)"
+        fi
+      else
+        _doc_ok "session '$slug': healthy (phase $phase)"
+      fi
+    done < <(find "$SESSION_ROOT" -mindepth 2 -maxdepth 2 -name phase-state.md 2>/dev/null)
+    if (( any == 0 )); then _doc_ok "no active sessions"; fi
+  else
+    _doc_ok "no session directory yet ($SESSION_ROOT)"
+  fi
+
+  echo
+  echo "Summary: $DOC_FAILS failure(s), $DOC_WARNS warning(s)"
+  if (( DOC_FAILS > 0 )); then return 1; fi
+  return 0
+}
+
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 CMD="${1:-help}"; shift || true
@@ -832,6 +914,7 @@ case "$CMD" in
   sessions)   cmd_sessions "$@" ;;
   clean)      cmd_clean "$@" ;;
   scan)       cmd_scan "$@" ;;
+  doctor)     cmd_doctor "$@" ;;
   version)    echo "devflow-ctl schema v$SCHEMA_VERSION" ;;
   help|--help|-h) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//' ;;
   *) die "unknown command '$CMD' — run 'devflow-ctl help'" ;;
