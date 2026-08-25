@@ -236,9 +236,18 @@ Pass to the Reviewer:
 **If the Reviewer returns APPROVED:**
 > ✅ Feature complete and approved. All standards verified.
 
-### Step 10 — Record Metrics
+### Step 10 — Record Metrics & Write Back Knowledge
 
-After the Reviewer concludes (APPROVED, or BLOCKs resolved/escalated), finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 2): set the completed timestamp; fill files created/modified, tests created, the Reviewer's BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions (`scope add` count). Then append a row to `docs/devflow/metrics/_aggregate.md` (create if missing) with `Type = feature`, Tasks = tests created, Test Pass % = `—`, Iterations = Reviewer loops; recalculate averages. See the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) → Generation Rules → Standalone agents.
+**Write back to the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — the Feature Agent READS it in Step 2; it must also CONTRIBUTE so future features reuse what was learned:
+- Extract reusable patterns applied successfully (implementation patterns, test strategies).
+- Extract anti-patterns from any BLOCK/WARN findings raised by self-review or the Reviewer.
+- **Add to BOTH sections**, following the same conventions as the lifecycle Finalizer:
+  - **By Topic** — under the relevant topic (Testing, Security, Architecture, Performance, Stack-Specific). Create the topic section if missing.
+  - **Cycle History** — a chronological entry `### {slug} — {date}` with the patterns and anti-patterns found.
+  - **Deduplication rule:** if a pattern or anti-pattern already exists in By Topic, do NOT duplicate it — append this feature's slug to the existing entry's source list instead.
+- If there is genuinely nothing new worth recording (trivial feature, no findings), skip the write-back and note that in the metrics file.
+
+After the Reviewer concludes (APPROVED, or BLOCKs resolved/escalated), finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 2): set the completed timestamp; fill files created/modified, tests created, the Reviewer's BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions (`scope add` count). Then append a row to `docs/devflow/metrics/_aggregate.md` (create if missing) with `Type = feature`, Tasks = tests created, Test Pass % = `—` in Pair mode or the actual rate in Standard/CI, Iterations = Reviewer loops; recalculate averages. See the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) → Generation Rules → Standalone agents.
 
 ---
 
