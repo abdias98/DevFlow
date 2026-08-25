@@ -133,6 +133,11 @@ Explore ONLY the files relevant to this feature:
 If implementation must be abandoned mid-way, offer the user:
 > "To revert all code changes and return to the pre-implementation state, run: `git reset --hard {sha}`" (get the SHA with `devflow-ctl checkpoint get pre-feature-impl`). NEVER execute `git reset` yourself.
 
+**Branch policy:** a feature branch is ALWAYS used for implementation work (same policy as lifecycle Standard Mode):
+- **Standard/CI:** auto-execute `git checkout -b feat/{slug}` before the first task. If the user named a custom branch during approval, use it instead.
+- **Pair:** give the user the exact command (`git checkout -b feat/{slug}`) and wait for confirmation that the branch is active before writing any code.
+- Commits land on this branch; `push` remains manual in every mode.
+
 Read the selected mode from session memory (`pair_mode`) before starting each task.
 
 For each task in the approved plan:
