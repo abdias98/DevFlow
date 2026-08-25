@@ -123,6 +123,13 @@ Explore ONLY the files relevant to this feature:
 
 **Entry condition:** `devflow-ctl gate check plan_approval` must pass — if it exits non-zero, return to Step 4. Before editing any production file, run `devflow-ctl scope check {file}`; on exit 1, ask the user for approval and `devflow-ctl scope add {glob}` before proceeding.
 
+**Rollback checkpoint:** before the FIRST task, record a rollback point:
+- **Standard/CI:** run `git rev-parse HEAD` and execute `devflow-ctl checkpoint set pre-feature-impl {sha}`.
+- **Pair:** ask the user to run `git rev-parse HEAD` and report the SHA, then record it with `devflow-ctl checkpoint set pre-feature-impl {sha}`.
+
+If implementation must be abandoned mid-way, offer the user:
+> "To revert all code changes and return to the pre-implementation state, run: `git reset --hard {sha}`" (get the SHA with `devflow-ctl checkpoint get pre-feature-impl`). NEVER execute `git reset` yourself.
+
 Read the selected mode from session memory (`pair_mode`) before starting each task.
 
 For each task in the approved plan:
