@@ -153,6 +153,10 @@ For each task in the approved plan:
 
 ### Step 6 — Verification (Self-Review or Verifier Subagent)
 
+**Lint/typecheck gate first.** Before the review itself, run the project's `Lint Command` from `## Stack Profile` (include any typecheck script the project defines, e.g. `tsc --noEmit`) scoped to the changed files where possible:
+- **Standard/CI:** auto-run it. Fix mechanical failures (formatting, unused imports) in-scope and re-run. Report persistent violations as findings below instead of hand-waving them.
+- **Pair:** inform the user of the exact command and wait for pasted output before continuing.
+
 After all tasks are complete, verify the implementation. The verification method depends on environment capabilities:
 
 **If `subagents: yes` in `context.md` → `## Environment Capabilities` AND the feature has 3+ tasks:**
