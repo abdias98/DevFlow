@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.5.0] — 2026-08-24
+
+> Feature Agent hardening — execution modes with verified TDD outcomes, rollback checkpoints, plan preservation as an audit artifact, deterministic iteration limits, lint/typecheck gating, CI mode, knowledge-base write-back, and explicit branch/verifier policies.
+
+### ✨ Added
+
+- **Execution modes for the Feature Agent** (`devflow-feature/SKILL.md`) — the same Pair/Standard/CI mode system as the lifecycle, selected at the approval gate and recorded via `devflow-ctl config set pair_mode`. TDD outcomes are now verified per mode: Red MUST be confirmed FAILING and Green PASSING before any commit (auto-run in Standard/CI; user-pasted output in Pair). A Green phase without confirmed passing tests can no longer be committed.
+- **Rollback checkpoint** (`devflow-feature/SKILL.md`) — Step 5 records a `pre-feature-impl` SHA via `devflow-ctl checkpoint` before the first task (Standard/CI auto-run; Pair asks the user) and offers a documented `git reset` command if implementation is abandoned. The agent never executes `git reset` itself.
+- **Lint/typecheck gate** (`devflow-feature/SKILL.md`) — Step 6 runs the project's Lint Command (plus typecheck where defined) on changed files before self-review or verifier dispatch: auto-run in Standard/CI, user-pasted output in Pair.
+- **CI mode handling** (`devflow-feature/SKILL.md`) — `CI=true` skips clarifying questions (assumptions recorded in `context.md`), auto-approves the plan gate, and fail-fasts via `--max 1` on every iterate loop.
+- **Knowledge-base write-back** (`devflow-feature/SKILL.md`) — Step 10 appends patterns and anti-patterns (from self-review and Reviewer findings) to By Topic + Cycle History in `learnings.md`, following the Finalizer's deduplication rule. Metrics now record a real Test Pass % in Standard/CI instead of always `—`.
+- **Explicit branch policy** (`devflow-feature/SKILL.md`) — a `feat/{slug}` branch is always created before implementation (auto-executed in Standard/CI, user-confirmed in Pair), matching lifecycle Standard Mode.
+
+### 🔄 Changed
+
+- **Approved plan is preserved as an audit artifact** (`devflow-feature/SKILL.md`, `plan-template.md`) — the plan is saved to `YYYY-MM-DD-{slug}-feature-plan.md` and the final report is created at the canonical `YYYY-MM-DD-{slug}-feature.md` path instead of overwriting the plan. The record of exactly what the user approved is no longer destroyed.
+- **Deterministic iteration limits** (`devflow-feature/SKILL.md`) — Green-phase fix attempts use the `implement_debug` loop counter; self-review and Reviewer fix loops use `implement_review`. Exit 1 escalates to the user instead of looping (replaces hardcoded "2 iterations" prose).
+- **Verifier dispatch threshold refined** (`devflow-feature/SKILL.md`) — the fresh-context verifier runs for any non-trivial feature (2+ tasks OR >3 files affected) instead of only 3+ tasks, with documented rationale.
+- **Completion protocol only after review** (`devflow-feature/SKILL.md`) — Step 7 reports "implementation finished — pending Reviewer approval" and the completion block (now including the Reviewer verdict) is emitted only after the review concludes.
+- **Test Execution Policy clarified** (`shared/rules.md`, `CONTRIBUTING.md`) — standalone agents follow the same mode system as lifecycle agents: Pair style by default; test/lint auto-execution only under CI mode or explicitly user-approved Standard mode.
+
+### 🐛 Fixed
+
+- **Questions template contradiction** (`devflow-feature/questions-template.md`) — the template claimed questions are ALWAYS mandatory, contradicting SKILL.md Step 1's infer-first policy. Now aligned: ask only what is missing or ambiguous.
+
 ## [4.4.0] — 2026-06-25
 
 > Deterministic security & framework hardening — vulnerability scanning wired into the lifecycle, a self-verifying remediation loop, install/session diagnostics, an eval harness to measure the framework, and CI plus behavioral test suites for the enforcement engine.

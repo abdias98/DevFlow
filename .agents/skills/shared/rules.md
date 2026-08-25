@@ -134,7 +134,8 @@ These are informational — the user decides whether to act on them. They do NOT
 
 ## Test Execution Policy
 
-- **NEVER auto-run tests in Pair mode or standalone agents.** Agents MUST NOT execute test commands autonomously unless operating in **Standard mode** or **CI mode** (see Implementation Modes and CI/CD Mode sections below for exceptions).
+- **NEVER auto-run tests in Pair mode or standalone agents operating in Pair style.** Agents MUST NOT execute test commands autonomously unless operating in **Standard mode** or **CI mode** (see Implementation Modes and CI/CD Mode sections below for exceptions).
+- **Standalone agents follow the same mode system.** Their default is Pair style (inform commands, wait for pasted results). They MAY auto-execute test/lint commands only when `CI=true` is set or when the user explicitly approves Standard mode at the agent's own approval gate — never by default.
 - **Test file creation must respect scope and approval:**
   - If the skill's procedure requires a regression test, include it in the plan and wait for user approval before creating the test file, unless the test file is already within the user-declared scope.
   - When a test file is created, the agent MUST:
