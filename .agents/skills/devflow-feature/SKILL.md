@@ -198,7 +198,7 @@ If the fix would require editing a file outside the plan → **do NOT fix it.** 
 Tell the user:
 
 ```
-✅ Feature implemented: {slug}
+🧪 Implementation finished: {slug} — pending Reviewer approval
 
 Files created/modified:
   {list}
@@ -258,16 +258,17 @@ After the Reviewer concludes (APPROVED, or BLOCKs resolved/escalated), finalize 
 
 ## ⚠️ Completion Protocol (ALL MODELS)
 
-Before ending your response, you MUST confirm:
+Emit this block ONLY after Step 10 concludes — never before the Reviewer has returned a verdict. It must reflect the final state:
 
 ```markdown
-✅ File saved: docs/devflow/features/YYYY-MM-DD-{slug}-feature.md
+✅ Feature complete: docs/devflow/features/YYYY-MM-DD-{slug}-feature.md
+🔍 Reviewer verdict: {APPROVED | CHANGES REQUESTED → resolved | escalated}
 📏 Size: ~{N} lines
 ⚡ Tasks completed: {count}
-🧪 Tests created: {count}
+🧪 Tests created: {count} ({passing / pending per mode})
 ```
 
-If you cannot confirm this because `create_file` was not called → **call it NOW** before responding.
+If you cannot confirm this because `create_file` was not called or the Reviewer has not concluded → **do NOT emit it; finish the pending step first** (call `create_file` NOW if the report is missing).
 
 ---
 
