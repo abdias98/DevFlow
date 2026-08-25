@@ -1,8 +1,8 @@
 # Feature Plan Template
 
-Save to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`:
+Save to `docs/devflow/features/YYYY-MM-DD-{slug}-feature-plan.md`:
 
-> This is the **intermediate plan artifact**. After implementation, Step 8 overwrites this file with the final feature report using [feature-template.md](./feature-template.md).
+> This is the **intermediate plan artifact** and a persistent audit record of what the user approved. After implementation, the final report is written to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md` (a SEPARATE file) using [feature-template.md](./feature-template.md). NEVER overwrite this plan file.
 
 ```markdown
 ## ⚡ Feature Plan: {slug}
@@ -99,6 +99,6 @@ Save to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`:
 
 ## 🚦 Confirmation
 
-Review the plan at `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`.
+Review the plan at `docs/devflow/features/YYYY-MM-DD-{slug}-feature-plan.md`.
 If approved, the Feature Agent will implement each task following TDD (Red → Green).
 ```

@@ -100,9 +100,9 @@ Explore ONLY the files relevant to this feature:
 
 1. Using the [feature plan template](<{{SKILLS_DIR}}/devflow-feature/plan-template.md>), write the complete plan document.
 2. **IMMEDIATELY after generating the plan content**, execute `create_file` to save it.
-   - **Path**: `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`
+   - **Path**: `docs/devflow/features/YYYY-MM-DD-{slug}-feature-plan.md`
    - This action MUST happen **before** you present anything to the user.
-   - This is the canonical artifact path for this flow; Step 8 MUST overwrite this same file with the final feature report.
+   - The plan is a PERSISTENT audit artifact — it records exactly what the user approved. Step 8 writes the final feature report to the separate canonical path (`YYYY-MM-DD-{slug}-feature.md`); it must NEVER overwrite this plan file.
 3. **Confirm the file was saved successfully.** If `create_file` fails, STOP and report the error — do NOT proceed.
 4. Only **after** the file is confirmed saved, present a brief summary of the plan and explicitly state the file path.
 5. Then ask:
@@ -202,8 +202,8 @@ To verify:
 ### Step 8 — Finalize Feature Document (MANDATORY)
 
 1. **Verify the Definition of Done.** Check each DoD criterion captured in Step 1 against the implemented work. Fill the report's **Definition of Done** section (Met ✅/❌ + Evidence: test name, file:line, or manual check). If any criterion is unmet, state it explicitly to the user and do NOT claim the feature is complete — recommend the remaining work or a follow-up.
-2. **MANDATORY**: Execute `create_file` to persist the final report (overwrite the plan file) using the [feature template](<{{SKILLS_DIR}}/devflow-feature/feature-template.md>).
-   - **Path**: `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`
+2. **MANDATORY**: Execute `create_file` to persist the final report using the [feature template](<{{SKILLS_DIR}}/devflow-feature/feature-template.md>).
+   - **Path**: `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md` (CREATE this file — do NOT overwrite the approved plan at `YYYY-MM-DD-{slug}-feature-plan.md`)
 3. Update session memory:
 ```markdown
 - [x] Standalone: Feature Agent — `docs/devflow/features/{filename}`
