@@ -146,7 +146,7 @@ For each task in the approved plan:
 2. Write the production code using `create_file` or `replace_file_content`.
 3. Keep it minimal — only what makes the test pass.
 4. Verify the test PASSES:
-   - **Standard/CI:** run `{Test Command (single file)} {test path}`. If it fails → fix within scope and re-run (max 3 attempts; then escalate to the user).
+   - **Standard/CI:** run `{Test Command (single file)} {test path}`. If it fails → run `devflow-ctl iterate implement_debug`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
    - **Pair:** ask the user to run the command and paste the output. Do NOT commit until PASS is confirmed.
 5. Commit `feat({scope}): {task description}` — Standard/CI auto-commit; Pair instructs the user with the exact commands.
 6. Record progress in `test-registry.md`: test file, test name, status (`red-confirmed`, `passing`).
@@ -173,7 +173,7 @@ Run a critical self-review with a deliberate context reset:
 - **Performance:** any N+1 queries, unbounded collections, or blocking I/O?
 - **Honesty check:** Is there anything about this implementation that you would critique if a colleague wrote it?
 
-If a BLOCK issue is found **that can be fixed within the files already in the approved plan** → fix it before continuing.
+If a BLOCK issue is found **that can be fixed within the files already in the approved plan** → run `devflow-ctl iterate implement_review`; on exit 0, fix it before continuing. On exit 1 (limit exceeded) → present the findings to the user instead of looping.
 If the fix would require editing a file outside the plan → **do NOT fix it.** Add an INFO comment in the closest in-scope file and mention it in the final report.
 
 **Compile recommendations** — include an `### Additional Recommendations` section in your response with:
@@ -223,8 +223,8 @@ Pass to the Reviewer:
 **If the Reviewer returns BLOCK findings:**
 1. Review the findings. Fixes MUST be confined to files listed in the approved mini-plan.
 2. If a BLOCK finding requires editing a file outside the plan → add it as an INFO note in the feature report, do NOT edit that file.
-3. Apply the in-scope fixes and re-invoke the Reviewer once more.
-4. If BLOCK findings persist after 2 iterations → present findings to the user and ask how to proceed.
+3. Run `devflow-ctl iterate implement_review`. On exit 0 → apply the in-scope fixes and re-invoke the Reviewer.
+4. On exit 1 (iteration limit exceeded) or if BLOCK findings persist → present findings to the user and ask how to proceed.
 
 **If the Reviewer returns APPROVED:**
 > ✅ Feature complete and approved. All standards verified.
