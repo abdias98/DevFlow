@@ -167,7 +167,9 @@ For each task in the approved plan:
 
 After all tasks are complete, verify the implementation. The verification method depends on environment capabilities:
 
-**If `subagents: yes` in `context.md` → `## Environment Capabilities` AND the feature has 3+ tasks:**
+**If `subagents: yes` in `context.md` → `## Environment Capabilities` AND the plan is non-trivial (2+ tasks OR more than 3 files affected):**
+
+> Rationale: a fresh-context verifier pass is cheap compared to a full Reviewer BLOCK loop, so any non-trivial feature benefits from it. Only trivial single-task, single-file features skip the verifier.
 
 Dispatch a **fresh-context verifier subagent** following the [verifier-subagent.md](<{{SKILLS_DIR}}/shared/verifier-subagent.md>) canonical pattern (same as the lifecycle Implementer). The verifier:
 - Reads the feature plan + modified files from scratch (no inherited Feature Agent bias).
