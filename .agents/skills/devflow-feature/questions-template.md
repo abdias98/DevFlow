@@ -1,8 +1,8 @@
 # Feature Agent Questions Template
 
-## Mandatory Questions
+## Questions to Clarify
 
-These questions MUST always be asked to ensure a clear, implementable feature scope:
+Ask these ONLY when the answer is missing or ambiguous — infer what you can from the user's request and the codebase (see SKILL.md Step 1). If the request already includes scope, Definition of Done, and a reference implementation, skip the questions entirely and confirm your understanding in the Understanding Summary instead.
 
 | Category | What to clarify |
 |----------|----------------|
