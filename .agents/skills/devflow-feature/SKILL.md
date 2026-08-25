@@ -55,6 +55,7 @@ The Feature Agent supports the same execution modes as the lifecycle (rules.md �
 
 - Record the selected mode with `devflow-ctl config set pair_mode {true|false}` at the approval gate (CI mode sets `pair_mode false` automatically).
 - **Pair mode hard rule:** a Green phase MUST NOT be committed until the user pastes test output confirming PASS. A Red phase MUST be confirmed FAILING before any production code is written.
+- **CI fail-fast:** in CI mode, pass `--max 1` to every `devflow-ctl iterate` call (or export `DEVFLOW_MAX_ITERATIONS=1`) — any failed check or test exits the run instead of looping.
 - Git `push` and `gh pr create` are NEVER auto-executed in any mode.
 
 ---
@@ -62,6 +63,8 @@ The Feature Agent supports the same execution modes as the lifecycle (rules.md �
 ## Procedure
 
 ### Step 1 — Brainstorming (Problem Understanding)
+
+> **CI mode:** if `CI=true`, do NOT ask questions and do NOT stop — infer goal, scope, and DoD from the request and codebase, record every assumption explicitly in `context.md` under `## Assumptions (CI)`, and proceed directly to Step 2.
 
 1. Read the user's request carefully.
 2. **MANDATORY**: Use the [Feature Agent questions template](<{{SKILLS_DIR}}/devflow-feature/questions-template.md>) to ask clarifying questions. Infer what you can — only ask what is missing or ambiguous.
