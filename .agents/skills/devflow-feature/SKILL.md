@@ -19,7 +19,7 @@ You are the **Feature Agent** standalone agent. Implement small-to-medium featur
   - [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) · [Accessibility](<{{SKILLS_DIR}}/shared/standards/accessibility.md>) — when a UI component is involved.
   - Cite the specific section in every finding: `{standard}.md §{N} → {BLOCK|WARN|INFO}` (consult each standard's Severity Classification).
 - **NEVER implement a feature without user confirmation** of the mini-plan.
-- **NEVER run tests** — provide the command and let the user run it.
+- **Test execution is mode-dependent** — **Pair (default):** NEVER run tests; provide the command and wait for the user's pasted results. **Standard:** auto-run tests/lint and verify outcomes before committing. **CI:** like Standard, plus fail-fast. See [Mode Selection](#mode-selection) below and rules.md → Test Execution Policy.
 - **NEVER add scope beyond what the user requested** or what the approved mini-plan explicitly includes.
 - **If complexity is HIGH** (>5 files, architectural changes, new components >2) → recommend `/devflow` instead.
 - **ALWAYS check for reusable existing code** before creating anything new.
@@ -40,6 +40,22 @@ Before doing anything, assess the request:
 
 If recommending `/devflow`, tell the user:
 > "This feature has significant scope/complexity. I recommend using the full DevFlow cycle (`/devflow`) to ensure proper architecture, planning, and review. Would you like to proceed that way?"
+
+---
+
+## Mode Selection
+
+The Feature Agent supports the same execution modes as the lifecycle (rules.md → Implementation Modes, CI/CD Mode):
+
+| Mode | Activation | Tests | Lint | Git commits | Iterations |
+|------|-----------|-------|------|-------------|------------|
+| **Pair** (default) | User selects 🤝 at the approval gate | Inform command, wait for pasted results | Inform command | Inform commands | Per procedure |
+| **Standard** | User selects ✅ Standard at the approval gate | Auto-run + verify | Auto-run | Auto-execute | Normal |
+| **CI** | `CI=true` env var at start | Auto-run + verify | Auto-run | Auto-execute | Max 1 (fail fast) |
+
+- Record the selected mode with `devflow-ctl config set pair_mode {true|false}` at the approval gate (CI mode sets `pair_mode false` automatically).
+- **Pair mode hard rule:** a Green phase MUST NOT be committed until the user pastes test output confirming PASS. A Red phase MUST be confirmed FAILING before any production code is written.
+- Git `push` and `gh pr create` are NEVER auto-executed in any mode.
 
 ---
 
@@ -93,29 +109,40 @@ Explore ONLY the files relevant to this feature:
 
 | header | question | type |
 |--------|----------|------|
-| `feature_confirmation` | The plan has been saved at `{path}`. Proceed with implementation? | options: ✅ Approve, ✏️ Modify plan, ❌ Cancel |
+| `feature_confirmation` | The plan has been saved at `{path}`. Proceed with implementation? | options: ✅ Approve — Standard (auto-run), 🤝 Approve — Pair (manual), ✏️ Modify plan, ❌ Cancel |
 
 **STOP. Do NOT apply any changes or create test files until the user approves.**
 
-- **✅ Approve** → run `devflow-ctl gate set plan_approval approved`, then proceed to Step 5.
+- **✅ Approve — Standard** → run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, then proceed to Step 5. Standard mode auto-executes tests, lint, and git commits (never push/PR).
+- **🤝 Approve — Pair** → run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode true`, then proceed to Step 5. Pair mode: the user runs every command and pastes results.
 - **❌ Cancel** → run `devflow-ctl lock release` and stop.
+
+> **CI exception:** if `CI=true` was detected at start, skip this question, log "CI mode: plan auto-approved.", run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, and proceed directly to Step 5.
 
 ### Step 5 — Apply Feature Implementation (TDD per task)
 
 **Entry condition:** `devflow-ctl gate check plan_approval` must pass — if it exits non-zero, return to Step 4. Before editing any production file, run `devflow-ctl scope check {file}`; on exit 1, ask the user for approval and `devflow-ctl scope add {glob}` before proceeding.
 
+Read the selected mode from session memory (`pair_mode`) before starting each task.
+
 For each task in the approved plan:
 
 **🔴 Red Phase:**
 1. Create the test file using `create_file`. This file was listed in the approved plan and is therefore within scope.
-2. Tell the user: `"Test created at {path}. To run: {Test Command (single file)} {path}"`
-3. **DO NOT run the test.**
+2. Verify the test FAILS:
+   - **Standard/CI:** run `{Test Command (single file)} {test path}` yourself. It MUST fail. If it unexpectedly passes → the test does not exercise the missing behavior; fix the test (it is in-scope) before writing any production code.
+   - **Pair:** tell the user `"Test created at {path}. To run: {Test Command (single file)} {path}"` and STOP. Do NOT proceed until the user pastes the output confirming the test fails.
+3. Do NOT write production code before Red is confirmed.
 
 **🟢 Green Phase:**
 1. Read the target file (if modifying existing).
 2. Write the production code using `create_file` or `replace_file_content`.
 3. Keep it minimal — only what makes the test pass.
-4. Commit: `feat({scope}): {task description}`
+4. Verify the test PASSES:
+   - **Standard/CI:** run `{Test Command (single file)} {test path}`. If it fails → fix within scope and re-run (max 3 attempts; then escalate to the user).
+   - **Pair:** ask the user to run the command and paste the output. Do NOT commit until PASS is confirmed.
+5. Commit `feat({scope}): {task description}` — Standard/CI auto-commit; Pair instructs the user with the exact commands.
+6. Record progress in `test-registry.md`: test file, test name, status (`red-confirmed`, `passing`).
 
 ### Step 6 — Verification (Self-Review or Verifier Subagent)
 
@@ -162,7 +189,8 @@ To verify:
   Full suite:   {Test Command}
 ```
 
-**DO NOT run the tests.**
+- **Pair mode:** DO NOT run the tests — the commands above are for the user.
+- **Standard/CI:** the full suite has already been run as part of Step 5/6; report the actual results (pass/fail counts) instead of asking the user to verify. If any test fails, do NOT report the feature as implemented — escalate.
 
 ### Step 8 — Finalize Feature Document (MANDATORY)
 
