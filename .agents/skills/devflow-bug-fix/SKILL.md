@@ -61,21 +61,25 @@ Applied to the Reproduce → Isolate → Fix → Verify flow:
 ### Step 1 — Brainstorming (Problem Understanding)
 
 1. Read the user's report: error message, stack trace, description of unexpected behavior.
-2. **Critical Friend check:** Before accepting the user's stated root cause or proposed fix:
-   - **Question the user's diagnosis** — if the user claims to know the root cause, still verify it independently.
-   - **Challenge assumptions** — "Are you sure it's in {file}? The stack trace suggests {alternative} might be the actual issue."
-   - **Suggest better approaches** — "Instead of {user's proposed fix}, a more robust solution would be {alternative}."
-   - Be honest: if the user's proposed fix would introduce technical debt or security issues, say so.
-3. **MANDATORY**: Use the [Bug-Fixer questions template](<{{SKILLS_DIR}}/devflow-bug-fix/questions-template.md>) to ask clarifying questions. Infer what you can — only ask what is missing or ambiguous.
+2. **MANDATORY**: Use the [Bug-Fixer questions template](<{{SKILLS_DIR}}/devflow-bug-fix/questions-template.md>) to ask clarifying questions. Infer what you can — only ask what is missing or ambiguous.
    - **Exception:** If the user's request already includes the exact error, steps to reproduce, affected files, and expected behavior, you may skip the questions template and proceed directly to Step 2 after confirming your understanding in the **Understanding Summary**.
-4. Extract:
+3. Extract:
    - **Error type:** `{TypeError | NullReferenceException | 404 | timeout | wrong output | ...}`
    - **Affected file(s):** from stack trace or user description
    - **Affected function/method:** from stack trace
    - **Steps to reproduce:** from user description
    - **Expected behavior:** what should have happened
-5. **STOP after sending the questions**. Wait for the user to answer before proceeding.
-6. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
+4. **STOP after sending the questions**. Wait for the user to answer before proceeding.
+5. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
+
+### Step 1.5 — Critical Friend Check
+
+Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.md>) on the user's bug report and, if stated, their proposed root cause or fix. Focus on:
+- **Question the user's diagnosis** — if the user claims to know the root cause, still verify it independently against the stack trace and the Understanding Summary.
+- **Challenge assumptions** — is the alleged root cause the only explanation the evidence supports?
+- **Suggest better approaches** — if the user's proposed fix would introduce technical debt or a security issue, say so and propose the more robust alternative.
+
+Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|INFO`) and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
 
 ### Step 2 — Load Stack Profile & Initialize Session
 
