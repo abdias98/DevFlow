@@ -45,18 +45,9 @@ If recommending `/devflow`, tell the user:
 
 ## Mode Selection
 
-The Feature Agent supports the same execution modes as the lifecycle (rules.md → Implementation Modes, CI/CD Mode):
+The Feature Agent supports the same three execution modes as every standalone agent — see [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Mode Selection for the full Pair/Standard/CI table, the CI fail-fast rule, and the hard rules (Red must be confirmed FAILING, Green must be confirmed PASSING before commit).
 
-| Mode | Activation | Tests | Lint | Git commits | Iterations |
-|------|-----------|-------|------|-------------|------------|
-| **Pair** (default) | User selects 🤝 at the approval gate | Inform command, wait for pasted results | Inform command | Inform commands | Per procedure |
-| **Standard** | User selects ✅ Standard at the approval gate | Auto-run + verify | Auto-run | Auto-execute | Normal |
-| **CI** | `CI=true` env var at start | Auto-run + verify | Auto-run | Auto-execute | Max 1 (fail fast) |
-
-- Record the selected mode with `devflow-ctl config set pair_mode {true|false}` at the approval gate (CI mode sets `pair_mode false` automatically).
-- **Pair mode hard rule:** a Green phase MUST NOT be committed until the user pastes test output confirming PASS. A Red phase MUST be confirmed FAILING before any production code is written.
-- **CI fail-fast:** in CI mode, pass `--max 1` to every `devflow-ctl iterate` call (or export `DEVFLOW_MAX_ITERATIONS=1`) — any failed check or test exits the run instead of looping.
-- Git `push` and `gh pr create` are NEVER auto-executed in any mode.
+Applied to the TDD-per-task flow in Step 5: **Red phase** = the test file created at the start of each task; **Green phase** = the production code written to make it pass.
 
 ---
 
@@ -126,17 +117,9 @@ Explore ONLY the files relevant to this feature:
 
 **Entry condition:** `devflow-ctl gate check plan_approval` must pass — if it exits non-zero, return to Step 4. Before editing any production file, run `devflow-ctl scope check {file}`; on exit 1, ask the user for approval and `devflow-ctl scope add {glob}` before proceeding.
 
-**Rollback checkpoint:** before the FIRST task, record a rollback point:
-- **Standard/CI:** run `git rev-parse HEAD` and execute `devflow-ctl checkpoint set pre-feature-impl {sha}`.
-- **Pair:** ask the user to run `git rev-parse HEAD` and report the SHA, then record it with `devflow-ctl checkpoint set pre-feature-impl {sha}`.
+**Rollback checkpoint:** before the FIRST task, record a `pre-feature-impl` rollback point — see [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Rollback Checkpoint.
 
-If implementation must be abandoned mid-way, offer the user:
-> "To revert all code changes and return to the pre-implementation state, run: `git reset --hard {sha}`" (get the SHA with `devflow-ctl checkpoint get pre-feature-impl`). NEVER execute `git reset` yourself.
-
-**Branch policy:** a feature branch is ALWAYS used for implementation work (same policy as lifecycle Standard Mode):
-- **Standard/CI:** auto-execute `git checkout -b feat/{slug}` before the first task. If the user named a custom branch during approval, use it instead.
-- **Pair:** give the user the exact command (`git checkout -b feat/{slug}`) and wait for confirmation that the branch is active before writing any code.
-- Commits land on this branch; `push` remains manual in every mode.
+**Branch policy:** a `feat/{slug}` branch is ALWAYS used for implementation work, created before the first task — see [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Branch Policy.
 
 Read the selected mode from session memory (`pair_mode`) before starting each task.
 
@@ -161,9 +144,7 @@ For each task in the approved plan:
 
 ### Step 6 — Verification (Self-Review or Verifier Subagent)
 
-**Lint/typecheck gate first.** Before the review itself, run the project's `Lint Command` from `## Stack Profile` (include any typecheck script the project defines, e.g. `tsc --noEmit`) scoped to the changed files where possible:
-- **Standard/CI:** auto-run it. Fix mechanical failures (formatting, unused imports) in-scope and re-run. Report persistent violations as findings below instead of hand-waving them.
-- **Pair:** inform the user of the exact command and wait for pasted output before continuing.
+**Lint/typecheck gate first** — see [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Lint / Typecheck Gate. Run it before the review itself, scoped to the changed files where possible.
 
 After all tasks are complete, verify the implementation. The verification method depends on environment capabilities:
 
