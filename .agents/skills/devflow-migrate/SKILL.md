@@ -23,6 +23,14 @@ You are the **Migration Agent** standalone agent. Analyze schema changes, genera
 
 ## Procedure
 
+### Step 0 — Session Opening
+
+1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
+2. **Initialize the standalone session:** run `devflow-ctl init --mode migrate --slug {slug}`.
+3. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Migration Agent`, slug, and stack. Leave quality values empty until Step 7.
+
+See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Step 0 — Session Opening for the canonical pattern. The environment capability probe and knowledge base read happen in Step 2, below.
+
 ### Step 1 — Understand the Schema Change
 
 1. Read the user's request. Identify:
@@ -72,6 +80,20 @@ Explore the project's existing migrations to determine:
 3. **Structure:** class-based, function-based, DSL (Prisma), code-first?
 4. **Tool command:** `php artisan migrate`, `npx prisma migrate dev`, `alembic upgrade head`, `dotnet ef migrations add`?
 
+### Step 4.5 — Approval Gate
+
+Before generating any migration file, present the planned changes (schema changes, files to create, zero-downtime strategy if any) and ask:
+
+| header | question | type |
+|--------|----------|------|
+| `migration_confirmation` | About to generate {N} migration file(s) for: {summary of schema changes}. Proceed? | options: ✅ Approve, ✏️ Adjust, ❌ Cancel |
+
+**STOP. Do NOT generate any migration file until the user approves.**
+
+- **✅ Approve** → proceed to Step 5.
+- **✏️ Adjust** → collect the user's feedback, revise the analysis from Step 3, and re-present this gate.
+- **❌ Cancel** → run `devflow-ctl lock release` and stop.
+
 ### Step 5 — Generate Migration Files
 
 For each schema change:
@@ -100,6 +122,10 @@ Pass to the Reviewer:
 - Invoking agent: `Migration Agent`
 - Artifact path: `docs/devflow/migrations/YYYY-MM-DD-{slug}-migration.md`
 - Feature Type: value from `## Stack Profile`
+
+### Step 8 — Release Session
+
+**Entry condition:** the Reviewer (Step 7) has returned a verdict. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and file counts. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the migration report is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
 
 ---
 

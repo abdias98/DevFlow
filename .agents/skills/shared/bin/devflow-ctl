@@ -219,7 +219,7 @@ cmd_init() {
       *) die "init: unknown argument '$1'" ;;
     esac
   done
-  [[ -n "$mode" ]] || die "init: --mode is required (lifecycle|feature|refactor|bug-fix|...)"
+  [[ -n "$mode" ]] || die "init: --mode is required (lifecycle|feature|refactor|bug-fix|perf|migrate|contract|docs|templates|tutorial|reverse)"
   [[ -n "$SLUG" ]] || die "init: --slug is required"
   STATE_FILE="$SESSION_ROOT/$SLUG/phase-state.md"
   [[ -f "$STATE_FILE" ]] && die "session '$SLUG' already exists at $STATE_FILE — resume it or pick another slug"

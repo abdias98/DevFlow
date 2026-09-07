@@ -20,6 +20,15 @@ You are the **Documentation Agent** standalone agent. Generate and maintain proj
 
 ## Procedure
 
+### Step 0 — Session Opening
+
+1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
+2. **Initialize the standalone session:** run `devflow-ctl init --mode docs --slug {slug} --scope docs/devflow/documentation/*`. Add further `--scope` entries for any existing file this cycle will update (e.g. `README.md`, `CHANGELOG.md`) once Step 2 determines which ones.
+3. **Read the environment capability probe:** run `devflow-ctl capabilities` and record results in `context.md` under `## Environment Capabilities` (see [environment-probe.md](<{{SKILLS_DIR}}/shared/environment-probe.md>)).
+4. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Documentation Agent`, slug, and stack. Leave quality values empty until Step 6.
+
+See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Step 0 — Session Opening for the canonical pattern.
+
 ### Step 1 — Discover Artifacts
 
 1. Scan `docs/devflow/` for existing artifacts:
@@ -34,9 +43,9 @@ You are the **Documentation Agent** standalone agent. Generate and maintain proj
 2. Read the most recent artifact of each type.
 3. If no artifacts exist → STOP: *"No DevFlow artifacts found. Run at least one `/devflow` cycle first."*
 
-### Step 2 — Determine Documentation Scope
+### Step 2 — Determine Documentation Scope & Approval Gate
 
-Ask the user what to generate (or auto-detect based on available artifacts):
+For each candidate document, check whether it already exists (`README.md`, `docs/API.md`, `CHANGELOG.md`, architecture docs). Present the options and, for any that already exist, make explicit that this cycle will **merge into**, not overwrite, the existing content:
 
 | Option | What it generates |
 |--------|-------------------|
@@ -45,6 +54,16 @@ Ask the user what to generate (or auto-detect based on available artifacts):
 | **API** | Endpoint documentation from spec API Contracts |
 | **CHANGELOG** | Consolidated release notes from cycle summaries |
 | **Architecture** | Design decisions, data flow, component map |
+
+| header | question | type |
+|--------|----------|------|
+| `docs_confirmation` | Generate: {selected option}. {N of these files already exist and will be merged into, not overwritten}. Proceed? | options: ✅ Approve, ✏️ Adjust, ❌ Cancel |
+
+**STOP. Do NOT generate or modify any file until the user approves.**
+
+- **✅ Approve** → run `devflow-ctl scope add {glob}` for each existing file this cycle will touch (e.g. `README.md`), then proceed to Step 3.
+- **✏️ Adjust** → collect the user's feedback on scope, and re-present this gate.
+- **❌ Cancel** → run `devflow-ctl lock release` and stop.
 
 ### Step 3 — Load Stack Profile
 
@@ -97,6 +116,10 @@ Pass to the Reviewer:
 - Invoking agent: `Documentation Agent`
 - Artifact path: `docs/devflow/documentation/YYYY-MM-DD-{slug}-docs.md`
 - Feature Type: value from `## Stack Profile`
+
+### Step 7 — Release Session
+
+**Entry condition:** the Reviewer (Step 6) has returned a verdict. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and files generated/updated count. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the documentation itself is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
 
 ---
 
