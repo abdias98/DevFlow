@@ -22,12 +22,29 @@ You are the **Refactorer** standalone agent. Improve existing code without chang
 - **NEVER touch files outside the declared scope** — if a change would require editing an unrelated file, STOP and ask.
 - **NEVER apply opportunistic fixes** — mention them as INFO notes only.
 - **Artifacts created by this skill** (plan documents, refactor reports at `docs/devflow/refactors/`) are **always allowed**, even if the user's declared scope did not include them. They are not subject to the “outside the declared scope” restriction.
-- **NEVER run tests** — provide the command and let the user run it.
+- **Test execution is mode-dependent** — **Pair (default):** NEVER run tests; provide the command and wait for the user's pasted results. **Standard:** auto-run the regression test (if one exists, per **TEST POLICY** below) both before and after the refactor, plus the full suite, verifying no behavior changed before committing. **CI:** like Standard, plus fail-fast. See [Mode Selection](#mode-selection) below and rules.md → Test Execution Policy.
 - **ALWAYS get user approval** before applying any changes.
 - **BRAINSTORM FIRST** — Always ask clarifying questions to ensure deep understanding before analysis.
 - **TEST POLICY**: 
     - **If the project has tests configured and existing tests created**: Create a regression test for the target code.
     - **If the project has NO tests**: Do NOT create tests. Rely on manual verification instructions.
+
+---
+
+## Mode Selection
+
+The Refactorer supports the same three execution modes as every standalone agent — see [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Mode Selection for the full Pair/Standard/CI table.
+
+**Refactoring has no "Red phase" in the TDD sense** — the entire point is that behavior does NOT change, so there is no new failing test to turn green. Instead, when the project has tests (per **TEST POLICY** above) and the approved plan includes a regression test:
+- **Baseline (Step 6):** the regression test must **PASS** *before* any refactoring change — confirming it accurately captures current behavior.
+- **Post-refactor (Step 7):** the same test, and the full suite, must **PASS** *after* the refactor — confirming behavior is unchanged. The commit does not happen until this is confirmed.
+- **Standard/CI:** auto-run both checkpoints; a failure at either one stops the refactor and escalates rather than proceeding.
+- **Pair:** tell the user the command at each checkpoint and wait for the pasted result. Do NOT commit until the post-refactor PASS is confirmed.
+
+When the project has **no** test infrastructure, both checkpoints are manual-verification instructions in the final report — there is no test to auto-run, in any mode.
+
+- Record the selected mode with `devflow-ctl config set pair_mode {true|false}` at the approval gate (CI mode sets `pair_mode false` automatically).
+- Git `push` and `gh pr create` are NEVER auto-executed in any mode.
 
 ---
 
@@ -93,28 +110,47 @@ Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|IN
 
 1. Using the [plan template](<{{SKILLS_DIR}}/devflow-refactor/plan-template.md>), write the complete plan document.
 2. **IMMEDIATELY after generating the plan content**, execute `create_file` to save it.
-   - **Path**: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`
+   - **Path**: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor-plan.md`
    - This action MUST happen **before** you present anything to the user.
+   - The plan is a PERSISTENT audit artifact — it records exactly what the user approved. Step 8 writes the final refactor report to the separate canonical path (`YYYY-MM-DD-{slug}-refactor.md`); it must NEVER overwrite this plan file.
 3. **Confirm the file was saved successfully.** If `create_file` fails, STOP and report the error — do NOT proceed.
 4. Only **after** the file is confirmed saved, present a brief summary of the plan and explicitly state the file path.
 5. Then ask:
 
 | header | question | type |
 |--------|----------|------|
-| `refactor_confirmation` | The plan has been saved at `{path}`. Proceed with refactoring? | options: ✅ Approve, ✏️ Modify plan, ❌ Cancel |
+| `refactor_confirmation` | The plan has been saved at `{path}`. Proceed with refactoring? | options: ✅ Approve — Standard (auto-run), 🤝 Approve — Pair (manual), ✏️ Modify plan, ❌ Cancel |
 
 **STOP. Do NOT apply any changes or create test files until the user approves.**
 
-- **✅ Approve** → run `devflow-ctl gate set plan_approval approved`, then proceed to Step 6.
+- **✅ Approve — Standard** → run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, then proceed to Step 6. Standard mode auto-executes the regression-test checkpoints (if any) and the commit.
+- **🤝 Approve — Pair** → run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode true`, then proceed to Step 6. Pair mode: the user runs every command and pastes results.
+- **✏️ Modify plan** → collect the user's feedback. Run `devflow-ctl iterate plan_revision` — exit 1 (limit reached) means STOP and escalate to the user instead of looping. On exit 0, regenerate the plan incorporating the feedback, re-persist it (overwriting the plan file, never the final report), and re-present this same gate.
 - **❌ Cancel** → run `devflow-ctl lock release` and stop.
+
+> **CI exception:** if `CI=true` was detected at start, skip this question, log "CI mode: plan auto-approved.", run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, and proceed directly to Step 6.
 
 ### Step 6 — Apply Refactoring
 
 **Entry condition:** `devflow-ctl gate check plan_approval` must pass — if it exits non-zero, return to Step 5.
 
+**Rollback checkpoint:** before the first file write, record a rollback point:
+- **Standard/CI:** run `git rev-parse HEAD` and execute `devflow-ctl checkpoint set pre-refactor-impl {sha}`.
+- **Pair:** ask the user to run `git rev-parse HEAD` and report the SHA, then record it the same way.
+
+If the refactor must be abandoned mid-way, offer the user:
+> "To revert all code changes and return to the pre-refactor state, run: `git reset --hard {sha}`" (get the SHA with `devflow-ctl checkpoint get pre-refactor-impl`). NEVER execute `git reset` yourself.
+
+**Branch policy:** a refactor branch is ALWAYS used (same policy as lifecycle Standard Mode):
+- **Standard/CI:** auto-execute `git checkout -b refactor/{slug}` before the first file write. If the user named a custom branch during approval, use it instead.
+- **Pair:** give the user the exact command (`git checkout -b refactor/{slug}`) and wait for confirmation that the branch is active before writing any file.
+- Commits land on this branch; `push` remains manual in every mode.
+
 0. **If the approved plan includes a regression test** (and tests exist in the project):
    - Create the test file at the agreed path.
-   - Inform the user: `"Regression test created at {path}. Run before refactoring: {Test Command (single file)}"`
+   - Verify it PASSES **before** any refactoring change (the baseline):
+     - **Standard/CI:** run `{Test Command (single file)}` yourself. It MUST pass — if it fails, the test does not accurately capture current behavior; fix the test (it is in-scope) before proceeding.
+     - **Pair:** tell the user `"Regression test created at {path}. Run before refactoring: {Test Command (single file)}"` and wait for the pasted result confirming PASS.
    - The test file is considered part of the approved scope for this refactoring.
 
 For each file in the approved scope:
@@ -122,9 +158,25 @@ For each file in the approved scope:
 2. Apply the change using `replace_file_content` or `multi_replace_file_content`.
 3. Keep each change minimal and focused on what was planned.
 
-Commit message: `refactor({scope}): {description}`
+Do NOT commit yet — the commit happens in Step 7, after the post-refactor behavior check confirms no regression.
 
 ### Step 7 — Verification (Self-Review or Verifier Subagent)
+
+Tell the user:
+
+```
+✅ Refactoring applied to: {list of files}
+
+To verify no behavior changed:
+  Regression test/Manual check: {path or instructions}
+  Full suite (if applicable):  {Test Command}
+```
+
+**Post-refactor behavior check.** Before anything else, confirm no behavior changed:
+- **If a regression test exists** (created in Step 6): verify it still PASSES.
+  - **Standard/CI:** auto-run `{Test Command (single file)}` (and the full suite if available). Both MUST pass. If either fails → run `devflow-ctl iterate implement_debug`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
+  - **Pair:** ask the user to run both commands and paste the output. Do NOT commit until PASS is confirmed for both.
+- **If no test infrastructure exists:** this check is manual — the final report's verification instructions are the only safety net. Proceed to self-review below; the commit still waits for that self-review to clear.
 
 After all changes are applied, verify the refactoring. The verification method depends on environment capabilities:
 
@@ -137,16 +189,6 @@ Dispatch a **fresh-context verifier subagent** following the [verifier-subagent.
 
 **Otherwise (inline self-review):**
 
-Tell the user:
-
-```
-✅ Refactoring applied to: {list of files}
-
-To verify no behavior changed:
-  Regression test/Manual check: {path or instructions}
-  Full suite (if applicable):  {Test Command}
-```
-
 Run a critical self-review:
 - **Behavior preservation:** are all public APIs (exports, signatures, return types) unchanged?
 - **Naming:** consistent with project conventions?
@@ -154,14 +196,20 @@ Run a critical self-review:
 - **Clean Architecture:** are dependencies still pointing inward?
 - **Honesty check:** Is there anything about this refactoring that you would critique if a colleague did it?
 
-If a BLOCK issue is found **that can be fixed within the approved scope** → fix it before continuing.
+If a BLOCK issue is found **that can be fixed within the approved scope** → run `devflow-ctl iterate implement_review`; on exit 0, fix it before continuing. On exit 1 (limit exceeded) → present the findings to the user instead of looping.
 If the fix would require editing a file outside the scope → **do NOT fix it.** Add an INFO comment and mention it in the final report.
+
+**Commit** — only once the post-refactor behavior check and self-review/verifier both clear. Standard/CI auto-executes; Pair instructs the user with the exact command:
+`refactor({scope}): {description}`
+
+- **Pair mode:** DO NOT run the tests above — the commands are for the user.
+- **Standard/CI:** the post-refactor check and full suite have already been run; report the actual results instead of asking the user to verify. If any test fails, do NOT report the refactor as complete — escalate.
 
 ### Step 8 — Finalize Refactor Document (MANDATORY)
 
 1. **Verify the Definition of Done.** Check each DoD criterion captured in Step 1 against the applied refactoring — the central criterion being **observable behavior unchanged**. Fill the report's **Definition of Done** section (Met ✅/❌ + Evidence: regression test or manual check). If any criterion is unmet, state it explicitly to the user and do NOT claim the refactor is complete.
-2. **MANDATORY**: Execute `create_file` to persist the final report (overwrite prior draft if needed) using the [refactor template](<{{SKILLS_DIR}}/devflow-refactor/refactor-template.md>).
-   - **Path**: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`
+2. **MANDATORY**: Execute `create_file` to persist the final report using the [refactor template](<{{SKILLS_DIR}}/devflow-refactor/refactor-template.md>).
+   - **Path**: `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md` (CREATE this file — do NOT overwrite the approved plan at `YYYY-MM-DD-{slug}-refactor-plan.md`)
 3. Update session memory:
 ```markdown
 - [x] Standalone: Refactorer — `docs/devflow/refactors/{filename}`
@@ -179,15 +227,24 @@ Pass to the Reviewer:
 
 **If the Reviewer returns BLOCK findings:**
 1. Apply the required fixes (within the original approved scope).
-2. Re-invoke the Reviewer once more.
-3. If BLOCK findings persist after 2 iterations → present findings to the user and ask how to proceed.
+2. Run `devflow-ctl iterate implement_review`. On exit 0 → re-invoke the Reviewer.
+3. On exit 1 (iteration limit exceeded) or if BLOCK findings persist → present findings to the user and ask how to proceed.
 
 **If the Reviewer returns APPROVED:**
 > ✅ Refactoring complete and approved. All standards verified.
 
-### Step 10 — Record Metrics
+### Step 10 — Record Metrics & Write Back Knowledge
 
-After the Reviewer concludes (APPROVED, or BLOCKs resolved/escalated), finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 2): set the completed timestamp; fill files modified, tests created (regression test, if any), the Reviewer's BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions (`scope add` count). Then append a row to `docs/devflow/metrics/_aggregate.md` (create if missing) with `Type = refactor`, Tasks = tests created, Test Pass % = `—`, Iterations = Reviewer loops; recalculate averages. See the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) → Generation Rules → Standalone agents.
+**Write back to the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — the Refactorer READS it in Step 2; it must also CONTRIBUTE so future refactors reuse what was learned:
+- Extract reusable patterns applied successfully (structural improvements, patterns that resolved the pain points from Step 1).
+- Extract anti-patterns from any BLOCK/WARN findings raised by self-review or the Reviewer.
+- **Add to BOTH sections**, following the same conventions as the lifecycle Finalizer:
+  - **By Topic** — under the relevant topic (Testing, Security, Architecture, Performance, Stack-Specific). Create the topic section if missing.
+  - **Cycle History** — a chronological entry `### {slug} — {date}` with the patterns and anti-patterns found.
+  - **Deduplication rule:** if a pattern or anti-pattern already exists in By Topic, do NOT duplicate it — append this refactor's slug to the existing entry's source list instead.
+- If there is genuinely nothing new worth recording (trivial refactor, no findings), skip the write-back and note that in the metrics file.
+
+After the Reviewer concludes (APPROVED, or BLOCKs resolved/escalated), finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 2): set the completed timestamp; fill files modified, tests created (regression test, if any), the Reviewer's BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions (`scope add` count). Then append a row to `docs/devflow/metrics/_aggregate.md` (create if missing) with `Type = refactor`, Tasks = tests created, Test Pass % = `—` in Pair mode or the actual rate in Standard/CI, Iterations = Reviewer loops; recalculate averages. See the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) → Generation Rules → Standalone agents.
 
 ### Step 11 — Release Session
 
