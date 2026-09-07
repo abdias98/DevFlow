@@ -94,18 +94,26 @@ set -- "${ARGS[@]+"${ARGS[@]}"}"
 # basenames and are already trusted.
 [[ -n "$SLUG" ]] && validate_slug "$SLUG"
 
+# Populates the global array _SESSIONS with every slug that has a
+# phase-state.md under SESSION_ROOT. Shared by resolve_session and any
+# command that needs to know the session count before committing to one
+# (e.g. `lock check` treats zero sessions as "nothing to lock", not an error).
+_discover_sessions() {
+  _SESSIONS=()
+  if [[ -d "$SESSION_ROOT" ]]; then
+    while IFS= read -r f; do
+      _SESSIONS+=("$(basename "$(dirname "$f")")")
+    done < <(find "$SESSION_ROOT" -mindepth 2 -maxdepth 2 -name phase-state.md 2>/dev/null)
+  fi
+}
+
 resolve_session() {
   if [[ -z "$SLUG" ]]; then
-    local sessions=()
-    if [[ -d "$SESSION_ROOT" ]]; then
-      while IFS= read -r f; do
-        sessions+=("$(basename "$(dirname "$f")")")
-      done < <(find "$SESSION_ROOT" -mindepth 2 -maxdepth 2 -name phase-state.md 2>/dev/null)
-    fi
-    case "${#sessions[@]}" in
+    _discover_sessions
+    case "${#_SESSIONS[@]}" in
       0) die "no active session found under $SESSION_ROOT — run 'devflow-ctl init' first" ;;
-      1) SLUG="${sessions[0]}" ;;
-      *) die "multiple active sessions (${sessions[*]}) — disambiguate with --slug" ;;
+      1) SLUG="${_SESSIONS[0]}" ;;
+      *) die "multiple active sessions (${_SESSIONS[*]}) — disambiguate with --slug" ;;
     esac
   fi
   STATE_FILE="$SESSION_ROOT/$SLUG/phase-state.md"
@@ -410,11 +418,24 @@ cmd_iterate() {
 }
 
 cmd_lock() {
+  local action="${1:-}"
+  # `lock check` with no explicit --slug and zero sessions on disk is the
+  # normal starting state for every standalone agent's Step 0 -- not an
+  # error. Every other case (acquire/release, or an explicit --slug that
+  # doesn't exist, or 2+ sessions) still goes through resolve_session and
+  # its usual exit-2 failures.
+  if [[ "$action" == "check" && -z "$SLUG" ]]; then
+    _discover_sessions
+    if [[ ${#_SESSIONS[@]} -eq 0 ]]; then
+      ok "no active session under $SESSION_ROOT (nothing to lock)"
+      return 0
+    fi
+  fi
   resolve_session
   local holder since
   holder="$(fm_get locked_by)"
   since="$(fm_get locked_since)"
-  case "${1:-}" in
+  case "$action" in
     check)
       if [[ -z "$holder" || "$holder" == "none" ]]; then
         ok "no active lock"

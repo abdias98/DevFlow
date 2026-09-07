@@ -44,7 +44,15 @@ Session state lives in the **YAML frontmatter** of `docs/devflow/session/{slug}/
 
 **Execution policy:** `devflow-ctl` only reads and writes session state files — it never touches production code, tests, or git history. It is therefore exempt from the Test Execution Policy and may be auto-executed by agents in **all modes, including Pair mode**. It replaces the markdown edits to `phase-state.md` that agents already performed.
 
-**On check failure (exit 1):** stop, report the CLI's message to the user verbatim, and follow the action it names (escalate, request approval, etc.). NEVER retry the same command expecting a different result, and NEVER proceed past a failed check.
+**Exit code semantics — act on the number, not just "did it fail":**
+
+| Exit | Meaning | What the agent does |
+|:--:|---|---|
+| `0` | Check passed, or the action completed | Proceed |
+| `1` | Check **failed** — gate closed, scope violation, iteration limit exceeded, active lock held by another agent | STOP, report the CLI's message verbatim, follow the action it names (escalate, request approval, etc.). NEVER retry the same command expecting a different result |
+| `2` | Usage or state error — bad arguments, no session found for an explicit `--slug`, or genuinely ambiguous state (2+ sessions with no `--slug` to disambiguate) | Fix the input and retry, or ask the user for the missing information (e.g. which slug). This is not a policy failure — the command couldn't even attempt the check |
+
+**`lock check` is the one case where "no session" is success, not exit 2.** With no explicit `--slug` and zero sessions on disk — the normal starting state before any standalone agent's Step 0 — `lock check` exits `0` with "no active session (nothing to lock)". An explicit `--slug` for a session that doesn't exist, or 2+ sessions with no `--slug` to pick one, still exit `2` as usual.
 
 **Fallback:** if the script is missing or not executable in the installed environment, fall back to the manual procedures described in each SKILL.md and inform the user that deterministic enforcement is unavailable.
 

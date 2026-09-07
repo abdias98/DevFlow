@@ -154,6 +154,38 @@ setup() {
   [[ "$output" == *"exceeded its limit"* ]]
 }
 
+# ── Lock check (F02: "no session" is success, not exit 2) ─────────────────────
+
+@test "lock check: empty repo (no sessions) exits 0, not 2" {
+  run "$CTL" lock check
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"no active session"* ]]
+}
+
+@test "lock check: own session with no holder exits 0" {
+  "$CTL" init --mode feature --slug mine >/dev/null
+  "$CTL" lock release --slug mine >/dev/null
+  run "$CTL" lock check --slug mine
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"no active lock"* ]]
+}
+
+@test "lock check: session held by another agent (not stale) exits 1" {
+  "$CTL" init --mode feature --slug theirs >/dev/null
+  run "$CTL" lock check --slug theirs
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"locked by Orchestrator"* ]]
+}
+
+@test "lock check: stale lock is a WARN, not a failure" {
+  "$CTL" init --mode feature --slug stale >/dev/null
+  local state="$DEVFLOW_SESSION_ROOT/stale/phase-state.md"
+  sed -i 's/^locked_since:.*/locked_since: 2020-01-01T00:00:00Z/' "$state"
+  run "$CTL" lock check --slug stale
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STALE"* ]]
+}
+
 # ── Capabilities (regression for the marker-parse double-space fix) ───────────
 
 @test "capabilities: defaults to unknown with no marker" {
