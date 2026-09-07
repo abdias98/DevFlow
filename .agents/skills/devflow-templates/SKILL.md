@@ -17,6 +17,15 @@ You are the **Template Agent** standalone agent. Generate and maintain project-s
 
 ---
 
+## Step 0 — Session Opening (both procedures)
+
+1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
+2. **Initialize the standalone session:** run `devflow-ctl init --mode templates --slug {slug} --scope docs/devflow/templates/* --scope docs/devflow/knowledge-base/*`.
+3. **Read the environment capability probe:** run `devflow-ctl capabilities` and record results in `context.md` under `## Environment Capabilities` (see [environment-probe.md](<{{SKILLS_DIR}}/shared/environment-probe.md>)).
+4. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Template Agent`, slug, and stack. Leave quality values empty until the final step of whichever procedure runs.
+
+See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Step 0 — Session Opening for the canonical pattern. Applies to both the Project Template Generation and the Knowledge Base Bootstrap procedures below.
+
 ## Procedure — Project Template Generation
 
 ### Step 1 — Discover Project Pattern Sources
@@ -40,6 +49,20 @@ From `context.md` or artifact analysis:
 1. Load the matching pre-defined template from `shared/templates/{type}.md`.
 2. Use it as a **reference checklist** of patterns to look for in the project artifacts.
 3. Do NOT copy patterns blindly — only include patterns actually used by the project.
+
+### Step 3.5 — Approval Gate
+
+`docs/devflow/templates/project-architecture.md` may already exist. Present what this cycle will add or change, and ask:
+
+| header | question | type |
+|--------|----------|------|
+| `template_confirmation` | About to {generate | update} `project-architecture.md` with {N} new patterns/decisions discovered. {It already exists and will be merged into, not overwritten.} Proceed? | options: ✅ Approve, ✏️ Adjust, ❌ Cancel |
+
+**STOP. Do NOT write the template file until the user approves.**
+
+- **✅ Approve** → proceed to Step 4.
+- **✏️ Adjust** → collect the user's feedback, revise the sources considered, and re-present this gate.
+- **❌ Cancel** → run `devflow-ctl lock release` and stop.
 
 ### Step 4 — Generate Project Template
 
@@ -100,6 +123,10 @@ Pass to Reviewer:
 - Invoking agent: `Template Agent`
 - Artifact path: `docs/devflow/templates/project-architecture.md`
 
+### Step 7 — Release Session
+
+**Entry condition:** the Reviewer (Step 6) has returned a verdict. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the project template is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
+
 ---
 
 ## Procedure — Knowledge Base Bootstrap
@@ -130,6 +157,20 @@ For each artifact, extract:
 2. Deduplicate — if the same pattern appears in multiple cycles, consolidate into one entry with a list of source cycles.
 3. Prioritize — anti-patterns that caused multiple BLOCKs rank higher than one-off observations.
 4. **Don't save what the repo or chat history already records** — only extract non-obvious learnings that would help future cycles.
+
+### Step B2.5 — Approval Gate
+
+Present the consolidated patterns, anti-patterns, and decisions found in Step B2, and ask:
+
+| header | question | type |
+|--------|----------|------|
+| `bootstrap_confirmation` | About to merge {N} patterns, {N} anti-patterns, and {N} decisions into `learnings.md`. Proceed? | options: ✅ Approve, ✏️ Adjust, ❌ Cancel |
+
+**STOP. Do NOT write to `learnings.md` until the user approves.**
+
+- **✅ Approve** → proceed to Step B3.
+- **✏️ Adjust** → collect the user's feedback, revise the consolidation, and re-present this gate.
+- **❌ Cancel** → run `devflow-ctl lock release` and stop.
 
 ### Step B3 — Write to Knowledge Base
 
@@ -164,6 +205,10 @@ Present a summary to the user:
 - Knowledge base updated at `docs/devflow/knowledge-base/learnings.md`.
 
 Recommend: "Run `/devflow-templates` (without bootstrap-knowledge) to generate a project architecture template that incorporates these learnings."
+
+### Step B5 — Release Session
+
+Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and counts from Step B4. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the updated `learnings.md` is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
 
 ---
 

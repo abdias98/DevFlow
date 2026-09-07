@@ -42,6 +42,14 @@ If the user does not specify a mode, ask:
 
 ## Procedure
 
+### Step 0 — Session Opening
+
+1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
+2. **Initialize the standalone session:** run `devflow-ctl init --mode reverse --slug {slug}`.
+3. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Reverse Engineering Agent`, slug, and stack. Leave quality values empty until Step 12.
+
+See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Step 0 — Session Opening for the canonical pattern. The environment capability probe and knowledge base read happen in Step 2, below.
+
 ### Step 1 — Select Mode
 
 1. Parse the user's request for `--quick`, `--deep`, or neither (default Full).
@@ -77,6 +85,20 @@ If the user does not specify a mode, ask:
 3. Identify cross-cutting concerns: authentication, logging, error handling, validation.
 4. Map the data flow from entry point to response/result.
 5. For every component identified, cite the source file path as evidence.
+
+### Step 4.5 — Approval Gate
+
+`AGENTS.md` may already exist at the project root. Present what this cycle will write, and ask:
+
+| header | question | type |
+|--------|----------|------|
+| `reverse_confirmation` | About to {create | update} `AGENTS.md` (and, in Full/Deep mode, an Architecture Spec and Project Template under `docs/devflow/reverse/`). {`AGENTS.md` already exists and will be updated, not replaced wholesale.} Proceed? | options: ✅ Approve, ✏️ Adjust, ❌ Cancel |
+
+**STOP. Do NOT write `AGENTS.md` or any spec file until the user approves.**
+
+- **✅ Approve** → proceed to Step 5.
+- **✏️ Adjust** → collect the user's feedback (e.g. narrow the mode), and re-present this gate.
+- **❌ Cancel** → run `devflow-ctl lock release` and stop.
 
 ### Step 5 — Generate AGENTS.md
 
@@ -180,6 +202,10 @@ Pass to the Reviewer:
 
 **If the Reviewer returns APPROVED:**
 > ✅ Reverse engineering complete and reviewed. All artifacts validated.
+
+### Step 13 — Release Session
+
+**Entry condition:** the Reviewer (Step 12) has returned a verdict. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and files analyzed. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (`AGENTS.md` and the reverse-engineering report are the persistent artifacts). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
 
 ---
 

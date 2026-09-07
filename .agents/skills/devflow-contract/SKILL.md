@@ -23,6 +23,14 @@ You are the **API Contract Agent** standalone agent. Validate that implemented A
 
 ## Procedure
 
+### Step 0 — Session Opening
+
+1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
+2. **Initialize the standalone session:** run `devflow-ctl init --mode contract --slug {slug}`.
+3. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Contract Agent`, slug, and stack. Leave quality values empty until Step 7.
+
+See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Step 0 — Session Opening for the canonical pattern. The environment capability probe and knowledge base read happen in Step 2, below.
+
 ### Step 1 — Load the API Contract
 
 1. Read the architecture spec from `docs/devflow/specs/`. Extract:
@@ -53,6 +61,20 @@ For each endpoint in the spec contract:
 | **Headers** | Are Content-Type, auth headers, CORS present as defined? |
 | **Auth** | Is authentication enforced? Does it match the spec (Bearer, API Key, Session)? |
 | **Error format** | Do error responses follow the defined format? |
+
+### Step 3.5 — Approval Gate
+
+Before generating any test file, present the planned contract tests (endpoints covered, file paths, test framework) and ask:
+
+| header | question | type |
+|--------|----------|------|
+| `contract_confirmation` | About to generate contract test files for {N} endpoint(s). Proceed? | options: ✅ Approve, ✏️ Adjust, ❌ Cancel |
+
+**STOP. Do NOT generate any test file until the user approves.**
+
+- **✅ Approve** → proceed to Step 4.
+- **✏️ Adjust** → collect the user's feedback, revise the analysis from Step 3, and re-present this gate.
+- **❌ Cancel** → run `devflow-ctl lock release` and stop.
 
 ### Step 4 — Generate Contract Tests
 
@@ -91,6 +113,10 @@ Pass to the Reviewer:
 - Invoking agent: `Contract Agent`
 - Artifact path: `docs/devflow/contracts/YYYY-MM-DD-{slug}-contract.md`
 - Feature Type: value from `## Stack Profile`
+
+### Step 8 — Release Session
+
+**Entry condition:** the Reviewer (Step 7) has returned a verdict. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and endpoint counts. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the contract report is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
 
 ---
 

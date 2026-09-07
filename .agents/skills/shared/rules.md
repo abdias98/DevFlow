@@ -21,7 +21,7 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
 - If `/memories/` is NOT available → use `docs/devflow/session/{slug}/` as regular files instead.
 - See [Memory Conventions](./memory-conventions.md) for paths, formats, and **lock rules**.
 - **Before reading or writing session memory**, check `phase-state.md` for an active lock (`Locked By`). If locked by another agent, do NOT write — report to the user.
-- Standalone agents (Refactorer, Bug-Fixer, Feature Agent) MUST check the lock before touching session memory. If a lifecycle cycle is active, recommend waiting or using full `/devflow` cycle instead.
+- **All 10 standalone agents** (Feature, Bug-Fixer, Refactorer, Performance, Migration, Contract, Documentation, Template, Tutorial, Reverse) MUST check the lock before touching session memory — see [standalone-execution.md](./standalone-execution.md) → Step 0. If a lifecycle cycle is active, recommend waiting or using full `/devflow` cycle instead.
 
 ## Deterministic Enforcement (`devflow-ctl`)
 
