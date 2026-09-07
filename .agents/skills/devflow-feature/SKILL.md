@@ -61,13 +61,18 @@ Applied to the TDD-per-task flow in Step 5: **Red phase** = the test file create
 2. **MANDATORY**: Use the [Feature Agent questions template](<{{SKILLS_DIR}}/devflow-feature/questions-template.md>) to ask clarifying questions. Infer what you can — only ask what is missing or ambiguous.
    - **Exception:** If the user's request already includes the specific scope (files, components), the Definition of Done, and any relevant reference implementation, you may skip the questions template and proceed directly to Step 2 after confirming your understanding in the **Understanding Summary**.
 3. Identify: goal, scope, DoD, reusable code, and constraints.
-4. **Critical Friend check:** Before proceeding, evaluate the request critically:
-   - Does this request contradict any standard (security, SOLID, architecture)?
-   - Is there a simpler/better approach the user hasn't considered?
-   - Are there assumptions that need to be challenged?
-   - If YES to any → present your concerns to the user before proceeding.
-5. **STOP after sending the questions**. Wait for the user to answer before proceeding.
-6. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
+4. **STOP after sending the questions**. Wait for the user to answer before proceeding.
+5. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
+
+### Step 1.5 — Critical Friend Check
+
+Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.md>) on the user's feature request. Focus on:
+- Does this request contradict any standard (security, SOLID, architecture)?
+- Is there a simpler/better approach the user hasn't considered?
+- Are there assumptions in the Understanding Summary that need to be challenged?
+- Does the request actually fit the Complexity Gate, or does it warrant a full `/devflow` cycle?
+
+Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|INFO`) and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
 
 ### Step 2 — Load Stack Profile & Initialize Session
 
@@ -109,6 +114,7 @@ Explore ONLY the files relevant to this feature:
 
 - **✅ Approve — Standard** → run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, then proceed to Step 5. Standard mode auto-executes tests, lint, and git commits (never push/PR).
 - **🤝 Approve — Pair** → run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode true`, then proceed to Step 5. Pair mode: the user runs every command and pastes results.
+- **✏️ Modify plan** → collect the user's feedback. Run `devflow-ctl iterate plan_revision` — exit 1 (limit reached) means STOP and escalate to the user instead of looping. On exit 0, regenerate the plan incorporating the feedback, re-persist it (overwriting the plan file, never the final report), and re-present this same gate.
 - **❌ Cancel** → run `devflow-ctl lock release` and stop.
 
 > **CI exception:** if `CI=true` was detected at start, skip this question, log "CI mode: plan auto-approved.", run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, and proceed directly to Step 5.
