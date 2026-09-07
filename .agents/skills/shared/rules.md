@@ -266,6 +266,12 @@ The Implementer dispatches a **fresh-context verifier** between implementation a
 
 See [verifier-subagent.md](./verifier-subagent.md) for the canonical pattern: when to dispatch, the verifier brief, four verification axes (structural, scope, plan compliance, obvious issues), findings format, sequential fallback, and anti-patterns. The Implementer references this file at Step 5 of its procedure.
 
+## Standalone Execution
+
+Every standalone agent (Feature, Bug-Fixer, Refactorer, Performance, Migration, Contract, Documentation, Template, Tutorial, Reverse) runs the same shape of cycle and shares the same execution guarantees: session opening, mode selection (Pair/Standard/CI), an approval gate with a handled option for every choice, branch policy, rollback checkpoint, deterministic iteration limits, a lint/typecheck gate, the canonical session-closing order, and knowledge-base write-back.
+
+See [standalone-execution.md](./standalone-execution.md) for the canonical pattern: the full procedure, the placeholder table each SKILL.md substitutes, the branch-type mapping, and the anti-patterns (most notably: never release the session lock or delete session memory before the Reviewer and metrics have used it). Every standalone agent's SKILL.md references this file instead of duplicating its prose.
+
 ## Environment Capability Probe
 
 DevFlow detects whether the **environment** (editor + tools) supports the primitives its features need: subagent invocation, vision tools, terminal/bash, persistent filesystem. This is **environment** detection, not model detection — DevFlow never classifies, routes, or recommends models. When a primitive is unavailable, the framework degrades gracefully to the equivalent sequential/manual/code-only mode — the cycle never breaks.
