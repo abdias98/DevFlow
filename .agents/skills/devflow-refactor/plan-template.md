@@ -1,6 +1,6 @@
 # Refactor Plan Template
 
-Save to `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`:
+Save to `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor-plan.md`:
 
 ```markdown
 # Refactor Plan: {Title}
