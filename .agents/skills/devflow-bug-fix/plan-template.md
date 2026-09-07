@@ -1,6 +1,6 @@
 # Bug-Fix Plan Template
 
-Save to `docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md`:
+Save to `docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix-plan.md`:
 
 ## 🐛 Bug-Fix Plan: {slug}
 
