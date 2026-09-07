@@ -172,7 +172,6 @@ Include an `### Additional Recommendations` section in your response with:
    - [x] Standalone: Bug-Fixer — `docs/devflow/bug-fixes/{filename}`
    ```
 6. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
-7. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the bug-fix report is the persistent artifact).
 
 ### Step 10 — Auto-Invoke Reviewer (Standalone Mode)
 
@@ -194,6 +193,12 @@ Pass to the Reviewer:
 ### Step 11 — Record Metrics
 
 After the Reviewer concludes (APPROVED, or BLOCKs resolved/escalated), finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 2): set the completed timestamp; fill files created/modified, tests created (the reproduction test), the Reviewer's BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions (`scope add` count). Then append a row to `docs/devflow/metrics/_aggregate.md` (create if missing) with `Type = bug-fix`, Tasks = tests created, Test Pass % = `—`, Iterations = Reviewer loops; recalculate averages. See the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) → Generation Rules → Standalone agents.
+
+### Step 12 — Release Session
+
+**Entry condition:** Step 10 (Reviewer) has returned a verdict and Step 11 (metrics) is complete. The session must stay alive through Steps 10–11 — both read and write it. Releasing it earlier is the exact defect this step exists to prevent. See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
+
+Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the bug-fix report is the persistent artifact).
 
 ---
 

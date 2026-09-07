@@ -167,7 +167,6 @@ If the fix would require editing a file outside the scope → **do NOT fix it.**
 - [x] Standalone: Refactorer — `docs/devflow/refactors/{filename}`
 ```
 4. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
-5. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the refactor report is the persistent artifact).
 
 ### Step 9 — Auto-Invoke Reviewer
 
@@ -189,6 +188,12 @@ Pass to the Reviewer:
 ### Step 10 — Record Metrics
 
 After the Reviewer concludes (APPROVED, or BLOCKs resolved/escalated), finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 2): set the completed timestamp; fill files modified, tests created (regression test, if any), the Reviewer's BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions (`scope add` count). Then append a row to `docs/devflow/metrics/_aggregate.md` (create if missing) with `Type = refactor`, Tasks = tests created, Test Pass % = `—`, Iterations = Reviewer loops; recalculate averages. See the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) → Generation Rules → Standalone agents.
+
+### Step 11 — Release Session
+
+**Entry condition:** Step 9 (Reviewer) has returned a verdict and Step 10 (metrics) is complete. The session must stay alive through Steps 9–10 — both read and write it. Releasing it earlier is the exact defect this step exists to prevent. See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
+
+Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the refactor report is the persistent artifact).
 
 ---
 

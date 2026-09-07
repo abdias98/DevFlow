@@ -223,7 +223,6 @@ To verify:
 - [x] Standalone: Feature Agent — `docs/devflow/features/{filename}`
 ```
 4. Do **NOT** finish in-chat only. If `create_file` fails or the file is not present at the path above, STOP and report the failure.
-5. Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the feature report is the persistent artifact).
 
 ### Step 9 — Auto-Invoke Reviewer (Standalone Mode)
 
@@ -256,11 +255,17 @@ Pass to the Reviewer:
 
 After the Reviewer concludes (APPROVED, or BLOCKs resolved/escalated), finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 2): set the completed timestamp; fill files created/modified, tests created, the Reviewer's BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions (`scope add` count). Then append a row to `docs/devflow/metrics/_aggregate.md` (create if missing) with `Type = feature`, Tasks = tests created, Test Pass % = `—` in Pair mode or the actual rate in Standard/CI, Iterations = Reviewer loops; recalculate averages. See the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) → Generation Rules → Standalone agents.
 
+### Step 11 — Release Session
+
+**Entry condition:** Step 9 (Reviewer) has returned a verdict and Step 10 (metrics + knowledge-base write-back) is complete. The session (`context.md`, `phase-state.md`, scope list) must stay alive through Steps 9–10 — both read and write it. Releasing it earlier is the exact defect this step exists to prevent. See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
+
+Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/session/{slug}/` (the feature report is the persistent artifact).
+
 ---
 
 ## ⚠️ Completion Protocol (ALL MODELS)
 
-Emit this block ONLY after Step 10 concludes — never before the Reviewer has returned a verdict. It must reflect the final state:
+Emit this block ONLY after Step 11 concludes — never before the Reviewer has returned a verdict. It must reflect the final state:
 
 ```markdown
 ✅ Feature complete: docs/devflow/features/YYYY-MM-DD-{slug}-feature.md
