@@ -42,6 +42,17 @@ From `devflow-ctl scope impact` (exploration-guide.md sub-step 9) — one row pe
 
 If the design introduces no changes to existing files, state "N/A — no existing components modified" instead of an empty table.
 
+### Concurrency Strategy *(if `concurrency.md` applies — shared mutable state, race-prone operations, background/async work)*
+
+The mechanism chosen to make the critical invariant(s) safe under concurrent access, stated explicitly rather than left implicit in the code:
+
+| Invariant to protect | Mechanism (lock / conditional-update / queue / actor / other) | Why this one, not the alternatives | Failure mode if violated |
+|-----------------------|------------------------------------------------------------|-------------------------------------|---------------------------|
+
+Per `concurrency.md` §2: prefer a conditional/compare-and-set update at the data-store level over an in-process lock whenever the invariant must hold across multiple processes/workers — an in-memory lock only protects a single process. State which one applies here and why. This decision flows into Test Architecture below: a critical concurrency invariant requires a real concurrency test (see `concurrency.md` §2), not only a sequential unit test.
+
+If the feature has no shared mutable state or race-prone operation, state "N/A — no concurrency-sensitive invariant" instead of an empty table.
+
 ### Test Architecture
 
 | Layer/Area | Test types used | Tool | Available utilities | Reference test |
