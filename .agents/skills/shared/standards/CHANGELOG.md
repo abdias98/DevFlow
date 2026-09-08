@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.11.0 — 2026-09-08
+
+### Updated standards — 2.11.0
+- **`concurrency.md`** (→ v1.3.0): §2 now requires empirical evidence for business-critical atomicity fixes (inventory, balance, unique allocation) — a sequential unit test is explicitly not sufficient; a real concurrency test (simultaneous operations racing for the same contended resource) is required. Reflected in the Code Review Checklist (§8, new item) and Severity Classification (§9, new WARN trigger). Found during the Wave 15 validation run: two full `/devflow` cycles both produced the correct fix, but nothing in the framework *required* the concurrency test that proved it — it existed only because the Planner chose to add one. Refs: F48, Wave 15.
+
 ## 2.10.2 — 2026-09-07
 
 ### Updated standards — 2.10.2

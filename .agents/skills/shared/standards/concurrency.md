@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Concurrency & Async (Technology-Agnostic)
 
-> **Version:** 1.2.1 | **Last Updated:** 2026-09-07
+> **Version:** 1.3.0 | **Last Updated:** 2026-09-08
 
 > **Note on examples:** All primitives (locks, queues, atomics, async constructs) are illustrative. Replace them with the actual concurrency model and libraries of the detected stack (threads, async/await, actors, goroutines, event loop, etc.).
 
@@ -25,9 +25,11 @@ Apply these principles to all code you design, generate, or review that runs con
   - Make compound "check-then-act" / "read-modify-write" sequences atomic — via a lock, a transaction, an atomic primitive, or a conditional/compare-and-set update.
   - Push invariants into the data store where possible (unique constraints, conditional/optimistic updates with a version column).
   - Treat "it worked in testing" as no evidence of correctness — races are timing-dependent and intermittent.
+  - **When the invariant is critical to the business** (inventory/seat/slot availability, a balance, a unique allocation, anything where a violation means overselling, double-spending, or double-allocating) — **a sequential unit test is not sufficient evidence that the fix works.** Write and run a real concurrency test: multiple simultaneous operations (threads, async tasks, or concurrent requests, whichever fits the stack) racing for the same contended resource, then assert the invariant held (e.g., stock never went negative, exactly one winner for the last unit). A code review that only reads the implementation and asserts "this looks atomic" is not verification.
 - **DON'T:**
   - Implement reserve/decrement-stock, balance updates, or unique-slug allocation as a non-atomic read-then-write.
   - Rely on the order in which concurrent tasks happen to run.
+  - Claim a critical concurrency invariant is fixed on the strength of a sequential test alone — sequential execution never exercises the race window a concurrency bug lives in.
 
 ## 3. Locking Discipline
 
@@ -87,6 +89,7 @@ Apply these principles to all code you design, generate, or review that runs con
 When reviewing, verify:
 - [ ] Shared mutable state is either avoided or every access (read and write) is synchronized (§1).
 - [ ] Compound check-then-act / read-modify-write sequences are atomic, not racy (§2).
+- [ ] If the atomicity being reviewed protects a business-critical invariant (inventory, balance, unique allocation), a real concurrency test exists and was run — not only a sequential unit test (§2).
 - [ ] Locks are held for the shortest critical section, acquired in a consistent order, and always released on every exit path (§3).
 - [ ] Every async operation's result or failure is awaited/observed — no fire-and-forget where failure means data loss (§4).
 - [ ] Operations that may be retried or redelivered are idempotent (§5).
@@ -100,7 +103,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | Severity | Triggers |
 |----------|---------|
 | 🔴 **BLOCK** | Non-atomic check-then-act / read-modify-write on shared state where a race causes data loss, overselling, double-spend, or corruption (§2); fire-and-forget async task with no error handling where failure = data loss (§4); non-idempotent side effect applied with no dedup under at-least-once delivery (§5); blocking I/O or external call performed while holding a lock, or inconsistent lock ordering that can deadlock (§3) |
-| 🟡 **WARN** | Shared mutable state accessed from multiple contexts without clear synchronization (§1); unbounded parallel task spawning (§4); sync-over-async that can exhaust the pool (§4); lock held across slow work, or critical section larger than necessary (§3); background task spawned with no cancellation/shutdown handling (§7); reliance on plain writes for cross-context visibility (§6) |
+| 🟡 **WARN** | Shared mutable state accessed from multiple contexts without clear synchronization (§1); unbounded parallel task spawning (§4); sync-over-async that can exhaust the pool (§4); lock held across slow work, or critical section larger than necessary (§3); background task spawned with no cancellation/shutdown handling (§7); reliance on plain writes for cross-context visibility (§6); a business-critical atomicity fix (inventory, balance, unique allocation) with no real concurrency test — only a sequential unit test, or no test at all (§2) |
 | 🟢 **INFO** | Mutable shared structure where an immutable or message-passing design would be simpler (§1); missing graceful-shutdown drain (§7); opportunity to replace a lock with an atomic/lock-free structure (§3) |
 
 ## 10. Applying This Standard with a Limited Scope
