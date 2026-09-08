@@ -621,3 +621,259 @@ setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
   [ "$status" -eq 0 ]
   [[ "$output" == *"STALE lock"* ]]
 }
+
+# ── Lock: acquire / release / --force / stale (F22) ─────────────────────────────
+
+@test "lock acquire: acquires an unlocked session for the named agent" {
+  "$CTL" init --mode feature --slug la1 >/dev/null
+  "$CTL" lock release --slug la1 >/dev/null
+  run "$CTL" lock acquire Implementer --slug la1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"lock acquired by Implementer"* ]]
+  run "$CTL" config get branch --slug la1
+  [ "$status" -eq 0 ]
+}
+
+@test "lock acquire: fails when held by a different, non-stale agent without --force" {
+  "$CTL" init --mode feature --slug la2 >/dev/null
+  run "$CTL" lock acquire Implementer --slug la2
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"lock held by Orchestrator"* ]]
+  [[ "$output" == *"--force"* ]]
+}
+
+@test "lock acquire: --force breaks a non-stale lock held by another agent" {
+  "$CTL" init --mode feature --slug la3 >/dev/null
+  run "$CTL" lock acquire Implementer --force --slug la3
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"lock acquired by Implementer"* ]]
+}
+
+@test "lock acquire: a stale lock is acquirable without --force" {
+  "$CTL" init --mode feature --slug la4 >/dev/null
+  local state="$DEVFLOW_SESSION_ROOT/la4/phase-state.md"
+  sed -i 's/^locked_since:.*/locked_since: 2020-01-01T00:00:00Z/' "$state"
+  run "$CTL" lock acquire Implementer --slug la4
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"lock acquired by Implementer"* ]]
+}
+
+@test "lock acquire: requires an agent name" {
+  "$CTL" init --mode feature --slug la5 >/dev/null
+  run "$CTL" lock acquire --slug la5
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"usage: devflow-ctl lock acquire"* ]]
+}
+
+@test "lock release: sets locked_by to none and stamps locked_since" {
+  "$CTL" init --mode feature --slug lr1 >/dev/null
+  run "$CTL" lock release --slug lr1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"lock released"* ]]
+  grep -q "^locked_by: none" "$DEVFLOW_SESSION_ROOT/lr1/phase-state.md"
+  ! grep -q "^locked_since: —" "$DEVFLOW_SESSION_ROOT/lr1/phase-state.md"
+}
+
+@test "lock: unknown action is a usage error" {
+  "$CTL" init --mode feature --slug lu1 >/dev/null
+  run "$CTL" lock bogus --slug lu1
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"usage: devflow-ctl lock"* ]]
+}
+
+# ── Config: pair_mode / rigor validation (F22) ──────────────────────────────────
+
+@test "config set: pair_mode accepts true and false" {
+  "$CTL" init --mode feature --slug cfg1 >/dev/null
+  run "$CTL" config set pair_mode true --slug cfg1
+  [ "$status" -eq 0 ]
+  run "$CTL" config get pair_mode --slug cfg1
+  [ "$output" = "true" ]
+  run "$CTL" config set pair_mode false --slug cfg1
+  [ "$status" -eq 0 ]
+  run "$CTL" config get pair_mode --slug cfg1
+  [ "$output" = "false" ]
+}
+
+@test "config set: pair_mode rejects a non-boolean value" {
+  "$CTL" init --mode feature --slug cfg2 >/dev/null
+  run "$CTL" config set pair_mode maybe --slug cfg2
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"pair_mode must be 'true' or 'false'"* ]]
+}
+
+@test "config set: rigor accepts each of the 4 valid levels" {
+  "$CTL" init --mode feature --slug cfg3 >/dev/null
+  for level in light standard deep maximum; do
+    run "$CTL" config set rigor "$level" --slug cfg3
+    [ "$status" -eq 0 ]
+    run "$CTL" config get rigor --slug cfg3
+    [ "$output" = "$level" ]
+  done
+}
+
+@test "config set: rigor rejects an invalid level" {
+  "$CTL" init --mode feature --slug cfg4 >/dev/null
+  run "$CTL" config set rigor extreme --slug cfg4
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"rigor must be 'light', 'standard', 'deep', or 'maximum'"* ]]
+}
+
+@test "config set: unknown key is a usage error" {
+  "$CTL" init --mode feature --slug cfg5 >/dev/null
+  run "$CTL" config set bogus_key x --slug cfg5
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"key must be one of"* ]]
+}
+
+# ── Checkpoint: set / get / missing (F22) ───────────────────────────────────────
+
+@test "checkpoint set/get: round-trips a named checkpoint SHA" {
+  "$CTL" init --mode feature --slug cp1 >/dev/null
+  run "$CTL" checkpoint set pre-impl abc1234 --slug cp1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"checkpoint 'pre-impl' = abc1234"* ]]
+  run "$CTL" checkpoint get pre-impl --slug cp1
+  [ "$status" -eq 0 ]
+  [ "$output" = "abc1234" ]
+}
+
+@test "checkpoint get: a checkpoint that was never set fails clearly" {
+  "$CTL" init --mode feature --slug cp2 >/dev/null
+  run "$CTL" checkpoint get never-set --slug cp2
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"not recorded"* ]]
+}
+
+@test "checkpoint set: requires both a name and a sha" {
+  "$CTL" init --mode feature --slug cp3 >/dev/null
+  run "$CTL" checkpoint set pre-impl --slug cp3
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"usage: devflow-ctl checkpoint set"* ]]
+}
+
+# ── Knowledge base: list / add (F22) ────────────────────────────────────────────
+
+setup_knowledge() { export DEVFLOW_KNOWLEDGE_FILE="$BATS_TEST_TMPDIR/learnings.md"; }
+
+@test "knowledge list: reports 'not found' when the KB doesn't exist yet" {
+  setup_knowledge
+  run "$CTL" knowledge list
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Knowledge base not found"* ]]
+}
+
+@test "knowledge add: creates the KB with header + Cycle History when missing" {
+  setup_knowledge
+  echo "### demo-cycle — 2026-01-01" > "$BATS_TEST_TMPDIR/entry.md"
+  run "$CTL" knowledge add "$BATS_TEST_TMPDIR/entry.md"
+  [ "$status" -eq 0 ]
+  [ -f "$DEVFLOW_KNOWLEDGE_FILE" ]
+  grep -q "^## Cycle History" "$DEVFLOW_KNOWLEDGE_FILE"
+  grep -q "demo-cycle" "$DEVFLOW_KNOWLEDGE_FILE"
+}
+
+@test "knowledge list: counts entries correctly with no double-zero bug" {
+  setup_knowledge
+  echo "# KB" > "$DEVFLOW_KNOWLEDGE_FILE"
+  run "$CTL" knowledge list
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Entries: 0"* ]]
+  [[ "$output" != *$'Entries: 0\n0'* ]]
+}
+
+@test "knowledge add: fails when the entry file does not exist" {
+  setup_knowledge
+  run "$CTL" knowledge add "$BATS_TEST_TMPDIR/missing.md"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"file not found"* ]]
+}
+
+# ── Sessions listing (F22) ───────────────────────────────────────────────────────
+
+@test "sessions: reports no sessions found on an empty root" {
+  run "$CTL" sessions
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"No sessions found"* ]] || [[ "$output" == *"No active sessions found"* ]]
+}
+
+@test "sessions: lists an active session with phase, mode, and lock state" {
+  "$CTL" init --mode feature --slug se1 >/dev/null
+  run "$CTL" sessions
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"se1"* ]]
+  [[ "$output" == *"locked by Orchestrator"* ]]
+}
+
+@test "sessions: an unlocked session is reported as unlocked" {
+  "$CTL" init --mode feature --slug se2 >/dev/null
+  "$CTL" lock release --slug se2 >/dev/null
+  run "$CTL" sessions
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"se2"* ]]
+  [[ "$output" == *"unlocked"* ]]
+}
+
+@test "sessions: lists multiple concurrent sessions" {
+  "$CTL" init --mode feature --slug se3 >/dev/null
+  "$CTL" init --mode bugfix --slug se4 >/dev/null
+  run "$CTL" sessions
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"se3"* ]]
+  [[ "$output" == *"se4"* ]]
+}
+
+# ── Multi-session disambiguation for more commands (F03) ────────────────────────
+
+@test "config get: 2 sessions, exactly one actively locked, resolves without --slug" {
+  "$CTL" init --mode feature --slug msa >/dev/null
+  "$CTL" init --mode feature --slug msb >/dev/null
+  "$CTL" lock release --slug msb >/dev/null
+  run "$CTL" config get branch
+  [ "$status" -eq 0 ]
+}
+
+@test "checkpoint set: 2 sessions both unlocked still requires --slug" {
+  "$CTL" init --mode feature --slug msc >/dev/null
+  "$CTL" init --mode feature --slug msd >/dev/null
+  "$CTL" lock release --slug msc >/dev/null
+  "$CTL" lock release --slug msd >/dev/null
+  run "$CTL" checkpoint set pre-impl abc123
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"--slug"* ]]
+}
+
+# ── Status and phase (F22, completes 17/17 subcommand coverage) ────────────────
+
+@test "status: prints session summary with mode, phase, lock, and scope" {
+  "$CTL" init --mode feature --slug st1 --scope "src/*" >/dev/null
+  run "$CTL" status --slug st1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Session:   st1"* ]]
+  [[ "$output" == *"Mode:      feature"* ]]
+  [[ "$output" == *"Lock:      Orchestrator"* ]]
+  [[ "$output" == *"src/*"* ]]
+}
+
+@test "status: reports scope as not declared when none was set" {
+  "$CTL" init --mode feature --slug st2 >/dev/null
+  run "$CTL" status --slug st2
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Scope:     (not declared)"* ]]
+}
+
+@test "phase get/set: round-trips a numeric phase" {
+  "$CTL" init --mode feature --slug ph1 >/dev/null
+  run "$CTL" phase set 4 --slug ph1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"phase set to 4"* ]]
+  run "$CTL" phase get --slug ph1
+  [ "$output" = "4" ]
+}
+
+@test "phase set: rejects a non-numeric phase" {
+  "$CTL" init --mode feature --slug ph2 >/dev/null
+  run "$CTL" phase set implement --slug ph2
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"numeric phase required"* ]]
+}
