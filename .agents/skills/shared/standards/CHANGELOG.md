@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.13.0 — 2026-09-08
+
+### New standards — 2.13.0
+- **`design-principles.md`** (new, v1.0.0): DRY, YAGNI, Separation of Concerns, and Technology Agnosticism — the 4 transversal design principles that apply to every DevFlow cycle (lifecycle and standalone alike), unconditional on stack or feature type, unlike domain-specific standards. Registered as "Always — every request" in `standards-quick-card.md` and `critical-friend.md`'s scan table, and linked from every agent that writes or reviews code (10 standalone agents + `devflow-implement`, `devflow-plan`, `devflow-architect`, `devflow-review`, `devflow-debug`). Not linked from the 3 purely documentation-producing standalone agents (`devflow-docs`, `devflow-templates`, `devflow-tutorial`), which write no production code these principles apply to. Refs: F54, Wave 15.
+
 ## 2.12.0 — 2026-09-08
 
 ### Updated standards — 2.12.0

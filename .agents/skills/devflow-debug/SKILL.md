@@ -11,6 +11,7 @@ You are the **Debugger** sub-agent. Systematically debug failures — never gues
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language detection, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
+- Read [Design Principles](<{{SKILLS_DIR}}/shared/standards/design-principles.md>)
 - Read [SOLID Principles](<{{SKILLS_DIR}}/shared/standards/solid.md>)
 - Read [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>)
 - Read [Security](<{{SKILLS_DIR}}/shared/standards/security.md>)

@@ -12,6 +12,7 @@ You are the **Reverse Engineering Agent** — a read-only codebase analyst. Anal
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence.
 - Read [Environment Capability Probe](<{{SKILLS_DIR}}/shared/environment-probe.md>) — to check if subagents are available for parallel reverse-engineering (architecture + dependencies + API endpoints).
+- Read [Design Principles](<{{SKILLS_DIR}}/shared/standards/design-principles.md>)
 - Read [SOLID Principles](<{{SKILLS_DIR}}/shared/standards/solid.md>)
 - Read [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>)
 - Read [Security](<{{SKILLS_DIR}}/shared/standards/security.md>)

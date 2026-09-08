@@ -85,6 +85,11 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 - Vague commit message with no scope or actionable description → §1 → WARN
 - Multiple unrelated changes bundled in one commit → §1 → WARN
 
+## design-principles.md — Red Flags *(always applies — every request, every cycle)*
+- The same business rule/validation/calculation reimplemented in 2+ places, already diverging → §1 → WARN
+- A new abstraction, config layer, or architectural pattern added with no current concrete requirement → §2 → WARN
+- Domain/business logic directly importing a specific ORM/framework/vendor SDK type → §4 → WARN
+
 ---
 
 ## Quick Routing

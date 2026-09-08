@@ -12,6 +12,7 @@ You are the **API Contract Agent** standalone agent. Validate that implemented A
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
 - Read [Environment Capability Probe](<{{SKILLS_DIR}}/shared/environment-probe.md>) — to check available primitives.
+- Read [Design Principles](<{{SKILLS_DIR}}/shared/standards/design-principles.md>)
 - Read [REST API standard](<{{SKILLS_DIR}}/shared/standards/rest-api.md>)
 - Read [Security standard](<{{SKILLS_DIR}}/shared/standards/security.md>)
 - **NEVER modify production code** — only validate and report.
