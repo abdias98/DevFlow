@@ -57,7 +57,7 @@ Gather:
   - Read the review → count BLOCK/WARN/INFO + extract top categories.
   - Read `test-registry.md` → count tests, first-pass rate.
   - Read `context.md` → DoD coverage.
-  - Read `traceability.md` → coverage percentage.
+  - Run `devflow-ctl traceability check docs/devflow/session/{slug}/traceability.md` → coverage percentage (do not count rows yourself).
   - Fill all remaining values in `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`.
   - Run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` — it appends the row to `_aggregate.md` and recomputes the 4 Averages that have a real column behind them (cycle duration, BLOCKs, test pass rate, total cycles). Do NOT recompute these by reading the table yourself. "Most frequent BLOCK category" and "Phase with most retries" have no structured column to derive from — the command leaves them as a manual entry; fill or update them yourself from this cycle's review/iteration data if you have something concrete to add.
 - **Append to knowledge base** (`docs/devflow/knowledge-base/learnings.md`):
@@ -76,7 +76,7 @@ Gather:
 ### Step 4 — Generate Final Summary
 
 1. Present the summary using the [summary template](<{{SKILLS_DIR}}/devflow-finalize/summary-template.md>).
-2. Read `traceability.md` from session memory and include the Coverage Summary in the final report.
+2. Run `devflow-ctl traceability check docs/devflow/session/{slug}/traceability.md` and include its Coverage Summary output in the final report — do not recount the rows yourself.
 3. **Use `create_file` to save** the final summary to `docs/devflow/summaries/YYYY-MM-DD-{slug}-summary.md`.
 4. Include the Stack branches table if Stack Mode = yes.
 5. **Generate a PR description** — produce a ready-to-use PR description from the cycle artifacts and present it to the user:

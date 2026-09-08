@@ -36,6 +36,7 @@
 #   backlog add <file> <reason> [--severity b|i|f]    Record a deferred (Outside-zone) finding
 #   backlog list [--area <glob>]                      List deferred findings, optionally by area
 #   metrics aggregate <metrics-file>                  Append a cycle's metrics to _aggregate.md, recompute averages
+#   traceability check <file>                         Count Source/TOTAL coverage in a traceability matrix; exit 1 if <100%
 #   sessions                                         List all active DevFlow sessions with phase and state
 #   clean [--force]                                  Remove sessions unlocked/stale ≥30 min (never `status: cancelled`); --force removes all
 #   scan [secrets|sca|sast|all]                      Deterministic security scan (exit 1 on findings)
@@ -1064,6 +1065,77 @@ cmd_metrics() {
   esac
 }
 
+# ── Traceability coverage (deterministic) ────────────────────────────────────
+# Moves "count the traceability rows and check they're all DONE" from LLM
+# eyeballing to a tool that actually counts. Parses the Requirement -> Task ->
+# Test -> Implementation table (traceability-matrix.md's format): rows are
+# "| R<N> | {Source} | ... | {Status} |", Status is ⬜ PENDING / 🟡 IN PROGRESS
+# / ✅ DONE.
+
+_traceability_check() {
+  local file="$1"
+  local rows; rows="$(grep -E '^\| *R[0-9]+ *\|' "$file" 2>/dev/null || true)"
+  if [[ -z "$rows" ]]; then
+    fail "traceability check: no requirement rows found (expected '| R1 | ... |' rows in $file)"
+    return 1
+  fi
+
+  # Per-Source and total counts (Source is field 3, Status is the last
+  # non-empty field before the trailing "|") -- summarized deterministically
+  # instead of eyeballed.
+  local summary; summary="$(awk -F'|' '
+    {
+      src = $3; gsub(/^ +| +$/, "", src)
+      status = $(NF-1); gsub(/^ +| +$/, "", status)
+      total[src]++; grand_total++
+      if (status ~ /DONE/) { done[src]++; grand_done++ }
+    }
+    END {
+      for (s in total) printf "%s\t%d\t%d\n", s, done[s]+0, total[s]
+      printf "TOTAL\t%d\t%d\n", grand_done+0, grand_total
+    }
+  ' <<< "$rows")"
+
+  echo "Traceability Coverage — $file"
+  echo ""
+  printf "%-20s %8s %8s %6s\n" "Source" "Covered" "Total" "%"
+  local src done_n total_n pct grand_done=0 grand_total=0
+  while IFS=$'\t' read -r src done_n total_n; do
+    [[ "$src" == "TOTAL" ]] && { grand_done="$done_n"; grand_total="$total_n"; continue; }
+    pct=$(( total_n > 0 ? done_n * 100 / total_n : 0 ))
+    printf "%-20s %8d %8d %5d%%\n" "$src" "$done_n" "$total_n" "$pct"
+  done <<< "$summary"
+  local grand_pct=$(( grand_total > 0 ? grand_done * 100 / grand_total : 0 ))
+  printf "%-20s %8d %8d %5d%%\n" "TOTAL" "$grand_done" "$grand_total" "$grand_pct"
+  echo ""
+
+  if (( grand_pct < 100 )); then
+    echo "Uncovered requirements:"
+    awk -F'|' '{
+      status = $(NF-1); gsub(/^ +| +$/, "", status)
+      if (status !~ /DONE/) {
+        id = $2; req = $4; gsub(/^ +| +$/, "", id); gsub(/^ +| +$/, "", req)
+        print "  " id " — " req " (" status ")"
+      }
+    }' <<< "$rows"
+    fail "traceability coverage is ${grand_pct}% — not 100%, see uncovered requirements above"
+    return 1
+  fi
+  ok "traceability coverage is 100% (${grand_total}/${grand_total} requirements)"
+}
+
+cmd_traceability() {
+  case "${1:-}" in
+    check)
+      local file="${2:-}"
+      [[ -n "$file" ]] || die "usage: devflow-ctl traceability check <file>"
+      [[ -f "$file" ]] || die "traceability check: file not found at $file"
+      _traceability_check "$file"
+      ;;
+    *) die "usage: devflow-ctl traceability check <file>" ;;
+  esac
+}
+
 # ── Sessions list ─────────────────────────────────────────────────────────────
 # Lists all active DevFlow sessions with phase, mode, and lock state.
 
@@ -1518,6 +1590,7 @@ case "$CMD" in
   knowledge)  cmd_knowledge "$@" ;;
   backlog)    cmd_backlog "$@" ;;
   metrics)    cmd_metrics "$@" ;;
+  traceability) cmd_traceability "$@" ;;
   sessions)   cmd_sessions "$@" ;;
   clean)      cmd_clean "$@" ;;
   scan)       cmd_scan "$@" ;;

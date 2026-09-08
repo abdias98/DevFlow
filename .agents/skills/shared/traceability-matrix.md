@@ -73,8 +73,8 @@ After each task's Green Phase completes successfully:
 
 ### Reviewer (Phase 6 — validation)
 
-1. Check: every requirement row has Status `✅ DONE`.
-2. Any `⬜ PENDING` or `🟡 IN PROGRESS` rows → WARN or BLOCK (if critical requirement).
+1. Run `devflow-ctl traceability check docs/devflow/session/{slug}/traceability.md` — it deterministically counts covered vs. total per Source and overall; do not count rows yourself.
+2. Any row it lists as uncovered (`⬜ PENDING` or `🟡 IN PROGRESS`) → WARN or BLOCK (if critical requirement).
 3. Flag requirements with no test coverage as BLOCK.
 
 ### Finalizer (Phase 8 — reporting)

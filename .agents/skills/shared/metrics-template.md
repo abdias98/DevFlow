@@ -142,7 +142,7 @@ Standalone agents (Feature, Bug-Fix, Refactor) record a **lightweight** metrics 
 1. Read the review document from `docs/devflow/reviews/` → count BLOCK/WARN/INFO, extract top categories.
 2. Read `test-registry.md` → count tests created, first-pass rate.
 3. Read `context.md` → count DoD criteria, met/unmet.
-4. Read `traceability.md` → coverage percentage.
+4. Run `devflow-ctl traceability check traceability.md` → coverage percentage (do not count rows yourself).
 5. Fill all remaining metric values.
 6. Save the completed metrics file.
 

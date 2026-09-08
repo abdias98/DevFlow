@@ -1053,3 +1053,65 @@ EOF
   [ "$status" -eq 2 ]
   [[ "$output" == *"usage: devflow-ctl metrics aggregate"* ]]
 }
+
+# ── Traceability coverage (F58) ──────────────────────────────────────────────
+
+write_traceability_partial() {
+  cat > "$BATS_TEST_TMPDIR/trace-partial.md" << 'EOF'
+## Requirement → Task → Test → Implementation
+
+| # | Source | Requirement | Task | Test File | Test Scenario | Impl File | Status |
+|---|--------|-------------|------|-----------|---------------|-----------|--------|
+| R1 | DoD | Users can buy tickets | Task 1 | `t1.ts` | happy path | `s1.ts` | ✅ DONE |
+| R2 | DoD | No overselling | Task 2 | `t2.ts` | race condition | `s2.ts` | ✅ DONE |
+| R3 | Edge Case | Zero stock | Task 3 | `t3.ts` | zero stock | `s3.ts` | ⬜ PENDING |
+| R4 | Risk | Payment failure | Task 4 | `t4.ts` | payment declined | `s4.ts` | 🟡 IN PROGRESS |
+EOF
+}
+
+write_traceability_full() {
+  cat > "$BATS_TEST_TMPDIR/trace-full.md" << 'EOF'
+## Requirement → Task → Test → Implementation
+
+| # | Source | Requirement | Task | Test File | Test Scenario | Impl File | Status |
+|---|--------|-------------|------|-----------|---------------|-----------|--------|
+| R1 | DoD | Users can buy tickets | Task 1 | `t1.ts` | happy path | `s1.ts` | ✅ DONE |
+| R2 | Edge Case | Zero stock | Task 3 | `t3.ts` | zero stock | `s3.ts` | ✅ DONE |
+EOF
+}
+
+@test "traceability check: exits 1 and lists uncovered requirements when <100%" {
+  write_traceability_partial
+  run "$CTL" traceability check "$BATS_TEST_TMPDIR/trace-partial.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"50%"* ]]
+  [[ "$output" == *"R3 — Zero stock"* ]]
+  [[ "$output" == *"R4 — Payment failure"* ]]
+}
+
+@test "traceability check: reports per-Source coverage breakdown" {
+  write_traceability_partial
+  run "$CTL" traceability check "$BATS_TEST_TMPDIR/trace-partial.md"
+  [[ "$output" == *"DoD"*"100%"* ]]
+  [[ "$output" == *"Edge Case"*"0%"* ]]
+}
+
+@test "traceability check: exits 0 at 100% coverage" {
+  write_traceability_full
+  run "$CTL" traceability check "$BATS_TEST_TMPDIR/trace-full.md"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"100%"* ]]
+}
+
+@test "traceability check: fails clearly when no requirement rows are found" {
+  echo "# empty" > "$BATS_TEST_TMPDIR/trace-empty.md"
+  run "$CTL" traceability check "$BATS_TEST_TMPDIR/trace-empty.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"no requirement rows found"* ]]
+}
+
+@test "traceability check: fails clearly when the file is missing" {
+  run "$CTL" traceability check "$BATS_TEST_TMPDIR/nonexistent.md"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"file not found"* ]]
+}
