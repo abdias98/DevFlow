@@ -7,6 +7,9 @@
 #   4. Unreferenced files in shared/
 #   5. Version header presence in standards
 #   11. Skill ↔ prompt parity (every devflow-* skill has a mirror .prompt.md)
+#   12. Standards integrity (no orphans, no duplicate numbering, mandatory
+#       sections, lightweight citation-vs-content semantic check, Quick Card
+#       and Critical Friend registration)
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -106,7 +109,7 @@ while IFS= read -r shared_file; do
     warn "$rel — no other skill file references this file"
     $FIX_MODE && echo "       FIX: add a reference in the relevant SKILL.md or remove the file if unused"
   fi
-done < <(find "$SKILLS_DIR/shared" -name "*.md" -not -path "*/standards/*" -not -name "CHANGELOG.md" -not -name "i18n-*.md" -type f)
+done < <(find "$SKILLS_DIR/shared" -name "*.md" -not -name "CHANGELOG.md" -not -name "i18n-*.md" -type f)
 
 # ── 5. Version headers in standards ──────────────────────────────────────────
 header "5. Version headers in standards"
@@ -392,6 +395,87 @@ if [[ -d "$PROMPTS_DIR_CHECK" ]]; then
   [[ $parity_errors -eq 0 ]] && green "Every devflow-* skill has a mirror prompt and vice versa"
 else
   warn "$PROMPTS_DIR_CHECK/ not found — skipping skill/prompt parity check (run from the repo root)"
+fi
+
+# ── 12. Standards integrity ──────────────────────────────────────────────────
+header "12. Standards integrity"
+
+STANDARDS_DIR="$SKILLS_DIR/shared/standards"
+STD_ERRORS_BEFORE=$ERRORS
+
+if [[ -d "$STANDARDS_DIR" ]]; then
+  while IFS= read -r std_file; do
+    std_name=$(basename "$std_file")
+
+    # 12.1 — No orphans: every standard must be referenced by >=1 SKILL.md outside standards/.
+    if ! grep -rl "$std_name" "$SKILLS_DIR" --include="SKILL.md" 2>/dev/null | grep -q .; then
+      fail "$std_file — orphaned: no SKILL.md references '$std_name'"
+      $FIX_MODE && echo "       FIX: link it from a relevant SKILL.md's Rules block, or remove it if unused"
+    fi
+
+    # 12.2 — Numbering: no duplicate "## N." headings.
+    dup_numbers=$(grep -oP '^## \K[0-9]+(?=\.)' "$std_file" | sort | uniq -d || true)
+    if [[ -n "$dup_numbers" ]]; then
+      while IFS= read -r n; do
+        fail "$std_file — duplicate section number '## $n.' (used more than once)"
+      done <<< "$dup_numbers"
+    fi
+
+    # 12.3 — Mandatory sections.
+    for required in "Severity Classification" "Code Review Checklist" "Applying This Standard with a Limited Scope"; do
+      if ! grep -q "$required" "$std_file" 2>/dev/null; then
+        fail "$std_file — missing mandatory section: '$required'"
+        $FIX_MODE && echo "       FIX: add a '## N. $required' section"
+      fi
+    done
+    if ! grep -qE '^\*\*Version:\*\*|^> \*\*Version:\*\*' "$std_file" 2>/dev/null; then
+      fail "$std_file — missing version header (expected '> **Version:** X.Y.Z')"
+    fi
+
+    # 12.4 — Lightweight semantic citation check: a "(§N)" trigger should share a
+    # significant word (>=5 letters, common words excluded) with the *body* of
+    # section N it cites — not just its 2-3 word title, which is too sparse and
+    # produces near-total false positives against real, on-topic citations.
+    STOPWORDS_RE='^(their|there|these|those|which|where|while|about|would|could|should|being|other|after|before|within|without|every|always|never|applied|applies|applying|instead|through|between|because|standard|section|following|reviewed|generated)$'
+    while IFS=$'\t' read -r sect_num sect_body; do
+      [[ -z "$sect_num" ]] && continue
+      body_words=$(tr 'A-Z' 'a-z' <<<"$sect_body" | grep -oE '[a-z]{5,}' | grep -vE "$STOPWORDS_RE" | sort -u || true)
+      [[ -z "$body_words" ]] && continue
+      while IFS= read -r ctx; do
+        [[ -z "$ctx" ]] && continue
+        ctx_words=$(tr 'A-Z' 'a-z' <<<"$ctx" | grep -oE '[a-z]{5,}' | grep -vE "$STOPWORDS_RE" || true)
+        match=false
+        while IFS= read -r w; do
+          [[ -z "$w" ]] && continue
+          if grep -qx "$w" <<<"$body_words"; then match=true; break; fi
+        done <<< "$ctx_words"
+        if ! $match; then
+          warn "$std_file — citation '(§$sect_num)' shares no significant term with section §$sect_num's body: \"${ctx:0:80}...\""
+        fi
+      done < <(grep -oP "[^;.|]*\(§${sect_num}\)" "$std_file" 2>/dev/null || true)
+    done < <(awk '
+      /^## [0-9]+\./ {
+        if (n != "") print n "\t" body;
+        line = $0; sub(/^## /, "", line); split(line, parts, ".");
+        n = parts[1]; body = "";
+        next
+      }
+      { body = body " " $0 }
+      END { if (n != "") print n "\t" body }
+    ' "$std_file")
+
+    # 12.5 — Registered in the Quick Card and critical-friend.md's scan table.
+    if [[ -f "$SKILLS_DIR/shared/standards-quick-card.md" ]] && ! grep -q "$std_name" "$SKILLS_DIR/shared/standards-quick-card.md" 2>/dev/null; then
+      warn "$std_file — not registered in standards-quick-card.md"
+    fi
+    if [[ -f "$SKILLS_DIR/shared/critical-friend.md" ]] && ! grep -q "$std_name" "$SKILLS_DIR/shared/critical-friend.md" 2>/dev/null; then
+      warn "$std_file — not registered in critical-friend.md's scan table"
+    fi
+  done < <(find "$STANDARDS_DIR" -name "*.md" -not -name "CHANGELOG.md" -type f)
+
+  [[ $ERRORS -eq $STD_ERRORS_BEFORE ]] && green "All standards pass the integrity check (no orphans, no duplicate numbering, all mandatory sections present)"
+else
+  warn "$STANDARDS_DIR/ not found — skipping standards integrity check (run from the repo root)"
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
