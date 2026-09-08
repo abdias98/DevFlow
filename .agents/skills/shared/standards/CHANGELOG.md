@@ -4,6 +4,12 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.9.5 — 2026-09-07
+
+### Updated standards — 2.9.5
+- **`rest-api.md`** (→ v2.3.1): added a precedence note to §4 (Response Structure) — RFC 9457 Problem Details (§7) governs error response bodies whenever adopted, prevailing over the success envelope's `errors` field; the two sections previously read as contradictory. Unified the nested-path threshold: §1's "more than 2–3 levels" and the Severity table's ">3 levels" now both read ">3 levels".
+- **`accessibility.md`** (→ v1.2.1) / **`ui-design.md`** (→ v2.4.2): fixed a contradictory touch-target threshold — accessibility.md §7 now states the WCAG 2.2 AA floor (**24×24 CSS px**, 2.5.8) as the required minimum and the AAA recommendation (**44×44 CSS px**, 2.5.5, already ui-design.md's own default) as a separate, non-blocking preference. Both standards' Severity tables split the single "below 44×44" WARN into a 24×24 WARN (AA violation) and a 44×44 INFO (AAA gap). Refs: F25, F26, Wave 13.
+
 ## 2.9.4 — 2026-09-07
 
 ### Updated standards — 2.9.4

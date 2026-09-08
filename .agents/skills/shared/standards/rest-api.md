@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: REST API Design (Technology-Agnostic)
 
-> **Version:** 2.3.0 | **Last Updated:** 2026-09-07
+> **Version:** 2.3.1 | **Last Updated:** 2026-09-07
 
 > **Apply only if:** the project has HTTP endpoints, REST controllers, or API contracts.
 > If this is a CLI, library, background worker, or frontend-only project, skip this standard entirely.
@@ -17,7 +17,7 @@ Apply these principles to all API endpoints you design, generate, or review.
   - Use query parameters for filtering, sorting, and pagination, not for identifying resources.
 - **DON'T:**
   - Use verbs in URIs: `GET /getUsers`, `POST /createOrder`, `DELETE /removeItem`.
-  - Create deeply nested paths (more than 2–3 levels). Prefer independent resource endpoints and linking instead.
+  - Create deeply nested paths (more than 3 levels — see the Severity Classification's `>3 levels` INFO trigger). Prefer independent resource endpoints and linking instead.
   - Embed actions into resource names (e.g., `/activateUser`). Use sub‑resources with the correct HTTP method: `PATCH /users/{id}/status`.
 
 ## 2. HTTP Methods & Semantics
@@ -59,11 +59,12 @@ Apply these principles to all API endpoints you design, generate, or review.
 
 ## 4. Response Structure
 - **What:** Consistent response shapes reduce client-side complexity.
+- **Precedence note:** the envelope below governs **success** responses. If the API adopts RFC 9457 Problem Details (§7) for errors — the preferred format — error responses use §7's `type`/`title`/`status`/`detail` shape instead of this envelope's `errors` array; §7 prevails for error bodies whenever it is in effect. Only when RFC 9457 is *not* adopted does an error use this envelope's own `errors` field, per §7's custom-envelope fallback.
 - **DO:**
-  - Use a consistent envelope for all responses. A widely adopted pattern: `{ "data": ..., "meta": ..., "errors": [...] }`.
+  - Use a consistent envelope for all **success** responses. A widely adopted pattern: `{ "data": ..., "meta": ..., "errors": [...] }`.
     - `data`: the payload (object for single resource, array for collections).
     - `meta`: pagination info, total count, links.
-    - `errors`: structured error objects when not successful (see Principle 7).
+    - `errors`: structured error objects when not successful, **only if RFC 9457 (§7) is not adopted** — see the precedence note above.
   - Use a standard date/time format (e.g., ISO 8601) across the entire API.
   - Return the full resource representation on `POST` and `PUT/PATCH` (unless the client specifies a preference for a minimal response via headers).
 - **DON'T:**
