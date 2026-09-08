@@ -13,7 +13,7 @@ You are the **Refactorer** standalone agent. Improve existing code without chang
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
 - Read [Environment Capability Probe](<{{SKILLS_DIR}}/shared/environment-probe.md>) — to check if subagents are available for verification.
 - **Standards — scan first, load on demand.** Start with the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) (fast BLOCK-trigger scan). Load a full standard **only when** a quick-card red flag matches or the target code clearly falls in its domain — do not load every standard upfront:
-  - General: [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
+  - General: [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>) · [Git Conventions](<{{SKILLS_DIR}}/shared/standards/git-conventions.md>)
   - [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) — when API endpoints are involved.
   - [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) · [Accessibility](<{{SKILLS_DIR}}/shared/standards/accessibility.md>) — when a UI component is involved.
   - Cite the specific section in every finding: `{standard}.md §{N} → {BLOCK|WARN|INFO}` (consult each standard's Severity Classification).
@@ -197,9 +197,9 @@ Run a critical self-review:
 - **Honesty check:** Is there anything about this refactoring that you would critique if a colleague did it?
 
 If a BLOCK issue is found **that can be fixed within the approved scope** → run `devflow-ctl iterate implement_review --slug {slug}`; on exit 0, fix it before continuing. On exit 1 (limit exceeded) → present the findings to the user instead of looping.
-If the fix would require editing a file outside the scope → **do NOT fix it.** Add an INFO comment and mention it in the final report.
+If the fix falls in the Impact Zone with a closed coherence reason → fix it and record `devflow-ctl scope justify <file> "<reason>"`. Otherwise → defer it: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` and mention it in the final report (`rules.md` → Scope-Locking — Three Zones).
 
-**Commit** — only once the post-refactor behavior check and self-review/verifier both clear. Standard/CI auto-executes; Pair instructs the user with the exact command:
+**Commit** (per `git-conventions.md` §1) — only once the post-refactor behavior check and self-review/verifier both clear. Standard/CI auto-executes; Pair instructs the user with the exact command:
 `refactor({scope}): {description}`
 
 - **Pair mode:** DO NOT run the tests above — the commands are for the user.

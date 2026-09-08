@@ -8,7 +8,7 @@ This document defines the canonical pattern for adaptive skill prescriptiveness.
 
 ## How It Works
 
-The [rigor level](./rules.md) (set by the Planner in Phase 4: `light` | `standard` | `deep` | `maximum`) controls how prescriptive the skill procedures are. This is a **framework-level** adjustment — the framework changes its own scaffolding, not the model's behavior.
+The rigor level (`light` | `standard` | `deep` | `maximum`) controls how prescriptive the skill procedures are. It is set by the Planner in Phase 4 for lifecycle cycles, or by the standalone agent itself in [standalone-execution.md](./standalone-execution.md) → Step 0, using the same classification criterion. This is a **framework-level** adjustment — the framework changes its own scaffolding, not the model's behavior.
 
 ### Rigor → Prescriptiveness mapping
 
@@ -47,7 +47,7 @@ These invariants are the floor — they apply at every rigor level. The rigor le
 
 ### Rigor → Verification Layers
 
-The rigor level controls which verification layers run during Phase 5 (Implementer) and Phase 6 (Reviewer):
+The rigor level controls which verification layers run during Phase 5 (Implementer) and Phase 6 (Reviewer) in a lifecycle cycle — and, identically, during a standalone agent's own implementation and verification steps ([standalone-execution.md](./standalone-execution.md) → §8):
 
 | Rigor | Task Supervisor (per-wave) | Verifier (post-waves) | Reviewer | Extra checkpoints |
 |-------|:---:|:---:|:---:|:---:|
@@ -93,7 +93,7 @@ This makes the adaptation visible to the user — they know what scaffolding is 
 
 ## When to Use Each Rigor Level
 
-The Planner (Phase 4) classifies the feature and sets the rigor level. The classification is a **framework decision**, documented in `context.md` and visible to the user:
+The Planner (Phase 4) classifies the feature and sets the rigor level for a lifecycle cycle; a standalone agent classifies its own cycle the same way at Step 0 ([standalone-execution.md](./standalone-execution.md)). The classification is a **framework decision**, documented in `context.md` and visible to the user:
 
 | Feature type | Default rigor | Rationale |
 |--------------|---------------|-----------|
@@ -102,7 +102,7 @@ The Planner (Phase 4) classifies the feature and sets the rigor level. The class
 | Complex (new feature, integration, refactoring) | `deep` | The agent follows the procedure literally, flags deviations |
 | Frontier (migration, architecture change, novel algorithm) | `maximum` | The agent follows exactly, escalates conservatively, extra verification |
 
-The user can override the Planner's classification at the Confirmation Gate.
+The user can override the classification at the Confirmation Gate (lifecycle) or the approval gate (standalone).
 
 ---
 

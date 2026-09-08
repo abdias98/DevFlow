@@ -139,7 +139,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 1. Verify entry condition: `context.md` exists and has Goal + DoD + Constraints.
 2. **Perform the validation yourself** (you are the Orchestrator and have full context). Follow the [Validation Gate checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Validation Gate section:
    - **Challenge assumptions** — question every unstated or stated assumption. Is this really necessary? Is this the best approach?
-   - **Scan standards** — check against SOLID, Security, Clean Architecture, Performance, REST API (if applicable), UI Design (if applicable).
+   - **Scan standards** — scan the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) first; load the full standard for any domain a red flag matches or that clearly applies.
    - **Flag contradictions** — any internal inconsistencies in the requirements?
    - **Security scan** — establish a deterministic baseline first, then reason about what a scanner cannot see:
      - **Standard/CI mode:** auto-execute the read-only `devflow-ctl scan all` (committed secrets + dependency CVEs). **Pair mode:** ask the user to run it and report the output. The command **skips gracefully** when a scanner is absent — note any skipped scan.

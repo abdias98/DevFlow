@@ -12,9 +12,9 @@ You are the **Feature Agent** standalone agent. Implement small-to-medium featur
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
 - Read [Environment Capability Probe](<{{SKILLS_DIR}}/shared/environment-probe.md>) — to check if subagents and vision are available.
-- Read [Task Supervisor](<{{SKILLS_DIR}}/shared/task-supervisor.md>) — for verifying task subagent output when subagents are available.
+- Read [Task Supervisor](<{{SKILLS_DIR}}/shared/task-supervisor.md>) — for verifying task subagent output when subagents are available. Same rigor-based skip criteria as the lifecycle Implementer ([adaptive-skills.md](<{{SKILLS_DIR}}/shared/adaptive-skills.md>) → Rigor → Verification Layers): skip at `light` rigor, or at `standard` unless 5+ tasks; run for `deep`/`maximum`.
 - **Standards — scan first, load on demand.** Start with the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) (fast BLOCK-trigger scan). Load a full standard **only when** a quick-card red flag matches or the change clearly falls in its domain — do not load every standard upfront:
-  - General: [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
+  - General: [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>) · [Git Conventions](<{{SKILLS_DIR}}/shared/standards/git-conventions.md>)
   - [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) — when API endpoints are involved.
   - [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) · [Accessibility](<{{SKILLS_DIR}}/shared/standards/accessibility.md>) — when a UI component is involved.
   - Cite the specific section in every finding: `{standard}.md §{N} → {BLOCK|WARN|INFO}` (consult each standard's Severity Classification).
@@ -23,7 +23,7 @@ You are the **Feature Agent** standalone agent. Implement small-to-medium featur
 - **NEVER add scope beyond what the user requested** or what the approved mini-plan explicitly includes.
 - **If complexity is HIGH** (>5 files, architectural changes, new components >2) → recommend `/devflow` instead.
 - **ALWAYS check for reusable existing code** before creating anything new.
-- **When applying standards:** If a clean-architecture, SOLID, or other standard requires editing files outside the approved scope, **do not edit them**. Instead, add an INFO comment in the in-scope file describing the recommended change.
+- **When applying standards:** if the fix falls in the Impact Zone with a closed coherence reason, apply it and record `devflow-ctl scope justify <file> "<reason>"`; otherwise defer it via `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` (`rules.md` → Scope-Locking — Three Zones).
 - **Artifacts created by this skill** (plan documents, feature reports at `docs/devflow/features/`) are **always allowed**, even if the user's declared scope did not include them. They are not subject to the “outside the declared scope” restriction.
 
 ---
@@ -145,7 +145,7 @@ For each task in the approved plan:
 4. Verify the test PASSES:
    - **Standard/CI:** run `{Test Command (single file)} {test path}`. If it fails → run `devflow-ctl iterate implement_debug --slug {slug}`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
    - **Pair:** ask the user to run the command and paste the output. Do NOT commit until PASS is confirmed.
-5. Commit `feat({scope}): {task description}` — Standard/CI auto-commit; Pair instructs the user with the exact commands.
+5. Commit `feat({scope}): {task description}` (per `git-conventions.md` §1) — Standard/CI auto-commit; Pair instructs the user with the exact commands.
 6. Record progress in `test-registry.md`: test file, test name, status (`red-confirmed`, `passing`).
 
 ### Step 6 — Verification (Self-Review or Verifier Subagent)
@@ -175,7 +175,7 @@ Run a critical self-review with a deliberate context reset:
 - **Honesty check:** Is there anything about this implementation that you would critique if a colleague wrote it?
 
 If a BLOCK issue is found **that can be fixed within the files already in the approved plan** → run `devflow-ctl iterate implement_review --slug {slug}`; on exit 0, fix it before continuing. On exit 1 (limit exceeded) → present the findings to the user instead of looping.
-If the fix would require editing a file outside the plan → **do NOT fix it.** Add an INFO comment in the closest in-scope file and mention it in the final report.
+If the fix falls in the Impact Zone with a closed coherence reason → fix it and record `devflow-ctl scope justify <file> "<reason>"`. Otherwise → defer it: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` and mention it in the final report (`rules.md` → Scope-Locking — Three Zones).
 
 **Compile recommendations** — include an `### Additional Recommendations` section in your response with:
 - Out-of-scope improvements discovered during implementation.

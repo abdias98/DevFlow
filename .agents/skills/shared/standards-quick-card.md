@@ -77,6 +77,11 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 - Keyboard trap with no exit → §3
 - Critical form input with no programmatic label → §6
 
+## git-conventions.md — Red Flags
+- Direct commit to a protected branch (`main`/`master`) without a PR → §2 → BLOCK
+- Vague commit message with no scope or actionable description → §1 → WARN
+- Multiple unrelated changes bundled in one commit → §1 → WARN
+
 ---
 
 ## Quick Routing

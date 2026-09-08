@@ -44,6 +44,16 @@ Every standalone agent opens its session the same way, before doing anything els
 4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — read the **By Topic** section relevant to this task. Check for implementation patterns, anti-patterns, and known pitfalls before doing anything else.
 5. Read `## Stack Profile` from `context.md`. If not found, perform [Quick Stack Detection](./stack-detection.md) and write it.
 6. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](./metrics-template.md) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: {agent}`, slug, and stack. Leave quality values empty until §9.
+7. **Classify rigor level** — using the same criterion as the Planner (`devflow-plan/SKILL.md` → Step 4):
+
+   | Level | When | Effect on the cycle |
+   |-------|------|---------------------|
+   | `light` | Trivial change (rename, typo, comment, single-line fix) | Minimal plan, single-pass review, fewer checkpoints |
+   | `standard` | Routine change (standard CRUD, test writing, simple component) | Full plan + TDD + review (default) |
+   | `deep` | Complex change (new capability, integration, refactoring, multi-file) | Full plan + TDD + review + extra attention to edge cases |
+   | `maximum` | Frontier task (codebase-wide migration, architecture change, novel algorithm) | Full plan + TDD + review + conservative escalation + extra checkpoints |
+
+   Set it with `devflow-ctl config set rigor {level}`. Document the chosen level and rationale in the plan header under `**Rigor:** {level} — {one-line reason}` — the approval gate (§3) surfaces it to the user, who may override it. This rigor level governs both how the agent reads its own SKILL.md procedure ([adaptive-skills.md](./adaptive-skills.md)) and the verifier/supervisor thresholds in §8 below.
 
 ---
 
@@ -131,11 +141,15 @@ Before self-review or verifier dispatch (§8), run the project's `Lint Command` 
 
 ## 8. Verification — Self-Review or Verifier Subagent
 
-The verification method depends on environment capabilities and plan size:
+The verification method depends on environment capabilities and the rigor level classified in §1.7 (same thresholds as the lifecycle Implementer — [adaptive-skills.md](./adaptive-skills.md) → Rigor → Verification Layers):
 
-**If `subagents: yes` AND the plan is non-trivial (2+ tasks OR more than 3 files affected):** dispatch a **fresh-context verifier subagent** following [verifier-subagent.md](./verifier-subagent.md). It reads the plan and modified files from scratch (no inherited agent bias), checks structural completeness / scope compliance / plan compliance / obvious issues, and returns a verdict. Act on findings: fix BLOCKs and re-verify (via `iterate implement_review`), note WARNs for the Reviewer.
+- **`light`:** always skip the verifier subagent — inline self-review only, kept brief.
+- **`standard`:** dispatch the verifier only if the plan is non-trivial (3+ tasks OR more than 3 files affected); otherwise inline self-review.
+- **`deep` / `maximum`:** always dispatch the verifier if `subagents: yes`; `maximum` additionally escalates conservatively (2 failed attempts instead of 3) throughout the cycle.
 
-**Otherwise (inline self-review):** run a critical self-review — security, naming, SOLID, Clean Architecture, performance, and an honesty check ("would I critique this if a colleague wrote it?"). Fix in-scope BLOCKs via `iterate implement_review`; if the fix needs a file outside the plan, do NOT fix it — add an INFO note and mention it in the final report.
+**When dispatching:** run a **fresh-context verifier subagent** following [verifier-subagent.md](./verifier-subagent.md). It reads the plan and modified files from scratch (no inherited agent bias), checks structural completeness / scope compliance / plan compliance / obvious issues, and returns a verdict. Act on findings: fix BLOCKs and re-verify (via `iterate implement_review`), note WARNs for the Reviewer.
+
+**Inline self-review** (no subagent available, or rigor says to skip it): run a critical self-review — security, naming, SOLID, Clean Architecture, performance, and an honesty check ("would I critique this if a colleague wrote it?"). Fix in-scope BLOCKs via `iterate implement_review`. If a BLOCK's fix falls in the Impact Zone with a closed coherence reason, fix it and record `devflow-ctl scope justify <file> "<reason>"`; otherwise defer it via `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` (`rules.md` → Scope-Locking — Three Zones) and mention it in the final report.
 
 ---
 
