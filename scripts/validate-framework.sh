@@ -12,6 +12,9 @@
 #       and Critical Friend registration)
 #   13. Standalone enforcement matrix (init/lock check/scope/approval gate/
 #       closing order per standalone agent)
+#   14. Standards duplication (DRY) — flags near-identical prose lines shared
+#       between two standards, outside the intentionally-shared Limited Scope
+#       closing block
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -546,6 +549,39 @@ for agent in "${STANDALONE_ALL[@]}"; do
 done
 
 [[ $ERRORS -eq 0 ]] && green "All standalone agents satisfy the enforcement matrix (init, lock check, scope, approval gate, closing order)"
+
+# ── 14. Standards duplication (DRY) ──────────────────────────────────────────
+header "14. Standards duplication (DRY)"
+
+# Strips the shared Limited Scope closing block (the six-closed-coherence-
+# reasons paragraph is intentionally identical across every standard -- part
+# of the three-zone scope model template, not an unresolved overlap) plus
+# headings, tables, and blank lines, leaving only substantial prose lines.
+_std_dup_lines() {
+  awk '/^## [0-9]+\. Applying This Standard with a Limited Scope/{exit} {print}' "$1" \
+    | grep -vE '^#|^[[:space:]]*$|^\|' \
+    | awk 'length($0) >= 80'
+}
+
+if [[ -d "$STANDARDS_DIR" ]]; then
+  mapfile -t _STD_FILES < <(find "$STANDARDS_DIR" -name "*.md" -not -name "CHANGELOG.md" -type f | sort)
+  dup_warnings=0
+  for ((_i = 0; _i < ${#_STD_FILES[@]}; _i++)); do
+    for ((_j = _i + 1; _j < ${#_STD_FILES[@]}; _j++)); do
+      a="${_STD_FILES[$_i]}"; b="${_STD_FILES[$_j]}"
+      while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        if grep -qxF "$line" "$b" 2>/dev/null; then
+          warn "$(basename "$a") and $(basename "$b") share a near-identical line — possible unresolved DRY overlap (see standards-dry-policy.md): \"${line:0:90}...\""
+          ((dup_warnings++)) || true
+        fi
+      done < <(_std_dup_lines "$a")
+    done
+  done
+  [[ $dup_warnings -eq 0 ]] && green "No unresolved duplication found between standards"
+else
+  warn "$STANDARDS_DIR/ not found — skipping standards duplication check (run from the repo root)"
+fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""
