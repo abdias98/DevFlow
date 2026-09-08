@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Testing (Technology-Agnostic)
 
-> **Version:** 1.2.2 | **Last Updated:** 2026-09-07
+> **Version:** 1.3.0 | **Last Updated:** 2026-09-08
 
 > **Note on examples:** All tool names, directory names, and code fragments are illustrative. Replace them with the actual test runner, utilities, and conventions of the detected stack.
 
@@ -17,6 +17,7 @@ Apply these principles to all tests you design, generate, or review. TDD is non-
   - Invert the pyramid (many E2E, few unit tests) — it produces a slow, brittle, and expensive suite.
   - Skip unit tests in favor of integration tests "because they test more" — integration tests are slower and harder to isolate failures.
   - Write tests that depend on the order in which they run. Each test must be fully independent.
+- **Concurrency/load tests are orthogonal to this pyramid, not a layer within it.** A feature with a business-critical concurrency invariant (see `concurrency.md` §2) needs a test that launches multiple simultaneous operations against the same contended resource — this is neither a unit test (it isn't sequential) nor a full E2E test (it isn't validating a user journey). Budget for it separately; do not skip it because "the pyramid is already covered" by unit/integration/E2E counts.
 
 ## 2. Test Anatomy — Arrange / Act / Assert
 

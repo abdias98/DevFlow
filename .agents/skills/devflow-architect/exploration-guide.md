@@ -6,7 +6,7 @@ This guide is used by the **Architect** during Phase 2. Exploration is **read-on
 
 ## When to Skip
 
-If `AGENTS.md` was found → skip sub-steps 1, 2, 4, 5, 6. Run only **sub-steps 3, 7, 8, and 9**.
+If `AGENTS.md` was found → skip sub-steps 1, 2, 4, 5, 6. Run only **sub-steps 3, 7, 8, 9, and 10**.
 
 ## Sub-steps
 
@@ -68,6 +68,14 @@ For each existing component the design will modify (as opposed to purely new fil
 - If the design introduces no changes to existing files (pure addition), state that explicitly — `## Impact Analysis` still exists, with "N/A — no existing components modified."
 
 This is what lets the Plan's Impact Zone block (Planner, Phase 4) start from a real list instead of discovering ripple effects mid-implementation.
+
+### 10. Concurrency Strategy Decision ⚠️ MANDATORY WHEN APPLICABLE — WRITES SPEC
+
+If `concurrency.md` is one of the standards that applies to this feature (shared mutable state, a race-prone check-then-act sequence, or background/async work touching a limited/contended resource — e.g. inventory, seat/slot availability, a rate limit, a balance), you MUST decide the concurrency mechanism **now**, at design time, not leave it for the Implementer to improvise mid-task.
+
+**MANDATORY OUTPUT:** Record the decision in the spec under `## Concurrency Strategy` (see spec-template.md): the invariant being protected, the mechanism chosen (lock, conditional/compare-and-set update, queue, actor, or another), why that one over the alternatives, and the failure mode if the invariant is violated. If the feature has no concurrency-sensitive invariant, state "N/A" explicitly rather than omitting the section.
+
+This decision is not cosmetic — it determines what Test Architecture (above) must include: per `concurrency.md` §2, a critical concurrency invariant is not considered verified by a sequential unit test alone; the Plan (Phase 4) must schedule a real concurrency test (multiple simultaneous operations against the same contended resource) as one of its tasks.
 
 ---
 

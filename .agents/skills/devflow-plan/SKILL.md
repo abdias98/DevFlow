@@ -73,6 +73,8 @@ Set the rigor level with `devflow-ctl config set rigor {level}`. Document the ch
 
 **Decompose the spec into atomic tasks.** Break down the architecture into ordered, testable tasks following TDD order.
 
+**If the spec's `## Concurrency Strategy` declares a real invariant** (not "N/A"), one of the tasks MUST be a real concurrency test — multiple simultaneous operations racing for the same contended resource, asserting the invariant held — per `concurrency.md` §2. A sequential unit task alone does not satisfy this; add it as its own task rather than folding it into the main implementation task, so the Reviewer can verify it ran (test output, not just presence in the diff).
+
 ### Step 5 — Stack Planning *(only if Stack Mode = yes)*
 
 Follow the [stack planning rules](<{{SKILLS_DIR}}/devflow-plan/stack-planning.md>) to group tasks into Stacks and prepare branch metadata. The Planner provides the git commands for branch creation but never creates PRs automatically.
