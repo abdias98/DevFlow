@@ -2,6 +2,7 @@
 
 Metrics are recorded per cycle and saved to `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`. An aggregate file `docs/devflow/metrics/_aggregate.md` tracks cross-cycle trends.
 
+**Contract artifact:** `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`
 **Initialized by:** Orchestrator (Step 0 — creates empty metrics stub)
 **Updated by:** Orchestrator (phase completions — timing + iteration counts)
 **Finalized by:** Finalizer (quality metrics + aggregate update)
