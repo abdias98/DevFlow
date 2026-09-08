@@ -38,11 +38,12 @@ Read session memory: `context.md` (feature, slug, Stack Mode), `phase-state.md` 
 2. **Review:** Check the latest review document in `docs/devflow/reviews/`. If BLOCK findings remain unresolved → STOP, route to Implementer.
 3. **Deferred backlog:** Re-read the review document for any `🟠 INCOMPLETE` finding. Run `devflow-ctl backlog list --area {this cycle's scope}` and confirm every one of them has a matching entry — an INCOMPLETE finding must never vanish when session memory is cleaned. If one is missing (e.g., the Reviewer's step was skipped), run `devflow-ctl backlog add {file} "{reason}" --severity incomplete` for it now, before proceeding.
 4. **DoD:** Verify each criterion from `context.md`. Flag any unverifiable items to the user.
-5. **Dependencies:** If `Audit Command` is configured in Stack Profile (mode-aware — see Rules):
-   - **Standard / CI mode:** auto-execute `{Audit Command}` and read the result.
-   - **Pair mode:** ask the user — *"Run dependency audit: `{Audit Command}`. Report any vulnerabilities found."*
+5. **Dependencies:** Run `devflow-ctl scan sca` (mode-aware — see Rules) — the same deterministic, language-agnostic dependency-vulnerability audit the Validation Gate already uses, so both gates report through one path instead of two uncorrelated mechanisms:
+   - **Standard / CI mode:** auto-execute the read-only command and read the result.
+   - **Pair mode:** ask the user — *"Run `devflow-ctl scan sca`. Report any vulnerabilities found."*
    - Critical/High vulnerabilities → WARN the user. Recommend fixing before release.
-   - No audit tool configured → skip this check.
+   - The command skips gracefully when no supported manifest or audit tool is found — note that explicitly rather than silently omitting the check.
+   - Record the finding (or the skip reason) in the final summary's Quality section (Step 4) — including non-blocking findings, so they aren't silently lost between here and the summary.
 6. **Stack branches** *(if Stack Mode = yes)*: Verify all expected branches exist (ask user to confirm with `git branch`).
 
 ### Step 3 — Collect Artifacts
@@ -98,6 +99,7 @@ Gather:
 - Review: {APPROVED | CHANGES REQUESTED → resolved} ({B} BLOCKs, {W} WARNs, {I} INFOs resolved)
 - DoD: {N}/{N} criteria met
 - Test suite: {passing | N failures}
+- Dependency audit (`devflow-ctl scan sca`): {clean | N critical/high found — see detail | skipped: reason}
 { - Visual diff: {checked / skipped (no vision)} *(if UI feature)*}
 
 ### Artifacts

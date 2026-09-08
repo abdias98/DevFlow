@@ -301,7 +301,7 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
    - [ ] No failing tests (Standard/CI: Finalizer auto-runs the full suite and it passes; Pair: user confirms the full suite passes).
    - [ ] All Definition of Done criteria from `context.md` are met.
    - [ ] Traceability coverage ≥ 100% on DoD and Edge Cases (check `traceability.md`).
-   - [ ] Dependency audit passed — no critical/high vulnerabilities (if `Audit Command` is configured).
+   - [ ] Dependency audit passed — `devflow-ctl scan sca` reports no critical/high vulnerabilities (or skips honestly if no supported manifest/tool is present).
    - [ ] All persistent artifacts exist on disk and are complete — verify with:
      ```
      devflow-ctl artifacts check spec docs/devflow/specs/{file} --slug {slug}
