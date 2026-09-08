@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.12.0 — 2026-09-08
+
+### Updated standards — 2.12.0
+- **`logging.md`** (→ v1.3.0): new `## 5. Business/Audit Event Logging` — distinguishes business/audit events (what happened, to whom, when — for traceability and compliance) from technical/diagnostic logs. Requires logging successes as well as failures, keeping audit events independent of the general verbosity level, and append-only storage when the domain needs non-repudiation. Sections after it renumbered (Error Logging §6, Performance & Volume §7, Log Management §8, Code Review Checklist §9, Severity Classification §10, Limited Scope §11). Updated the 2 external citations to `logging.md §5` (now §6) in `error-handling.md` (→ v1.2.2) and `devflow-review/review-checklist.md`. Refs: F52, Wave 15.
+
 ## 2.11.1 — 2026-09-08
 
 ### Updated standards — 2.11.1

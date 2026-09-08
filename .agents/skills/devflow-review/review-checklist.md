@@ -49,7 +49,7 @@ This checklist guides the Reviewer in both Cycle Mode and Standalone Mode. Apply
 
 ### Logging *(apply only if the change emits logs/traces/metrics)*
 - [ ] No secret, credential, token, or PII written to a log at any level. 🔴 **BLOCK** if found (`logging.md §3`).
-- [ ] No exception caught and silently swallowed — neither logged nor rethrown. 🔴 **BLOCK** if found (`logging.md §5`).
+- [ ] No exception caught and silently swallowed — neither logged nor rethrown. 🔴 **BLOCK** if found (`logging.md §6`).
 - [ ] Logs are structured (named fields), not string-concatenated messages (`logging.md §1`).
 
 ### Dependencies *(apply only if manifests/lockfiles changed)*

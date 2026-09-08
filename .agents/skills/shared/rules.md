@@ -114,6 +114,8 @@ The tone should always be professional and constructive: *"I notice this approac
 
 For the full step-by-step Critical Friend procedure used by standalone agents, see [critical-friend.md](./critical-friend.md).
 
+The same DRY discipline this section asks agents to enforce on the code they review also applies to the standards themselves — see [standards-dry-policy.md](./standards-dry-policy.md) for how DevFlow keeps its own 16 standards from re-explaining the same rule in two places.
+
 ## Additional Recommendations Section
 
 Every agent MUST include an **"Additional Recommendations"** section at the end of its output when:
