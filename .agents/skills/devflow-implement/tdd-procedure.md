@@ -1,5 +1,7 @@
 # TDD Procedure — Red→Green Cycle
 
+> This procedure is the **execution** of [testing.md](<{{SKILLS_DIR}}/shared/standards/testing.md>) § The TDD Cycle (Red → Green → Refactor) — that section defines what a valid Red/Green/Refactor *is*; this file defines the concrete steps that produce one.
+
 > **Standard Mode (Pair Mode: no):** Auto-execute tests and git commands. See `rules.md` → `## Implementation Modes`.
 > **Pair Mode (Pair Mode: yes):** Tell user the commands and wait for confirmation. NEVER auto-execute.
 > **CI Mode (CI=true):** Same as Standard mode — auto-execute.

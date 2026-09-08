@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.9.4 — 2026-09-07
+
+### Updated standards — 2.9.4
+- **`testing.md`** (→ v1.2.0): new `## 9. The TDD Cycle (Red → Green → Refactor)` — what a valid Red is (fails for the right reason, not a plumbing error), what a minimal Green is, when to refactor, and the rule that a Green is never committed without a confirmed PASS. Code Review Checklist, Severity Classification, and Limited Scope renumbered to §10/§11/§12. `devflow-implement/tdd-procedure.md` now references this section as the standard it executes. Refs: F34, Wave 13.
+
 ## 2.9.3 — 2026-09-07
 
 ### Updated standards — 2.9.3
