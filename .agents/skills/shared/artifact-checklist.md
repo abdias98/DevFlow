@@ -7,7 +7,7 @@ Every DevFlow artifact MUST be validated against its template before being saved
 Validated by: **Orchestrator** (before Step 3 — Architect)
 
 - [ ] **Goal & Constraints Review** — goal is achievable within stated constraints
-- [ ] **Standards Scan** — checked against SOLID, Clean Architecture, Security, Performance, REST API (if applicable), UI Design (if applicable). Each finding cites `{standard}.md §{N} → {BLOCK|WARN|INFO}`
+- [ ] **Standards Scan** — scanned with `standards-quick-card.md`; full standard loaded when a red flag matches or the domain clearly applies. Each finding cites `{standard}.md §{N} → {BLOCK|WARN|INFO}`
 - [ ] **Assumptions Challenged** — all fragile or unverified assumptions questioned. If no fragile assumptions exist, state "No fragile assumptions — justification: {reason}" (do NOT invent challenges)
 - [ ] **Contradictions Flagged** — any internal contradictions in requirements surfaced
 - [ ] **Security Scan** — potential vulnerabilities identified (input validation, auth, injection, secrets). Any finding matching the BLOCK triggers below raises a BLOCK immediately

@@ -11,14 +11,11 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language detection, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
-- Read [SOLID Principles](<{{SKILLS_DIR}}/shared/standards/solid.md>)
-- Read [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>)
-- Read [Security](<{{SKILLS_DIR}}/shared/standards/security.md>)
-- Read [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>)
-- Read [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) *(apply only if API endpoints are involved)*
-- Read [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) *(apply only if the feature has a UI)*
-- Read [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
-- Read [Git Conventions](<{{SKILLS_DIR}}/shared/standards/git-conventions.md>) — commit message and branch naming format.
+- **Standards — scan first, load on demand.** Start with the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) (fast BLOCK-trigger scan). Load a full standard **only when** a quick-card red flag matches or the task clearly falls in its domain — do not load every standard upfront:
+  - General: [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
+  - [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) — when API endpoints are involved.
+  - [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) · [Accessibility](<{{SKILLS_DIR}}/shared/standards/accessibility.md>) — when the feature has a UI.
+  - Read [Git Conventions](<{{SKILLS_DIR}}/shared/standards/git-conventions.md>) — commit message and branch naming format (always applies).
 - Read [Parallel Subagents](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) — for independent task dispatch and verifier dispatch.
 - Read [Verifier Subagent](<{{SKILLS_DIR}}/shared/verifier-subagent.md>) — for the pre-review verification step.
 - Read [Task Supervisor](<{{SKILLS_DIR}}/shared/task-supervisor.md>) — for per-wave supervisor checks on task subagents.
