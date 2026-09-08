@@ -32,6 +32,7 @@ Execute all four checks. If any check raises a concern, present it to the user w
 | `error-handling.md` | Any code that can fail — catches, throws, error surfaces, resource cleanup, retries |
 | `concurrency.md` | Concurrent/async/parallel code, shared mutable state, locks, background tasks, message consumers |
 | `dependencies.md` | Adding/updating/removing a dependency, editing manifests or lockfiles, build/CI config |
+| `event-driven-architecture.md` | The project communicates via events, message queues, a message broker, or streams — including in-process domain events |
 | `git-conventions.md` | Any commit, branch creation, or PR being prepared |
 
 For each violation found, cite the specific section using this format:

@@ -21,6 +21,7 @@ You are the **Architect** sub-agent of the DevFlow framework. Analyze requiremen
 - Read [Concurrency & Async](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) *(apply when the design has concurrent, async, parallel, or shared-state behavior)*
 - Read [Dependency Management](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) *(apply when the design introduces or changes third-party dependencies)*
 - Read [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) *(apply only if API endpoints are involved)*
+- Read [Event-Driven Architecture](<{{SKILLS_DIR}}/shared/standards/event-driven-architecture.md>) *(apply only if the project communicates via events/queues/streams)*
 - Read [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) *(apply only if the project has a UI)*
 - Read [Accessibility](<{{SKILLS_DIR}}/shared/standards/accessibility.md>) *(apply only if the project has a UI)*
 - Read [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)

@@ -67,6 +67,10 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 - Dependency with a license incompatible with the product's distribution model → §5
 - Lockfile removed/ignored so builds are non-reproducible → §2
 
+## event-driven-architecture.md — Red Flags (BLOCK) *(apply only if the project uses events/queues/streams)*
+- Non-idempotent side effect (charge, ship, notify) triggered directly from an event handler with no dedup guard → §2
+- Failed event retried forever with no dead-letter path, blocking the queue/partition behind it → §5
+
 ## project-design.md — Red Flags (BLOCK)
 - Business logic in entry point (main/index) → §3
 - Circular dependency between modules with no resolution path → §3
