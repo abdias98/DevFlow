@@ -142,6 +142,27 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
+@test "scope: 'src/*' accepts a file directly inside the segment" {
+  "$CTL" init --mode feature --slug s --scope 'src/*' >/dev/null
+  run "$CTL" scope check src/a.ts --slug s
+  [ "$status" -eq 0 ]
+}
+
+@test "scope: 'src/*' rejects a file in a nested subdirectory (no crossing '/')" {
+  "$CTL" init --mode feature --slug s --scope 'src/*' >/dev/null
+  run "$CTL" scope check src/a/b.ts --slug s
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"OUTSIDE"* ]]
+}
+
+@test "scope: 'src/**' accepts both a direct file and a nested one" {
+  "$CTL" init --mode feature --slug s --scope 'src/**' >/dev/null
+  run "$CTL" scope check src/a.ts --slug s
+  [ "$status" -eq 0 ]
+  run "$CTL" scope check src/a/b.ts --slug s
+  [ "$status" -eq 0 ]
+}
+
 # ── Iteration limits ──────────────────────────────────────────────────────────
 
 @test "iterate: fails once the limit is exceeded" {
@@ -323,6 +344,126 @@ setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
   printf 'ok\n' > "$SCANDIR/readme.md"
   run bash -c "cd '$SCANDIR' && '$CTL' scan all"
   [[ "$output" == *"code patterns (SAST)"* ]]
+}
+
+# ── Artifacts check — standalone types (F28) ───────────────────────────────────
+
+@test "artifacts check: feature — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Summary\n## Definition of Done\n## Files Changed\n## Tasks Completed\n## Tests\n## Self-Review\n' > "$f"
+  run "$CTL" artifacts check feature "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: feature — a missing section fails" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Summary\n' > "$f"
+  run "$CTL" artifacts check feature "$f"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing required section"* ]]
+}
+
+@test "artifacts check: bugfix — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Bug Report\n## Root Cause\n## Reproduction Test\n## Fix Applied\n## Verification\n## Definition of Done\n' > "$f"
+  run "$CTL" artifacts check bugfix "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: refactor — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Scope\n## Changes Applied\n## Regression Guard\n## Definition of Done\n' > "$f"
+  run "$CTL" artifacts check refactor "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: perf — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Summary\n## Static Analysis Findings\n## Benchmark Results\n## Recommendations\n' > "$f"
+  run "$CTL" artifacts check perf "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: migration — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Schema Changes\n## Migration Files Generated\n## Compatibility Analysis\n## Rollback Plan\n' > "$f"
+  run "$CTL" artifacts check migration "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: contract — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Endpoints Validated\n## Contract Definition\n## Discrepancies\n## Coverage Summary\n' > "$f"
+  run "$CTL" artifacts check contract "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: docs — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Documentation Generated\n## Artifact Sources Used\n' > "$f"
+  run "$CTL" artifacts check docs "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: reverse — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Project Overview\n## Generated Artifacts\n## Stack Profile\n## Known Unknowns\n' > "$f"
+  run "$CTL" artifacts check reverse "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: unknown type is a usage error" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Anything\n' > "$f"
+  run "$CTL" artifacts check bogus "$f"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"unknown artifact type"* ]]
+}
+
+# ── Clean safety (F27) ──────────────────────────────────────────────────────────
+
+@test "clean: a freshly-released session survives (grace period, not stale yet)" {
+  "$CTL" init --mode feature --slug fresh >/dev/null
+  "$CTL" lock release --slug fresh >/dev/null
+  run "$CTL" clean
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"no stale sessions"* ]]
+  [ -d "$DEVFLOW_SESSION_ROOT/fresh" ]
+}
+
+@test "clean: an unlocked session past the stale window is removed" {
+  "$CTL" init --mode feature --slug old >/dev/null
+  "$CTL" lock release --slug old >/dev/null
+  sed -i 's/^locked_since:.*/locked_since: 2020-01-01T00:00:00Z/' "$DEVFLOW_SESSION_ROOT/old/phase-state.md"
+  run "$CTL" clean
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"removed: old"* ]]
+  [ ! -d "$DEVFLOW_SESSION_ROOT/old" ]
+}
+
+@test "clean: a session marked cancelled is never removed, even if stale" {
+  "$CTL" init --mode feature --slug cancelled >/dev/null
+  "$CTL" config set status cancelled --slug cancelled >/dev/null
+  "$CTL" lock release --slug cancelled >/dev/null
+  sed -i 's/^locked_since:.*/locked_since: 2020-01-01T00:00:00Z/' "$DEVFLOW_SESSION_ROOT/cancelled/phase-state.md"
+  run "$CTL" clean
+  [ "$status" -eq 0 ]
+  [ -d "$DEVFLOW_SESSION_ROOT/cancelled" ]
+}
+
+@test "clean --force: removes everything, including a cancelled session" {
+  "$CTL" init --mode feature --slug cancelled >/dev/null
+  "$CTL" config set status cancelled --slug cancelled >/dev/null
+  run "$CTL" clean --force
+  [ "$status" -eq 0 ]
+  [ ! -d "$DEVFLOW_SESSION_ROOT/cancelled" ]
+}
+
+@test "config: status only accepts active or cancelled" {
+  "$CTL" init --mode feature --slug s >/dev/null
+  run "$CTL" config set status bogus --slug s
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"must be 'active' or 'cancelled'"* ]]
 }
 
 # ── Doctor (install / session diagnostics) ────────────────────────────────────

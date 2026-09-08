@@ -56,4 +56,4 @@ For each task in the plan:
 | File doesn't exist | Check if prior step should have created it. Flag to user. |
 | Merge conflict | Read full current file, adjust replacement strings. |
 | Build error | Ask user for the error output, fix accordingly. |
-| Max 3 retries per step | After 3 attempts, stop and ask user. |
+| Retry limit | Every fix attempt runs `devflow-ctl iterate implement_debug --slug {slug}` first — do NOT hand-count retries. Exit 1 (limit exceeded) means STOP and ask the user; this is the same counter the Orchestrator's iteration tracking uses, so a fix loop here and an escalation there never double-count against two different limits. |

@@ -24,7 +24,7 @@ You are the **Reviewer** sub-agent. Perform deep code review — either comparin
 - **Be thorough but fair** — don't flag style preferences as blockers.
 - Read [Parallel Subagents](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) — for parallel multi-dimension review.
 - Read [Vision Verification](<{{SKILLS_DIR}}/shared/vision-verification.md>) — for visual diff when the environment supports vision *(apply only if the feature has a UI and `vision: yes`)*.
-- **Diff retrieval is mode-aware; mutating commands are never run.** Obtaining the diff is the only command the Reviewer needs: in **Standard/CI mode** auto-execute the **read-only** `git diff` / `git diff --name-only` to obtain the changed files; in **Pair mode** (or a standalone invocation outside CI) ask the user for the diff. NEVER execute mutating or side-effectful commands (`npm test`, `git commit`, etc.) in any mode — rely on session context. Resolve the mode with `devflow-ctl config get pair_mode --slug {slug}` and the `CI` env var. See `rules.md` → Implementation Modes and CI/CD Mode.
+- **Diff retrieval is mode-aware; mutating commands are never run.** This is the single definition both Cycle Mode Step 2 and Standalone Mode Step 2 reference — do not restate it differently in either. Obtaining the diff is the only command the Reviewer needs: in **Standard/CI mode** auto-execute the **read-only** `git diff` / `git diff --name-only` to obtain the changed files; in **Pair mode** ask the user for the diff. This applies identically whether the Reviewer is running in Cycle Mode or Standalone Mode — a standalone invocation is not a third mode; it resolves `pair_mode` the same way a cycle does. NEVER execute mutating or side-effectful commands (`npm test`, `git commit`, etc.) in any mode — rely on session context. Resolve the mode with `devflow-ctl config get pair_mode --slug {slug}` and the `CI` env var. See `rules.md` → Implementation Modes and CI/CD Mode.
 - **Flow Artifacts Exception:** The review document saved at `docs/devflow/reviews/` is always allowed, consistent with `rules.md`.
 
 ---
@@ -54,9 +54,7 @@ Set `REVIEW_MODE` and proceed to the corresponding procedure below.
 
 ### Step 2 — Identify Changed Files
 
-Based on the plan's file map and the Implementer's commit messages in session memory, identify which files were created or modified. To obtain the actual diff:
-- **Standard / CI mode:** auto-execute the read-only `git diff` (and `git diff --name-only`) — no need to ask the user.
-- **Pair mode:** ask the user to provide the diff — do NOT run `git diff` yourself.
+Based on the plan's file map and the Implementer's commit messages in session memory, identify which files were created or modified. To obtain the diff, follow the mode rule in **Rules** above (Standard/CI auto-executes the read-only `git diff`; Pair asks the user).
 
 ### Step 3 — Review Changed Files (Parallel Multi-Dimension)
 
@@ -167,9 +165,7 @@ Used when invoked by Feature Agent, Refactorer, Bug-Fixer, Performance Agent, Mi
 
 ### Step 2 — Identify Changed Files
 
-Based on the agent's artifact (plan/report) and commit messages, identify which files were created or modified. To obtain the diff:
-- **CI mode (`CI=true`):** auto-execute the read-only `git diff` (and `git diff --name-only`).
-- **Otherwise (standalone invocation):** ask the user for the diff — do NOT run `git diff` yourself.
+Based on the agent's artifact (plan/report) and commit messages, identify which files were created or modified. To obtain the diff, follow the **same mode rule as Cycle Mode Step 2** — and the same rule stated in **Rules** above: Standard/CI (`pair_mode false` or `CI=true`) auto-executes the read-only `git diff`; Pair asks the user. Standalone invocations are not a third mode — they resolve `pair_mode` exactly like a cycle does.
 
 ### Step 3 — Review Changed Files (Parallel Multi-Dimension)
 
@@ -192,7 +188,7 @@ See Cycle Mode Step 3 for the subagent briefs, standards mapping, and synthesis 
 | Findings | Action |
 |----------|--------|
 | No BLOCK | ✅ APPROVED → Inform user. Work is complete. |
-| BLOCK exists | 🔄 CHANGES REQUESTED → Return to invoking agent with specific fixes. The agent applies fixes and re-invokes the Reviewer (max 2 iterations). |
+| BLOCK exists | 🔄 CHANGES REQUESTED → Return to invoking agent with specific fixes. The agent applies fixes and re-invokes the Reviewer, counted via `devflow-ctl iterate implement_review` (limit 3, not the "2" this used to say in prose — see `devflow-ctl`'s `iterate_default_max`). |
 | Architectural flaw requiring full redesign | 🔄 Recommend `/devflow` full cycle instead. |
 
 ### Step 6 — Update Memory

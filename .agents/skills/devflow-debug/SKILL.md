@@ -26,7 +26,7 @@ You are the **Debugger** sub-agent. Systematically debug failures — never gues
   - Resolve the mode with `devflow-ctl config get pair_mode` (within a cycle) and the `CI` env var. `git push` / `gh pr create` are NEVER auto-executed in any mode.
 - Explain **WHY** the error occurred, not just what the fix is.
 - Document every debugging session in a debug log.
-- Maximum 3 attempts before escalating to the user.
+- Retry attempts are counted via `devflow-ctl iterate implement_debug` — never hand-counted in prose. This is the same counter the Orchestrator's own iteration tracking uses for the Implementer↔Debugger loop, so a retry here and an escalation there never disagree about how many attempts have actually happened.
 - Stack-agnostic — operates on current branch regardless of stacking.
 - **Flow Artifacts Exception:** The debug log saved at `docs/devflow/debug-logs/` is always allowed, consistent with `rules.md`.
 
@@ -80,7 +80,7 @@ Systematic analysis in order:
 6. Compare with plan code.
 7. Check the [debug template](<{{SKILLS_DIR}}/devflow-debug/debug-template.md>) for common patterns by area.
 
-Also check `/memories/repo/debug-patterns.md` if it exists for project-specific patterns.
+Also check `docs/devflow/knowledge-base/debug-patterns.md` if it exists for project-specific patterns.
 
 ### Step 4 — Apply Fix
 
@@ -102,8 +102,7 @@ Also check `/memories/repo/debug-patterns.md` if it exists for project-specific 
 > 1. Run the failing test: `{Test Command (single file)} {path}` — it should PASS.
 > 2. Run the full test suite: `{Test Command}` — no regressions."
 
-- If the test still fails (or the user reports it fails) → loop back to Step 3 (max 3 attempts).
-- After 3 attempts → escalate with structured triage:
+- If the test still fails (or the user reports it fails) → run `devflow-ctl iterate implement_debug --slug {slug}`. On exit 0, loop back to Step 3. On exit 1 (limit exceeded), do NOT loop again — escalate with structured triage:
   - **A) Architectural change** → Route to Architect.
   - **B) Plan revision** → Route to Planner.
   - **C) Simplify scope** → Update plan, skip test.
@@ -113,7 +112,7 @@ Also check `/memories/repo/debug-patterns.md` if it exists for project-specific 
 ### Step 6 — Document
 
 1. **Use `create_file` to save** the debug log to `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md` following the [debug template](<{{SKILLS_DIR}}/devflow-debug/debug-template.md>).
-2. If the root cause pattern is reusable, suggest the user append it to `/memories/repo/debug-patterns.md`.
+2. If the root cause pattern is reusable, suggest the user append it to `docs/devflow/knowledge-base/debug-patterns.md`.
 
 ### Step 7 — Update Memory
 

@@ -131,7 +131,7 @@ Pass to the Reviewer:
 
 ## ⚠️ Completion Protocol (ALL MODELS)
 
-Before ending your response, you MUST confirm:
+Before ending your response, run `devflow-ctl artifacts check migration docs/devflow/migrations/YYYY-MM-DD-{slug}-migration.md --slug {slug}`. On exit 1, fix the missing section and re-check before proceeding. Then confirm:
 
 ```markdown
 ✅ File saved: docs/devflow/migrations/YYYY-MM-DD-{slug}-migration.md

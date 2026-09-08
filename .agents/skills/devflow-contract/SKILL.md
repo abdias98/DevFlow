@@ -122,7 +122,7 @@ Pass to the Reviewer:
 
 ## ⚠️ Completion Protocol (ALL MODELS)
 
-Before ending your response, you MUST confirm:
+Before ending your response, run `devflow-ctl artifacts check contract docs/devflow/contracts/YYYY-MM-DD-{slug}-contract.md --slug {slug}`. On exit 1, fix the missing section and re-check before proceeding. Then confirm:
 
 ```markdown
 ✅ File saved: docs/devflow/contracts/YYYY-MM-DD-{slug}-contract.md
