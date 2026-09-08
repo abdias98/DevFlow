@@ -9,9 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🐛 Fixed
+
+- **The Wave 16 locale guard did not actually guard anything.** `metrics aggregate` pinned `LC_NUMERIC=C` on its three `awk` calls, but `LC_ALL` takes precedence over every `LC_*` variable — so on any system or CI job that exports `LC_ALL` (the user's own machine, and the new matrix job), `awk`'s `printf "%.1f"` still wrote `1,0`. Now `LC_ALL=C`. Found by the F63 matrix on its first run, which is the entire argument for having it. (F63, Wave 17)
+- **A test that looked like it asserted a decimal point but did not.** `grep -q "Avg. BLOCKs per cycle | 1.0"` is a BRE: the unescaped `.` is a wildcard, so it matched `1,0` just as happily and silently stopped testing the separator. This is why the original locale bug shipped green. Now `grep -qF`, plus a dedicated test that runs the aggregation under a hostile `LC_ALL`/`LC_NUMERIC` and asserts no comma appears in any `Avg.` row — the assertion that makes the CI matrix able to catch a regression instead of merely re-running. (F63, Wave 17)
+- **Eight `shellcheck` warning-level findings**, including two unguarded destructive paths: `cmd_clean`'s `rm -rf "$SESSION_ROOT/$slug"` would expand to `rm -rf "$SESSION_ROOT/"` — every session — on an empty `slug`, now `"${slug:?}"`. Also two `trap "rm -rf '$TEMP_DIR'" EXIT` handlers expanding at definition rather than signal time (`install.sh`, `uninstall.sh`), and four dead variables. (F62, Wave 17)
+
 ### ✨ Added
 
 - **`validate-framework.sh` §15 — Multi-agent contract integrity.** The first behavioural check in a validator whose other 14 sections are all structural. A `shared/` document opts in by naming the artifact it governs (`**Contract artifact:** \`path\``) above its existing `**<Verb> by:** <Agent>` participant block; §15 then asserts that every named agent's `SKILL.md` actually references that artifact. Discovery is declaration-driven rather than a hardcoded file list, so a new contract is covered the moment it is written. An agent name that maps to no skill directory is an ERROR, never a skip — a typo must not silently disable enforcement for that participant. Verified against the bug that motivated it: reverting the F60 fix makes §15 fail with two errors naming `devflow-implement` and `devflow-review`. (F61, Wave 17)
+- **`scripts/lint-shell.sh` + `npm run lint:sh`, gated in CI at severity `warning`.** The framework's kernel is ~2,400 lines of bash that every editor profile runs, and CI linted none of it. Files are discovered by extension or shebang (tracked and untracked alike), so a new script is covered the moment it exists. When `shellcheck` is missing the script skips locally but **fails** when `CI` is set — a silently-skipped gate is worse than no gate, because the build still reports green. (F62, Wave 17)
+- **CI locale matrix (`LC_ALL: [C, es_ES.UTF-8]`).** The suite ran under a single locale, which is how a comma decimal separator reached `main` with every test green. (F63, Wave 17)
 - **`tests/validate-framework.bats`** — first test suite for the validator (9 tests): positive, negative (the F60 shape), multi-participant reporting, unmapped agent, missing `SKILL.md`, empty tree, token derivation, token length floor, and multi-contract independence. Fixture-driven, with no production seam: the suite `cd`s into a throwaway framework tree and runs the real script, asserting on §15's own output block rather than the process exit code.
 
 ## [4.8.1] — 2026-09-08

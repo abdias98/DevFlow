@@ -14,6 +14,20 @@ jobs:
   test:
     name: validate + tests
     runs-on: ubuntu-latest
+
+    # The framework's kernel is bash, and bash is locale-sensitive: awk's
+    # printf "%.1f" emits a comma decimal separator under a non-C LC_NUMERIC,
+    # which is how a broken metrics aggregate reached main while every test
+    # passed on an English runner. Running the suite under a Spanish locale too
+    # keeps that class from hiding behind the CI environment.
+    strategy:
+      fail-fast: false
+      matrix:
+        locale: ['C', 'es_ES.UTF-8']
+
+    env:
+      LC_ALL: ${{ matrix.locale }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -21,17 +35,31 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Generate the non-C locale
+        if: matrix.locale != 'C'
+        run: |
+          sudo locale-gen "${{ matrix.locale }}"
+          sudo update-locale
+          locale -a | grep -i "$(echo "${{ matrix.locale }}" | cut -d. -f1)"
+
       # --ignore-scripts: the package's own "install" script is `bash install.sh`
       # (the DevFlow editor installer), which must NOT run in CI. We only need the
       # bats dev dependency. No lockfile with dev deps is committed, so not `npm ci`.
       - name: Install dependencies (bats)
         run: npm install --ignore-scripts --no-audit --no-fund
 
+      # Static analysis of every shell file. Gated at 'warning'; the repository
+      # is clean at that level, so a new finding is genuinely new. lint-shell.sh
+      # refuses to skip when CI is set, so a missing linter fails the build
+      # instead of reporting a silently-green gate.
+      - name: Lint shell scripts
+        run: npm run lint:sh
+
       # Structural consistency: template vars, cross-refs, required sections,
-      # devflow-ctl integrity, version sync.
+      # devflow-ctl integrity, version sync, multi-agent contract integrity.
       - name: Validate framework consistency
         run: npm run validate
 
-      # Behavioral suites: devflow-ctl state machine + eval scoring engine.
+      # Behavioral suites: devflow-ctl state machine, validator §15, eval engine.
       - name: Run test suites
         run: npm test

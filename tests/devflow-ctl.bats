@@ -1025,8 +1025,27 @@ EOF
   "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/full-metrics.md" >/dev/null
   run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/feat-metrics.md"
   [ "$status" -eq 0 ]
-  grep -q "Avg. BLOCKs per cycle | 1.0" "$DEVFLOW_AGGREGATE_FILE"
-  grep -q "Total cycles completed | 2" "$DEVFLOW_AGGREGATE_FILE"
+  # -F, not -q alone: in a BRE the '.' is a wildcard, so "1.0" happily matches
+  # "1,0" and the assertion silently stops testing the decimal separator. That
+  # is how the locale bug (awk's %.1f emitting a comma under a non-C
+  # LC_NUMERIC) reached main with this test green. Fixed-string matching is
+  # what makes the CI locale matrix able to catch a regression here.
+  grep -qF "Avg. BLOCKs per cycle | 1.0" "$DEVFLOW_AGGREGATE_FILE"
+  grep -qF "Total cycles completed | 2" "$DEVFLOW_AGGREGATE_FILE"
+}
+
+@test "metrics aggregate: averages use a period decimal separator regardless of locale" {
+  setup_metrics
+  write_full_metrics
+  write_standalone_metrics
+  "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/full-metrics.md" >/dev/null
+  LC_ALL=es_ES.UTF-8 LC_NUMERIC=es_ES.UTF-8 run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/feat-metrics.md"
+  [ "$status" -eq 0 ]
+  # Explicitly hostile locale: mawk's printf "%.1f" writes "1,0" here unless the
+  # call sites pin LC_NUMERIC=C. Asserting the absence of a comma states the
+  # invariant directly instead of relying on a pattern that happens to match.
+  ! grep -qE '^\| Avg\..*[0-9],[0-9]' "$DEVFLOW_AGGREGATE_FILE"
+  grep -qF "Avg. BLOCKs per cycle | 1.0" "$DEVFLOW_AGGREGATE_FILE"
 }
 
 @test "metrics aggregate: preserves a manually-edited BLOCK category across recalculation" {
