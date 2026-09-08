@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Error Handling (Technology-Agnostic)
 
-> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.1 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All exception types, result wrappers, and code fragments are illustrative. Replace them with the actual error model, libraries, and conventions of the detected stack.
 
@@ -57,7 +57,7 @@ Apply these principles to all code you design, generate, or review that can fail
   - Map error categories to the right transport semantics (e.g., validation vs. auth vs. not-found vs. server error) — see [rest-api.md](./rest-api.md) where APIs are involved.
   - Log the full technical detail internally (see [logging.md](./logging.md) §5) instead of returning it.
 - **DON'T:**
-  - Return stack traces, exception messages, internal paths, or SQL to external clients. *(Blocker — also `security.md`.)*
+  - Return stack traces, exception messages, internal paths, or SQL to external clients. *(Blocker — canonical citation: this section, `error-handling.md §5`; `security.md §6` cross-references it as the security angle on the same finding.)*
   - Use the same error body for "invalid input" and "internal failure" — callers cannot react correctly.
 
 ## 6. Resource Cleanup & Consistency
@@ -90,7 +90,18 @@ Apply these principles to all code you design, generate, or review that can fail
   - Retry a non-idempotent operation (e.g., "charge card") without an idempotency key — it can duplicate effects.
   - Retry in a tight unbounded loop with no backoff or cap.
 
-## 9. Severity Classification
+## 9. Code Review Checklist
+When reviewing, verify:
+- [ ] Invalid state is rejected at the boundary — no continuing on `null`/default/sentinel values hoping it resolves downstream (§1).
+- [ ] No empty catch blocks or catch-and-continue that discards the error (§2).
+- [ ] Caught errors are narrowly typed, and the original cause is chained when wrapped/translated (§3).
+- [ ] Infrastructure errors are translated to domain/layer-appropriate types at boundaries — no raw DB/network exception leaking outward (§4).
+- [ ] External-facing errors are generic and actionable — no stack trace, internal detail, or SQL returned to a caller (§5).
+- [ ] Resources are released on every path (success and failure); multi-step state changes are atomic or compensated (§6).
+- [ ] Exceptions are reserved for exceptional conditions, not used for ordinary control flow (§7).
+- [ ] Retries apply only to idempotent operations, are bounded, and use backoff (§8).
+
+## 10. Severity Classification
 
 Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `error-handling.md §2`).
 
@@ -100,7 +111,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | 🟡 **WARN** | Catching the base/broadest error type to handle, without rethrow (§3); wrapping an error without chaining the original cause (§3); infrastructure error leaking raw across a layer boundary (§4); exceptions used for ordinary control flow (§7); unbounded or backoff-less retry (§8); continuing with a default/sentinel after a failure instead of failing fast (§1) |
 | 🟢 **INFO** | Generic error message could be more actionable (§5); expected outcome modeled as a thrown exception where a result type would read better (§7); missing correlation ID in the surfaced error (§5) |
 
-## 10. Applying This Standard with a Limited Scope
+## 11. Applying This Standard with a Limited Scope
 
 When reviewing or modifying error handling in a **specific set of files**, follow these constraints:
 

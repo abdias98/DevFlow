@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Concurrency & Async (Technology-Agnostic)
 
-> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All primitives (locks, queues, atomics, async constructs) are illustrative. Replace them with the actual concurrency model and libraries of the detected stack (threads, async/await, actors, goroutines, event loop, etc.).
 
@@ -83,7 +83,17 @@ Apply these principles to all code you design, generate, or review that runs con
   - Spawn detached background tasks with no ownership, cancellation, or failure visibility.
   - Leave timers/pollers/threads running after the component that owns them is disposed.
 
-## 8. Severity Classification
+## 8. Code Review Checklist
+When reviewing, verify:
+- [ ] Shared mutable state is either avoided or every access (read and write) is synchronized (§1).
+- [ ] Compound check-then-act / read-modify-write sequences are atomic, not racy (§2).
+- [ ] Locks are held for the shortest critical section, acquired in a consistent order, and always released on every exit path (§3).
+- [ ] Every async operation's result or failure is awaited/observed — no fire-and-forget where failure means data loss (§4).
+- [ ] Operations that may be retried or redelivered are idempotent (§5).
+- [ ] Shared data is published through the platform's proper visibility primitive, not a plain write (§6).
+- [ ] Background/long-running tasks support graceful shutdown and failure supervision (§7).
+
+## 9. Severity Classification
 
 Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `concurrency.md §2`).
 
@@ -93,7 +103,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | 🟡 **WARN** | Shared mutable state accessed from multiple contexts without clear synchronization (§1); unbounded parallel task spawning (§4); sync-over-async that can exhaust the pool (§4); lock held across slow work, or critical section larger than necessary (§3); background task spawned with no cancellation/shutdown handling (§7); reliance on plain writes for cross-context visibility (§6) |
 | 🟢 **INFO** | Mutable shared structure where an immutable or message-passing design would be simpler (§1); missing graceful-shutdown drain (§7); opportunity to replace a lock with an atomic/lock-free primitive (§3) |
 
-## 9. Applying This Standard with a Limited Scope
+## 10. Applying This Standard with a Limited Scope
 
 When reviewing or modifying concurrent code in a **specific set of files**, follow these constraints:
 

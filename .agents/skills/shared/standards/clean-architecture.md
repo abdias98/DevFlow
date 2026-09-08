@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Clean Architecture (Technology-Agnostic)
 
-> **Version:** 2.3.0 | **Last Updated:** 2026-09-07
+> **Version:** 2.3.1 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All code-like fragments and tool references are illustrative. Replace them with the actual libraries, frameworks, and naming conventions of the detected stack.
 
@@ -81,6 +81,7 @@ Apply these patterns to all code you design, generate, or review.
   - Inside `Application`, group by feature (e.g., `Orders/CreateOrder`, `Orders/GetOrderHistory`) rather than by type.  
 
 ## 5. Testing Requirements
+- **What:** Layer boundaries exist partly so each layer is testable in isolation. This section covers the *architectural* testability requirement per layer; [testing.md](./testing.md) owns test design in depth (Arrange/Act/Assert, what to mock and what not to, coverage) — see `testing.md` §3 for the "mock at the port/interface boundary" rule this section's mocked-ports guidance depends on.
 - **Entities:** Must be unit testable with zero mocks — just instantiate and assert behaviour.  
 - **Use Cases:** Test with mocked ports (repositories, services). Verify orchestration, exception paths, and mapping.  
 - **Adapters:** Integration/contract tests against real or emulated infrastructure (database, HTTP).  

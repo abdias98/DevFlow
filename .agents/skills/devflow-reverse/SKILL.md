@@ -146,17 +146,17 @@ Generate or update the project's `AGENTS.md` file with:
 ### Step 8b — Vulnerability Audit *(Deep only)*
 
 1. Check dependencies against known vulnerability databases (note: report known CVEs based on version numbers).
-2. Scan for OWASP Top 10 patterns:
-   - Injection (SQL, NoSQL, command, LDAP)
-   - Broken authentication
-   - Sensitive data exposure (hardcoded secrets, plaintext passwords)
-   - XML External Entities (XXE)
-   - Broken access control
-   - Security misconfiguration
-   - Cross-Site Scripting (XSS)
-   - Insecure deserialization
-   - Components with known vulnerabilities
-   - Insufficient logging & monitoring
+2. Scan for OWASP Top 10 (2021) patterns:
+   - A01: Broken Access Control (missing authz checks, IDOR, CORS misconfiguration, CSRF)
+   - A02: Cryptographic Failures (plaintext secrets/passwords, weak/no encryption in transit or at rest)
+   - A03: Injection (SQL, NoSQL, command, LDAP, XSS)
+   - A04: Insecure Design (missing threat modeling, mass assignment, no rate limiting by design — see `security.md` §8)
+   - A05: Security Misconfiguration (default credentials, verbose errors, unnecessary features enabled)
+   - A06: Vulnerable and Outdated Components (see `dependencies.md`)
+   - A07: Identification and Authentication Failures (broken session management, weak credential recovery)
+   - A08: Software and Data Integrity Failures (insecure deserialization, unsigned/unverified updates)
+   - A09: Security Logging and Monitoring Failures (no audit trail for sensitive actions, unmonitored failed logins)
+   - A10: Server-Side Request Forgery (SSRF)
 3. Each vulnerability finding must cite the source file and line.
 4. Classify by severity: 🔴 CRITICAL, 🔴 HIGH, 🟡 MEDIUM, 🟢 LOW.
 

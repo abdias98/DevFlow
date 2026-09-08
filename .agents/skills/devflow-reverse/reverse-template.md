@@ -91,7 +91,7 @@ Dependencies used in code but not listed in manifest:
 
 | ID | OWASP Category | Severity | Location | Description | Remediation |
 |----|---------------|----------|----------|-------------|-------------|
-| VULN-{N} | {Injection | Broken Auth | Sensitive Data | XXE | Broken Access Control | Misconfiguration | XSS | Deserialization | Known CVE | Insufficient Logging} | 🔴 CRITICAL / 🔴 HIGH / 🟡 MEDIUM / 🟢 LOW | {file}:{line} | {description with CVE reference if applicable} | {how to fix} |
+| VULN-{N} | {A01 Broken Access Control | A02 Cryptographic Failures | A03 Injection | A04 Insecure Design | A05 Security Misconfiguration | A06 Vulnerable/Outdated Components | A07 Auth Failures | A08 Software/Data Integrity Failures | A09 Logging/Monitoring Failures | A10 SSRF} | 🔴 CRITICAL / 🔴 HIGH / 🟡 MEDIUM / 🟢 LOW | {file}:{line} | {description with CVE reference if applicable} | {how to fix} |
 
 ### Stack Profile
 

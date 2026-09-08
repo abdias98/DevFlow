@@ -1,10 +1,10 @@
 # DevFlow Engineering Standards: Dependency Management & Supply Chain (Technology-Agnostic)
 
-> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.1 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All manifest files, lockfiles, audit tools, and registries are illustrative. Replace them with the actual package manager and ecosystem of the detected stack (npm, pip, Maven, Cargo, Go modules, Composer, NuGet, etc.).
 
-Apply these principles whenever you add, update, remove, or review third-party dependencies, manifests, lockfiles, or build configuration.
+Apply these principles whenever you add, update, remove, or review third-party dependencies, manifests, lockfiles, or build configuration. This standard owns the supply-chain discipline in depth (OWASP A08: Software and Data Integrity Failures); [security.md](./security.md) §5 covers the same topic at security-scan depth and links back here.
 
 ## 1. Minimize the Dependency Surface
 
@@ -85,7 +85,17 @@ Apply these principles whenever you add, update, remove, or review third-party d
   - Ship development/test tooling as a production runtime dependency.
   - Ignore a transitive vulnerability because it is "not a direct dependency" — it still ships.
 
-## 8. Severity Classification
+## 8. Code Review Checklist
+When reviewing, verify:
+- [ ] A new dependency is justified — the standard library or an existing dependency was considered and ruled out first (§1).
+- [ ] The lockfile is committed and CI uses the reproducible-install command; no floating version specifiers in production dependencies (§2).
+- [ ] A vulnerability audit has been run; no known critical/high vulnerability ships without a documented, time-boxed mitigation (§3).
+- [ ] Dependencies install from a trusted registry with integrity verification; no typosquatting/dependency-confusion risk (§4).
+- [ ] A new dependency's license is compatible with the project's distribution model (§5).
+- [ ] Updates are deliberate and reviewable — not bulk-bumped across unrelated packages or mixed with feature work (§6).
+- [ ] Dev/build-only tooling is not shipped as a production runtime dependency (§7).
+
+## 9. Severity Classification
 
 Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `dependencies.md §3`).
 
@@ -95,7 +105,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | 🟡 **WARN** | Unbounded/floating version specifier (`*`/`latest`) for a production dependency (§2); new dependency added with no justification when an existing one or the standard library suffices (§1); unmaintained/archived package added for security-sensitive functionality (§1); development/build tool declared as a production runtime dependency (§7); audit not run in CI (§3) |
 | 🟢 **INFO** | Heavy dependency added for a trivial utility (§1); routine upgrades long overdue (§6); dependency tree could be leaner / transitive footprint noted (§7); license attribution/notice missing (§5) |
 
-## 9. Applying This Standard with a Limited Scope
+## 10. Applying This Standard with a Limited Scope
 
 When reviewing or modifying dependencies in a **specific set of files**, follow these constraints:
 

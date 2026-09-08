@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Accessibility (a11y) (Technology-Agnostic)
 
-> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.1 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** Element names, ARIA attributes, and APIs are illustrative (web-oriented). Map them to the accessibility API of the detected platform (web/ARIA, iOS/UIKit accessibility, Android/TalkBack, desktop toolkits). The principles are universal; the primitives differ.
 
@@ -78,22 +78,32 @@ Accessibility is **not a feature — it is a requirement**. Apply these principl
 - **DO:**
   - Announce important asynchronous updates to assistive tech (live regions / platform announcements).
   - Respect user preferences: reduced motion, increased contrast, color scheme, and zoom/text scaling up to **200%** without loss of content or function.
-  - Keep target sizes comfortable (a common floor is ~44×44 px / 24px minimum per WCAG) for touch.
+  - Meet **WCAG 2.2**'s target size floor: **24×24 CSS px minimum** (2.5.8 Target Size Minimum, Level AA — required unless an exception applies, e.g. inline text links or an equivalent target elsewhere). Prefer the larger, **44×44 CSS px** recommended size (2.5.5 Target Size Enhanced, Level AAA — see [ui-design.md](./ui-design.md) §5, which treats it as the default for new components) whenever the design isn't otherwise constrained.
 - **DON'T:**
   - Auto-play motion or carousels that cannot be paused, or animation that ignores `prefers-reduced-motion`.
   - Silently swap content so screen-reader users never learn it changed.
 
-## 8. Severity Classification
+## 8. Code Review Checklist
+When reviewing, verify:
+- [ ] Non-text content has a text alternative; state (error, success) is never conveyed by color alone (§1).
+- [ ] Text/background contrast meets WCAG AA (4.5:1 normal text, 3:1 large text/UI components) (§2).
+- [ ] Every interactive element is reachable and operable by keyboard, with no keyboard trap (§3).
+- [ ] A visible focus indicator is present and focus order follows the visual/reading order (§4).
+- [ ] Native semantic elements are used before ARIA; every control has an accessible name (§5).
+- [ ] Every form input has a programmatic label; errors are identified in text, not color alone (§6).
+- [ ] Dynamic content updates are announced to assistive tech; motion respects `prefers-reduced-motion` (§7).
+
+## 9. Severity Classification
 
 Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `accessibility.md §3`).
 
 | Severity | Triggers |
 |----------|---------|
 | 🔴 **BLOCK** | Interactive element (button, link, form field, control) not keyboard-operable, or missing an accessible name/role, blocking a core user flow (§3, §5); `aria-hidden="true"` (or equivalent) on a focusable element creating an unreachable trap (§5); keyboard trap with no exit (§3); form input with no programmatic label on a critical flow (§6) |
-| 🟡 **WARN** | Text/UI below the WCAG AA contrast minimum (§2); missing or invisible focus indicator (§4); meaning conveyed by color alone (§1); validation error shown by color only, or not tied to the field (§6); informative image/icon with no text alternative (§1); motion that ignores reduced-motion preference (§7); touch target below the recommended minimum (§7) |
-| 🟢 **INFO** | ARIA used where a native semantic element would suffice (§5); async update not announced via a live region (§7); zoom/reflow not yet verified to 200% (§7); focus order slightly out of step with visual order (§4) |
+| 🟡 **WARN** | Text/UI below the WCAG AA contrast minimum (§2); missing or invisible focus indicator (§4); meaning conveyed by color alone (§1); validation error shown by color only, or not tied to the field (§6); informative image/icon with no text alternative (§1); motion that ignores reduced-motion preference (§7); touch target below **24×24 CSS px** with no exception applying — the WCAG 2.2 AA floor (§7) |
+| 🟢 **INFO** | ARIA used where a native semantic element would suffice (§5); async update not announced via a live region (§7); zoom/reflow not yet verified to 200% (§7); focus order slightly out of step with visual order (§4); touch target at/above 24×24 but below the **44×44** recommended (AAA) size (§7) |
 
-## 9. Applying This Standard with a Limited Scope
+## 10. Applying This Standard with a Limited Scope
 
 When reviewing or modifying accessibility in a **specific set of files**, follow these constraints:
 

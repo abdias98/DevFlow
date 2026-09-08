@@ -1,10 +1,10 @@
 # DevFlow Engineering Standards: Testing (Technology-Agnostic)
 
-> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.1 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All tool names, directory names, and code fragments are illustrative. Replace them with the actual test runner, utilities, and conventions of the detected stack.
 
-Apply these principles to all tests you design, generate, or review. TDD is non-negotiable in DevFlow — this standard defines what "good tests" means.
+Apply these principles to all tests you design, generate, or review. TDD is non-negotiable in DevFlow — this standard defines what "good tests" means. For the architectural side of testability per layer (why Entities need zero mocks, Use Cases mock at the port boundary), see [clean-architecture.md](./clean-architecture.md) §5.
 
 ## 1. Test Pyramid
 
@@ -106,7 +106,19 @@ Apply these principles to all tests you design, generate, or review. TDD is non-
   - Add real `sleep`/`delay` calls in tests. Control time with a mock clock.
   - Run E2E tests on every push — gate them on a pre-release or nightly pipeline.
 
-## 9. Code Review Checklist
+## 9. The TDD Cycle (Red → Green → Refactor)
+
+- **What:** TDD is non-negotiable in DevFlow (see the standard's opening line). This section defines what makes each phase of the cycle valid — [tdd-procedure.md](<{{SKILLS_DIR}}/devflow-implement/tdd-procedure.md>) is the concrete *execution* of this standard; this section is the *rule* it implements.
+- **A valid Red:**
+  - The test fails **for the right reason** — the assertion fails because the behavior doesn't exist yet, not because of a typo, a missing import, or a setup error. A Red that fails on a `ReferenceError`/`ImportError` is not a valid Red — fix the test's own plumbing first, then re-run it to see the *real* failure.
+  - The test must be confirmed failing before any production code is written. Writing the implementation first and the test second is not TDD, even if the test happens to pass afterward.
+- **A minimal Green:**
+  - Write the smallest change that makes the failing assertion pass — no extra branches, no unrequested generalization, no unrelated cleanup folded into the same step.
+  - A Green that required editing more than the task's declared files, or that also silently fixed a different failing test, is a signal the task was mis-scoped — flag it rather than accepting the extra change quietly.
+- **When to refactor:** only after Green, only on the code just touched, and only if the full test suite for the affected area still passes afterward with no behavior change. Refactor-while-Green is not an excuse to skip the "minimal" rule above — the sequence is Red → Green → *then* Refactor, never interleaved.
+- **The commit rule:** a Green phase is never committed on the strength of "it should pass now" — it must be committed only after a test-run output (auto-executed in Standard/CI mode, pasted by the user in Pair mode) actually confirms PASS. See `rules.md` → Implementation Modes for the mode-dependent execution rule this section assumes.
+
+## 10. Code Review Checklist
 When reviewing tests, verify:
 - [ ] Each test has a clear Arrange / Act / Assert structure.
 - [ ] Test names describe the scenario and expected outcome without reading the code.
@@ -117,7 +129,7 @@ When reviewing tests, verify:
 - [ ] No `sleep`/`delay` in tests; time is controlled via mock clock.
 - [ ] Coverage is meaningful — assertions actually verify behavior, not just execute lines.
 
-## 10. Severity Classification
+## 11. Severity Classification
 
 Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `testing.md §5`).
 
@@ -127,7 +139,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | 🟡 **WARN** | Test verifies implementation details instead of behavior (§2); multiple unrelated assertions in one test producing unreadable failures (§2); test relies on execution order — fails when run in isolation (§6); real `sleep`/`delay` in test body (§8); no edge case or error scenario covered for a feature (§4) |
 | 🟢 **INFO** | Test name does not describe the scenario clearly (§7); test file not mirroring source structure (§7); in-memory alternative available but not used (test is slow but not blocking) (§8) |
 
-## 11. Applying This Standard with a Limited Scope
+## 12. Applying This Standard with a Limited Scope
 
 When reviewing or adding tests to a **specific set of files**, follow these constraints:
 

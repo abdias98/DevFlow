@@ -4,6 +4,51 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.10.1 — 2026-09-07
+
+### Updated standards — 2.10.1
+- **`security.md`** (→ v2.4.1): §6 now names `error-handling.md §5` as the canonical citation for "stack trace exposed to an external caller"; §6 is the security-angle cross-reference only, avoiding the same finding logged under two section numbers.
+- **`error-handling.md`** (→ v1.2.1): §5's Blocker note reciprocates — this section is canonical, `security.md §6` cross-references it.
+- **`dependencies.md`** (→ v1.2.1): intro now states it owns the supply-chain depth (OWASP A08); `security.md` §5 covers the same topic at security-scan depth and links back.
+- **`performance.md`** (→ v2.3.2): §4 now declares `concurrency.md` §4 the owner of fire-and-forget error handling and sync-over-async correctness hazards; performance.md keeps the throughput angle and links instead of duplicating the rule. Severity table's fire-and-forget BLOCK trigger now cites `concurrency.md §4` as canonical; `standards-quick-card.md`'s matching row updated to match.
+- **`clean-architecture.md`** (→ v2.3.1) / **`testing.md`** (→ v1.2.1): §5 (Testing Requirements) and testing.md's intro now cross-link — clean-architecture.md owns per-layer architectural testability, testing.md owns test design depth (AAA, mocking, coverage).
+
+Refs: F17, Wave 13.
+
+## 2.10.0 — 2026-09-07
+
+### Updated standards — 2.10.0
+- **`security.md`** (→ v2.4.0): new `## 8. Additional OWASP Top 10 (2021) Coverage` — CSRF (tokens/`SameSite`), insecure deserialization, mass assignment/over-posting, and Insecure Design (A04, threat-modeling tie to the Validation Gate). §5 (Dependency Security) now cross-references `dependencies.md` as the standard that owns A08's supply-chain depth. Sections after the new one renumbered: Security Interactions §9, Code Review Checklist §10, Severity Classification §11, Limited Scope §12. New red flags registered in `standards-quick-card.md`.
+- `devflow-reverse/SKILL.md` Step 8b and `reverse-template.md`'s Vulnerability Findings table: OWASP taxonomy updated from the 2017 list (Injection, Broken Auth, Sensitive Data Exposure, XXE, ...) to OWASP Top 10 (2021) A01–A10. Refs: F18, Wave 13.
+
+## 2.9.5 — 2026-09-07
+
+### Updated standards — 2.9.5
+- **`rest-api.md`** (→ v2.3.1): added a precedence note to §4 (Response Structure) — RFC 9457 Problem Details (§7) governs error response bodies whenever adopted, prevailing over the success envelope's `errors` field; the two sections previously read as contradictory. Unified the nested-path threshold: §1's "more than 2–3 levels" and the Severity table's ">3 levels" now both read ">3 levels".
+- **`accessibility.md`** (→ v1.2.1) / **`ui-design.md`** (→ v2.4.2): fixed a contradictory touch-target threshold — accessibility.md §7 now states the WCAG 2.2 AA floor (**24×24 CSS px**, 2.5.8) as the required minimum and the AAA recommendation (**44×44 CSS px**, 2.5.5, already ui-design.md's own default) as a separate, non-blocking preference. Both standards' Severity tables split the single "below 44×44" WARN into a 24×24 WARN (AA violation) and a 44×44 INFO (AAA gap). Refs: F25, F26, Wave 13.
+
+## 2.9.4 — 2026-09-07
+
+### Updated standards — 2.9.4
+- **`testing.md`** (→ v1.2.0): new `## 9. The TDD Cycle (Red → Green → Refactor)` — what a valid Red is (fails for the right reason, not a plumbing error), what a minimal Green is, when to refactor, and the rule that a Green is never committed without a confirmed PASS. Code Review Checklist, Severity Classification, and Limited Scope renumbered to §10/§11/§12. `devflow-implement/tdd-procedure.md` now references this section as the standard it executes. Refs: F34, Wave 13.
+
+## 2.9.3 — 2026-09-07
+
+### Updated standards — 2.9.3
+- **`logging.md`, `error-handling.md`, `concurrency.md`, `dependencies.md`, `accessibility.md`** (each → v1.2.0): gained a `Code Review Checklist` section (renumbering Severity Classification and Limited Scope by one), bringing all 14 standards to structural parity (Code Review Checklist + Severity Classification + Limited Scope). `git-conventions.md`'s Limited Scope gap was already closed in v2.9.0 — not repeated here.
+- `devflow-review/review-checklist.md` gained matching **Error Handling**, **Concurrency**, **Logging**, **Dependencies** (Universal Checks) and **Accessibility** (UI-Specific) sections — the checklist sections `devflow-review/SKILL.md`'s subagent-3 dimension already assigned but that didn't exist in the file. Refs: F15, Wave 13.
+
+## 2.9.2 — 2026-09-07
+
+### Updated standards — 2.9.2
+- **`performance.md`** (→ v2.3.1): Severity table's unbounded-collection BLOCK trigger cited `(§2, §6)`; §6 is *Measure Before Optimizing*, unrelated to pagination — corrected to `(§2)`.
+- **`ui-design.md`** (→ v2.4.1): 4 stale citations in the Severity Classification table pointed at sections that no longer hold that content (renumbered by earlier standard restructuring): design-token citations `§4` → `§13` (Design Tokens & Consistency), responsive-behavior citation `§9` → `§3` (Visual Foundation), virtualization citation `§15` → `§11` (Performance). Refs: F16, Wave 13.
+
+## 2.9.1 — 2026-09-07
+
+### Updated standards — 2.9.1
+- **`security.md`** (→ v2.3.1): fixed a duplicate `## 10.` — *Severity Classification* keeps §10, *Applying This Standard with a Limited Scope* is renumbered to §11. `security.md` is the most-cited standard in the framework; every `security.md §10` citation was ambiguous before this fix (a repo-wide sweep found none actually pointing at the scope block). Refs: F14, Wave 13.
+
 ## 2.9.0 — 2026-09-07
 
 ### Updated standards — 2.9.0

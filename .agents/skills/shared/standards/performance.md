@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Performance (Technology-Agnostic)
 
-> **Version:** 2.3.0 | **Last Updated:** 2026-09-07
+> **Version:** 2.3.2 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All patterns and code fragments are illustrative. Adapt syntax and tool names to the detected stack.
 
@@ -46,7 +46,7 @@ Apply these principles to all code you design, generate, or review.
   - Use caching as a substitute for fixing an inefficient query or algorithm; fix the root cause first.
 
 ## 4. Asynchronous Operations
-- **What:** Blocking I/O wastes threads and degrades throughput under load.
+- **What:** Blocking I/O wastes threads and degrades throughput under load. This section covers the **throughput** angle; [concurrency.md](./concurrency.md) §4 **owns** the correctness hazards of async code (fire-and-forget error handling, sync-over-async deadlock/starvation) — cite `concurrency.md §4` for those, not this section.
 - **DO:**
   - Use async/non‑blocking patterns for all I/O‑bound operations (network, disk, database).
   - Apply back‑pressure when the incoming request rate exceeds the processing capacity (e.g., bounded queues, circuit breakers).
@@ -54,8 +54,8 @@ Apply these principles to all code you design, generate, or review.
   - Parallelize independent I/O operations (e.g., fire multiple API calls concurrently and await them all).
 - **DON'T:**
   - Block the main thread or event loop with synchronous I/O in environments where async is available.
-  - Mix sync‑over‑async or async‑over‑sync patterns, which can cause thread‑pool starvation.
-  - Fire‑and‑forget async work without error handling — unobserved exceptions can crash the process or leave data inconsistent.
+  - Mix sync‑over‑async or async‑over‑sync patterns — see [concurrency.md](./concurrency.md) §4 for the correctness hazard (thread‑pool starvation, deadlock); this is a throughput cost on top of that.
+  - Fire‑and‑forget async work without error handling — see [concurrency.md](./concurrency.md) §4 (owns this; a data-loss instance is a Blocker there).
   - Use async for CPU‑bound work expecting it to become faster — offload CPU‑bound tasks to a background worker pool instead.
 
 ## 5. Resource Management
@@ -104,7 +104,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 | Severity | Triggers |
 |----------|---------|
-| 🔴 **BLOCK** | N+1 database queries in a loop on a hot path with unbounded input (§2); unbounded collection returned from a public API or repository without pagination (§2, §6); fire-and-forget async task with no error handling where failure causes data loss (§4) |
+| 🔴 **BLOCK** | N+1 database queries in a loop on a hot path with unbounded input (§2); unbounded collection returned from a public API or repository without pagination (§2); fire-and-forget async task with no error handling where failure causes data loss (canonical citation: `concurrency.md §4`) |
 | 🟡 **WARN** | Missing explicit TTL on cached data (§3); cache introduced without invalidation strategy (§3); synchronous I/O call where async is available in the runtime (§4); resource (connection, file handle) not explicitly released — no `using`/`try-with-resources` (§5); no connection pooling for expensive resources (§5) |
 | 🟢 **INFO** | O(n²) algorithm on a collection that is currently small but could grow (§1); optimization applied without profiling evidence or a performance budget (§6); sequential async calls that could be parallelized (§4) |
 
