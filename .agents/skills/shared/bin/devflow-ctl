@@ -931,7 +931,7 @@ cmd_sessions() {
   fi
   local found=0
   while IFS= read -r -d '' statefile; do
-    local slug phase mode lock locked_by
+    local slug phase mode lock locked_by rigor
     slug="$(basename "$(dirname "$statefile")")"
     # Read frontmatter fields without resolving a single session
     phase="$(awk '/^phase:/{print $2;exit}' "$statefile" 2>/dev/null || echo "?")"
