@@ -164,15 +164,6 @@ done
 header "7. Artifact path consistency"
 
 # Each standalone agent should declare a canonical artifact path
-ARTIFACT_PATTERNS=(
-  "docs/devflow/features/"
-  "docs/devflow/bug-fixes/"
-  "docs/devflow/refactors/"
-  "docs/devflow/specs/"
-  "docs/devflow/plans/"
-  "docs/devflow/reviews/"
-)
-
 declare -A SKILL_ARTIFACT_MAP=(
   ["devflow-feature"]="docs/devflow/features/"
   ["devflow-bug-fix"]="docs/devflow/bug-fixes/"

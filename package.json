@@ -25,6 +25,8 @@
     "uninstall": "bash uninstall.sh",
     "validate": "bash scripts/validate-framework.sh",
     "validate:fix": "bash scripts/validate-framework.sh --fix",
+    "lint:sh": "bash scripts/lint-shell.sh",
+    "lint:sh:all": "bash scripts/lint-shell.sh --all",
     "test": "bats tests/"
   },
   "devDependencies": {

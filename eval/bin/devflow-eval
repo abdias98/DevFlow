@@ -107,10 +107,10 @@ EVAL_PORT="${EVAL_PORT:-$(( 30000 + RANDOM % 10000 ))}"
 _EVAL_SERVE_PID=""
 
 eval_serve_start() { # eval_serve_start <serve-cmd> [ready-path]
-  local cmd="$1" ready="${2:-/}" i
+  local cmd="$1" ready="${2:-/}"
   PORT="$EVAL_PORT" setsid bash -c "$cmd" >"/tmp/eval-serve-$EVAL_PORT.log" 2>&1 &
   _EVAL_SERVE_PID=$!
-  for i in $(seq 1 40); do
+  for _ in $(seq 1 40); do
     curl -s -o /dev/null --max-time 1 "http://127.0.0.1:$EVAL_PORT$ready" 2>/dev/null && return 0
     sleep 0.25
   done
