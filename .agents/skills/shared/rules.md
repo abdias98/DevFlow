@@ -210,6 +210,10 @@ CI mode is active when the environment variable `CI=true` is set. This is the st
 | Error handling | Ask user how to proceed | Log error and exit |
 | Git commands | Tell user to run | Auto-execute (branch, commit) |
 | Rollback | Tell user to run | Skip rollback (fail fast) |
+| Scope expansion — **Impact Zone** | Ask, then `scope justify` | Auto-permit: `devflow-ctl scope justify {file} "CI: coherence"`, then proceed |
+| Scope expansion — **Outside** | Ask, then `scope add` | **Fail the pipeline** (exit non-zero), listing every file and why it was needed |
+
+**"Interactive questions → Use defaults or skip" does NOT cover scope.** That row is about the framework's own clarifying questions (goal, DoD, ambiguous requirements) — it was never meant to license silently working outside a plan's declared scope, and must not be read that way. A CI cycle never omits a scope decision: an Impact Zone coherence change is auto-justified and logged (not asked, not skipped — the six closed reasons make it mechanical); anything genuinely Outside fails the run loudly instead of being silently dropped or silently applied.
 
 ### CI configuration (environment variables)
 
@@ -225,7 +229,7 @@ CI mode is active when the environment variable `CI=true` is set. This is the st
 1. **Orchestrator:** Detect CI mode at Step 0. Skip the Confirmation Gate (auto-approve). Reduce max iterations to 1.
 2. **Brainstormer:** Skip clarifying questions. Infer from context or use reasonable defaults.
 3. **Architect:** Auto-accept spec without user confirmation.
-4. **Implementer:** Auto-run tests after each task (exception: `run_in_terminal` / `bash` is allowed). Report results inline.
+4. **Implementer:** Auto-run tests after each task (exception: `run_in_terminal` / `bash` is allowed). Report results inline. On an Impact Zone edit, auto-run `scope justify {file} "CI: coherence"` — never ask. On an Outside-zone need, fail the run instead of proceeding or silently skipping.
 5. **Reviewer:** Normal behavior — still classifies BLOCK/WARN/INFO.
 6. **Debugger:** Skip. If tests fail, report error and exit.
 7. **Finalizer:** Normal behavior — save summary and clean session memory.
