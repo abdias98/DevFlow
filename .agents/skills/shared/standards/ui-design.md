@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: UI Design (Technology-Agnostic)
 
-> **Version:** 2.4.0 | **Last Updated:** 2026-09-07
+> **Version:** 2.4.1 | **Last Updated:** 2026-09-07
 
 > **Apply only if:** the project has a user interface (web frontend, mobile app, desktop app, or server-rendered views).
 > If this is a pure API, CLI tool, library, or background worker, skip this standard entirely.
@@ -331,8 +331,8 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | Severity | Triggers |
 |----------|---------|
 | 🔴 **BLOCK** | Interactive element (button, link, form field) not keyboard-accessible or missing ARIA role/label, blocking core user flows (→ accessibility.md §3, §5); hardcoded secret or sensitive data rendered in UI/template (→ security.md §3) |
-| 🟡 **WARN** | Component introduced without checking for an existing reusable equivalent — duplication confirmed (§3); hardcoded color, spacing, or font value instead of design token (§4); missing interaction state (focus, error, loading, disabled) on an interactive element (§6); no responsive behavior on a new UI component expected to render on mobile (§9); touch target smaller than 44×44 px on a mobile screen (→ accessibility.md §7) |
-| 🟢 **INFO** | Minor inconsistency in naming relative to the design system conventions (§4); large list not virtualized but data set is currently small and bounded (§15); component slightly outside the design system pattern but not causing duplication or accessibility issues (§3) |
+| 🟡 **WARN** | Component introduced without checking for an existing reusable equivalent — duplication confirmed (§3); hardcoded color, spacing, or font value instead of design token (§13); missing interaction state (focus, error, loading, disabled) on an interactive element (§6); no responsive behavior on a new UI component expected to render on mobile (§3); touch target smaller than 44×44 px on a mobile screen (→ accessibility.md §7) |
+| 🟢 **INFO** | Minor inconsistency in naming relative to the design system conventions (§13); large list not virtualized but data set is currently small and bounded (§11); component slightly outside the design system pattern but not causing duplication or accessibility issues (§3) |
 
 ## 17. Applying This Standard with a Limited Scope
 

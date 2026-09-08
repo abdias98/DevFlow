@@ -4,6 +4,12 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.9.2 — 2026-09-07
+
+### Updated standards — 2.9.2
+- **`performance.md`** (→ v2.3.1): Severity table's unbounded-collection BLOCK trigger cited `(§2, §6)`; §6 is *Measure Before Optimizing*, unrelated to pagination — corrected to `(§2)`.
+- **`ui-design.md`** (→ v2.4.1): 4 stale citations in the Severity Classification table pointed at sections that no longer hold that content (renumbered by earlier standard restructuring): design-token citations `§4` → `§13` (Design Tokens & Consistency), responsive-behavior citation `§9` → `§3` (Visual Foundation), virtualization citation `§15` → `§11` (Performance). Refs: F16, Wave 13.
+
 ## 2.9.1 — 2026-09-07
 
 ### Updated standards — 2.9.1

@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Performance (Technology-Agnostic)
 
-> **Version:** 2.3.0 | **Last Updated:** 2026-09-07
+> **Version:** 2.3.1 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All patterns and code fragments are illustrative. Adapt syntax and tool names to the detected stack.
 
@@ -104,7 +104,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 | Severity | Triggers |
 |----------|---------|
-| 🔴 **BLOCK** | N+1 database queries in a loop on a hot path with unbounded input (§2); unbounded collection returned from a public API or repository without pagination (§2, §6); fire-and-forget async task with no error handling where failure causes data loss (§4) |
+| 🔴 **BLOCK** | N+1 database queries in a loop on a hot path with unbounded input (§2); unbounded collection returned from a public API or repository without pagination (§2); fire-and-forget async task with no error handling where failure causes data loss (§4) |
 | 🟡 **WARN** | Missing explicit TTL on cached data (§3); cache introduced without invalidation strategy (§3); synchronous I/O call where async is available in the runtime (§4); resource (connection, file handle) not explicitly released — no `using`/`try-with-resources` (§5); no connection pooling for expensive resources (§5) |
 | 🟢 **INFO** | O(n²) algorithm on a collection that is currently small but could grow (§1); optimization applied without profiling evidence or a performance budget (§6); sequential async calls that could be parallelized (§4) |
 
