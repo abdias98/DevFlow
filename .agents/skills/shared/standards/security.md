@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Security (Technology-Agnostic)
 
-> **Version:** 2.4.1 | **Last Updated:** 2026-09-07
+> **Version:** 2.4.2 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All tool names and code fragments are illustrative. Replace them with the actual libraries, services, and conventions of the detected stack.
 
@@ -66,7 +66,7 @@ Apply these principles to all code you design, generate, or review.
   - Blindly update dependencies without reviewing changelogs and breaking changes, especially for critical or large libraries.
 
 ## 6. Error Handling & Information Disclosure
-- **What:** Internal errors must never leak system details to clients. **Canonical citation for "stack trace exposed to an external caller" is [error-handling.md](./error-handling.md) §5** — cite this section (§6) only as the security-angle cross-reference, not the primary citation, to avoid the same finding being logged under two different section numbers.
+- **What:** Internal errors must never leak system details to clients. **Canonical citation for "stack trace exposed to an external caller" is [error-handling.md](./error-handling.md) §5** — this Error Handling & Information Disclosure section is only the security-angle cross-reference, not the primary citation, to avoid the same finding being logged under two different section numbers.
 - **DO:**
   - Log errors internally with full context (stack trace, request details, user context) for debugging. Use structured logging and ensure logs do not contain secrets.
   - Return generic, user-friendly error messages to clients. Distinguish between user‑actionable errors (validation failures, not found) and system errors (internal server error) without revealing internals.
@@ -125,9 +125,9 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 | Severity | Triggers |
 |----------|---------|
-| 🔴 **BLOCK** | Hardcoded secret/credential in source code (§3); custom auth/crypto implementation (§2); unvalidated external input reaching SQL, shell, or LDAP (§1, §4); sensitive tokens stored in `localStorage`/`sessionStorage` (§2); no authentication on a data-mutating or private-data endpoint (§2); stack traces or internal paths exposed in API responses (§6) |
+| 🔴 **BLOCK** | Hardcoded secret/credential in source code (§3); custom authentication/cryptography mechanism (§2); unvalidated external input reaching SQL, shell, or LDAP (§1, §4); sensitive tokens stored in `localStorage`/`sessionStorage` (§2); no authentication on a data-mutating or private-data endpoint (§2); stack traces or internal paths exposed in API responses (§6) |
 | 🟡 **WARN** | Missing rate limiting on sensitive endpoint (§7); HTTP used without redirect to HTTPS (§7); dependency with known moderate vulnerability (§5); `localStorage` used for non-sensitive tokens with no documented rationale (§2); incomplete input validation (allows but does not reject all bad input) (§1) |
-| 🟢 **INFO** | Missing HSTS header (§7); no structured logging of security events (§7); dependency lock file absent (§5); minor information disclosure in non-production environment (§6) |
+| 🟢 **INFO** | Missing HSTS header — incomplete Transport Security (§7); no structured logging of security events (§7); dependency lock file absent (§5); minor information disclosure in non-production environment (§6) |
 
 ## 12. Applying This Standard with a Limited Scope
 

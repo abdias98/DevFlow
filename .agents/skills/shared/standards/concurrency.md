@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Concurrency & Async (Technology-Agnostic)
 
-> **Version:** 1.2.0 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.1 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All primitives (locks, queues, atomics, async constructs) are illustrative. Replace them with the actual concurrency model and libraries of the detected stack (threads, async/await, actors, goroutines, event loop, etc.).
 
@@ -101,7 +101,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 |----------|---------|
 | 🔴 **BLOCK** | Non-atomic check-then-act / read-modify-write on shared state where a race causes data loss, overselling, double-spend, or corruption (§2); fire-and-forget async task with no error handling where failure = data loss (§4); non-idempotent side effect applied with no dedup under at-least-once delivery (§5); blocking I/O or external call performed while holding a lock, or inconsistent lock ordering that can deadlock (§3) |
 | 🟡 **WARN** | Shared mutable state accessed from multiple contexts without clear synchronization (§1); unbounded parallel task spawning (§4); sync-over-async that can exhaust the pool (§4); lock held across slow work, or critical section larger than necessary (§3); background task spawned with no cancellation/shutdown handling (§7); reliance on plain writes for cross-context visibility (§6) |
-| 🟢 **INFO** | Mutable shared structure where an immutable or message-passing design would be simpler (§1); missing graceful-shutdown drain (§7); opportunity to replace a lock with an atomic/lock-free primitive (§3) |
+| 🟢 **INFO** | Mutable shared structure where an immutable or message-passing design would be simpler (§1); missing graceful-shutdown drain (§7); opportunity to replace a lock with an atomic/lock-free structure (§3) |
 
 ## 10. Applying This Standard with a Limited Scope
 

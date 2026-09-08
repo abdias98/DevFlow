@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: REST API Design (Technology-Agnostic)
 
-> **Version:** 2.3.1 | **Last Updated:** 2026-09-07
+> **Version:** 2.3.2 | **Last Updated:** 2026-09-07
 
 > **Apply only if:** the project has HTTP endpoints, REST controllers, or API contracts.
 > If this is a CLI, library, background worker, or frontend-only project, skip this standard entirely.
@@ -170,7 +170,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | Severity | Triggers |
 |----------|---------|
 | 🔴 **BLOCK** | `200 OK` returned with an error body (§3); unsafe state-changing operation exposed via `GET` (§2); no authentication on an endpoint that exposes or mutates private data (§8); unvalidated client input used directly in a query or command (§8 → security.md §1) |
-| 🟡 **WARN** | Verb in URI path (e.g., `/getUser`, `/createOrder`) (§1); wrong HTTP method for the operation (§2); missing pagination on a collection endpoint (§6); inconsistent response envelope across endpoints (§4); no versioning strategy on a public API (§5); unstructured error response — plain string or HTML (§7) |
+| 🟡 **WARN** | Verb in URI path (e.g., `/getUser`, `/createOrder`) (§1); wrong HTTP method for a state-changing operation (§2); missing pagination on a collection endpoint (§6); inconsistent response envelope across endpoints (§4); no versioning strategy on a public API (§5); unstructured error response — plain string or HTML (§7) |
 | 🟢 **INFO** | Deeply nested URI (>3 levels) without documented rationale (§1); `Idempotency-Key` not supported on a non-idempotent `POST` (§9); API spec (OpenAPI) missing or outdated (§10); no `documentation_url` in error response (§7) |
 
 ## 14. Applying This Standard with a Limited Scope
