@@ -235,9 +235,9 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
     - Proceed to Step 6.
 6. **If 🤝 Pair** → run `devflow-ctl gate set confirmation approved --slug {slug}` and `devflow-ctl config set pair_mode true --slug {slug}`. Branch is created manually by the user. Pair mode: the user runs tests, creates branches, and confirms each task. Proceed to Step 6.
 7. **If ✏️ Request changes** → collect user feedback. Run `devflow-ctl iterate plan_revision --slug {slug}` (exit 1 = revision limit reached, escalate to the user instead). Route back to Step 4 (Planner) with the feedback.
-8. **If ❌ Cancel** → stop the cycle. Release the memory lock with `devflow-ctl lock release`. Present the rollback option:
+8. **If ❌ Cancel** → stop the cycle. Run `devflow-ctl config set status cancelled --slug {slug}` **before** releasing the lock — this is what keeps `devflow-ctl clean` from removing the session once it naturally ages past the stale-lock window. Then release the memory lock with `devflow-ctl lock release --slug {slug}`. Present the rollback option:
    > "Cycle cancelled. To revert all DevFlow artifacts created so far, run: `git reset --hard {pre-phase-1-sha}`"
-   Update `phase-state.md` noting cancellation. Do NOT clean session memory (preserve artifacts for reference).
+   Update `phase-state.md` noting cancellation. Do NOT clean session memory (preserve artifacts for reference — `devflow-ctl clean` respects `status: cancelled` and will never remove it; only `--force` would).
 
 ### Step 6 — Phase 5: Implementer
 

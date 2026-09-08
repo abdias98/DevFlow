@@ -346,6 +346,52 @@ setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
   [[ "$output" == *"code patterns (SAST)"* ]]
 }
 
+# ── Clean safety (F27) ──────────────────────────────────────────────────────────
+
+@test "clean: a freshly-released session survives (grace period, not stale yet)" {
+  "$CTL" init --mode feature --slug fresh >/dev/null
+  "$CTL" lock release --slug fresh >/dev/null
+  run "$CTL" clean
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"no stale sessions"* ]]
+  [ -d "$DEVFLOW_SESSION_ROOT/fresh" ]
+}
+
+@test "clean: an unlocked session past the stale window is removed" {
+  "$CTL" init --mode feature --slug old >/dev/null
+  "$CTL" lock release --slug old >/dev/null
+  sed -i 's/^locked_since:.*/locked_since: 2020-01-01T00:00:00Z/' "$DEVFLOW_SESSION_ROOT/old/phase-state.md"
+  run "$CTL" clean
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"removed: old"* ]]
+  [ ! -d "$DEVFLOW_SESSION_ROOT/old" ]
+}
+
+@test "clean: a session marked cancelled is never removed, even if stale" {
+  "$CTL" init --mode feature --slug cancelled >/dev/null
+  "$CTL" config set status cancelled --slug cancelled >/dev/null
+  "$CTL" lock release --slug cancelled >/dev/null
+  sed -i 's/^locked_since:.*/locked_since: 2020-01-01T00:00:00Z/' "$DEVFLOW_SESSION_ROOT/cancelled/phase-state.md"
+  run "$CTL" clean
+  [ "$status" -eq 0 ]
+  [ -d "$DEVFLOW_SESSION_ROOT/cancelled" ]
+}
+
+@test "clean --force: removes everything, including a cancelled session" {
+  "$CTL" init --mode feature --slug cancelled >/dev/null
+  "$CTL" config set status cancelled --slug cancelled >/dev/null
+  run "$CTL" clean --force
+  [ "$status" -eq 0 ]
+  [ ! -d "$DEVFLOW_SESSION_ROOT/cancelled" ]
+}
+
+@test "config: status only accepts active or cancelled" {
+  "$CTL" init --mode feature --slug s >/dev/null
+  run "$CTL" config set status bogus --slug s
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"must be 'active' or 'cancelled'"* ]]
+}
+
 # ── Doctor (install / session diagnostics) ────────────────────────────────────
 
 @test "doctor: clean environment reports no failures" {
