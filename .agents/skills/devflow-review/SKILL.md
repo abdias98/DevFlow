@@ -192,7 +192,7 @@ See Cycle Mode Step 3 for the subagent briefs, standards mapping, and synthesis 
 | Findings | Action |
 |----------|--------|
 | No BLOCK | ✅ APPROVED → Inform user. Work is complete. |
-| BLOCK exists | 🔄 CHANGES REQUESTED → Return to invoking agent with specific fixes. The agent applies fixes and re-invokes the Reviewer (max 2 iterations). |
+| BLOCK exists | 🔄 CHANGES REQUESTED → Return to invoking agent with specific fixes. The agent applies fixes and re-invokes the Reviewer, counted via `devflow-ctl iterate implement_review` (limit 3, not the "2" this used to say in prose — see `devflow-ctl`'s `iterate_default_max`). |
 | Architectural flaw requiring full redesign | 🔄 Recommend `/devflow` full cycle instead. |
 
 ### Step 6 — Update Memory

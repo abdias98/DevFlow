@@ -129,7 +129,7 @@ After supervisor findings are resolved:
 1. Verify all tasks completed successfully (files exist, tests pass in Standard mode).
 2. **Standard mode:** auto-commit each task sequentially (never parallelize git commands) with the planned message from the plan.
 3. **Pair mode:** present all tasks in the wave for user approval. After approval, tell the user the commit commands.
-4. If any subagent failed (before supervisor) → stop, diagnose, and re-dispatch the failed task (max 2 retries per task).
+4. If any subagent failed (before supervisor) → run `devflow-ctl iterate implement_debug --slug {slug}`. On exit 0, diagnose and re-dispatch the failed task. On exit 1 (limit exceeded), stop and escalate to the user with the failure output instead of re-dispatching again.
 5. Proceed to the next wave.
 
 **Sequential fallback:** If the editor does not support parallel subagent invocation, execute tasks sequentially within each wave (they are independent, so order doesn't matter). The synthesis step is identical — only the execution order changes. See [parallel-subagents.md](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) → Fallback.
@@ -158,6 +158,10 @@ Update `test-registry.md` and `phase-state`:
 ```markdown
 - [x] Phase 5: Implementer — all {N} tasks complete
 ```
+
+### Step 4.5 — Lint / Typecheck Gate
+
+Before the Verifier or the Reviewer see any of this, run the project's `Lint Command` from `## Stack Profile` (including any typecheck script the project defines, e.g. `tsc --noEmit`), scoped to the changed files where possible — see [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Lint / Typecheck Gate for the canonical Standard/CI-vs-Pair behavior (the Feature Agent already follows the same rule). Fix mechanical failures (formatting, unused imports) in-scope and re-run; report persistent violations as findings for the Reviewer instead of hand-waving them. This is the fix for a gap where the Implementer — the phase that writes the most code — was the only phase without a mechanical lint/typecheck check before review.
 
 ### Step 5 — Pre-Review Verification
 
