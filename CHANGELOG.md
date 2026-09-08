@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.6.0] — 2026-09-07
+
+> Five-wave hardening pass (Waves 10–14, 39 PRs) closing the 46 findings (F01–F46) from the main-branch audit: standalone-agent session enforcement, deterministic CLI fixes, a three-zone scope model with a deferred backlog, standards structural integrity and OWASP 2021 coverage, and new framework self-validation checks that keep all of it from regressing.
+
+### ✨ Added
+
+- **Standalone execution canonical pattern** (`shared/standalone-execution.md`) — the single source of truth for Session Opening, Mode Selection, Approval Gate, Branch Policy, Rollback Checkpoint, Iteration Limits, Lint Gate, Verification, Canonical Closing Order, and Knowledge Base Write-Back, referenced by all 10 standalone agents instead of duplicated per-skill prose. (F02–F12)
+- **Full session enforcement for all 10 standalone agents** — `devflow-ctl init`/`lock check`/`scope check`/metrics now apply uniformly; the 7 agents that had none (`perf`, `migrate`, `contract`, `docs`, `templates`, `tutorial`, `reverse`) are brought to parity. (F12)
+- **Three-zone scope model** (`rules.md` → Scope-Locking — Three Zones) — Core / Impact Zone / Outside replaces the old binary scope-lock. `devflow-ctl scope impact/justify/audit` implement language-agnostic dependent/dependency discovery, a closed list of 6 coherence reasons for editing the Impact Zone, and an audit of undeclared edits. Wired through the Architect, Planner, Implementer, Verifier, and Reviewer. (F39–F42)
+- **Deferred backlog** (`docs/devflow/backlog/deferred.md`, `devflow-ctl backlog add/list`) — a persistent, severity-graded (🔴 BLOCK / 🟠 INCOMPLETE / 🟢 INFO) record of scope-adjacent findings that fell outside the Core or Impact Zone, read by the Brainstormer and Architect at the start of a cycle touching the same area. (F43–F45)
+- **Rigor classification for standalone flows** — every standalone agent now classifies and sets its own rigor level (`light`/`standard`/`deep`/`maximum`) at Step 0, using the Planner's criterion, driving rigor-aware verifier/supervisor thresholds. (F19)
+- **`accessibility.md` and `git-conventions.md` reach full standard parity** — a Code Review Checklist section added to all 14 standards (5 were missing one), `git-conventions.md` gains a Limited Scope section and its own Code Review Checklist wiring into `standards-quick-card.md`, `critical-friend.md`, and the 6 agents that commit. (F13, F15)
+- **`testing.md` gains "The TDD Cycle (Red → Green → Refactor)"** — defines a valid Red (fails for the right reason), a minimal Green, when to refactor, and the never-commit-without-confirmed-PASS rule; `tdd-procedure.md` now references it as the standard it executes. (F34)
+- **OWASP Top 10 (2021) coverage** — `security.md` gains CSRF, insecure deserialization, mass assignment, and Insecure Design (A04); `devflow-reverse`'s vulnerability taxonomy updated from the 2017 list to A01–A10. (F18)
+- **Bidirectional standards cross-links** — security.md ↔ error-handling.md, dependencies.md ↔ security.md, performance.md ↔ concurrency.md, clean-architecture.md ↔ testing.md each declare one canonical owner instead of duplicating overlapping rules under different section numbers. (F17)
+- **Three new framework self-validation checks** (`scripts/validate-framework.sh`) — §11 skill ↔ prompt parity, §12 standards integrity (no orphans, no duplicate numbering, mandatory sections, a lightweight citation-vs-content semantic check), §13 the standalone enforcement matrix (init/lock/scope/approval-gate/closing-order per agent). Each was verified to fail on the pre-Wave-10 tree and pass on the fixed one. (F20, F21)
+- **`devflow-reverse.prompt.md`** — the one skill that had no mirror `.github/prompts/` entry; all 18 skills now have 18 matching prompts. (F20)
+- **29 new bats cases** (71 → 100) closing coverage gaps in `lock`, `config`, `checkpoint`, `knowledge`, `sessions`, `status`, `phase`, and multi-session disambiguation. (F03, F22)
+
+### 🔄 Changed
+
+- **Session closing order** (F01) — `devflow-feature`, `devflow-bug-fix`, `devflow-refactor` no longer release the lock and delete session memory *before* invoking the Reviewer and recording metrics; `devflow-finalize` now archives `autonomous-log.md`/`send-to-user.md` (if present) and deletes the whole session directory instead of a hand-picked file list, so nothing is silently orphaned. (F01, F37)
+- **`devflow-ctl` session resolution** — `lock check` on an empty repo exits 0 instead of 2; `resolve_session` auto-resolves to the single actively-locked session among 2+ candidates instead of always requiring `--slug`. (F02, F03)
+- **`devflow-ctl` scope glob matching is segment-aware** — `*` no longer crosses `/`, making the exact-glob semantics the Impact Zone model depends on. (F06)
+- **Implementer and Planner reach all 14 standards** via the same "scan first, load on demand" policy the standalone agents already used, instead of a fixed 6–7 standard list. (F07, F29)
+- **`devflow-ctl clean`** respects a stale-lock grace period for unlocked sessions and never removes a session marked `cancelled` without `--force`. (F27)
+- **`devflow-ctl artifacts check`** gains 8 standalone report types (feature, bugfix, refactor, perf, migration, contract, docs, reverse). (F28)
+- **Deterministic iteration counting** everywhere — every "max N retries/attempts" in prose replaced with `devflow-ctl iterate {loop}`, so a fix loop and an escalation never double-count against two different limits. (F10)
+
+### 🐛 Fixed
+
+- **`security.md`'s duplicate `## 10.`** section (Severity Classification and Limited Scope both numbered 10) — the framework's most-cited standard had every `§10` citation ambiguous; renumbered to §11. (F14)
+- **4+1 stale section citations** in `performance.md` and `ui-design.md` pointing at content that had moved during earlier restructuring. (F16)
+- **`rest-api.md`'s response-envelope vs. RFC 9457 contradiction** — added an explicit precedence note; unified the "2–3 levels" / ">3 levels" nested-path threshold. (F25)
+- **`accessibility.md`/`ui-design.md`'s conflated touch-target thresholds** — split the WCAG 2.2 AA floor (24×24, required) from the AAA recommendation (44×44) into two distinct severities. (F26)
+- **`editor-profiles/vscode.yaml`** — `vision: false` → `true` (GitHub Copilot Chat in VS Code accepts image attachments; the Reviewer's visual-diff step was being skipped needlessly). (F32)
+- **`cmd_sessions`** — `rigor` was assigned without being declared `local`, leaking it as an implicit global. (F33)
+- **Two `grep -c` double-zero bugs** (`cmd_backlog`, `cmd_knowledge`) — `grep -c` prints `0` on zero matches while still exiting 1, so a `|| echo 0` fallback appended a *second* `0`; fixed with `|| true` and an explicit default. (F44, F22)
+- **`devflow-migrate` and `devflow-contract`** generated real production files (migrations, contract tests) with no `scope check`/`scope add` gate at all — found while writing the new §13 check; fixed with the same pattern `bug-fix`/`refactor` already use.
+- **Two `set -e`/`pipefail` traps** in `scripts/validate-framework.sh` itself — pipeline assignments aborted the whole script whenever an inner `grep` found nothing, since `pipefail` propagates that as the assignment's exit status.
+- **`devflow/SKILL.md`'s Confirmation Gate** duplicated in `lifecycle.md` with a different, out-of-sync option set; and rule 13 asserted a flat "max 3 iterations" contradicting the actual per-loop table (2 for two of the four loops). Both now reference the single source of truth instead of duplicating it. (F35, F36)
+
+**Closing note:** applying the Wave 14 checks to the pre-Wave-10 tree (`72f5668`) reproduces well over 20 of the 46 catalogued findings; applying them to this release returns 0 errors and 0 warnings.
+
 ## [4.5.0] — 2026-08-24
 
 > Feature Agent hardening — execution modes with verified TDD outcomes, rollback checkpoints, plan preservation as an audit artifact, deterministic iteration limits, lint/typecheck gating, CI mode, knowledge-base write-back, and explicit branch/verifier policies.
