@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Concurrency & Async (Technology-Agnostic)
 
-> **Version:** 1.0.0 | **Last Updated:** 2026-06-15
+> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All primitives (locks, queues, atomics, async constructs) are illustrative. Replace them with the actual concurrency model and libraries of the detected stack (threads, async/await, actors, goroutines, event loop, etc.).
 
@@ -97,7 +97,11 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 When reviewing or modifying concurrent code in a **specific set of files**, follow these constraints:
 
-1. **Only change synchronization within the approved scope.** If out-of-scope code has an unguarded race, flag it as a finding (WARN/BLOCK note) rather than editing it.
+1. **Only change synchronization within the approved Core scope.** If out-of-scope code has an unguarded race, apply the Impact Zone / backlog handling below rather than editing it directly.
 2. **Fixing a data-corrupting race or a data-loss fire-and-forget is always in scope** when it occurs in a file you are already modifying — it is a required fix, not an opportunistic change.
 3. **Do not introduce a new concurrency model, threading framework, or message broker** unless that integration is explicitly in scope; use the existing primitives.
 4. **When adding synchronization to satisfy this standard**, match the project's existing concurrency conventions (its lock types, async style, idempotency mechanism) rather than introducing a new approach.
+
+**Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
+- **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
+- **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.

@@ -207,6 +207,52 @@ setup() {
   [[ "$output" == *"STALE"* ]]
 }
 
+# ── Deferred backlog (F43, F44, F45) ────────────────────────────────────────────
+
+setup_backlog() { export DEVFLOW_BACKLOG_FILE="$BATS_TEST_TMPDIR/deferred.md"; }
+
+@test "backlog add: creates the file with a header and one row" {
+  setup_backlog
+  run "$CTL" backlog add src/foo.ts "needs a coherence fix" --severity incomplete --slug demo
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"D1"* ]]
+  [ -f "$DEVFLOW_BACKLOG_FILE" ]
+  grep -q "🟠 INCOMPLETE" "$DEVFLOW_BACKLOG_FILE"
+  grep -q "demo" "$DEVFLOW_BACKLOG_FILE"
+}
+
+@test "backlog add: IDs increment across entries" {
+  setup_backlog
+  "$CTL" backlog add a.ts "r1" --severity info
+  "$CTL" backlog add b.ts "r2" --severity block
+  run "$CTL" backlog add c.ts "r3" --severity incomplete
+  [[ "$output" == *"D3"* ]]
+}
+
+@test "backlog add: rejects an invalid severity" {
+  setup_backlog
+  run "$CTL" backlog add a.ts "r" --severity bogus
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"must be 'block', 'incomplete', or 'info'"* ]]
+}
+
+@test "backlog list --area: filters by a glob against the File column" {
+  setup_backlog
+  "$CTL" backlog add src/auth/session.ts "r1" --severity incomplete
+  "$CTL" backlog add src/db/pool.ts "r2" --severity block
+  run "$CTL" backlog list --area 'src/auth/*'
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"session.ts"* ]]
+  [[ "$output" != *"pool.ts"* ]]
+}
+
+@test "backlog list: with no backlog file, reports none found instead of erroring" {
+  setup_backlog
+  run "$CTL" backlog list
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"No deferred backlog found"* ]]
+}
+
 # ── Scope impact / justify / audit — three-zone model (F39) ───────────────────
 
 setup_impact_repo() {

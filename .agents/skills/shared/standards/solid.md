@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: SOLID Principles (Technology-Agnostic)
 
-> **Version:** 2.2.0 | **Last Updated:** 2026-06-10
+> **Version:** 2.3.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All code-like fragments use generic pseudo-code or abstract concepts (e.g., “HTTP client”, “ORM entity”, “service locator”) to avoid dependence on any specific language or framework. Adapt the concrete syntax to the detected stack.
 
@@ -91,18 +91,22 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 ## 9. Applying This Standard with a Limited Scope
 
-When you are asked to apply SOLID principles to a **specific set of files or modules** (the declared scope), follow these constraints to respect the “never touch files outside the scope” rule:
+When you are asked to apply SOLID principles to a **specific set of files or modules** (the declared Core scope), follow these constraints:
 
-1. **Only modify files inside the scope.**  
-   - If an SRP violation requires splitting a class, but the new class would be outside the scope, **do not create it**. Instead, add a comment in the original file recommending the split and describing the responsibility that should be extracted.
-2. **Interface extraction when the implementer is outside scope.**  
-   - If DIP requires depending on an abstraction but the existing concrete class is outside scope, define the interface (port) in scope and leave a TODO/INFO comment stating that the outer class should implement it.
-3. **OCP refactors limiting new classes.**  
-   - If replacing a `switch` with polymorphism would require creating multiple new strategy files outside scope, document the pattern in a comment instead of partially refactoring.
-4. **Avoid breaking the build.**  
-   - Removing a direct instantiation to replace with injected dependency may break DI registration if the composition root is out of scope. In that case, leave the `new` call but add a comment explaining how it should be refactored to full DIP.
-5. **Small scope-safe improvements are always allowed:**  
-   - Renaming a class for clarity (if the user approved it).  
-   - Extracting a private method to reduce duplication within the same file.  
-   - Replacing magic numbers with constants within the same file.  
+1. **Only modify files inside Core directly.**
+   - If an SRP violation requires splitting a class, but the new class would fall in the Impact Zone or Outside, apply the handling below (justify if it's a closed coherence reason; otherwise backlog it) rather than leaving an ad hoc comment.
+2. **Interface extraction when the implementer is outside scope.**
+   - If DIP requires depending on an abstraction but the existing concrete class is outside Core, define the interface (port) in Core. Route the outer class's adapter implementation through the Impact Zone / backlog handling below.
+3. **OCP refactors limiting new classes.**
+   - If replacing a `switch` with polymorphism would require creating multiple new strategy files outside Core, apply the handling below instead of partially refactoring.
+4. **Avoid breaking the build.**
+   - Removing a direct instantiation to replace with injected dependency may break DI registration if the composition root is out of scope. If the registration change is a closed coherence reason (Core doesn't compile/run without it) and falls in the Impact Zone, make it and `scope justify`; otherwise defer the whole change to the backlog.
+5. **Small scope-safe improvements are always allowed:**
+   - Renaming a class for clarity (if the user approved it).
+   - Extracting a private method to reduce duplication within the same file.
+   - Replacing magic numbers with constants within the same file.
    - Adding documentation comments that clarify the contract (LSP).
+
+**Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
+- **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
+- **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.

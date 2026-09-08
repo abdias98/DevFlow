@@ -95,7 +95,7 @@ Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|IN
 1. Read **only** the files in the Approved Scope List.
 2. Identify the issues to address: code smells, duplication, complexity, naming, magic numbers.
 3. Identify direct dependencies (imports used by the target) that may need updating.
-4. **DO NOT read or analyze files outside the scope** unless they are direct imports of the target.
+4. Read whatever is needed to evaluate impact — see rules.md → Scope restricts writing, never reading. **Modify only the Core and, for coherence changes with a recorded `scope justify`, the Impact Zone** — reading is not the restriction; writing is.
 5. **When applying Clean Architecture rules:** if you detect violations that would require editing files outside the scope, follow the **“Applying This Standard with a Limited Scope”** section of `clean-architecture.md`. Only modify files within scope; for architectural changes needing files out of scope, leave TODO/INFO comments in the in-scope files instead.
 
 ### Step 4 — Analyze Test Infrastructure (do NOT create tests yet)

@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: REST API Design (Technology-Agnostic)
 
-> **Version:** 2.2.0 | **Last Updated:** 2026-06-10
+> **Version:** 2.3.0 | **Last Updated:** 2026-09-07
 
 > **Apply only if:** the project has HTTP endpoints, REST controllers, or API contracts.
 > If this is a CLI, library, background worker, or frontend-only project, skip this standard entirely.
@@ -174,20 +174,24 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 ## 14. Applying This Standard with a Limited Scope
 
-When applying REST API design rules to a **specific set of files or modules** (the declared scope), follow these constraints:
+When applying REST API design rules to a **specific set of files or modules** (the declared Core scope), follow these constraints:
 
-1. **Only modify files inside the scope.**
-   - If an API endpoint outside the scope violates a rule, flag it as an INFO note in the in‑scope file and recommend the fix. Do not touch external controllers or routes.
+1. **Only modify files inside Core directly.**
+   - If an API endpoint outside Core violates a rule, apply the Impact Zone / backlog handling below rather than touching external controllers or routes unconditionally.
 2. **Response structure changes.**
-   - Normalizing a response envelope is allowed if both the controller and the serialization logic are in scope. If the envelope is defined by a global middleware or serializer outside the scope, leave a TODO comment and suggest the central change.
+   - Normalizing a response envelope is allowed if both the controller and the serialization logic are in Core. If the envelope is defined by a global middleware or serializer outside Core, route it through the handling below rather than editing it unconditionally.
 3. **Versioning additions.**
-   - If a new endpoint is being added within scope, apply the existing versioning strategy. Do not introduce a new version prefix or modify the routing configuration if those live outside the scope.
+   - If a new endpoint is being added within Core, apply the existing versioning strategy. Do not introduce a new version prefix or modify the routing configuration if those live outside Core/Impact Zone.
 4. **Pagination and filtering.**
    - Paginating an unbounded collection within an in‑scope endpoint is always allowed. Do not introduce new shared pagination libraries or modify base controller classes outside the scope.
 5. **Security headers and rate limiting.**
-   - Applying rate limiting or CORS headers usually requires middleware configuration outside the scope. Recommend those changes as INFO notes rather than modifying global configuration files.
+   - Applying rate limiting or CORS headers usually requires middleware configuration outside Core. Apply the Impact Zone / backlog handling below rather than modifying global configuration files unconditionally.
 6. **Scope‑safe improvements are always allowed:**
    - Correcting HTTP methods and status codes in a controller.
    - Adjusting resource URIs (if the routing table is in the same file).
    - Returning structured error objects instead of plain strings.
    - Adding an `Idempotency-Key` check within the in‑scope service method.
+
+**Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
+- **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
+- **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.

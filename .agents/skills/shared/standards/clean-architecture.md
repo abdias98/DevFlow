@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Clean Architecture (Technology-Agnostic)
 
-> **Version:** 2.2.0 | **Last Updated:** 2026-06-10
+> **Version:** 2.3.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All code-like fragments and tool references are illustrative. Replace them with the actual libraries, frameworks, and naming conventions of the detected stack.
 
@@ -109,24 +109,27 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 ## 8. Applying This Standard with a Limited Scope
 
-When you are asked to apply Clean Architecture rules to a **specific set of files or modules** (the declared scope), follow these additional constraints to avoid breaking the principle of “never touch files outside the scope”:
+When you are asked to apply Clean Architecture rules to a **specific set of files or modules** (the declared Core scope), follow these additional constraints:
 
-1. **Only modify files inside the scope.**  
-   - If a violation is found in a file outside the scope, **do not edit it**. Instead, add a comment (in the files you *can* edit) mentioning the architectural issue and the recommended change in the other file.  
-   - Use the same style as the skill's INFO notes.
+1. **Only modify files inside Core directly.**
+   - If a violation is found in a file outside Core, apply the Impact Zone / backlog handling below instead of editing it unconditionally.
 
-2. **Do not introduce new abstractions that would break the build.**  
-   - If a change requires extracting an interface and implementing it in an outer layer, but that outer layer is not in scope, **put the interface definition in scope (as a port)** and leave a TODO/INFO comment explaining that an adapter is needed elsewhere.  
-   - Do not modify DI registrations unless the composition root is explicitly in scope.
+2. **Do not introduce new abstractions that would break the build.**
+   - If a change requires extracting an interface and implementing it in an outer layer, put the interface definition in Core (as a port). If the outer-layer adapter falls in the Impact Zone and the missing adapter is a closed coherence reason (Core is broken without it), implement it and `scope justify`; otherwise defer it to the backlog.
+   - Do not modify DI registrations unless the composition root is explicitly in Core or justified as Impact Zone.
 
-3. **If removing a forbidden dependency would break compilation, pause.**  
-   - Example: A Use Case imports an ORM entity. Removing that import might require rewriting the method, which could need a repository interface and a DTO. If those new files fall outside the scope, **do not proceed**. Instead, document the violation as an INFO note and explain the refactoring path.
+3. **If removing a forbidden dependency would break compilation, resolve it, don't stall.**
+   - Example: A Use Case imports an ORM entity. Removing that import might require a repository interface and a DTO. If those new files fall in the Impact Zone as the direct consequence of keeping Core coherent, create them and `scope justify`. If they fall Outside, defer the whole change to the backlog with `incomplete` severity and explain the refactoring path.
 
-4. **Scope‑safe transformations are always allowed:**  
-   - Removing framework annotations from domain entities (only if that entity file is in scope).  
-   - Extracting value objects within the same file/module.  
-   - Moving business logic from a controller to a use case if both are in scope.  
-   - Adding input/output DTOs inside the application layer if it is within scope.
+4. **Scope‑safe transformations are always allowed:**
+   - Removing framework annotations from domain entities (only if that entity file is in Core).
+   - Extracting value objects within the same file/module.
+   - Moving business logic from a controller to a use case if both are in Core.
+   - Adding input/output DTOs inside the application layer if it is within Core.
 
-5. **The clean architecture rules still apply *in full* during design or full‑project review.**  
+5. **The clean architecture rules still apply *in full* during design or full‑project review.**
    - When the scope is the whole project, follow the above rules without any softening.
+
+**Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
+- **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
+- **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.

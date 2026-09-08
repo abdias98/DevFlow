@@ -33,6 +33,8 @@
 #   capabilities [get <key>]                         Print environment capabilities (from .devflow-environment)
 #   knowledge list                                   List entries in the knowledge base
 #   knowledge add <file>                             Add a knowledge base entry from a file
+#   backlog add <file> <reason> [--severity b|i|f]    Record a deferred (Outside-zone) finding
+#   backlog list [--area <glob>]                      List deferred findings, optionally by area
 #   sessions                                         List all active DevFlow sessions with phase and state
 #   clean [--force]                                  Remove sessions unlocked/stale ≥30 min (never `status: cancelled`); --force removes all
 #   scan [secrets|sca|sast|all]                      Deterministic security scan (exit 1 on findings)
@@ -543,7 +545,7 @@ cmd_scope() {
           [[ "$f" == docs/devflow/* ]] && continue
           matched=false
           while IFS= read -r glob; do
-            _glob_match "$f" "$glob" && { matched=true; break; }
+            if _glob_match "$f" "$glob"; then matched=true; break; fi
           done <<< "$globs"
           $matched || continue
           while IFS=$'\t' read -r path rel; do
@@ -854,6 +856,71 @@ cmd_knowledge() {
   esac
 }
 
+# ── Deferred backlog ──────────────────────────────────────────────────────────
+# The persistent record of scope-adjacent findings that fell outside the Core
+# or Impact Zone of the cycle that found them (rules.md → Scope-Locking —
+# Three Zones). Not session-scoped -- like the knowledge base, it survives
+# across cycles at a fixed path, so this does not call resolve_session.
+
+BACKLOG_FILE="${DEVFLOW_BACKLOG_FILE:-docs/devflow/backlog/deferred.md}"
+
+cmd_backlog() {
+  case "${1:-}" in
+    add)
+      local file="${2:-}" reason="${3:-}" severity="incomplete" i
+      for ((i = 4; i <= $#; i++)); do
+        if [[ "${!i}" == "--severity" ]]; then
+          local j=$((i + 1))
+          severity="${!j:-}"
+        fi
+      done
+      [[ -n "$file" && -n "$reason" ]] || die 'usage: devflow-ctl backlog add <file> "<reason>" [--severity block|incomplete|info]'
+      local sev_label
+      case "$severity" in
+        block)      sev_label="🔴 BLOCK" ;;
+        incomplete) sev_label="🟠 INCOMPLETE" ;;
+        info)       sev_label="🟢 INFO" ;;
+        *) die "backlog add: --severity must be 'block', 'incomplete', or 'info'" ;;
+      esac
+      mkdir -p "$(dirname "$BACKLOG_FILE")"
+      if [[ ! -f "$BACKLOG_FILE" ]]; then
+        {
+          echo "# Deferred Backlog"
+          echo ""
+          echo "Persistent record of scope-adjacent findings not fixed because they fell outside the Core or Impact Zone of the cycle that found them (rules.md → Scope-Locking — Three Zones). Read by the Brainstormer and Architect at the start of a cycle touching the same area, so what was skipped once doesn't stay skipped forever."
+          echo ""
+          echo "| ID | File | Reason | Severity | Cycle | Date | Status |"
+          echo "|----|------|--------|----------|-------|------|--------|"
+        } > "$BACKLOG_FILE"
+      fi
+      local n; n="$(grep -c '^| D[0-9]' "$BACKLOG_FILE" 2>/dev/null || true)"
+      local id="D$((${n:-0} + 1))"
+      # Pipes in free text would break the table -- neutralize them.
+      file="${file//|/-}"; reason="${reason//|/-}"
+      echo "| $id | $file | $reason | $sev_label | ${SLUG:-unknown} | $(now_iso) | open |" >> "$BACKLOG_FILE"
+      ok "backlog entry $id recorded for '$file' ($severity)"
+      ;;
+    list)
+      [[ -f "$BACKLOG_FILE" ]] || { echo "No deferred backlog found at $BACKLOG_FILE"; exit 0; }
+      local area=""
+      [[ "${2:-}" == "--area" ]] && area="${3:-}"
+      if [[ -z "$area" ]]; then
+        cat "$BACKLOG_FILE"
+      else
+        echo "| ID | File | Reason | Severity | Cycle | Date | Status |"
+        echo "|----|------|--------|----------|-------|------|--------|"
+        local line f
+        while IFS= read -r line; do
+          [[ "$line" == "| D"[0-9]* ]] || continue
+          f="$(awk -F'|' '{gsub(/^ +| +$/,"",$3); print $3}' <<< "$line")"
+          if _glob_match "$f" "$area"; then echo "$line"; fi
+        done < "$BACKLOG_FILE"
+      fi
+      ;;
+    *) die 'usage: devflow-ctl backlog add <file> "<reason>" [--severity block|incomplete|info] | list [--area <glob>]' ;;
+  esac
+}
+
 # ── Sessions list ─────────────────────────────────────────────────────────────
 # Lists all active DevFlow sessions with phase, mode, and lock state.
 
@@ -1156,6 +1223,7 @@ case "$CMD" in
   artifacts)  cmd_artifacts "$@" ;;
   capabilities) cmd_capabilities "$@" ;;
   knowledge)  cmd_knowledge "$@" ;;
+  backlog)    cmd_backlog "$@" ;;
   sessions)   cmd_sessions "$@" ;;
   clean)      cmd_clean "$@" ;;
   scan)       cmd_scan "$@" ;;

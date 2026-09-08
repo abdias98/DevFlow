@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Error Handling (Technology-Agnostic)
 
-> **Version:** 1.0.0 | **Last Updated:** 2026-06-15
+> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All exception types, result wrappers, and code fragments are illustrative. Replace them with the actual error model, libraries, and conventions of the detected stack.
 
@@ -104,7 +104,11 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 When reviewing or modifying error handling in a **specific set of files**, follow these constraints:
 
-1. **Only change error handling within the approved scope.** If out-of-scope code swallows errors or leaks internals, flag it as a finding (WARN/BLOCK note) rather than editing it.
+1. **Only change error handling within the approved Core scope.** If out-of-scope code swallows errors or leaks internals, apply the Impact Zone / backlog handling below rather than editing it directly.
 2. **Fixing a swallowed error or an internal-detail leak is always in scope** when it occurs in a file you are already modifying — it is a required fix, not an opportunistic change.
 3. **Do not introduce a new global error model, middleware, or result-type library** unless that file is explicitly in scope; conform to the existing error-handling pattern.
 4. **When adding error handling to satisfy this standard**, match the project's existing error types, boundary-translation pattern, and surfacing conventions rather than inventing new ones.
+
+**Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
+- **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
+- **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.

@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Accessibility (a11y) (Technology-Agnostic)
 
-> **Version:** 1.0.0 | **Last Updated:** 2026-06-15
+> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** Element names, ARIA attributes, and APIs are illustrative (web-oriented). Map them to the accessibility API of the detected platform (web/ARIA, iOS/UIKit accessibility, Android/TalkBack, desktop toolkits). The principles are universal; the primitives differ.
 
@@ -97,7 +97,11 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 When reviewing or modifying accessibility in a **specific set of files**, follow these constraints:
 
-1. **Only change markup/behavior within the approved scope.** If an out-of-scope component has an a11y violation, flag it as a finding (WARN/BLOCK note) rather than editing it.
+1. **Only change markup/behavior within the approved Core scope.** If an out-of-scope component has an a11y violation, apply the Impact Zone / backlog handling below rather than editing it directly.
 2. **Fixing a keyboard trap, a missing accessible name, or a focus-hidden control is always worth surfacing** when it occurs in a file you are already modifying — these block users entirely.
 3. **Do not introduce a new accessibility/UI framework or global ARIA strategy** unless it is explicitly in scope; use the platform's native semantics and the project's existing patterns.
 4. **When adding accessibility to satisfy this standard**, prefer native semantic controls over ARIA, and verify contrast and keyboard operation rather than assuming them.
+
+**Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
+- **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
+- **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.

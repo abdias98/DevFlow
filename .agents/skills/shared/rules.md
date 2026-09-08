@@ -135,6 +135,12 @@ These are informational — the user decides whether to act on them. They do NOT
 
 A change to the **Core** almost always has ripple effects: a renamed function breaks its callers, a changed type breaks its consumers, a new field needs a migration. Treating every one of those as equally "outside scope" forces a false choice between silently expanding scope and leaving the Core change in a broken, half-finished state. Scope is not binary — it is three zones, each with its own permission:
 
+### Scope restricts writing, never reading
+
+An agent MUST be able to read any file it needs to understand the impact of its change — a scope restriction is a limit on what gets **edited**, never on what gets **looked at**. A file being outside the Core does not make it invisible: the agent still needs to read it to discover it's a dependent, decide whether it needs a coherence change, or trace a bug's causal chain in the first place. "Outside scope, therefore don't even open it" produces exactly the blindness the Impact Zone model exists to fix — an agent can't classify a file it was never allowed to read.
+
+This is not license to explore the whole repo on every task. Read with the same judgment `devflow-ctl scope impact` applies: what's needed to trace this specific change's effects, not a sweep for its own sake. The restriction that matters, and that stays absolute, is on **writing**: `devflow-ctl scope check` gates edits, never reads.
+
 ### Core
 
 The exact files/globs approved via `devflow-ctl init --scope` (or added later through `scope add`, with the user's explicit approval). Free to edit anything within the approved plan — this is unchanged from before.
@@ -204,6 +210,10 @@ CI mode is active when the environment variable `CI=true` is set. This is the st
 | Error handling | Ask user how to proceed | Log error and exit |
 | Git commands | Tell user to run | Auto-execute (branch, commit) |
 | Rollback | Tell user to run | Skip rollback (fail fast) |
+| Scope expansion — **Impact Zone** | Ask, then `scope justify` | Auto-permit: `devflow-ctl scope justify {file} "CI: coherence"`, then proceed |
+| Scope expansion — **Outside** | Ask, then `scope add` | **Fail the pipeline** (exit non-zero), listing every file and why it was needed |
+
+**"Interactive questions → Use defaults or skip" does NOT cover scope.** That row is about the framework's own clarifying questions (goal, DoD, ambiguous requirements) — it was never meant to license silently working outside a plan's declared scope, and must not be read that way. A CI cycle never omits a scope decision: an Impact Zone coherence change is auto-justified and logged (not asked, not skipped — the six closed reasons make it mechanical); anything genuinely Outside fails the run loudly instead of being silently dropped or silently applied.
 
 ### CI configuration (environment variables)
 
@@ -219,7 +229,7 @@ CI mode is active when the environment variable `CI=true` is set. This is the st
 1. **Orchestrator:** Detect CI mode at Step 0. Skip the Confirmation Gate (auto-approve). Reduce max iterations to 1.
 2. **Brainstormer:** Skip clarifying questions. Infer from context or use reasonable defaults.
 3. **Architect:** Auto-accept spec without user confirmation.
-4. **Implementer:** Auto-run tests after each task (exception: `run_in_terminal` / `bash` is allowed). Report results inline.
+4. **Implementer:** Auto-run tests after each task (exception: `run_in_terminal` / `bash` is allowed). Report results inline. On an Impact Zone edit, auto-run `scope justify {file} "CI: coherence"` — never ask. On an Outside-zone need, fail the run instead of proceeding or silently skipping.
 5. **Reviewer:** Normal behavior — still classifies BLOCK/WARN/INFO.
 6. **Debugger:** Skip. If tests fail, report error and exit.
 7. **Finalizer:** Normal behavior — save summary and clean session memory.
@@ -330,12 +340,24 @@ See [task-supervisor.md](./task-supervisor.md) for the canonical pattern: when t
 
 ## INFO Notes & Violation Reporting
 
-- When a code smell, architectural violation, or potential improvement is found in a file outside the scope, add an INFO note following this format:
-  - **In code:** a comment starting with `// INFO:` (or language‑appropriate comment) briefly describing the issue and the recommended fix.
-  - **In plans/reports:** a bullet under a dedicated `## Observations` section.
-  - **In agent output:** include in the `### Additional Recommendations` section.
-- INFO notes must never modify behavior; they only inform.
-- **Elevation rule:** If the issue is a SECURITY vulnerability, DATA LOSS risk, or ARCHITECTURAL VIOLATION that contradicts a core standard, the agent MUST elevate it to the user as a WARNING before proceeding with any other work. Do not silently continue.
+When work surfaces a code smell, architectural violation, or potential improvement outside the Core — something that isn't one of the six closed Impact Zone coherence reasons (Scope-Locking — Three Zones above) — **record it in the deferred backlog first**, then optionally leave a pointer. The backlog is the record; a comment is, at most, a signpost to it.
+
+1. **Backlog first:** run `devflow-ctl backlog add {file} "{one-line reason}" --severity {block|incomplete|info}`.
+2. **Optional comment, second:** only when there's a real anchor in a file you can actually edit (a Core or justified Impact Zone file) — a comment starting with `// INFO:` (or the language's equivalent) briefly describing the issue and pointing at the backlog entry's ID. Never the only record of the finding.
+3. **In plans/reports:** a bullet under a dedicated `## Observations` section, citing the backlog ID.
+4. **In agent output:** include in the `### Additional Recommendations` section, citing the backlog ID.
+
+INFO notes (backlog entries of any severity) must never modify behavior; they only inform.
+
+**Three severities, not two:**
+
+| Severity | Meaning | Can it be silently dropped? |
+|---|---|---|
+| 🔴 **BLOCK** | Security vulnerability, data-loss risk, or architectural violation contradicting a core standard | Never — elevate to the user as a WARNING immediately, before any other work (unchanged from before) |
+| 🟠 **INCOMPLETE** | The Core change is functionally incoherent without this, but it doesn't meet the Impact Zone's six closed coherence reasons — fixing it now would mean expanding scope | Never — must survive to the next cycle in the backlog; the Reviewer reports it explicitly, it is never downgraded to a plain INFO note that quietly disappears |
+| 🟢 **INFO** | A genuine improvement or observation with no coherence dependency | Yes, in the sense that acting on it is the user's call — but it still gets a backlog entry, not just a comment, so the next cycle in that area sees it |
+
+**Elevation rule (BLOCK, unchanged):** If the issue is a SECURITY vulnerability, DATA LOSS risk, or ARCHITECTURAL VIOLATION that contradicts a core standard, the agent MUST elevate it to the user as a WARNING before proceeding with any other work. Do not silently continue.
 
 ## Error Handling & Communication
 

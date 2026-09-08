@@ -35,13 +35,14 @@ Read session memory: `context.md` (feature, slug, Stack Mode), `phase-state.md` 
    - **Pair mode:** ask the user — *"Run the full test suite: `{Test Command}`. Did all tests pass?"*
    - If ANY fail → STOP, route to Debugger.
 2. **Review:** Check the latest review document in `docs/devflow/reviews/`. If BLOCK findings remain unresolved → STOP, route to Implementer.
-3. **DoD:** Verify each criterion from `context.md`. Flag any unverifiable items to the user.
-4. **Dependencies:** If `Audit Command` is configured in Stack Profile (mode-aware — see Rules):
+3. **Deferred backlog:** Re-read the review document for any `🟠 INCOMPLETE` finding. Run `devflow-ctl backlog list --area {this cycle's scope}` and confirm every one of them has a matching entry — an INCOMPLETE finding must never vanish when session memory is cleaned. If one is missing (e.g., the Reviewer's step was skipped), run `devflow-ctl backlog add {file} "{reason}" --severity incomplete` for it now, before proceeding.
+4. **DoD:** Verify each criterion from `context.md`. Flag any unverifiable items to the user.
+5. **Dependencies:** If `Audit Command` is configured in Stack Profile (mode-aware — see Rules):
    - **Standard / CI mode:** auto-execute `{Audit Command}` and read the result.
    - **Pair mode:** ask the user — *"Run dependency audit: `{Audit Command}`. Report any vulnerabilities found."*
    - Critical/High vulnerabilities → WARN the user. Recommend fixing before release.
    - No audit tool configured → skip this check.
-5. **Stack branches** *(if Stack Mode = yes)*: Verify all expected branches exist (ask user to confirm with `git branch`).
+6. **Stack branches** *(if Stack Mode = yes)*: Verify all expected branches exist (ask user to confirm with `git branch`).
 
 ### Step 3 — Collect Artifacts
 

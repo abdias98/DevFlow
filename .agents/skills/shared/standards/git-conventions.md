@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Git Conventions (Technology-Agnostic)
 
-> **Version:** 1.0.0 | **Last Updated:** 2026-06-10
+> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** Branch names, commit scopes, and tag formats are illustrative. Adapt to the team's agreed conventions detected from the existing git history.
 
@@ -96,3 +96,15 @@ Use when raising findings in code review. Always cite this file and section (e.g
 | 🔴 **BLOCK** | Direct commit to a protected branch (`main`/`master`) without a PR (§2) |
 | 🟡 **WARN** | Vague commit message with no scope or actionable description (§1); multiple unrelated changes in one commit (§1); branch name does not match the change type (§2) |
 | 🟢 **INFO** | Missing issue reference in footer when one exists (§1); non-annotated release tag (§4) |
+
+## 8. Applying This Standard with a Limited Scope
+
+When applying git conventions to a **specific set of files or a single change** (the declared Core scope), follow these constraints:
+
+1. **Only rewrite commits/branches you created in this cycle.** Do not amend, rebase, or rename commits or branches that predate the current task.
+2. **A commit message or branch name violation in your own change is always in scope to fix** — rename the branch or amend the still-unpushed commit before opening the PR.
+3. **Do not rewrite shared history** (`git commit --amend` on a pushed commit, `git rebase` on a shared branch, `git push --force` to a shared branch) as a side effect of applying this standard; that is always an explicit, separately-confirmed action per `rules.md` → Approval & Confirmation.
+
+**Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
+- **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
+- **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.

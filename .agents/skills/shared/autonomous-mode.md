@@ -40,6 +40,8 @@ This document defines the canonical pattern for Autonomous Mode — a non-presen
 | **Iteration limits** | 1 (fail-fast) | Normal (3) | Normal (3, or `DEVFLOW_MAX_ITERATIONS`) |
 | **On test failure** | Exit immediately | Auto-retry → Debugger | Auto-retry → Debugger → escalate to user |
 | **On BLOCK** | Exit immediately | Route to user | Write to `send-to-user.md`, pause |
+| **Scope — Impact Zone** | Auto-justify (`scope justify {file} "CI: coherence"`) | Ask, then `scope justify` | Auto-justify and continue — never pauses for a coherence change |
+| **Scope — Outside** | Fail the run, listing files | Ask, then `scope add` | Add to the deferred backlog and continue; pause via `send-to-user.md` only if the deferred item is `INCOMPLETE`-severity (the DoD can't be met without it) |
 | **Checkpoints** | Pipeline logs | Chat output | `autonomous-log.md` (async, persistent) |
 | **Resume** | Pipeline re-run | User resumes | `devflow-ctl status` → resume from last phase |
 
@@ -150,6 +152,8 @@ The cycle proceeds in Pair mode — the user must be present to approve commands
 - ❌ **Skip checkpoints** — the async log is the user's only visibility into what happened while they were away. Every phase must be logged.
 - ❌ **Fabricate progress** — every checkpoint must be grounded in persisted state (tool results, artifact existence, test-registry). The framework audits its own claims.
 - ❌ **Escalate trivial issues** — test failures and WARN findings are handled by iterations, not by escalating to the user. Only escalate genuine human-required BLOCKs.
+- ❌ **Pause the cycle for an Impact Zone coherence change** — the six closed reasons (rules.md → Scope-Locking — Three Zones) are mechanical, not a judgment call. Auto-justify and continue; a pause here is the same over-escalation as pausing for a WARN finding.
+- ❌ **Silently expand into the Outside zone to avoid pausing** — the opposite failure. An Outside-zone need goes to the deferred backlog with a severity, not into an unapproved edit just because no one is present to ask.
 - ❌ **Re-run completed phases on resume** — the resume capability reads `phase-state.md` and resumes from the last incomplete phase. Completed phases are not re-run.
 
 ---
