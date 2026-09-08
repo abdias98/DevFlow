@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.7.0] — 2026-09-08
+
+> Wave 15 (9 PRs, F47–F56) — findings from validating the 4.6.0 framework end-to-end against two real `/devflow` cycles (Node/TypeScript+Express and Python/FastAPI) on a concurrency-sensitive ticket-sales feature: universal dependency auditing, deterministic rigor for business-critical concurrency, business-event logging, a DRY policy for the standards themselves, and two new standards — Design Principles and Event-Driven Architecture (with CQRS).
+
+### ✨ Added
+
+- **`devflow-ctl scan sca` is language-agnostic** — rewritten from npm-only to 8 independent, best-effort ecosystem detectors (Node via npm/pnpm/yarn, Python via pip-audit, Rust via cargo-audit, Ruby via bundler-audit, Go via govulncheck, PHP via the built-in `composer audit`, .NET via `dotnet list package --vulnerable`, Java with an honest "no zero-config tool" note). Every detected manifest runs — a monorepo with a Node frontend and a Python backend gets both audited. (F47)
+- **Explicit Concurrency Strategy in the spec** — `spec-template.md` gains a `## Concurrency Strategy` section, conditional on `concurrency.md` applying: the mechanism chosen (lock/conditional-update/queue/actor), why, and the failure mode if violated. Mandatory-when-applicable in the Architect's exploration guide. (F49)
+- **Empirical evidence required for critical concurrency invariants** — `concurrency.md` §2 now requires a real concurrency test (not a sequential unit test) for business-critical atomicity fixes (inventory, balance, unique allocation). `devflow-plan` schedules it as its own task when the spec declares a real invariant. `testing.md` recognizes concurrency/load tests as a category orthogonal to the unit/integration/E2E pyramid. (F48, F51)
+- **Business/Audit Event Logging** (`logging.md` §5) — distinguishes business/audit events (what happened, to whom, when — for traceability and compliance) from technical/diagnostic logs. Requires logging successes as well as failures, independent of the general log verbosity level. (F52)
+- **A DRY policy for the standards themselves** (`shared/standards-dry-policy.md`) — one canonical owner per topic, everyone else cross-references. Documents the 4 existing resolved overlaps as precedent. New `validate-framework.sh` §14 flags any two standards sharing a near-identical prose line, excluding the intentionally-shared Limited Scope closing block. (F53)
+- **`design-principles.md`** (new, 15th standard) — DRY, YAGNI, Separation of Concerns, and Technology Agnosticism. Unlike domain-specific standards, unconditional: applies to every cycle regardless of stack. Linked from every agent that writes or reviews production code. (F54)
+- **`event-driven-architecture.md`** (new, 16th standard) — producer/consumer contracts, delivery guarantees (at-least-once by default, cross-linking `concurrency.md` §5's idempotency mechanism), schema versioning, ordering, dead-letter queues, Event Sourcing vs. simple notification, and CQRS (§7, with an explicit warning against adopting it as a default "best practice" with no measured symptom driving it). Conditional on the project using events/queues/streams. (F56)
+
+### 🔄 Changed
+
+- **Dependency audit unified on `devflow-ctl scan sca`** — `devflow-finalize` and the lifecycle's Finalizer entry condition previously invoked `{Audit Command}` directly (e.g. `npm audit`), uncorrelated with the Validation Gate's own `scan sca`. Both gates now share one deterministic, language-agnostic source; the final summary gains an explicit "Dependency audit" line so a finding is never silently lost. (F50)
+
+### 🐛 Fixed
+
+- Two `grep -c` double-zero bugs (`cmd_knowledge`, and a `set -e`/`pipefail` trap in `validate-framework.sh`'s new checks) found while building this wave's tooling — same class of bug as Wave 12/14, same fix (`|| true` instead of `|| echo 0`, or wrapping a pipeline assignment).
+- `devflow-migrate` and `devflow-contract` generated real production files (migrations, contract tests) with no `scope check`/`scope add` gate at all — found while validating concurrency rigor; fixed with the same pattern `bug-fix`/`refactor` already use.
+
+**Validation method:** two full, real `/devflow` cycles (Brainstorm→Architect→Plan→Confirmation Gate→Implement TDD→Review→Finalize) run against a "sell event tickets without overselling under concurrent purchases" request, given in natural language with no technical specification, on independent Node/TS and Python/FastAPI sandboxes — followed by an independent external audit of the generated code and an empirical concurrency stress test in each. Both cycles produced a correct, verified fix; this wave closes the gaps between "the LLM got it right" and "the framework required it."
+
 ## [4.6.0] — 2026-09-07
 
 > Five-wave hardening pass (Waves 10–14, 39 PRs) closing the 46 findings (F01–F46) from the main-branch audit: standalone-agent session enforcement, deterministic CLI fixes, a three-zone scope model with a deferred backlog, standards structural integrity and OWASP 2021 coverage, and new framework self-validation checks that keep all of it from regressing.
