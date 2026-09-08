@@ -417,6 +417,56 @@ setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
   run bash -c "cd '$SCANDIR' && '$CTL' scan sca"
   [ "$status" -eq 0 ]
   [[ "$output" == *"skipped"* ]]
+  [[ "$output" == *"Node, Python, Rust, Ruby, Go, PHP, .NET, Java"* ]]
+}
+
+@test "scan sca: Python manifest skips honestly when pip-audit is absent" {
+  setup_scan
+  printf 'requests==2.0.0\n' > "$SCANDIR/requirements.txt"
+  PATH="/usr/bin:/bin" run bash -c "cd '$SCANDIR' && '$CTL' scan sca"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"pip-audit not installed"* ]]
+}
+
+@test "scan sca: Rust manifest skips honestly when cargo-audit is absent" {
+  setup_scan
+  printf '[package]\nname = "x"\n' > "$SCANDIR/Cargo.toml"
+  PATH="/usr/bin:/bin" run bash -c "cd '$SCANDIR' && '$CTL' scan sca"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"cargo-audit not installed"* ]]
+}
+
+@test "scan sca: Ruby manifest skips honestly when bundle-audit is absent" {
+  setup_scan
+  printf 'source "https://rubygems.org"\n' > "$SCANDIR/Gemfile"
+  PATH="/usr/bin:/bin" run bash -c "cd '$SCANDIR' && '$CTL' scan sca"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"bundle-audit not installed"* ]]
+}
+
+@test "scan sca: Go manifest skips honestly when govulncheck is absent" {
+  setup_scan
+  printf 'module example.com/x\n\ngo 1.21\n' > "$SCANDIR/go.mod"
+  PATH="/usr/bin:/bin" run bash -c "cd '$SCANDIR' && '$CTL' scan sca"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"govulncheck not installed"* ]]
+}
+
+@test "scan sca: Java manifest reports the zero-config-tool limitation honestly" {
+  setup_scan
+  printf '<project></project>\n' > "$SCANDIR/pom.xml"
+  run bash -c "cd '$SCANDIR' && '$CTL' scan sca"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"no zero-config CLI auditor available"* ]]
+}
+
+@test "scan sca: a monorepo with 2 manifests audits both, not just the first" {
+  setup_scan
+  printf '{"name":"x","version":"1.0.0"}' > "$SCANDIR/package.json"
+  printf 'requests==2.0.0\n' > "$SCANDIR/requirements.txt"
+  PATH="/usr/bin:/bin:$(dirname "$(command -v npm)")" run bash -c "cd '$SCANDIR' && '$CTL' scan sca"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"pip-audit not installed"* ]]
 }
 
 @test "scan all: clean tree with no manifest passes" {

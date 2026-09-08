@@ -1064,25 +1064,175 @@ scan_secrets() {
   return 0
 }
 
-# SCA: known CVEs in dependencies (npm audit for Node; skips otherwise).
+# SCA: known CVEs in dependencies, language-agnostic.
+#
+# Each ecosystem detector below is independent and best-effort, following the
+# same graceful-degradation contract as scan_secrets/scan_sast: if the manifest
+# is present but the audit tool isn't installed, skip honestly (never fail the
+# scan for a missing tool). All detected manifests run — a monorepo with both
+# a Node frontend and a Python backend gets both audited, not just the first
+# one found. `_sca_report <label> <crit> <high> <detail-hint>` is the shared
+# accumulator so every ecosystem reports through one consistent path.
+_SCA_ANY_MANIFEST=0
+
+_sca_report() {
+  local label="$1" crit="${2:-0}" hi="${3:-0}" hint="$4"
+  crit="${crit:-0}"; hi="${hi:-0}"
+  if (( crit + hi > 0 )); then
+    echo "  [${crit} critical, ${hi} high] $label — $hint"
+    SCAN_FINDINGS=$(( SCAN_FINDINGS + crit + hi )); return 1
+  fi
+  echo "  clean ($label, no high/critical vulnerabilities)"; return 0
+}
+
+_sca_node() {
+  [[ -f package.json ]] || return 0
+  _SCA_ANY_MANIFEST=1
+  local tool
+  if [[ -f pnpm-lock.yaml ]] && command -v pnpm >/dev/null 2>&1; then
+    tool=pnpm
+  elif [[ -f yarn.lock ]] && command -v yarn >/dev/null 2>&1; then
+    tool=yarn
+  elif command -v npm >/dev/null 2>&1; then
+    tool=npm
+  else
+    echo "  skipped: package.json found but no npm/pnpm/yarn on PATH"; return 0
+  fi
+  local out crit hi
+  case "$tool" in
+    npm)
+      out="$(npm audit --audit-level=high --json 2>/dev/null || true)"
+      [[ -n "$out" ]] || { echo "  skipped: npm audit produced no output (offline or no lockfile)"; return 0; }
+      crit="$(printf '%s' "$out" | jq -r '.metadata.vulnerabilities.critical // 0' 2>/dev/null || echo 0)"
+      hi="$(printf '%s' "$out" | jq -r '.metadata.vulnerabilities.high // 0' 2>/dev/null || echo 0)"
+      ;;
+    pnpm)
+      out="$(pnpm audit --audit-level high --json 2>/dev/null || true)"
+      [[ -n "$out" ]] || { echo "  skipped: pnpm audit produced no output (offline or no lockfile)"; return 0; }
+      crit="$(printf '%s' "$out" | jq -r '.metadata.vulnerabilities.critical // 0' 2>/dev/null || echo 0)"
+      hi="$(printf '%s' "$out" | jq -r '.metadata.vulnerabilities.high // 0' 2>/dev/null || echo 0)"
+      ;;
+    yarn)
+      # Classic `yarn audit` prints one JSON object per line (NDJSON); the
+      # summary line carries the severity counts.
+      out="$(yarn audit --json 2>/dev/null || true)"
+      [[ -n "$out" ]] || { echo "  skipped: yarn audit produced no output (offline or no lockfile)"; return 0; }
+      crit="$(printf '%s' "$out" | jq -rs '[.[] | select(.type=="auditSummary") | .data.vulnerabilities.critical] | add // 0' 2>/dev/null || echo 0)"
+      hi="$(printf '%s' "$out" | jq -rs '[.[] | select(.type=="auditSummary") | .data.vulnerabilities.high] | add // 0' 2>/dev/null || echo 0)"
+      ;;
+  esac
+  _sca_report "$tool dependencies" "$crit" "$hi" "run '$tool audit' for detail"
+}
+
+_sca_python() {
+  { [[ -f requirements.txt ]] || [[ -f pyproject.toml ]] || [[ -f Pipfile ]]; } || return 0
+  _SCA_ANY_MANIFEST=1
+  if ! command -v pip-audit >/dev/null 2>&1; then
+    echo "  skipped: Python manifest found but pip-audit not installed (pip install pip-audit)"; return 0
+  fi
+  local out crit hi
+  out="$(pip-audit --format json 2>/dev/null || true)"
+  [[ -n "$out" ]] || { echo "  skipped: pip-audit produced no output"; return 0; }
+  # pip-audit has no built-in critical/high split -- every reported vuln
+  # (dependencies[].vulns[]) is treated as "high" for the purposes of this
+  # gate, since it has no CVSS severity field to bucket on.
+  hi="$(printf '%s' "$out" | jq -r '[.dependencies[]?.vulns[]?] | length' 2>/dev/null || echo 0)"
+  _sca_report "pip dependencies" 0 "$hi" "run 'pip-audit' for detail"
+}
+
+_sca_rust() {
+  [[ -f Cargo.toml ]] || return 0
+  _SCA_ANY_MANIFEST=1
+  if ! command -v cargo-audit >/dev/null 2>&1 && ! cargo audit --version >/dev/null 2>&1; then
+    echo "  skipped: Cargo.toml found but cargo-audit not installed (cargo install cargo-audit)"; return 0
+  fi
+  local out crit hi
+  out="$(cargo audit --json 2>/dev/null || true)"
+  [[ -n "$out" ]] || { echo "  skipped: cargo audit produced no output"; return 0; }
+  crit=0
+  hi="$(printf '%s' "$out" | jq -r '.vulnerabilities.count // 0' 2>/dev/null || echo 0)"
+  _sca_report "cargo dependencies" "$crit" "$hi" "run 'cargo audit' for detail"
+}
+
+_sca_ruby() {
+  [[ -f Gemfile ]] || return 0
+  _SCA_ANY_MANIFEST=1
+  if ! command -v bundle-audit >/dev/null 2>&1; then
+    echo "  skipped: Gemfile found but bundle-audit not installed (gem install bundler-audit)"; return 0
+  fi
+  local out hi
+  out="$(bundle-audit check --format json 2>/dev/null || true)"
+  [[ -n "$out" ]] || { echo "  skipped: bundle-audit produced no output"; return 0; }
+  hi="$(printf '%s' "$out" | jq -r '.results | length' 2>/dev/null || echo 0)"
+  _sca_report "bundler dependencies" 0 "$hi" "run 'bundle-audit check' for detail"
+}
+
+_sca_go() {
+  [[ -f go.mod ]] || return 0
+  _SCA_ANY_MANIFEST=1
+  if ! command -v govulncheck >/dev/null 2>&1; then
+    echo "  skipped: go.mod found but govulncheck not installed (go install golang.org/x/vuln/cmd/govulncheck@latest)"; return 0
+  fi
+  local out hi
+  out="$(govulncheck -json ./... 2>/dev/null || true)"
+  [[ -n "$out" ]] || { echo "  skipped: govulncheck produced no output"; return 0; }
+  # govulncheck streams one JSON object per line; count distinct OSV entries.
+  hi="$(printf '%s' "$out" | jq -rs '[.[] | select(.osv != null) | .osv.id] | unique | length' 2>/dev/null || echo 0)"
+  _sca_report "Go module dependencies" 0 "$hi" "run 'govulncheck ./...' for detail"
+}
+
+_sca_php() {
+  [[ -f composer.json ]] || return 0
+  _SCA_ANY_MANIFEST=1
+  if ! command -v composer >/dev/null 2>&1; then
+    echo "  skipped: composer.json found but composer not installed"; return 0
+  fi
+  # `composer audit` is built into Composer 2.4+ — no plugin required.
+  local out hi
+  out="$(composer audit --format=json --no-interaction 2>/dev/null || true)"
+  [[ -n "$out" ]] || { echo "  skipped: composer audit produced no output (Composer < 2.4?)"; return 0; }
+  hi="$(printf '%s' "$out" | jq -r '.advisories | [.[] | length] | add // 0' 2>/dev/null || echo 0)"
+  _sca_report "Composer dependencies" 0 "$hi" "run 'composer audit' for detail"
+}
+
+_sca_dotnet() {
+  { compgen -G "*.csproj" >/dev/null 2>&1 || compgen -G "*.sln" >/dev/null 2>&1; } || return 0
+  _SCA_ANY_MANIFEST=1
+  if ! command -v dotnet >/dev/null 2>&1; then
+    echo "  skipped: .csproj/.sln found but dotnet SDK not installed"; return 0
+  fi
+  local out hi
+  out="$(dotnet list package --vulnerable --format json 2>/dev/null || true)"
+  if [[ -z "$out" ]]; then
+    echo "  skipped: 'dotnet list package --vulnerable' produced no output (SDK < 8, or no restored packages)"; return 0
+  fi
+  hi="$(printf '%s' "$out" | jq -r '[.projects[]?.frameworks[]?.topLevelPackages[]?] | length' 2>/dev/null || echo 0)"
+  _sca_report "NuGet dependencies" 0 "$hi" "run 'dotnet list package --vulnerable' for detail"
+}
+
+_sca_java() {
+  { [[ -f pom.xml ]] || [[ -f build.gradle ]] || [[ -f build.gradle.kts ]]; } || return 0
+  _SCA_ANY_MANIFEST=1
+  echo "  skipped: Java/Kotlin manifest found — no zero-config CLI auditor available (configure the OWASP dependency-check Maven/Gradle plugin, or Snyk, in the project itself)"
+}
+
 scan_sca() {
   echo "== scan: dependencies (SCA) =="
-  if [[ -f package.json ]] && command -v npm >/dev/null 2>&1; then
-    local out crit hi
-    out="$(npm audit --audit-level=high --json 2>/dev/null || true)"
-    if [[ -z "$out" ]]; then
-      echo "  skipped: npm audit produced no output (offline or no lockfile)"; return 0
-    fi
-    crit="$(printf '%s' "$out" | jq -r '.metadata.vulnerabilities.critical // 0' 2>/dev/null || echo 0)"
-    hi="$(printf '%s' "$out" | jq -r '.metadata.vulnerabilities.high // 0' 2>/dev/null || echo 0)"
-    crit="${crit:-0}"; hi="${hi:-0}"
-    if (( crit + hi > 0 )); then
-      echo "  [${crit} critical, ${hi} high] npm dependencies — run 'npm audit' for detail"
-      SCAN_FINDINGS=$(( SCAN_FINDINGS + crit + hi )); return 1
-    fi
-    echo "  clean (no high/critical npm vulnerabilities)"; return 0
+  _SCA_ANY_MANIFEST=0
+  local rc=0
+  _sca_node   || rc=1
+  _sca_python || rc=1
+  _sca_rust   || rc=1
+  _sca_ruby   || rc=1
+  _sca_go     || rc=1
+  _sca_php    || rc=1
+  _sca_dotnet || rc=1
+  _sca_java   || rc=1
+  if (( _SCA_ANY_MANIFEST == 0 )); then
+    echo "  skipped: no supported dependency manifest found (Node, Python, Rust, Ruby, Go, PHP, .NET, Java)"
+    return 0
   fi
-  echo "  skipped: no supported manifest found (Node package.json)"; return 0
+  return $rc
 }
 
 # SAST: dangerous code patterns (injection, unsafe sinks) via semgrep.

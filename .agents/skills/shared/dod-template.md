@@ -9,7 +9,7 @@ Every feature MUST satisfy these before the Finalizer can complete the cycle:
 ### Code Quality
 - [ ] **Lint passes:** `{Lint Command}` exits with zero errors
 - [ ] **Build succeeds:** `{Build Command}` completes without errors
-- [ ] **Dependencies audited:** No critical/high vulnerabilities reported by `{Audit Command}` *(if configured)*
+- [ ] **Dependencies audited:** No critical/high vulnerabilities reported by `devflow-ctl scan sca` *(skips honestly if no supported manifest/tool is present)*
 - [ ] **No hardcoded secrets:** No API keys, tokens, or credentials in source files
 - [ ] **Scope respected:** No files modified outside the approved plan
 - [ ] **Standards compliance:** SOLID, Clean Architecture, Security, Performance standards checked by Reviewer
