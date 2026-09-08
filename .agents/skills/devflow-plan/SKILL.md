@@ -149,7 +149,9 @@ Update session memory:
 
 ## ⚠️ Completion Protocol (ALL MODELS)
 
-Before transitioning to the next phase, you MUST confirm in your response:
+Before transitioning to the next phase, run `devflow-ctl artifacts check plan docs/devflow/plans/{file} --spec docs/devflow/specs/{spec-file} --slug {slug}`. If the spec declared a real Concurrency Strategy (not "N/A") and this fails because the plan has no concurrency-test task, add that task now — per Step 4's rule above — before saving the plan as final, rather than letting the Finalizer discover it in Phase 8.
+
+You MUST confirm in your response:
 
 ```markdown
 ✅ File saved: docs/devflow/plans/YYYY-MM-DD-{slug}.md

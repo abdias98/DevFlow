@@ -35,6 +35,8 @@
 #   knowledge add <file>                             Add a knowledge base entry from a file
 #   backlog add <file> <reason> [--severity b|i|f]    Record a deferred (Outside-zone) finding
 #   backlog list [--area <glob>]                      List deferred findings, optionally by area
+#   metrics aggregate <metrics-file>                  Append a cycle's metrics to _aggregate.md, recompute averages
+#   traceability check <file>                         Count Source/TOTAL coverage in a traceability matrix; exit 1 if <100%
 #   sessions                                         List all active DevFlow sessions with phase and state
 #   clean [--force]                                  Remove sessions unlocked/stale ≥30 min (never `status: cancelled`); --force removes all
 #   scan [secrets|sca|sast|all]                      Deterministic security scan (exit 1 on findings)
@@ -748,10 +750,48 @@ artifacts_required() {
   esac
 }
 
+# If the spec declares a real (non-N/A) Concurrency Strategy, the plan must
+# schedule an actual concurrency test (concurrency.md §2 / devflow-plan Step 4)
+# -- not just a sequential unit test. This is a presence check (does the plan
+# mention concurrency-test vocabulary at all), not a correctness judgment: it
+# catches the "nobody scheduled a concurrency test at all" gap, the same way
+# scan_secrets catches "a secret is present" without judging whether the code
+# using it is otherwise well-designed.
+_artifacts_check_concurrency_task() {
+  local plan_path="$1" spec_path="$2"
+  [[ -f "$spec_path" ]] || return 0
+
+  local strategy; strategy="$(awk '
+    /^#+ Concurrency Strategy/ { f=1; next }
+    /^#+ / { if (f) exit }
+    f { print }
+  ' "$spec_path")"
+  [[ -n "$strategy" ]] || return 0
+
+  # No section content, or an explicit N/A -- nothing to require.
+  if echo "$strategy" | grep -qiE '^\s*N/A\b' || [[ -z "$(echo "$strategy" | tr -d '[:space:]')" ]]; then
+    return 0
+  fi
+
+  local keywords='concurrent|concurrency|simultaneous|race condition|thread|Promise\.all|asyncio\.gather|ThreadPoolExecutor|parallel (request|task|call)'
+  if ! grep -qiE "$keywords" "$plan_path" 2>/dev/null; then
+    fail "plan '$plan_path' — spec declares a real Concurrency Strategy but the plan has no task with concurrency-test vocabulary ($keywords) — schedule a real concurrency test (concurrency.md §2), not only a sequential unit test"
+    return 1
+  fi
+  return 0
+}
+
 cmd_artifacts() {
-  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse> <path>"
-  local type="${2:-}" path="${3:-}"
-  [[ -n "$type" && -n "$path" ]] || die "usage: devflow-ctl artifacts check <type> <path>"
+  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse> <path> [--spec <spec-path>]"
+  local type="${2:-}" path="${3:-}" spec_path=""
+  [[ -n "$type" && -n "$path" ]] || die "usage: devflow-ctl artifacts check <type> <path> [--spec <spec-path>]"
+  shift 3
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --spec) spec_path="${2:-}"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
   [[ -f "$path" ]] || fail "artifact not found at $path — it was never saved with create_file"
   local required missing=()
   required="$(artifacts_required "$type")" || die "unknown artifact type '$type' (spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse)"
@@ -760,6 +800,9 @@ cmd_artifacts() {
   done <<< "$required"
   if [[ ${#missing[@]} -gt 0 ]]; then
     fail "artifact '$path' is missing required section(s): ${missing[*]} — complete it before proceeding (see shared/artifact-checklist.md)"
+  fi
+  if [[ "$type" == "plan" && -n "$spec_path" ]]; then
+    _artifacts_check_concurrency_task "$path" "$spec_path"
   fi
   ok "artifact '$path' has all required $type sections"
 }
@@ -918,6 +961,219 @@ cmd_backlog() {
       fi
       ;;
     *) die 'usage: devflow-ctl backlog add <file> "<reason>" [--severity block|incomplete|info] | list [--area <glob>]' ;;
+  esac
+}
+
+# ── Metrics aggregation (deterministic) ───────────────────────────────────────
+# Moves "recalculate the averages" from LLM arithmetic over a markdown table to
+# a tool that actually adds. Only the 4 Averages rows with a real column behind
+# them in Cycle History are computed; the other 2 (most frequent BLOCK
+# category, phase with most retries) have no structured column to derive from
+# and are left as an explicit manual note rather than silently faked.
+
+AGGREGATE_FILE="${DEVFLOW_AGGREGATE_FILE:-docs/devflow/metrics/_aggregate.md}"
+
+# Extracts "N" from the first line matching a label like "Tests created" or
+# "BLOCK findings" (with or without a "(Reviewer)"/"(first run)" suffix),
+# tolerating the two per-cycle metrics formats (full lifecycle vs standalone).
+_metrics_field() {
+  local file="$1" label="$2"
+  grep -m1 -E "^\| ${label}" "$file" 2>/dev/null | grep -oP '\|\s*\K[0-9]+(?=\s*(/|\s*\(|\s*\|))' | head -1 || true
+}
+
+_metrics_aggregate() {
+  local file="$1"
+  local slug type date duration blocks tests test_pass_pct iterations
+
+  slug="$(grep -m1 '^# DevFlow Metrics' "$file" | grep -oP '(?<=— )[a-zA-Z0-9-]+' | head -1 || true)"
+  [[ -n "$slug" ]] || die "metrics aggregate: could not find slug in '# DevFlow Metrics — {slug}' header"
+  type="$(grep -m1 '^# DevFlow Metrics' "$file" | grep -oP '(?<=standalone: )[a-zA-Z-]+(?=\))' || true)"
+  type="${type:-full}"
+
+  date="$(grep -m1 -E '^\*\*(Cycle started|Started):\*\*' "$file" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1 || true)"
+  date="${date:-unknown}"
+
+  duration="$(grep -m1 -E '^\| \*\*TOTAL\*\*' "$file" | grep -oP '\|\s*\*\*\K[0-9]+(?=\*\*\s*\|\s*$)' || true)"
+  duration="${duration:-—}"
+
+  tests="$(_metrics_field "$file" 'Tests created')"; tests="${tests:-0}"
+  blocks="$(_metrics_field "$file" 'BLOCK findings')"; blocks="${blocks:-0}"
+
+  test_pass_pct="$(grep -m1 'Tests passing' "$file" | grep -oP '\(\K[0-9]+(?=%\))' || true)"
+  test_pass_pct="${test_pass_pct:-—}"
+
+  if grep -q '^## Iterations' "$file" 2>/dev/null; then
+    iterations="$(awk '/^## Iterations/{f=1;next} /^## /{f=0} f' "$file" \
+      | grep -oP '^\|[^|]*\|[^|]*\|\s*\K[0-9]+' | awk '{s+=$1} END{print s+0}' || true)"
+  else
+    iterations="$(_metrics_field "$file" 'Reviewer iterations')"; iterations="${iterations:-0}"
+  fi
+  iterations="${iterations:-0}"
+
+  mkdir -p "$(dirname "$AGGREGATE_FILE")"
+  if [[ ! -f "$AGGREGATE_FILE" ]]; then
+    {
+      echo "# DevFlow Aggregate Metrics"
+      echo ""
+      echo "> Updated: $(now_iso)"
+      echo ""
+      echo "## Cycle History"
+      echo ""
+      echo "| # | Date | Type | Feature | Duration | Tasks | BLOCKs | Test Pass % | Iterations |"
+      echo "|---|------|------|---------|:--------:|:-----:|:------:|:----------:|:----------:|"
+    } > "$AGGREGATE_FILE"
+  fi
+
+  local n; n="$(grep -c '^| [0-9]' "$AGGREGATE_FILE" 2>/dev/null || true)"
+  local row_num=$(( ${n:-0} + 1 ))
+  local test_pass_display="—"
+  [[ "$test_pass_pct" != "—" ]] && test_pass_display="${test_pass_pct}%"
+  local newrow="| $row_num | $date | $type | $slug | $duration | $tests | $blocks | $test_pass_display | $iterations |"
+
+  # A plain `>>` only works the first time. On every run after the first, the
+  # file already ends with a "## Averages" section -- appending blindly would
+  # land the new row *after* it, where _metrics_recalculate_averages's own
+  # truncate-and-rebuild step would discard it along with the stale section.
+  # Insert the row immediately after the last existing data row instead (not
+  # merely "before ## Averages" -- that would leave the blank line separating
+  # the table from the next section in between the two rows, splitting the
+  # markdown table in two).
+  local last_row_line; last_row_line="$(grep -n '^| [0-9]\+ |' "$AGGREGATE_FILE" 2>/dev/null | tail -1 | cut -d: -f1 || true)"
+  if [[ -n "$last_row_line" ]]; then
+    sed -i "${last_row_line}a\\${newrow}" "$AGGREGATE_FILE"
+  else
+    echo "$newrow" >> "$AGGREGATE_FILE"
+  fi
+
+  _metrics_recalculate_averages
+  ok "metrics from '$file' appended to $AGGREGATE_FILE (row #$row_num); averages recalculated"
+}
+
+# Recomputes the Averages section from the Cycle History table, replacing it
+# in place. Only touches rows with a name this function knows how to compute;
+# "Most frequent BLOCK category" and "Phase with most retries" have no source
+# column and are preserved as manual entries (or left as a placeholder on the
+# first run) rather than fabricated.
+_metrics_recalculate_averages() {
+  local total_cycles avg_duration avg_blocks avg_test_pass existing_category existing_phase
+
+  total_cycles="$(grep -c '^| [0-9]' "$AGGREGATE_FILE" 2>/dev/null || true)"
+  total_cycles="${total_cycles:-0}"
+
+  avg_duration="$(LC_NUMERIC=C awk -F'|' '/^\| [0-9]/{gsub(/ /,"",$6); if ($6 ~ /^[0-9]+$/) {s+=$6; c++}} END{if (c>0) printf "%.1f", s/c; else print "—"}' "$AGGREGATE_FILE")"
+  avg_blocks="$(LC_NUMERIC=C awk -F'|' '/^\| [0-9]/{gsub(/ /,"",$8); if ($8 ~ /^[0-9]+$/) {s+=$8; c++}} END{if (c>0) printf "%.1f", s/c; else print "0"}' "$AGGREGATE_FILE")"
+  avg_test_pass="$(LC_NUMERIC=C awk -F'|' '/^\| [0-9]/{gsub(/[ %]/,"",$9); if ($9 ~ /^[0-9]+$/) {s+=$9; c++}} END{if (c>0) printf "%.0f", s/c; else print "—"}' "$AGGREGATE_FILE")"
+  [[ "$avg_test_pass" != "—" ]] && avg_test_pass="${avg_test_pass}%"
+
+  existing_category="$(awk -F'|' '/Most frequent BLOCK category/{gsub(/^ +| +$/,"",$3); print $3; exit}' "$AGGREGATE_FILE")"
+  existing_category="${existing_category:-manual entry — no structured column to derive this from}"
+  existing_phase="$(awk -F'|' '/Phase with most retries/{gsub(/^ +| +$/,"",$3); print $3; exit}' "$AGGREGATE_FILE")"
+  existing_phase="${existing_phase:-manual entry — no structured column to derive this from}"
+
+  # Strip any existing "## Averages" section (from the first "##" of that
+  # heading to end of file) and append a freshly computed one.
+  local tmp; tmp="$(mktemp)"
+  awk '/^## Averages/{exit} {print}' "$AGGREGATE_FILE" > "$tmp"
+  # Trim trailing blank lines left by the strip before re-appending.
+  sed -i -e :a -e '/^\s*$/{$d;N;ba' -e '}' "$tmp" 2>/dev/null || true
+  {
+    cat "$tmp"
+    echo ""
+    echo ""
+    echo "## Averages (last $total_cycles cycles)"
+    echo ""
+    echo "| Metric | Value |"
+    echo "|--------|-------|"
+    echo "| Avg. cycle duration | ${avg_duration} min |"
+    echo "| Avg. BLOCKs per cycle | ${avg_blocks} |"
+    echo "| Avg. test pass rate (first run) | ${avg_test_pass} |"
+    echo "| Most frequent BLOCK category | ${existing_category} |"
+    echo "| Phase with most retries | ${existing_phase} |"
+    echo "| Total cycles completed | ${total_cycles} |"
+  } > "$AGGREGATE_FILE"
+  rm -f "$tmp"
+}
+
+cmd_metrics() {
+  case "${1:-}" in
+    aggregate)
+      local metrics_file="${2:-}"
+      [[ -n "$metrics_file" ]] || die "usage: devflow-ctl metrics aggregate <metrics-file>"
+      [[ -f "$metrics_file" ]] || die "metrics aggregate: file not found at $metrics_file"
+      _metrics_aggregate "$metrics_file"
+      ;;
+    *) die "usage: devflow-ctl metrics aggregate <metrics-file>" ;;
+  esac
+}
+
+# ── Traceability coverage (deterministic) ────────────────────────────────────
+# Moves "count the traceability rows and check they're all DONE" from LLM
+# eyeballing to a tool that actually counts. Parses the Requirement -> Task ->
+# Test -> Implementation table (traceability-matrix.md's format): rows are
+# "| R<N> | {Source} | ... | {Status} |", Status is ⬜ PENDING / 🟡 IN PROGRESS
+# / ✅ DONE.
+
+_traceability_check() {
+  local file="$1"
+  local rows; rows="$(grep -E '^\| *R[0-9]+ *\|' "$file" 2>/dev/null || true)"
+  if [[ -z "$rows" ]]; then
+    fail "traceability check: no requirement rows found (expected '| R1 | ... |' rows in $file)"
+    return 1
+  fi
+
+  # Per-Source and total counts (Source is field 3, Status is the last
+  # non-empty field before the trailing "|") -- summarized deterministically
+  # instead of eyeballed.
+  local summary; summary="$(awk -F'|' '
+    {
+      src = $3; gsub(/^ +| +$/, "", src)
+      status = $(NF-1); gsub(/^ +| +$/, "", status)
+      total[src]++; grand_total++
+      if (status ~ /DONE/) { done[src]++; grand_done++ }
+    }
+    END {
+      for (s in total) printf "%s\t%d\t%d\n", s, done[s]+0, total[s]
+      printf "TOTAL\t%d\t%d\n", grand_done+0, grand_total
+    }
+  ' <<< "$rows")"
+
+  echo "Traceability Coverage — $file"
+  echo ""
+  printf "%-20s %8s %8s %6s\n" "Source" "Covered" "Total" "%"
+  local src done_n total_n pct grand_done=0 grand_total=0
+  while IFS=$'\t' read -r src done_n total_n; do
+    [[ "$src" == "TOTAL" ]] && { grand_done="$done_n"; grand_total="$total_n"; continue; }
+    pct=$(( total_n > 0 ? done_n * 100 / total_n : 0 ))
+    printf "%-20s %8d %8d %5d%%\n" "$src" "$done_n" "$total_n" "$pct"
+  done <<< "$summary"
+  local grand_pct=$(( grand_total > 0 ? grand_done * 100 / grand_total : 0 ))
+  printf "%-20s %8d %8d %5d%%\n" "TOTAL" "$grand_done" "$grand_total" "$grand_pct"
+  echo ""
+
+  if (( grand_pct < 100 )); then
+    echo "Uncovered requirements:"
+    awk -F'|' '{
+      status = $(NF-1); gsub(/^ +| +$/, "", status)
+      if (status !~ /DONE/) {
+        id = $2; req = $4; gsub(/^ +| +$/, "", id); gsub(/^ +| +$/, "", req)
+        print "  " id " — " req " (" status ")"
+      }
+    }' <<< "$rows"
+    fail "traceability coverage is ${grand_pct}% — not 100%, see uncovered requirements above"
+    return 1
+  fi
+  ok "traceability coverage is 100% (${grand_total}/${grand_total} requirements)"
+}
+
+cmd_traceability() {
+  case "${1:-}" in
+    check)
+      local file="${2:-}"
+      [[ -n "$file" ]] || die "usage: devflow-ctl traceability check <file>"
+      [[ -f "$file" ]] || die "traceability check: file not found at $file"
+      _traceability_check "$file"
+      ;;
+    *) die "usage: devflow-ctl traceability check <file>" ;;
   esac
 }
 
@@ -1374,6 +1630,8 @@ case "$CMD" in
   capabilities) cmd_capabilities "$@" ;;
   knowledge)  cmd_knowledge "$@" ;;
   backlog)    cmd_backlog "$@" ;;
+  metrics)    cmd_metrics "$@" ;;
+  traceability) cmd_traceability "$@" ;;
   sessions)   cmd_sessions "$@" ;;
   clean)      cmd_clean "$@" ;;
   scan)       cmd_scan "$@" ;;
