@@ -388,6 +388,36 @@ cmd_gate() {
   esac
 }
 
+# Segment-aware glob match: `*` matches within a single path segment only —
+# it never crosses `/`; `**` matches zero or more whole segments. Plain bash
+# `[[ file == $pattern ]]` treats `*` and `**` identically (both cross `/`),
+# which made a scope like `src/*` silently accept `src/a/b.ts` — this is the
+# fix. Recursion relies on bash's dynamic scoping: fparts/pparts are `local`
+# in _glob_match and stay visible to _glob_match_rec across the call chain.
+_glob_match_rec() {
+  local fi="$1" pi="$2"
+  if (( pi == ${#pparts[@]} )); then
+    (( fi == ${#fparts[@]} )); return
+  fi
+  if [[ "${pparts[$pi]}" == "**" ]]; then
+    _glob_match_rec "$fi" $((pi + 1)) && return 0
+    (( fi < ${#fparts[@]} )) && _glob_match_rec $((fi + 1)) "$pi" && return 0
+    return 1
+  fi
+  (( fi < ${#fparts[@]} )) || return 1
+  # shellcheck disable=SC2053
+  [[ "${fparts[$fi]}" == ${pparts[$pi]} ]] || return 1
+  _glob_match_rec $((fi + 1)) $((pi + 1))
+}
+
+_glob_match() {
+  local file="$1" pattern="$2"
+  local -a fparts pparts
+  IFS='/' read -ra fparts <<< "$file"
+  IFS='/' read -ra pparts <<< "$pattern"
+  _glob_match_rec 0 0
+}
+
 cmd_scope() {
   resolve_session
   case "${1:-}" in
@@ -400,10 +430,7 @@ cmd_scope() {
       local globs; globs="$(fm_list scope)"
       [[ -n "$globs" ]] || fail "no scope declared for session '$SLUG' — declare it with 'scope add' before editing files"
       while IFS= read -r glob; do
-        # `**` and `*` both match across `/` in bash [[ == ]] pattern matching.
-        local pattern="${glob//\*\*/*}"
-        # shellcheck disable=SC2053
-        if [[ "$file" == $pattern ]]; then
+        if _glob_match "$file" "$glob"; then
           ok "'$file' matches scope glob '$glob'"
           return
         fi

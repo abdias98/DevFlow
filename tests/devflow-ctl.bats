@@ -142,6 +142,27 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
+@test "scope: 'src/*' accepts a file directly inside the segment" {
+  "$CTL" init --mode feature --slug s --scope 'src/*' >/dev/null
+  run "$CTL" scope check src/a.ts --slug s
+  [ "$status" -eq 0 ]
+}
+
+@test "scope: 'src/*' rejects a file in a nested subdirectory (no crossing '/')" {
+  "$CTL" init --mode feature --slug s --scope 'src/*' >/dev/null
+  run "$CTL" scope check src/a/b.ts --slug s
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"OUTSIDE"* ]]
+}
+
+@test "scope: 'src/**' accepts both a direct file and a nested one" {
+  "$CTL" init --mode feature --slug s --scope 'src/**' >/dev/null
+  run "$CTL" scope check src/a.ts --slug s
+  [ "$status" -eq 0 ]
+  run "$CTL" scope check src/a/b.ts --slug s
+  [ "$status" -eq 0 ]
+}
+
 # ── Iteration limits ──────────────────────────────────────────────────────────
 
 @test "iterate: fails once the limit is exceeded" {
