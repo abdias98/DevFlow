@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Accessibility (a11y) (Technology-Agnostic)
 
-> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** Element names, ARIA attributes, and APIs are illustrative (web-oriented). Map them to the accessibility API of the detected platform (web/ARIA, iOS/UIKit accessibility, Android/TalkBack, desktop toolkits). The principles are universal; the primitives differ.
 
@@ -83,7 +83,17 @@ Accessibility is **not a feature — it is a requirement**. Apply these principl
   - Auto-play motion or carousels that cannot be paused, or animation that ignores `prefers-reduced-motion`.
   - Silently swap content so screen-reader users never learn it changed.
 
-## 8. Severity Classification
+## 8. Code Review Checklist
+When reviewing, verify:
+- [ ] Non-text content has a text alternative; state (error, success) is never conveyed by color alone (§1).
+- [ ] Text/background contrast meets WCAG AA (4.5:1 normal text, 3:1 large text/UI components) (§2).
+- [ ] Every interactive element is reachable and operable by keyboard, with no keyboard trap (§3).
+- [ ] A visible focus indicator is present and focus order follows the visual/reading order (§4).
+- [ ] Native semantic elements are used before ARIA; every control has an accessible name (§5).
+- [ ] Every form input has a programmatic label; errors are identified in text, not color alone (§6).
+- [ ] Dynamic content updates are announced to assistive tech; motion respects `prefers-reduced-motion` (§7).
+
+## 9. Severity Classification
 
 Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `accessibility.md §3`).
 
@@ -93,7 +103,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | 🟡 **WARN** | Text/UI below the WCAG AA contrast minimum (§2); missing or invisible focus indicator (§4); meaning conveyed by color alone (§1); validation error shown by color only, or not tied to the field (§6); informative image/icon with no text alternative (§1); motion that ignores reduced-motion preference (§7); touch target below the recommended minimum (§7) |
 | 🟢 **INFO** | ARIA used where a native semantic element would suffice (§5); async update not announced via a live region (§7); zoom/reflow not yet verified to 200% (§7); focus order slightly out of step with visual order (§4) |
 
-## 9. Applying This Standard with a Limited Scope
+## 10. Applying This Standard with a Limited Scope
 
 When reviewing or modifying accessibility in a **specific set of files**, follow these constraints:
 

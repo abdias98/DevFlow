@@ -4,6 +4,12 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.9.3 — 2026-09-07
+
+### Updated standards — 2.9.3
+- **`logging.md`, `error-handling.md`, `concurrency.md`, `dependencies.md`, `accessibility.md`** (each → v1.2.0): gained a `Code Review Checklist` section (renumbering Severity Classification and Limited Scope by one), bringing all 14 standards to structural parity (Code Review Checklist + Severity Classification + Limited Scope). `git-conventions.md`'s Limited Scope gap was already closed in v2.9.0 — not repeated here.
+- `devflow-review/review-checklist.md` gained matching **Error Handling**, **Concurrency**, **Logging**, **Dependencies** (Universal Checks) and **Accessibility** (UI-Specific) sections — the checklist sections `devflow-review/SKILL.md`'s subagent-3 dimension already assigned but that didn't exist in the file. Refs: F15, Wave 13.
+
 ## 2.9.2 — 2026-09-07
 
 ### Updated standards — 2.9.2

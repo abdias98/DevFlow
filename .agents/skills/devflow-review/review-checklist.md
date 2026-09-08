@@ -35,6 +35,28 @@ This checklist guides the Reviewer in both Cycle Mode and Standalone Mode. Apply
 - [ ] Edge cases from spec/plan are covered.
 - [ ] No test gaps for critical paths.
 
+### Error Handling
+- [ ] No empty catch blocks or catch-and-continue that discards the error. 🔴 **BLOCK** if found (`error-handling.md §2`).
+- [ ] Caught errors are narrowly typed and the original cause is chained when wrapped/translated (`error-handling.md §3`).
+- [ ] No raw stack trace, exception message, or internal detail returned to an external caller. 🔴 **BLOCK** if found (`error-handling.md §5`).
+- [ ] Resources are released and multi-step state changes are atomic on every failure path (`error-handling.md §6`).
+
+### Concurrency *(apply only if concurrent/async code is present)*
+- [ ] No non-atomic check-then-act / read-modify-write on shared state. 🔴 **BLOCK** if found (`concurrency.md §2`).
+- [ ] No fire-and-forget async task where failure means data loss. 🔴 **BLOCK** if found (`concurrency.md §4`).
+- [ ] Locks are held for the shortest critical section and always released (`concurrency.md §3`).
+- [ ] Operations that may be retried or redelivered are idempotent (`concurrency.md §5`).
+
+### Logging *(apply only if the change emits logs/traces/metrics)*
+- [ ] No secret, credential, token, or PII written to a log at any level. 🔴 **BLOCK** if found (`logging.md §3`).
+- [ ] No exception caught and silently swallowed — neither logged nor rethrown. 🔴 **BLOCK** if found (`logging.md §5`).
+- [ ] Logs are structured (named fields), not string-concatenated messages (`logging.md §1`).
+
+### Dependencies *(apply only if manifests/lockfiles changed)*
+- [ ] No known critical/high vulnerability introduced with no documented mitigation. 🔴 **BLOCK** if found (`dependencies.md §3`).
+- [ ] Lockfile is committed and consistent with the manifest (`dependencies.md §2`).
+- [ ] No dependency installed from an untrusted source or with integrity verification disabled (`dependencies.md §4`).
+
 ---
 
 ## UI-Specific Checks *(apply only if Feature Type is UI/frontend)*
@@ -45,6 +67,12 @@ This checklist guides the Reviewer in both Cycle Mode and Standalone Mode. Apply
 - [ ] Components are self-contained and reusable. 🔴 **BLOCK** if a modal/dialog/overlay is inlined inside the component that triggers it.
 - [ ] No hardcoded visual values — design tokens used for spacing, colors, typography.
 - [ ] Layout uses relative units, not fixed pixels.
+
+### Accessibility
+- [ ] Every interactive element is reachable and operable by keyboard, with no keyboard trap. 🔴 **BLOCK** if found (`accessibility.md §3`).
+- [ ] `aria-hidden="true"` is never present on a focusable element. 🔴 **BLOCK** if found (`accessibility.md §5`).
+- [ ] Every control has an accessible name; native semantic elements are used before ARIA (`accessibility.md §5`).
+- [ ] Every form input has a programmatic label; errors are identified in text, not color alone (`accessibility.md §6`).
 
 ---
 

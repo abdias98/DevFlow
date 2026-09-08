@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Logging & Observability (Technology-Agnostic)
 
-> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All logger names, field names, and code fragments are illustrative. Replace them with the actual logging library, format, and conventions of the detected stack.
 
@@ -88,7 +88,17 @@ Apply these principles to all code you design, generate, or review that emits lo
   - Rely on ephemeral container stdout with no aggregation in production.
   - Keep sensitive logs indefinitely "just in case".
 
-## 8. Severity Classification
+## 8. Code Review Checklist
+When reviewing, verify:
+- [ ] No secrets, credentials, tokens, or PII are written to logs at any level (§3).
+- [ ] Log levels are used deliberately — `ERROR` reserved for actionable failures, no routine flow logged at `WARN`/`ERROR` (§2).
+- [ ] Logs are structured (named fields), not string-concatenated messages (§1).
+- [ ] A correlation/request ID is attached to every log line for a traceable operation (§4).
+- [ ] A caught error that isn't rethrown is logged once, at the boundary, with type/message/stack (§5).
+- [ ] No logging inside a tight or unbounded loop without sampling or rate-limiting (§6).
+- [ ] Logs reach a centralized, rotated destination — not only console/stdout (§7).
+
+## 9. Severity Classification
 
 Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `logging.md §3`).
 
@@ -98,7 +108,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | 🟡 **WARN** | Routine/expected flow logged at `ERROR`/`WARN`, or failures logged below `ERROR` (§2); unstructured string-concatenated logs where the project uses structured logging (§1); same error logged at every layer as it propagates (§5); logging inside an unbounded loop with no sampling (§6); logs with no correlation/request ID in a multi-request service (§4) |
 | 🟢 **INFO** | `print`/`console.log` used instead of the project logger (§1); expensive log construction not guarded by a level check (§6); inconsistent or non-UTC timestamps (§7); missing centralized aggregation (§7) |
 
-## 9. Applying This Standard with a Limited Scope
+## 10. Applying This Standard with a Limited Scope
 
 When reviewing or modifying logging in a **specific set of files**, follow these constraints:
 
