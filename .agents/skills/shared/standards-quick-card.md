@@ -31,7 +31,7 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 ## performance.md — Red Flags (BLOCK)
 - Database query inside a loop with unbounded input (N+1) → §2
 - API / repository returns an unbounded collection (no pagination) → §2
-- Fire-and-forget async task with no error handling where failure = data loss → §4
+- Fire-and-forget async task with no error handling where failure = data loss → concurrency.md §4
 
 ## rest-api.md — Red Flags (BLOCK)
 - `200 OK` returned with an error body → §3

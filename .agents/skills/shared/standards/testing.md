@@ -1,10 +1,10 @@
 # DevFlow Engineering Standards: Testing (Technology-Agnostic)
 
-> **Version:** 1.2.0 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.1 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All tool names, directory names, and code fragments are illustrative. Replace them with the actual test runner, utilities, and conventions of the detected stack.
 
-Apply these principles to all tests you design, generate, or review. TDD is non-negotiable in DevFlow — this standard defines what "good tests" means.
+Apply these principles to all tests you design, generate, or review. TDD is non-negotiable in DevFlow — this standard defines what "good tests" means. For the architectural side of testability per layer (why Entities need zero mocks, Use Cases mock at the port boundary), see [clean-architecture.md](./clean-architecture.md) §5.
 
 ## 1. Test Pyramid
 

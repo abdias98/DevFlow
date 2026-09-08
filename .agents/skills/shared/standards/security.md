@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Security (Technology-Agnostic)
 
-> **Version:** 2.4.0 | **Last Updated:** 2026-09-07
+> **Version:** 2.4.1 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All tool names and code fragments are illustrative. Replace them with the actual libraries, services, and conventions of the detected stack.
 
@@ -66,7 +66,7 @@ Apply these principles to all code you design, generate, or review.
   - Blindly update dependencies without reviewing changelogs and breaking changes, especially for critical or large libraries.
 
 ## 6. Error Handling & Information Disclosure
-- **What:** Internal errors must never leak system details to clients.
+- **What:** Internal errors must never leak system details to clients. **Canonical citation for "stack trace exposed to an external caller" is [error-handling.md](./error-handling.md) §5** — cite this section (§6) only as the security-angle cross-reference, not the primary citation, to avoid the same finding being logged under two different section numbers.
 - **DO:**
   - Log errors internally with full context (stack trace, request details, user context) for debugging. Use structured logging and ensure logs do not contain secrets.
   - Return generic, user-friendly error messages to clients. Distinguish between user‑actionable errors (validation failures, not found) and system errors (internal server error) without revealing internals.

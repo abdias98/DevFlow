@@ -4,6 +4,17 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.10.1 — 2026-09-07
+
+### Updated standards — 2.10.1
+- **`security.md`** (→ v2.4.1): §6 now names `error-handling.md §5` as the canonical citation for "stack trace exposed to an external caller"; §6 is the security-angle cross-reference only, avoiding the same finding logged under two section numbers.
+- **`error-handling.md`** (→ v1.2.1): §5's Blocker note reciprocates — this section is canonical, `security.md §6` cross-references it.
+- **`dependencies.md`** (→ v1.2.1): intro now states it owns the supply-chain depth (OWASP A08); `security.md` §5 covers the same topic at security-scan depth and links back.
+- **`performance.md`** (→ v2.3.2): §4 now declares `concurrency.md` §4 the owner of fire-and-forget error handling and sync-over-async correctness hazards; performance.md keeps the throughput angle and links instead of duplicating the rule. Severity table's fire-and-forget BLOCK trigger now cites `concurrency.md §4` as canonical; `standards-quick-card.md`'s matching row updated to match.
+- **`clean-architecture.md`** (→ v2.3.1) / **`testing.md`** (→ v1.2.1): §5 (Testing Requirements) and testing.md's intro now cross-link — clean-architecture.md owns per-layer architectural testability, testing.md owns test design depth (AAA, mocking, coverage).
+
+Refs: F17, Wave 13.
+
 ## 2.10.0 — 2026-09-07
 
 ### Updated standards — 2.10.0

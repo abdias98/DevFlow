@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Error Handling (Technology-Agnostic)
 
-> **Version:** 1.2.0 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.1 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All exception types, result wrappers, and code fragments are illustrative. Replace them with the actual error model, libraries, and conventions of the detected stack.
 
@@ -57,7 +57,7 @@ Apply these principles to all code you design, generate, or review that can fail
   - Map error categories to the right transport semantics (e.g., validation vs. auth vs. not-found vs. server error) — see [rest-api.md](./rest-api.md) where APIs are involved.
   - Log the full technical detail internally (see [logging.md](./logging.md) §5) instead of returning it.
 - **DON'T:**
-  - Return stack traces, exception messages, internal paths, or SQL to external clients. *(Blocker — also `security.md`.)*
+  - Return stack traces, exception messages, internal paths, or SQL to external clients. *(Blocker — canonical citation: this section, `error-handling.md §5`; `security.md §6` cross-references it as the security angle on the same finding.)*
   - Use the same error body for "invalid input" and "internal failure" — callers cannot react correctly.
 
 ## 6. Resource Cleanup & Consistency

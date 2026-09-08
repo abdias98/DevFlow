@@ -1,10 +1,10 @@
 # DevFlow Engineering Standards: Dependency Management & Supply Chain (Technology-Agnostic)
 
-> **Version:** 1.2.0 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.1 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All manifest files, lockfiles, audit tools, and registries are illustrative. Replace them with the actual package manager and ecosystem of the detected stack (npm, pip, Maven, Cargo, Go modules, Composer, NuGet, etc.).
 
-Apply these principles whenever you add, update, remove, or review third-party dependencies, manifests, lockfiles, or build configuration.
+Apply these principles whenever you add, update, remove, or review third-party dependencies, manifests, lockfiles, or build configuration. This standard owns the supply-chain discipline in depth (OWASP A08: Software and Data Integrity Failures); [security.md](./security.md) §5 covers the same topic at security-scan depth and links back here.
 
 ## 1. Minimize the Dependency Surface
 
