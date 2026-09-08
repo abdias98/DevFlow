@@ -6,6 +6,7 @@
 #   3. Missing required sections in SKILL.md files
 #   4. Unreferenced files in shared/
 #   5. Version header presence in standards
+#   11. Skill ↔ prompt parity (every devflow-* skill has a mirror .prompt.md)
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -357,6 +358,40 @@ if [[ -f package.json ]]; then
   fi
 else
   warn "package.json not found — skipping version sync check (run from the repo root)"
+fi
+
+# ── 11. Skill ↔ prompt parity ────────────────────────────────────────────────
+header "11. Skill ↔ prompt parity"
+
+PROMPTS_DIR_CHECK=".github/prompts"
+
+if [[ -d "$PROMPTS_DIR_CHECK" ]]; then
+  parity_errors=0
+  # Every devflow-* skill directory (plus the orchestrator "devflow") must have a mirror prompt.
+  while IFS= read -r skill_dir; do
+    name=$(basename "$skill_dir")
+    prompt_file="$PROMPTS_DIR_CHECK/$name.prompt.md"
+    if [[ ! -f "$prompt_file" ]]; then
+      fail "$skill_dir — no mirror prompt found at $prompt_file"
+      $FIX_MODE && echo "       FIX: create $prompt_file following the format of an existing prompt"
+      ((parity_errors++)) || true
+    fi
+  done < <(find "$SKILLS_DIR" -maxdepth 1 -type d \( -name "devflow" -o -name "devflow-*" \))
+
+  # Every devflow*.prompt.md must have a mirror skill directory.
+  while IFS= read -r prompt_file; do
+    name=$(basename "$prompt_file" .prompt.md)
+    skill_dir="$SKILLS_DIR/$name"
+    if [[ ! -d "$skill_dir" ]]; then
+      fail "$prompt_file — no mirror skill directory found at $skill_dir"
+      $FIX_MODE && echo "       FIX: create $skill_dir/SKILL.md or remove the orphaned prompt"
+      ((parity_errors++)) || true
+    fi
+  done < <(find "$PROMPTS_DIR_CHECK" -maxdepth 1 -name "devflow*.prompt.md" -type f)
+
+  [[ $parity_errors -eq 0 ]] && green "Every devflow-* skill has a mirror prompt and vice versa"
+else
+  warn "$PROMPTS_DIR_CHECK/ not found — skipping skill/prompt parity check (run from the repo root)"
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
