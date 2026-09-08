@@ -112,16 +112,16 @@ Explore ONLY the files relevant to this feature:
 
 **STOP. Do NOT apply any changes or create test files until the user approves.**
 
-- **✅ Approve — Standard** → run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, then proceed to Step 5. Standard mode auto-executes tests, lint, and git commits (never push/PR).
-- **🤝 Approve — Pair** → run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode true`, then proceed to Step 5. Pair mode: the user runs every command and pastes results.
-- **✏️ Modify plan** → collect the user's feedback. Run `devflow-ctl iterate plan_revision` — exit 1 (limit reached) means STOP and escalate to the user instead of looping. On exit 0, regenerate the plan incorporating the feedback, re-persist it (overwriting the plan file, never the final report), and re-present this same gate.
+- **✅ Approve — Standard** → run `devflow-ctl gate set plan_approval approved --slug {slug}` and `devflow-ctl config set pair_mode false --slug {slug}`, then proceed to Step 5. Standard mode auto-executes tests, lint, and git commits (never push/PR).
+- **🤝 Approve — Pair** → run `devflow-ctl gate set plan_approval approved --slug {slug}` and `devflow-ctl config set pair_mode true --slug {slug}`, then proceed to Step 5. Pair mode: the user runs every command and pastes results.
+- **✏️ Modify plan** → collect the user's feedback. Run `devflow-ctl iterate plan_revision --slug {slug}` — exit 1 (limit reached) means STOP and escalate to the user instead of looping. On exit 0, regenerate the plan incorporating the feedback, re-persist it (overwriting the plan file, never the final report), and re-present this same gate.
 - **❌ Cancel** → run `devflow-ctl lock release` and stop.
 
-> **CI exception:** if `CI=true` was detected at start, skip this question, log "CI mode: plan auto-approved.", run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, and proceed directly to Step 5.
+> **CI exception:** if `CI=true` was detected at start, skip this question, log "CI mode: plan auto-approved.", run `devflow-ctl gate set plan_approval approved --slug {slug}` and `devflow-ctl config set pair_mode false --slug {slug}`, and proceed directly to Step 5.
 
 ### Step 5 — Apply Feature Implementation (TDD per task)
 
-**Entry condition:** `devflow-ctl gate check plan_approval` must pass — if it exits non-zero, return to Step 4. Before editing any production file, run `devflow-ctl scope check {file}`; on exit 1, ask the user for approval and `devflow-ctl scope add {glob}` before proceeding.
+**Entry condition:** `devflow-ctl gate check plan_approval --slug {slug}` must pass — if it exits non-zero, return to Step 4. Before editing any production file, run `devflow-ctl scope check {file} --slug {slug}`; on exit 1, ask the user for approval and `devflow-ctl scope add {glob} --slug {slug}` before proceeding.
 
 **Rollback checkpoint:** before the FIRST task, record a `pre-feature-impl` rollback point — see [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Rollback Checkpoint.
 
@@ -143,7 +143,7 @@ For each task in the approved plan:
 2. Write the production code using `create_file` or `replace_file_content`.
 3. Keep it minimal — only what makes the test pass.
 4. Verify the test PASSES:
-   - **Standard/CI:** run `{Test Command (single file)} {test path}`. If it fails → run `devflow-ctl iterate implement_debug`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
+   - **Standard/CI:** run `{Test Command (single file)} {test path}`. If it fails → run `devflow-ctl iterate implement_debug --slug {slug}`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
    - **Pair:** ask the user to run the command and paste the output. Do NOT commit until PASS is confirmed.
 5. Commit `feat({scope}): {task description}` — Standard/CI auto-commit; Pair instructs the user with the exact commands.
 6. Record progress in `test-registry.md`: test file, test name, status (`red-confirmed`, `passing`).
@@ -174,7 +174,7 @@ Run a critical self-review with a deliberate context reset:
 - **Performance:** any N+1 queries, unbounded collections, or blocking I/O?
 - **Honesty check:** Is there anything about this implementation that you would critique if a colleague wrote it?
 
-If a BLOCK issue is found **that can be fixed within the files already in the approved plan** → run `devflow-ctl iterate implement_review`; on exit 0, fix it before continuing. On exit 1 (limit exceeded) → present the findings to the user instead of looping.
+If a BLOCK issue is found **that can be fixed within the files already in the approved plan** → run `devflow-ctl iterate implement_review --slug {slug}`; on exit 0, fix it before continuing. On exit 1 (limit exceeded) → present the findings to the user instead of looping.
 If the fix would require editing a file outside the plan → **do NOT fix it.** Add an INFO comment in the closest in-scope file and mention it in the final report.
 
 **Compile recommendations** — include an `### Additional Recommendations` section in your response with:
@@ -223,7 +223,7 @@ Pass to the Reviewer:
 **If the Reviewer returns BLOCK findings:**
 1. Review the findings. Fixes MUST be confined to files listed in the approved mini-plan.
 2. If a BLOCK finding requires editing a file outside the plan → add it as an INFO note in the feature report, do NOT edit that file.
-3. Run `devflow-ctl iterate implement_review`. On exit 0 → apply the in-scope fixes and re-invoke the Reviewer.
+3. Run `devflow-ctl iterate implement_review --slug {slug}`. On exit 0 → apply the in-scope fixes and re-invoke the Reviewer.
 4. On exit 1 (iteration limit exceeded) or if BLOCK findings persist → present findings to the user and ask how to proceed.
 
 **If the Reviewer returns APPROVED:**

@@ -43,7 +43,7 @@ The Refactorer supports the same three execution modes as every standalone agent
 
 When the project has **no** test infrastructure, both checkpoints are manual-verification instructions in the final report — there is no test to auto-run, in any mode.
 
-- Record the selected mode with `devflow-ctl config set pair_mode {true|false}` at the approval gate (CI mode sets `pair_mode false` automatically).
+- Record the selected mode with `devflow-ctl config set pair_mode {true|false} --slug {slug}` at the approval gate (CI mode sets `pair_mode false` automatically).
 - Git `push` and `gh pr create` are NEVER auto-executed in any mode.
 
 ---
@@ -123,23 +123,23 @@ Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|IN
 
 **STOP. Do NOT apply any changes or create test files until the user approves.**
 
-- **✅ Approve — Standard** → run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, then proceed to Step 6. Standard mode auto-executes the regression-test checkpoints (if any) and the commit.
-- **🤝 Approve — Pair** → run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode true`, then proceed to Step 6. Pair mode: the user runs every command and pastes results.
-- **✏️ Modify plan** → collect the user's feedback. Run `devflow-ctl iterate plan_revision` — exit 1 (limit reached) means STOP and escalate to the user instead of looping. On exit 0, regenerate the plan incorporating the feedback, re-persist it (overwriting the plan file, never the final report), and re-present this same gate.
+- **✅ Approve — Standard** → run `devflow-ctl gate set plan_approval approved --slug {slug}` and `devflow-ctl config set pair_mode false --slug {slug}`, then proceed to Step 6. Standard mode auto-executes the regression-test checkpoints (if any) and the commit.
+- **🤝 Approve — Pair** → run `devflow-ctl gate set plan_approval approved --slug {slug}` and `devflow-ctl config set pair_mode true --slug {slug}`, then proceed to Step 6. Pair mode: the user runs every command and pastes results.
+- **✏️ Modify plan** → collect the user's feedback. Run `devflow-ctl iterate plan_revision --slug {slug}` — exit 1 (limit reached) means STOP and escalate to the user instead of looping. On exit 0, regenerate the plan incorporating the feedback, re-persist it (overwriting the plan file, never the final report), and re-present this same gate.
 - **❌ Cancel** → run `devflow-ctl lock release` and stop.
 
-> **CI exception:** if `CI=true` was detected at start, skip this question, log "CI mode: plan auto-approved.", run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, and proceed directly to Step 6.
+> **CI exception:** if `CI=true` was detected at start, skip this question, log "CI mode: plan auto-approved.", run `devflow-ctl gate set plan_approval approved --slug {slug}` and `devflow-ctl config set pair_mode false --slug {slug}`, and proceed directly to Step 6.
 
 ### Step 6 — Apply Refactoring
 
-**Entry condition:** `devflow-ctl gate check plan_approval` must pass — if it exits non-zero, return to Step 5.
+**Entry condition:** `devflow-ctl gate check plan_approval --slug {slug}` must pass — if it exits non-zero, return to Step 5.
 
 **Rollback checkpoint:** before the first file write, record a rollback point:
-- **Standard/CI:** run `git rev-parse HEAD` and execute `devflow-ctl checkpoint set pre-refactor-impl {sha}`.
+- **Standard/CI:** run `git rev-parse HEAD` and execute `devflow-ctl checkpoint set pre-refactor-impl {sha} --slug {slug}`.
 - **Pair:** ask the user to run `git rev-parse HEAD` and report the SHA, then record it the same way.
 
 If the refactor must be abandoned mid-way, offer the user:
-> "To revert all code changes and return to the pre-refactor state, run: `git reset --hard {sha}`" (get the SHA with `devflow-ctl checkpoint get pre-refactor-impl`). NEVER execute `git reset` yourself.
+> "To revert all code changes and return to the pre-refactor state, run: `git reset --hard {sha}`" (get the SHA with `devflow-ctl checkpoint get pre-refactor-impl --slug {slug}`). NEVER execute `git reset` yourself.
 
 **Branch policy:** a refactor branch is ALWAYS used (same policy as lifecycle Standard Mode):
 - **Standard/CI:** auto-execute `git checkout -b refactor/{slug}` before the first file write. If the user named a custom branch during approval, use it instead.
@@ -154,7 +154,7 @@ If the refactor must be abandoned mid-way, offer the user:
    - The test file is considered part of the approved scope for this refactoring.
 
 For each file in the approved scope:
-1. Run `devflow-ctl scope check {file}` — if it exits 1, STOP and ask the user for explicit approval (then `devflow-ctl scope add {glob}`).
+1. Run `devflow-ctl scope check {file} --slug {slug}` — if it exits 1, STOP and ask the user for explicit approval (then `devflow-ctl scope add {glob} --slug {slug}`).
 2. Apply the change using `replace_file_content` or `multi_replace_file_content`.
 3. Keep each change minimal and focused on what was planned.
 
@@ -174,7 +174,7 @@ To verify no behavior changed:
 
 **Post-refactor behavior check.** Before anything else, confirm no behavior changed:
 - **If a regression test exists** (created in Step 6): verify it still PASSES.
-  - **Standard/CI:** auto-run `{Test Command (single file)}` (and the full suite if available). Both MUST pass. If either fails → run `devflow-ctl iterate implement_debug`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
+  - **Standard/CI:** auto-run `{Test Command (single file)}` (and the full suite if available). Both MUST pass. If either fails → run `devflow-ctl iterate implement_debug --slug {slug}`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
   - **Pair:** ask the user to run both commands and paste the output. Do NOT commit until PASS is confirmed for both.
 - **If no test infrastructure exists:** this check is manual — the final report's verification instructions are the only safety net. Proceed to self-review below; the commit still waits for that self-review to clear.
 
@@ -196,7 +196,7 @@ Run a critical self-review:
 - **Clean Architecture:** are dependencies still pointing inward?
 - **Honesty check:** Is there anything about this refactoring that you would critique if a colleague did it?
 
-If a BLOCK issue is found **that can be fixed within the approved scope** → run `devflow-ctl iterate implement_review`; on exit 0, fix it before continuing. On exit 1 (limit exceeded) → present the findings to the user instead of looping.
+If a BLOCK issue is found **that can be fixed within the approved scope** → run `devflow-ctl iterate implement_review --slug {slug}`; on exit 0, fix it before continuing. On exit 1 (limit exceeded) → present the findings to the user instead of looping.
 If the fix would require editing a file outside the scope → **do NOT fix it.** Add an INFO comment and mention it in the final report.
 
 **Commit** — only once the post-refactor behavior check and self-review/verifier both clear. Standard/CI auto-executes; Pair instructs the user with the exact command:
@@ -227,7 +227,7 @@ Pass to the Reviewer:
 
 **If the Reviewer returns BLOCK findings:**
 1. Apply the required fixes (within the original approved scope).
-2. Run `devflow-ctl iterate implement_review`. On exit 0 → re-invoke the Reviewer.
+2. Run `devflow-ctl iterate implement_review --slug {slug}`. On exit 0 → re-invoke the Reviewer.
 3. On exit 1 (iteration limit exceeded) or if BLOCK findings persist → present findings to the user and ask how to proceed.
 
 **If the Reviewer returns APPROVED:**

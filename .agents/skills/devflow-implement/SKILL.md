@@ -43,17 +43,17 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 
 ### Step 1 — Load Context
 
-1. **Verify the Confirmation Gate:** run `devflow-ctl gate check confirmation` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If it exits non-zero, STOP — the user has not approved the plan. Do not write any code.
-2. Read session memory: `context.md` (tech stack, constraints, Stack Mode) and run `devflow-ctl status` for the session state.
+1. **Verify the Confirmation Gate:** run `devflow-ctl gate check confirmation --slug {slug}` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If it exits non-zero, STOP — the user has not approved the plan. Do not write any code.
+2. Read session memory: `context.md` (tech stack, constraints, Stack Mode) and run `devflow-ctl status --slug {slug}` for the session state.
 3. **Read the plan** — load the plan document from `docs/devflow/plans/`. Read the **File Map** and **task list overview** to understand the full scope. For each task during execution (Step 2), read only that task's **work packet** section — not the entire plan repeatedly. This avoids loading N × (full plan) tokens when only N × (work packet) is needed.
 4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for implementation patterns, anti-patterns, and known pitfalls relevant to the detected stack and the tasks ahead. Apply documented patterns and avoid known mistakes.
-5. **Declare the scope:** register the plan's File Map (Create + Modify lists) with `devflow-ctl scope add {glob}` for each path, if not already declared.
+5. **Declare the scope:** register the plan's File Map (Create + Modify lists) with `devflow-ctl scope add {glob} --slug {slug}` for each path, if not already declared.
 6. Note Stack Mode: `no` → standard flow, `yes` → stacked flow.
 7. Identify where to start (first unchecked task or resume from checkpoint).
 
 ### Step 2 — Execute Plan
 
-**Before each file edit**, run `devflow-ctl scope check {file}`. If it exits 1, the file is outside the approved scope: STOP, ask the user for explicit approval, and only after they approve run `devflow-ctl scope add {glob}` and proceed. Test files and DevFlow artifacts from the plan always pass (Flow Artifacts Exception).
+**Before each file edit**, run `devflow-ctl scope check {file} --slug {slug}`. If it exits 1, the file is outside the approved scope: STOP, ask the user for explicit approval, and only after they approve run `devflow-ctl scope add {glob} --slug {slug}` and proceed. Test files and DevFlow artifacts from the plan always pass (Flow Artifacts Exception).
 
 - **Stack Mode = yes** → Follow the [stacked flow](<{{SKILLS_DIR}}/devflow-implement/stack-flow.md>) (stacked flow has its own ordering; parallel dispatch does not apply).
 - **Stack Mode = no** → Continue to task independence analysis below.
@@ -94,7 +94,7 @@ Each subagent's brief:
 |-------|---------|
 | **Goal** | Implement this task following Red→Green TDD. |
 | **Context** | **READ:** the task's work packet from the plan (Goal, Context, Constraints, Acceptance criteria, Deliverables, Implementation guide), relevant standards, Stack Profile test commands. **DO NOT READ:** other tasks' sections, the full plan, context.md, standards not relevant to this task. |
-| **Constraints** | Write ONLY to the task's declared files. Follow TDD Red→Green. Do NOT commit — the Implementer handles commits after wave synthesis. Run `devflow-ctl scope check {file}` before each edit. |
+| **Constraints** | Write ONLY to the task's declared files. Follow TDD Red→Green. Do NOT commit — the Implementer handles commits after wave synthesis. Run `devflow-ctl scope check {file} --slug {slug}` before each edit. |
 | **Output format** | Task complete — files created/modified, test command, test result (Standard mode) or test command for user (Pair mode). |
 
 After all subagents in a wave return, the Implementer runs **supervisor checks** before synthesizing:
@@ -108,7 +108,7 @@ After all subagents in a wave return, the Implementer runs **supervisor checks**
 1. **Per-task checks (parallel, fresh context each):** For each task in the wave, dispatch a supervisor check subagent with:
    - **Goal:** Verify task {N} implementation matches its work packet and stays in scope.
    - **Context — READ:** plan.md (ONLY task {N}'s work packet), {files declared in task N's deliverables}. **DO NOT READ:** other tasks' sections, the full plan, context.md, standards, the Implementer's reasoning.
-   - **Constraints:** Read-only. Do NOT run tests. Do NOT edit files. Check against **acceptance criteria** (NOT implementation guide). Run `devflow-ctl scope check {file}` for each modified file.
+   - **Constraints:** Read-only. Do NOT run tests. Do NOT edit files. Check against **acceptance criteria** (NOT implementation guide). Run `devflow-ctl scope check {file} --slug {slug}` for each modified file.
    - **Output:** Findings table (BLOCK/WARN/INFO) across 3 axes: plan compliance, scope compliance, obvious issues. Verdict: PASS / PASS_WITH_WARNINGS / FAIL.
 
 2. **Cross-task consistency check (fresh context):** Dispatch one check that verifies interfaces across all tasks in the wave:
@@ -175,7 +175,7 @@ If the skip criteria are met, proceed directly to Step 6.
 
 1. Compose the verifier brief:
    - **Goal:** Verify the implementation matches the plan structurally and stays in scope.
-   - **Context:** The plan document, the spec (if architecture-relevant), the list of modified files, and `devflow-ctl scope list` output. **No access to the Implementer's reasoning.**
+   - **Context:** The plan document, the spec (if architecture-relevant), the list of modified files, and `devflow-ctl scope list --slug {slug}` output. **No access to the Implementer's reasoning.**
    - **Constraints:** Read-only. Do NOT run tests. Do NOT edit files. Do NOT do deep quality/security analysis (that is the Reviewer's job).
    - **Output format:** Findings list with verdict (PASS / PASS_WITH_WARNINGS / FAIL) and per-finding severity (BLOCK / WARN / INFO) across four axes: structural completeness, scope compliance, plan compliance, obvious issues.
 2. Dispatch the verifier (parallel subagent if the editor supports it; otherwise inline with a deliberate context reset — see [verifier-subagent.md](<{{SKILLS_DIR}}/shared/verifier-subagent.md>) → Fallback).
