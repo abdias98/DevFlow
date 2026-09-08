@@ -4,7 +4,10 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
-## 2.8.0 — 2026-06-15
+## 2.9.0 — 2026-09-07
+
+### Updated standards — 2.9.0
+- **All 14 standards** (`accessibility.md` → v1.1.0, `clean-architecture.md` → v2.3.0, `concurrency.md` → v1.1.0, `dependencies.md` → v1.1.0, `error-handling.md` → v1.1.0, `git-conventions.md` → v1.1.0, `logging.md` → v1.1.0, `performance.md` → v2.3.0, `project-design.md` → v2.3.0, `rest-api.md` → v2.3.0, `security.md` → v2.3.0, `solid.md` → v2.3.0, `testing.md` → v1.1.0, `ui-design.md` → v2.4.0): "Applying This Standard with a Limited Scope" rewritten to align with the three-zone scope model (`rules.md` → Scope-Locking — Three Zones). Violations outside Core no longer default to a silent TODO/INFO comment; a fix in the Impact Zone with a closed coherence reason gets applied and recorded with `devflow-ctl scope justify`, everything else is deferred with `devflow-ctl backlog add` at `incomplete` or `info` severity. `git-conventions.md` gained a Limited Scope section (§8) for the first time, bringing all 14 standards to parity. Refs: F42, Wave 12.
 
 ### New standards — 2.8.0
 - **`accessibility.md`** (new, v1.0.0): Accessibility (a11y) standard — extracted from `ui-design.md §10` into its own first-class standard. Covers Perceivable (text alternatives, no color-only meaning), color contrast (WCAG AA), keyboard operability, visible focus, semantics & ARIA (native-first, no `aria-hidden` on focusable elements), forms & errors, and dynamic content & motion (reduced-motion, 200% zoom, target size), with a Severity Classification and limited-scope guidance. Registered in `standards-quick-card.md`, the Critical Friend scan table, and linked from the Architect and the standalone agents' UI-conditional standard set. Part of Wave 3.

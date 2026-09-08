@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Project Design Patterns (Technology-Agnostic)
 
-> **Version:** 2.2.0 | **Last Updated:** 2026-06-10
+> **Version:** 2.3.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All file names, patterns, and tool references are illustrative. Adapt terminology and conventions to the detected stack.
 
@@ -96,15 +96,19 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 ## 7. Applying This Standard with a Limited Scope
 
-When applying project design rules to a **specific set of files or modules** (the declared scope), follow these constraints:
+When applying project design rules to a **specific set of files or modules** (the declared Core scope), follow these constraints:
 
-1. **Do not restructure the entire project.**  
-   - If a file within scope violates a design rule (e.g., business logic in a controller), refactor that file only. Do not move files to new directories, rename modules globally, or reorganize the folder structure unless those changes are explicitly within the scope and approved.
-2. **Respect the existing architectural pattern.**  
-   - If the project uses Layered architecture, do not introduce Hexagonal patterns in a single module without approval. Consistency within the scope is paramount; flag inconsistencies as INFO notes if they cannot be resolved locally.
-3. **Module naming and organization.**  
-   - If you identify a `utils` or `helpers` module that should be split, but splitting would create new files outside the scope, leave a comment in the in‑scope file recommending the extraction and describing the target modules.
-4. **Dependency direction.**  
-   - If you find an inward dependency violation (e.g., a domain entity importing an ORM class) and fixing it requires changes outside the scope, apply the fix only to the in‑scope file (e.g., remove the import, add a port interface) and leave a TODO/INFO comment for the outer‑layer file that must implement the adapter.
-5. **Architecture Spec updates.**  
+1. **Do not restructure the entire project.**
+   - If a file within Core violates a design rule (e.g., business logic in a controller), refactor that file only. Do not move files to new directories, rename modules globally, or reorganize the folder structure unless those changes are explicitly within scope and approved.
+2. **Respect the existing architectural pattern.**
+   - If the project uses Layered architecture, do not introduce Hexagonal patterns in a single module without approval. Consistency within Core is paramount; anything unresolved locally follows the Impact Zone / backlog handling below.
+3. **Module naming and organization.**
+   - If you identify a `utils` or `helpers` module that should be split, but the split would create files in the Impact Zone or Outside, apply the handling below (justify if it's a closed coherence reason; otherwise backlog it) rather than leaving an ad hoc comment.
+4. **Dependency direction.**
+   - If you find an inward dependency violation (e.g., a domain entity importing an ORM class) and fixing it requires an adapter outside Core, apply the fix to the in‑scope file (e.g., remove the import, add a port interface) and route the outer-layer adapter through the Impact Zone / backlog handling below.
+5. **Architecture Spec updates.**
    - Do not create or modify the Architecture Spec unless it is explicitly within the approved scope. If the refactor changes the project structure in a way that warrants a Spec update, mention this to the user as a follow‑up task.
+
+**Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
+- **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
+- **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.

@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Testing (Technology-Agnostic)
 
-> **Version:** 1.0.0 | **Last Updated:** 2026-06-10
+> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All tool names, directory names, and code fragments are illustrative. Replace them with the actual test runner, utilities, and conventions of the detected stack.
 
@@ -131,7 +131,11 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 When reviewing or adding tests to a **specific set of files**, follow these constraints:
 
-1. **Only create test files within the approved scope.** If existing tests for out-of-scope code are broken, flag them as INFO notes rather than modifying them.
+1. **Only create test files within the approved Core scope.** If existing tests for out-of-scope code are broken, apply the Impact Zone / backlog handling below rather than modifying them directly.
 2. **Regression tests are always within scope** for any bug fix — they are a required deliverable, not an optional extra.
-3. **If a test requires a factory or fixture that lives outside scope**, use the existing one (read-only) or create an inline minimal version within the test file. Do not modify shared test utilities unless they are in scope.
+3. **If a test requires a factory or fixture that lives outside scope**, use the existing one (read-only) or create an inline minimal version within the test file. Do not modify shared test utilities unless they are in Core or justified as Impact Zone.
 4. **Coverage tooling:** Do not modify coverage configuration files unless they are explicitly in scope.
+
+**Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
+- **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
+- **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.

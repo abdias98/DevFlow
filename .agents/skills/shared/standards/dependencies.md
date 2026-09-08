@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Dependency Management & Supply Chain (Technology-Agnostic)
 
-> **Version:** 1.0.0 | **Last Updated:** 2026-06-15
+> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All manifest files, lockfiles, audit tools, and registries are illustrative. Replace them with the actual package manager and ecosystem of the detected stack (npm, pip, Maven, Cargo, Go modules, Composer, NuGet, etc.).
 
@@ -99,7 +99,11 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 When reviewing or modifying dependencies in a **specific set of files**, follow these constraints:
 
-1. **Only change manifests/lockfiles within the approved scope.** A dependency change is rarely "trivial" — it affects the whole build, so treat manifest/lockfile edits as in-scope only when the task explicitly calls for them.
-2. **Removing a known critical/high vulnerability or an untrusted source is always worth surfacing** — if it is outside scope, raise it as a BLOCK/WARN finding rather than silently bumping versions.
+1. **Only change manifests/lockfiles within the approved Core scope.** A dependency change is rarely "trivial" — it affects the whole build, so treat manifest/lockfile edits as in-scope only when the task explicitly calls for them.
+2. **Removing a known critical/high vulnerability or an untrusted source is always worth surfacing** — if the affected manifest is outside Core, raise it as a BLOCK/WARN finding and, per the Impact Zone / backlog handling below, defer the actual bump rather than silently applying it.
 3. **Do not perform a broad dependency upgrade** as a side effect of an unrelated change; propose it separately so the resulting lockfile diff is reviewable on its own.
 4. **When adding a dependency to satisfy a task**, prefer one already present or in the same ecosystem the project uses, and update the lockfile with the standard tooling (never by hand).
+
+**Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
+- **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
+- **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.

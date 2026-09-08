@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Performance (Technology-Agnostic)
 
-> **Version:** 2.2.0 | **Last Updated:** 2026-06-10
+> **Version:** 2.3.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All patterns and code fragments are illustrative. Adapt syntax and tool names to the detected stack.
 
@@ -110,15 +110,19 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 ## 10. Applying This Standard with a Limited Scope
 
-When applying performance rules to a **specific set of files or modules** (the declared scope), follow these constraints:
+When applying performance rules to a **specific set of files or modules** (the declared Core scope), follow these constraints:
 
-1. **Only modify files inside the scope.**
-   - If a performance issue (e.g., N+1 query) originates from code outside the scope, document it as an INFO note in the in‑scope file and recommend the fix for the external caller.
+1. **Only modify files inside Core directly.**
+   - If a performance issue (e.g., N+1 query) originates from code outside Core, apply the Impact Zone / backlog handling below instead of editing it unconditionally.
 2. **Async transformations require careful scope boundaries.**
-   - Changing a method from sync to async changes its signature and forces all callers to adopt async. If callers are outside scope, **do not change the signature**. Instead, leave a comment explaining the async opportunity and the required call‑chain migration.
+   - Changing a method from sync to async changes its signature and forces all callers to adopt async. If every affected caller is in Core or Impact Zone (the signature change makes them incoherent otherwise — a closed coherence reason), migrate them and `scope justify` each one. If some callers fall Outside, do not change the signature — defer the whole migration to the backlog with `incomplete` severity and describe the call-chain migration required.
 3. **Caching introductions.**
-   - Adding a cache layer may require configuration or DI registration outside scope. Define the cache interface within scope, implement a no‑op or in‑memory version for now, and leave a TODO for the composition root registration.
+   - Adding a cache layer may require configuration or DI registration outside Core. Define the cache interface within Core, implement a no‑op or in‑memory version for now, and backlog the composition-root registration (`info` unless Core is non-functional without it).
 4. **Resource management fixes.**
-   - Adding a `using`/`try‑with‑resources` block is always safe within scope if the resource acquisition is already present. Do not change the resource acquisition method (e.g., connection factory) if it belongs to a different module.
+   - Adding a `using`/`try‑with‑resources` block is always safe within scope if the resource acquisition is already present. Do not change the resource acquisition method (e.g., connection factory) if it belongs to a different module outside Core/Impact Zone.
 5. **Profiling evidence.**
    - When a performance claim is made in a review or refactor context, mention that profiling would be required to confirm, but do not run profilers yourself. The user is responsible for providing the metrics.
+
+**Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
+- **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
+- **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.

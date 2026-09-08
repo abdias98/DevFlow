@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: UI Design (Technology-Agnostic)
 
-> **Version:** 2.3.0 | **Last Updated:** 2026-06-15
+> **Version:** 2.4.0 | **Last Updated:** 2026-09-07
 
 > **Apply only if:** the project has a user interface (web frontend, mobile app, desktop app, or server-rendered views).
 > If this is a pure API, CLI tool, library, or background worker, skip this standard entirely.
@@ -336,14 +336,14 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 ## 17. Applying This Standard with a Limited Scope
 
-When applying UI design rules to a **specific set of files or modules** (the declared scope), follow these constraints:
+When applying UI design rules to a **specific set of files or modules** (the declared Core scope), follow these constraints:
 
-1. **Only modify files inside the scope.**
-   - If a UI violation is found in a component outside the scope, mention it as an INFO note in the in-scope file and describe the recommended fix.
+1. **Only modify files inside Core directly.**
+   - If a UI violation is found in a component outside Core, apply the Impact Zone / backlog handling below rather than editing it unconditionally.
 2. **Component refactors.**
-   - If a component needs to be split for SRP but the new component would live outside the scope, leave a comment in the original file recommending the split and the target location.
+   - If a component needs to be split for SRP but the new component would live in the Impact Zone or Outside, apply the handling below (justify if it's a closed coherence reason; otherwise backlog it) rather than leaving an ad hoc comment.
 3. **Design token introduction.**
-   - If you replace hardcoded values with design tokens, define the tokens within the scope (e.g., in a local constants file) if a global token file exists outside the scope. Leave a TODO to migrate to the global token file.
+   - If you replace hardcoded values with design tokens, define the tokens within Core (e.g., in a local constants file) if a global token file exists outside Core. Backlog the migration to the global token file (`info` unless Core is inconsistent without it).
 4. **Accessibility fixes.**
    - Replacing `div` with `button` or adding keyboard handlers within the same file is always allowed. Do not modify global accessibility configurations or base templates outside the scope.
 5. **Performance improvements.**
@@ -356,3 +356,7 @@ When applying UI design rules to a **specific set of files or modules** (the dec
    - Extracting a presentational component from a container component if both stay within scope.
    - Adding inline validation or error messages to a form within scope.
    - Replacing a generic icon with one from the project's icon set.
+
+**Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
+- **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
+- **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
