@@ -107,13 +107,45 @@ _discover_sessions() {
   fi
 }
 
+# True (exit 0) if the given slug's session has a lock that is held (not
+# "none"/empty) and not stale. Reads the frontmatter directly — this runs
+# before any candidate slug has been chosen, so STATE_FILE/fm_get aren't
+# set up yet (same direct-read pattern as cmd_sessions/cmd_clean).
+_has_active_lock() {
+  local slug="$1" statefile="$SESSION_ROOT/$1/phase-state.md"
+  local locked_by locked_since epoch age_min
+  locked_by="$(awk '/^locked_by:/{sub(/^locked_by: */,"");print;exit}' "$statefile" 2>/dev/null)"
+  [[ -n "$locked_by" && "$locked_by" != "none" ]] || return 1
+  locked_since="$(awk '/^locked_since:/{sub(/^locked_since: */,"");print;exit}' "$statefile" 2>/dev/null)"
+  epoch="$(to_epoch "$locked_since")"
+  [[ "$epoch" != 0 ]] || return 1
+  age_min=$(( ($(date +%s) - epoch) / 60 ))
+  (( age_min < STALE_LOCK_MINUTES ))
+}
+
 resolve_session() {
   if [[ -z "$SLUG" ]]; then
     _discover_sessions
     case "${#_SESSIONS[@]}" in
       0) die "no active session found under $SESSION_ROOT — run 'devflow-ctl init' first" ;;
       1) SLUG="${_SESSIONS[0]}" ;;
-      *) die "multiple active sessions (${_SESSIONS[*]}) — disambiguate with --slug" ;;
+      *)
+        # 2+ sessions on disk is ambiguous by default, but if exactly one of
+        # them currently holds an active (non-stale) lock, that is the live
+        # cycle an agent means when it omits --slug — the rest are abandoned
+        # or completed sessions still sitting on disk. Pick it and say so.
+        local locked_candidates=()
+        for s in "${_SESSIONS[@]}"; do
+          _has_active_lock "$s" && locked_candidates+=("$s")
+        done
+        case "${#locked_candidates[@]}" in
+          1)
+            SLUG="${locked_candidates[0]}"
+            echo "[devflow-ctl] OK: multiple sessions on disk (${_SESSIONS[*]}) — resolved to '$SLUG' (the only one with an active lock)" >&2
+            ;;
+          *) die "multiple active sessions (${_SESSIONS[*]}) — disambiguate with --slug" ;;
+        esac
+        ;;
     esac
   fi
   STATE_FILE="$SESSION_ROOT/$SLUG/phase-state.md"

@@ -116,7 +116,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - **Initialize autonomous log:** If autonomous mode is active, create `docs/devflow/session/{slug}/autonomous-log.md` with a header (slug, started timestamp).
    - **Initialize metrics:** Create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>). Fill the cycle header (slug, stack, started timestamp).
 8. Detect the project stack profile (or leave `[To be detected by Architect]`).
-9. **Record checkpoint:** Auto-execute `git rev-parse HEAD` (read-only — safe in all modes) and record it with `devflow-ctl checkpoint set pre-phase-1 {sha}`. If the command fails (e.g., not a git repo), ask the user for the SHA and explain why it could not be retrieved automatically.
+9. **Record checkpoint:** Auto-execute `git rev-parse HEAD` (read-only — safe in all modes) and record it with `devflow-ctl checkpoint set pre-phase-1 {sha} --slug {slug}`. If the command fails (e.g., not a git repo), ask the user for the SHA and explain why it could not be retrieved automatically.
 
 ### Step 1 — Phase 1: Brainstormer
 
@@ -155,16 +155,16 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 5. Update `context.md` with `## Validator Findings` (challenges, risks, alternatives). If the user accepted any BLOCK risks, add `## Accepted Risks` with timestamp, risk description, and user's rationale.
 6. Update `phase-state.md` body to show `[x] Phase 2: Validation Gate`.
 7. **Route decision based on findings:**
-   - **✅ CLEAR (no BLOCK)** → run `devflow-ctl gate set validation passed`, proceed to Step 3.
-   - **⚠️ WARNINGS ONLY** → note them, present to user, run `devflow-ctl gate set validation passed`, proceed to Step 3.
-   - **🔴 BLOCK (security, architectural, or contradiction issues)** → run `devflow-ctl gate set validation blocked`, present to user, ask for resolution:
+   - **✅ CLEAR (no BLOCK)** → run `devflow-ctl gate set validation passed --slug {slug}`, proceed to Step 3.
+   - **⚠️ WARNINGS ONLY** → note them, present to user, run `devflow-ctl gate set validation passed --slug {slug}`, proceed to Step 3.
+   - **🔴 BLOCK (security, architectural, or contradiction issues)** → run `devflow-ctl gate set validation blocked --slug {slug}`, present to user, ask for resolution:
      
      | header | question | type |
      |--------|----------|------|
      | `validation_block` | The Validation Gate found BLOCK issues. How to proceed? | options: ✅ Accept risks & continue, ✏️ Revise requirements, ❌ Cancel cycle |
      
-     - **✅ Accept risks** → run `devflow-ctl gate set validation accepted-risks` (only valid from `blocked` — the CLI enforces this). Record user's acceptance in `context.md` under `## Accepted Risks` (with timestamp and rationale). Also append the accepted risk to the archived report at `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md`. Proceed to Step 3.
-     - **✏️ Revise** → run `devflow-ctl iterate validation_brainstorm` (exit 1 = limit reached, escalate instead), then route back to Step 1 (Brainstormer).
+     - **✅ Accept risks** → run `devflow-ctl gate set validation accepted-risks --slug {slug}` (only valid from `blocked` — the CLI enforces this). Record user's acceptance in `context.md` under `## Accepted Risks` (with timestamp and rationale). Also append the accepted risk to the archived report at `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md`. Proceed to Step 3.
+     - **✏️ Revise** → run `devflow-ctl iterate validation_brainstorm --slug {slug}` (exit 1 = limit reached, escalate instead), then route back to Step 1 (Brainstormer).
      - **❌ Cancel** → stop cycle, release lock.
      - **CI mode:** BLOCK findings are NOT auto-accepted. Fail the pipeline immediately with exit code 1 and print the BLOCK findings to stdout.
 8. After Phase 2 is complete:
@@ -214,7 +214,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 2. Read the plan from `docs/devflow/plans/` and present a summary:
    - **Feature:** {slug}
    - **Tasks:** {count}
-   - **Rigor:** {level} — {reason} *(read from `devflow-ctl config get rigor`)*
+   - **Rigor:** {level} — {reason} *(read from `devflow-ctl config get rigor --slug {slug}`)*
    - **Files to create:** {list}
    - **Files to modify:** {list}
    - **Stack Mode:** {yes/no} — {branch plan if stacked}
@@ -226,23 +226,23 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    |--------|----------|------|
    | `plan_confirmation` | Plan + Test Cases + Mockups complete. Choose implementation mode: | options: ✅ Standard — auto-complete, 🤝 Pair — review each task, ✏️ Request changes, ❌ Cancel |
 
-5. **If ✅ Standard** → run `devflow-ctl gate set confirmation approved` and `devflow-ctl config set pair_mode false` (the CLI rejects the approval if the Validation Gate was never resolved). Then ask for the branch name:
+5. **If ✅ Standard** → run `devflow-ctl gate set confirmation approved --slug {slug}` and `devflow-ctl config set pair_mode false --slug {slug}` (the CLI rejects the approval if the Validation Gate was never resolved). Then ask for the branch name:
    > **"Standard mode selected. This will auto-execute: branch creation, test runs, commits, and git SHAs for rollback."**
    > Ask: *"Branch name? Suggested: `feat/{slug}`. Press Enter to accept or type a custom name."*
-   - Record the branch name with `devflow-ctl config set branch {name}`.
+   - Record the branch name with `devflow-ctl config set branch {name} --slug {slug}`.
    - **Stack Mode or not:** A branch is ALWAYS created, even for single-task features. This provides isolated workspace, clean rollback point, and safe experimentation.
     - Standard mode auto-execution rules: see `rules.md` → Standard Mode.
     - Proceed to Step 6.
-6. **If 🤝 Pair** → run `devflow-ctl gate set confirmation approved` and `devflow-ctl config set pair_mode true`. Branch is created manually by the user. Pair mode: the user runs tests, creates branches, and confirms each task. Proceed to Step 6.
-7. **If ✏️ Request changes** → collect user feedback. Run `devflow-ctl iterate plan_revision` (exit 1 = revision limit reached, escalate to the user instead). Route back to Step 4 (Planner) with the feedback.
+6. **If 🤝 Pair** → run `devflow-ctl gate set confirmation approved --slug {slug}` and `devflow-ctl config set pair_mode true --slug {slug}`. Branch is created manually by the user. Pair mode: the user runs tests, creates branches, and confirms each task. Proceed to Step 6.
+7. **If ✏️ Request changes** → collect user feedback. Run `devflow-ctl iterate plan_revision --slug {slug}` (exit 1 = revision limit reached, escalate to the user instead). Route back to Step 4 (Planner) with the feedback.
 8. **If ❌ Cancel** → stop the cycle. Release the memory lock with `devflow-ctl lock release`. Present the rollback option:
    > "Cycle cancelled. To revert all DevFlow artifacts created so far, run: `git reset --hard {pre-phase-1-sha}`"
    Update `phase-state.md` noting cancellation. Do NOT clean session memory (preserve artifacts for reference).
 
 ### Step 6 — Phase 5: Implementer
 
-1. Verify entry condition: run `devflow-ctl gate check confirmation`. If it exits non-zero, do NOT invoke the Implementer — return to the Confirmation Gate.
-2. **Check Pair Mode** via `devflow-ctl config get pair_mode`:
+1. Verify entry condition: run `devflow-ctl gate check confirmation --slug {slug}`. If it exits non-zero, do NOT invoke the Implementer — return to the Confirmation Gate.
+2. **Check Pair Mode** via `devflow-ctl config get pair_mode --slug {slug}`:
    - **If `Pair Mode: no` (Standard):** The Implementer auto-executes tests, creates branches, commits, and records git SHAs. See `rules.md` → Standard Mode.
    - **If `Pair Mode: yes` (Pair):** The Implementer tells the user each command and waits for confirmation.
 3. **Create the branch** (Standard mode auto-executes, Pair mode tells user):
@@ -251,7 +251,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
 4. **Record Pre-Phase 5 checkpoint:**
    - Standard: auto-execute `git rev-parse HEAD`.
    - Pair: ask user to run `git rev-parse HEAD` and report the SHA.
-   Record it with `devflow-ctl checkpoint set pre-phase-5 {sha}`.
+   Record it with `devflow-ctl checkpoint set pre-phase-5 {sha} --slug {slug}`.
 5. Invoke `devflow-implement`.
 6. **Wait** for completion. Verify:
    - `test-registry.md` updated with all test files and statuses.
@@ -273,7 +273,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
    - Verdict recorded in `phase-state.md`.
 4. **Route decision based on verdict:**
    - **APPROVED (no BLOCK)** → record metrics (review timing + findings count). Progress: *"✅ Phase 6 complete. Review passed. Next: Phase 8 — Finalizer."* Proceed to Step 9.
-   - **CHANGES REQUESTED (BLOCK findings)** → run `devflow-ctl iterate implement_review`. If it succeeds, route back to Step 6 (Implementer) with the Reviewer's findings. If it exits 1 (limit exceeded), escalate.
+   - **CHANGES REQUESTED (BLOCK findings)** → run `devflow-ctl iterate implement_review --slug {slug}`. If it succeeds, route back to Step 6 (Implementer) with the Reviewer's findings. If it exits 1 (limit exceeded), escalate.
    - **Architecture flaw** → route back to Step 3 (Architect).
    - **Plan gap** → route back to Step 4 (Planner).
 
@@ -285,8 +285,8 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
 2. **Record Pre-Phase 7 checkpoint:**
    - **Standard mode:** Auto-execute `git rev-parse HEAD`.
    - **Pair mode:** Ask the user to run `git rev-parse HEAD` and report the SHA.
-   Record it with `devflow-ctl checkpoint set pre-phase-7 {sha}`.
-3. Invoke `devflow-debug`. On each Debugger retry loop, run `devflow-ctl iterate implement_debug` first — exit 1 means the limit is exhausted: present the structured triage instead of looping again.
+   Record it with `devflow-ctl checkpoint set pre-phase-7 {sha} --slug {slug}`.
+3. Invoke `devflow-debug`. On each Debugger retry loop, run `devflow-ctl iterate implement_debug --slug {slug}` first — exit 1 means the limit is exhausted: present the structured triage instead of looping again.
 4. **Wait** for completion. Verify:
    - Debug log saved at `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md`.
    - Root cause identified and fix applied.
@@ -304,10 +304,10 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
    - [ ] Dependency audit passed — no critical/high vulnerabilities (if `Audit Command` is configured).
    - [ ] All persistent artifacts exist on disk and are complete — verify with:
      ```
-     devflow-ctl artifacts check spec docs/devflow/specs/{file}
-     devflow-ctl artifacts check plan docs/devflow/plans/{file}
-     devflow-ctl artifacts check review docs/devflow/reviews/{file}
-     devflow-ctl artifacts check validation docs/devflow/validations/{file}
+     devflow-ctl artifacts check spec docs/devflow/specs/{file} --slug {slug}
+     devflow-ctl artifacts check plan docs/devflow/plans/{file} --slug {slug}
+     devflow-ctl artifacts check review docs/devflow/reviews/{file} --slug {slug}
+     devflow-ctl artifacts check validation docs/devflow/validations/{file} --slug {slug}
      ```
    - **If any check fails** → route to the appropriate phase (Debugger or Implementer). Do NOT proceed.
 2. Invoke `devflow-finalize`.
@@ -372,7 +372,7 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 
 ### Rollback procedure
 
-1. Identify the appropriate checkpoint SHA with `devflow-ctl checkpoint get {pre-phase-1|pre-phase-5|pre-phase-7}`.
+1. Identify the appropriate checkpoint SHA with `devflow-ctl checkpoint get {pre-phase-1|pre-phase-5|pre-phase-7} --slug {slug}`.
 2. Present the rollback command to the user:
    > "To rollback to {phase}, run:
    > ```bash

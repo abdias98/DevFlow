@@ -51,7 +51,7 @@ The Bug-Fixer supports the same three execution modes as every standalone agent 
 Applied to the Reproduce → Isolate → Fix → Verify flow:
 - **Red phase** = the reproduction test created in Step 5. Standard/CI auto-runs it and it MUST fail (reproducing the bug); Pair tells the user the command and waits for the pasted result.
 - **Green phase** = the fix applied in Step 6. Standard/CI auto-runs the reproduction test (and the full suite) after the fix and it MUST pass before committing; Pair asks the user to paste the result.
-- Record the selected mode with `devflow-ctl config set pair_mode {true|false}` at the approval gate (CI mode sets `pair_mode false` automatically).
+- Record the selected mode with `devflow-ctl config set pair_mode {true|false} --slug {slug}` at the approval gate (CI mode sets `pair_mode false` automatically).
 - Git `push` and `gh pr create` are NEVER auto-executed in any mode.
 
 ---
@@ -119,23 +119,23 @@ Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|IN
 
 **STOP. Do NOT apply any changes or create test files until the user approves.**
 
-- **✅ Approve — Standard** → run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, then proceed to Step 5. Standard mode auto-executes the reproduction test, the fix verification, and the commit.
-- **🤝 Approve — Pair** → run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode true`, then proceed to Step 5. Pair mode: the user runs every command and pastes results.
-- **✏️ Modify plan** → collect the user's feedback. Run `devflow-ctl iterate plan_revision` — exit 1 (limit reached) means STOP and escalate to the user instead of looping. On exit 0, regenerate the plan incorporating the feedback, re-persist it (overwriting the plan file, never the final report), and re-present this same gate.
+- **✅ Approve — Standard** → run `devflow-ctl gate set plan_approval approved --slug {slug}` and `devflow-ctl config set pair_mode false --slug {slug}`, then proceed to Step 5. Standard mode auto-executes the reproduction test, the fix verification, and the commit.
+- **🤝 Approve — Pair** → run `devflow-ctl gate set plan_approval approved --slug {slug}` and `devflow-ctl config set pair_mode true --slug {slug}`, then proceed to Step 5. Pair mode: the user runs every command and pastes results.
+- **✏️ Modify plan** → collect the user's feedback. Run `devflow-ctl iterate plan_revision --slug {slug}` — exit 1 (limit reached) means STOP and escalate to the user instead of looping. On exit 0, regenerate the plan incorporating the feedback, re-persist it (overwriting the plan file, never the final report), and re-present this same gate.
 - **❌ Cancel** → run `devflow-ctl lock release` and stop.
 
-> **CI exception:** if `CI=true` was detected at start, skip this question, log "CI mode: plan auto-approved.", run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, and proceed directly to Step 5.
+> **CI exception:** if `CI=true` was detected at start, skip this question, log "CI mode: plan auto-approved.", run `devflow-ctl gate set plan_approval approved --slug {slug}` and `devflow-ctl config set pair_mode false --slug {slug}`, and proceed directly to Step 5.
 
 ### Step 5 — Create Reproduction Test
 
-**Entry condition:** `devflow-ctl gate check plan_approval` must pass — if it exits non-zero, return to Step 4.
+**Entry condition:** `devflow-ctl gate check plan_approval --slug {slug}` must pass — if it exits non-zero, return to Step 4.
 
 **Rollback checkpoint:** before the first file write, record a rollback point:
-- **Standard/CI:** run `git rev-parse HEAD` and execute `devflow-ctl checkpoint set pre-bugfix-impl {sha}`.
+- **Standard/CI:** run `git rev-parse HEAD` and execute `devflow-ctl checkpoint set pre-bugfix-impl {sha} --slug {slug}`.
 - **Pair:** ask the user to run `git rev-parse HEAD` and report the SHA, then record it the same way.
 
 If the fix must be abandoned mid-way, offer the user:
-> "To revert all code changes and return to the pre-fix state, run: `git reset --hard {sha}`" (get the SHA with `devflow-ctl checkpoint get pre-bugfix-impl`). NEVER execute `git reset` yourself.
+> "To revert all code changes and return to the pre-fix state, run: `git reset --hard {sha}`" (get the SHA with `devflow-ctl checkpoint get pre-bugfix-impl --slug {slug}`). NEVER execute `git reset` yourself.
 
 **Branch policy:** a fix branch is ALWAYS used (same policy as lifecycle Standard Mode):
 - **Standard/CI:** auto-execute `git checkout -b fix/{slug}` before creating the reproduction test. If the user named a custom branch during approval, use it instead.
@@ -156,13 +156,13 @@ After plan approval:
 ### Step 6 — Apply Minimal Fix
 
 For each file in the approved plan:
-1. Run `devflow-ctl scope check {file}` — if it exits 1, STOP and ask the user for explicit approval (then `devflow-ctl scope add {glob}`).
+1. Run `devflow-ctl scope check {file} --slug {slug}` — if it exits 1, STOP and ask the user for explicit approval (then `devflow-ctl scope add {glob} --slug {slug}`).
 2. Change **only what is necessary** to fix the root cause.
 3. Do NOT refactor unrelated code. Do NOT add new features.
 4. Apply changes with `replace_file_content` or `multi_replace_file_content`.
 5. Keep each change minimal and focused.
 6. Verify the reproduction test PASSES:
-   - **Standard/CI:** run `{Test Command (single file)} {path}`. If it fails → run `devflow-ctl iterate implement_debug`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
+   - **Standard/CI:** run `{Test Command (single file)} {path}`. If it fails → run `devflow-ctl iterate implement_debug --slug {slug}`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
    - **Pair:** ask the user to run the command and paste the output. Do NOT commit until PASS is confirmed.
 7. Commit — Standard/CI auto-executes; Pair instructs the user with the exact command:
    `fix({scope}): {one-line description of the bug}`
@@ -218,7 +218,7 @@ Pass to the Reviewer:
 
 **If the Reviewer returns BLOCK findings:**
 1. Apply the required fixes (within the original approved scope and causal chain).
-2. Run `devflow-ctl iterate implement_review`. On exit 0 → re-invoke the Reviewer.
+2. Run `devflow-ctl iterate implement_review --slug {slug}`. On exit 0 → re-invoke the Reviewer.
 3. On exit 1 (iteration limit exceeded) or if BLOCK findings persist → present findings to the user and ask how to proceed.
 
 **If the Reviewer returns APPROVED:**

@@ -186,6 +186,36 @@ setup() {
   [[ "$output" == *"STALE"* ]]
 }
 
+# ── Multi-session resolution (F03) ─────────────────────────────────────────────
+
+@test "resolve_session: 2 sessions, exactly one with an active lock, resolves without --slug" {
+  "$CTL" init --mode feature --slug locked >/dev/null
+  "$CTL" init --mode lifecycle --slug abandoned >/dev/null
+  "$CTL" lock release --slug abandoned >/dev/null
+  run "$CTL" gate check plan_approval
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"resolved to 'locked'"* ]]
+  [[ "$output" == *"gate 'plan_approval' is CLOSED"* ]]
+}
+
+@test "resolve_session: 2 sessions both actively locked still requires --slug" {
+  "$CTL" init --mode feature --slug a >/dev/null
+  "$CTL" init --mode feature --slug b >/dev/null
+  run "$CTL" gate check plan_approval
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"disambiguate with --slug"* ]]
+}
+
+@test "resolve_session: 2 sessions, only stale locks, still requires --slug" {
+  "$CTL" init --mode feature --slug old1 >/dev/null
+  "$CTL" init --mode feature --slug old2 >/dev/null
+  sed -i 's/^locked_since:.*/locked_since: 2020-01-01T00:00:00Z/' "$DEVFLOW_SESSION_ROOT/old1/phase-state.md"
+  sed -i 's/^locked_since:.*/locked_since: 2020-01-01T00:00:00Z/' "$DEVFLOW_SESSION_ROOT/old2/phase-state.md"
+  run "$CTL" gate check plan_approval
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"disambiguate with --slug"* ]]
+}
+
 # ── Capabilities (regression for the marker-parse double-space fix) ───────────
 
 @test "capabilities: defaults to unknown with no marker" {
