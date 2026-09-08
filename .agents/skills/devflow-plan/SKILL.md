@@ -101,9 +101,9 @@ Ensure you understand: file conventions, import patterns, test framework + asser
 
 Using the [plan template](<{{SKILLS_DIR}}/devflow-plan/plan-template.md>), write the complete plan document. The plan MUST include the **Plan Digest** — a 10-20 line structured summary (tasks, files to create/modify, key dependencies, risk areas, test strategy, scope) that downstream agents (Implementer, Reviewer, Verifier, Task Supervisor) read first. If the digest answers their questions, they skip reading the full plan — saving tokens. Before proceeding to Step 9, validate the plan against the [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Plan Document section: all required sections present, each task has commit checkpoint + test code.
 
-### Step 8a — Generate Traceability Matrix
+### Step 8a — Generate Traceability Matrix (MANDATORY)
 
-After the plan is complete, generate a traceability matrix using the [traceability matrix template](<{{SKILLS_DIR}}/shared/traceability-matrix.md>).
+**MANDATORY**: After the plan is complete, generate a traceability matrix using the [traceability matrix template](<{{SKILLS_DIR}}/shared/traceability-matrix.md>) and save it with `create_file` before proceeding to Step 9. This is the first link in a 4-step chain of custody (Planner writes → Implementer updates → Reviewer validates → Finalizer reports) — skipping this step silently breaks the other three, since none of them can validate or report on a file that was never created.
 
 1. Cross-reference each requirement (DoD criteria, Edge Cases from `context.md`, Spec sections, API Contracts, Risk Mitigations) with the plan tasks that address them.
 2. For each requirement, identify the task, test file, and test scenario from the plan.
@@ -150,6 +150,8 @@ Update session memory:
 ## ⚠️ Completion Protocol (ALL MODELS)
 
 Before transitioning to the next phase, run `devflow-ctl artifacts check plan docs/devflow/plans/{file} --spec docs/devflow/specs/{spec-file} --slug {slug}`. If the spec declared a real Concurrency Strategy (not "N/A") and this fails because the plan has no concurrency-test task, add that task now — per Step 4's rule above — before saving the plan as final, rather than letting the Finalizer discover it in Phase 8.
+
+Also confirm `docs/devflow/session/{slug}/traceability.md` exists on disk (Step 8a is MANDATORY — if you skipped it under time pressure, generate it now). If it's missing, the Implementer has nothing to update, the Reviewer has nothing to validate, and the Finalizer's `devflow-ctl traceability check` will fail on a missing file in Phase 8 instead of a coverage gap it could act on.
 
 You MUST confirm in your response:
 

@@ -72,6 +72,8 @@ Treat every scanner finding as a **🔴 BLOCK** in synthesis (a committed secret
 
 **Scope audit (Impact Zone).** Also auto-execute (Standard/CI) or ask the user to run (Pair) `devflow-ctl scope audit --slug {slug}` — the deterministic check from rules.md → Scope-Locking — Three Zones. Exit 1 means an Impact Zone file was modified without a recorded `scope justify` — treat it as a **🔴 BLOCK**, cited as `devflow-ctl scope audit`, and route it back to the Implementer the same as a failed `scan`. This only applies when the plan declared an Impact Zone (Wave 12); older plans with none will find nothing to audit.
 
+**Traceability check.** If `docs/devflow/session/{slug}/traceability.md` exists, also auto-execute (Standard/CI) or ask the user to run (Pair) `devflow-ctl traceability check docs/devflow/session/{slug}/traceability.md` — this is the Reviewer's half of the traceability contract (`shared/traceability-matrix.md` → "Validated by: Reviewer"). Exit 1 means at least one requirement row is still `⬜ PENDING`/`🟡 IN PROGRESS`; treat each uncovered row as a **🟡 WARN** by default, escalated to **🔴 BLOCK** if it maps to a DoD criterion or a HIGH-risk mitigation from the spec — route it back to the Implementer to either complete the task or justify the gap, the same as a failed `scan`. If the file doesn't exist for this cycle, note that explicitly as a coverage gap rather than silently skipping it — the Planner's Step 8a should have generated it.
+
 #### Skip criteria (review inline when ALL hold)
 
 - Only 1-2 files changed.
