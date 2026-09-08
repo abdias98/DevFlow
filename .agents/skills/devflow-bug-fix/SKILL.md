@@ -99,7 +99,7 @@ Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|IN
 3. Trace: input → processing → output. Where does the chain break?
 4. Check: initialization, null/undefined handling, type mismatches, off-by-one, async/await, dependency injection, missing validation.
 5. State the root cause hypothesis in **one sentence**: `"The bug appears to be caused by {X} in {file}:{line} because {Y}."`
-6. **DO NOT read or analyze files outside the causal chain.**
+6. The causal chain is **discovered** by reading — it cannot be a limit on reading itself. Trace as far as the evidence leads; see rules.md → Scope restricts writing, never reading. **Modify only files the causal chain actually implicates** — reading further to confirm it doesn't is expected, not a violation.
 7. **When applying Clean Architecture rules:** if you detect violations that would require editing files outside the scope, follow the **"Applying This Standard with a Limited Scope"** section of `clean-architecture.md`. Only modify files within scope; for architectural changes needing files out of scope, leave TODO/INFO comments in the in-scope files instead.
 
 ### Step 4 — Generate & Persist Bug-Fix Plan

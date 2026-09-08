@@ -135,6 +135,12 @@ These are informational — the user decides whether to act on them. They do NOT
 
 A change to the **Core** almost always has ripple effects: a renamed function breaks its callers, a changed type breaks its consumers, a new field needs a migration. Treating every one of those as equally "outside scope" forces a false choice between silently expanding scope and leaving the Core change in a broken, half-finished state. Scope is not binary — it is three zones, each with its own permission:
 
+### Scope restricts writing, never reading
+
+An agent MUST be able to read any file it needs to understand the impact of its change — a scope restriction is a limit on what gets **edited**, never on what gets **looked at**. A file being outside the Core does not make it invisible: the agent still needs to read it to discover it's a dependent, decide whether it needs a coherence change, or trace a bug's causal chain in the first place. "Outside scope, therefore don't even open it" produces exactly the blindness the Impact Zone model exists to fix — an agent can't classify a file it was never allowed to read.
+
+This is not license to explore the whole repo on every task. Read with the same judgment `devflow-ctl scope impact` applies: what's needed to trace this specific change's effects, not a sweep for its own sake. The restriction that matters, and that stays absolute, is on **writing**: `devflow-ctl scope check` gates edits, never reads.
+
 ### Core
 
 The exact files/globs approved via `devflow-ctl init --scope` (or added later through `scope add`, with the user's explicit approval). Free to edit anything within the approved plan — this is unchanged from before.
