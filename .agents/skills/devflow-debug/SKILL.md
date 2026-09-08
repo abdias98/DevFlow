@@ -80,7 +80,7 @@ Systematic analysis in order:
 6. Compare with plan code.
 7. Check the [debug template](<{{SKILLS_DIR}}/devflow-debug/debug-template.md>) for common patterns by area.
 
-Also check `/memories/repo/debug-patterns.md` if it exists for project-specific patterns.
+Also check `docs/devflow/knowledge-base/debug-patterns.md` if it exists for project-specific patterns.
 
 ### Step 4 — Apply Fix
 
@@ -113,7 +113,7 @@ Also check `/memories/repo/debug-patterns.md` if it exists for project-specific 
 ### Step 6 — Document
 
 1. **Use `create_file` to save** the debug log to `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md` following the [debug template](<{{SKILLS_DIR}}/devflow-debug/debug-template.md>).
-2. If the root cause pattern is reusable, suggest the user append it to `/memories/repo/debug-patterns.md`.
+2. If the root cause pattern is reusable, suggest the user append it to `docs/devflow/knowledge-base/debug-patterns.md`.
 
 ### Step 7 — Update Memory
 

@@ -25,7 +25,7 @@ You are the **Bug-Fixer** standalone agent. Resolve reported bugs systematically
 - **ALWAYS create a reproduction test** before applying the fix (after plan approval).
 - **When applying standards:** If a clean-architecture, SOLID, or other standard requires editing files outside the approved scope, **do not edit them**. Instead, add an INFO comment in the in-scope file describing the recommended change.
 - **Artifacts created by this skill** (plan documents, bug-fix reports at `docs/devflow/bug-fixes/`) are **always allowed**, even if the user's declared scope did not include them. They are not subject to the “outside the declared scope” restriction.
-- Consult `/memories/repo/debug-patterns.md` if it exists — check for known patterns first.
+- Consult `docs/devflow/knowledge-base/debug-patterns.md` if it exists — check for known patterns first.
 
 ---
 
@@ -95,7 +95,7 @@ Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|IN
 ### Step 3 — Analyze the Target Code
 
 1. Read **only** the files in the causal chain of the bug.
-2. Check `/memories/repo/debug-patterns.md` if it exists — check if the error type matches a known pattern.
+2. Check `docs/devflow/knowledge-base/debug-patterns.md` if it exists — check if the error type matches a known pattern.
 3. Trace: input → processing → output. Where does the chain break?
 4. Check: initialization, null/undefined handling, type mismatches, off-by-one, async/await, dependency injection, missing validation.
 5. State the root cause hypothesis in **one sentence**: `"The bug appears to be caused by {X} in {file}:{line} because {Y}."`
@@ -196,7 +196,7 @@ Include an `### Additional Recommendations` section in your response with:
 1. **Verify the Definition of Done.** Check each DoD criterion captured in Step 1 against the applied fix. Fill the report's **Definition of Done** section (Met ✅/❌ + Evidence: reproduction test, file:line, or manual check). If any criterion is unmet, state it explicitly to the user and do NOT claim the bug is fully resolved.
 2. **MANDATORY**: Execute `create_file` to persist the final report using the [bugfix template](<{{SKILLS_DIR}}/devflow-bug-fix/bugfix-template.md>).
    - **Path**: `docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md` (CREATE this file — do NOT overwrite the approved plan at `YYYY-MM-DD-{slug}-bugfix-plan.md`)
-3. Append the root cause pattern to `/memories/repo/debug-patterns.md` (if the pattern is reusable):
+3. Append the root cause pattern to `docs/devflow/knowledge-base/debug-patterns.md` (if the pattern is reusable):
    ```markdown
    | {Stack} | {Error type} | {Root cause pattern} | {Fix strategy} |
    ```
@@ -226,7 +226,7 @@ Pass to the Reviewer:
 
 ### Step 11 — Record Metrics & Write Back Knowledge
 
-**Write back to the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — the Bug-Fixer READS it in Step 2; it must also CONTRIBUTE so future bug-fixes reuse what was learned. This is in addition to the stack-specific pattern already appended to `/memories/repo/debug-patterns.md` in Step 9 — that file is a quick lookup table for known error signatures, while `learnings.md` is the framework's cross-cycle memory read by every agent:
+**Write back to the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — the Bug-Fixer READS it in Step 2; it must also CONTRIBUTE so future bug-fixes reuse what was learned. This is in addition to the stack-specific pattern already appended to `docs/devflow/knowledge-base/debug-patterns.md` in Step 9 — that file is a quick lookup table for known error signatures, while `learnings.md` is the framework's cross-cycle memory read by every agent:
 - Extract the root cause pattern and fix strategy applied successfully.
 - Extract anti-patterns from any BLOCK/WARN findings raised by the Reviewer.
 - **Add to BOTH sections**, following the same conventions as the lifecycle Finalizer:

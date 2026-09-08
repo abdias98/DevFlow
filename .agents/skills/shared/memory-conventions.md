@@ -10,8 +10,9 @@ These conventions define where and how DevFlow agents persist state and artifact
 
 These files live only for the duration of a DevFlow session. They are not versioned and may be cleaned up after the feature is complete.
 
-**Primary path:** `/memories/session/devflow/{slug}/`
-**Fallback path:** `docs/devflow/session/{slug}/`
+**Path:** `docs/devflow/session/{slug}/` — the ONLY location for session state (`context.md`, `phase-state.md`, `test-registry.md`, `traceability.md`, `validation-report.md`). `devflow-ctl` is the enforcement engine for gates, scope, iteration limits, and locks, and it only ever reads and writes `docs/devflow/session/{slug}/phase-state.md` — a session split across two possible locations would mean the CLI and the agent disagree about what state exists.
+
+> **If `/memories/` is available in the editor,** an agent MAY use it as an optional, read-only cache for its own convenience (e.g. remembering a detail across a very long session) — but it is NEVER a store for `phase-state.md`, `context.md`, or any file `devflow-ctl` reads or writes. Session state lives at the path above, unconditionally.
 
 > **Agents MUST ensure the target directory exists** before writing session files. Use available tools to create the directory if missing.
 
@@ -245,7 +246,7 @@ checkpoints:                    # rollback SHAs, recorded via `devflow-ctl check
    - Update `Current Phase` to the next number.
    - Add a `Last Updated` timestamp.
 3. **At cycle end** (Finalizer completes):
-   - Clean session memory by deleting all files in the session memory path (`/memories/session/devflow/{slug}/` or `docs/devflow/session/{slug}/`).
+   - Clean session memory by deleting all files in the session memory path (`docs/devflow/session/{slug}/`).
    - Confirm all persistent artifacts are saved.
 4. **All sub-agents read from and write to the SAME memory** — this is how they communicate. Do not create separate session files for different agents.
 
