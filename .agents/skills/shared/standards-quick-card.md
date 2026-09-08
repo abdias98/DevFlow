@@ -14,6 +14,9 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 - Sensitive tokens stored in `localStorage` / `sessionStorage` → §2
 - No authentication on an endpoint that mutates or exposes private data → §2
 - Stack traces / internal paths in API error responses → §6
+- State-changing endpoint with no CSRF token or `SameSite` cookie defense → §8
+- Untrusted input deserialized with a mechanism that can instantiate arbitrary types or execute code → §8
+- Request body bound directly onto a domain/persistence entity with no allowlisted DTO (mass assignment) → §8
 
 ## solid.md — Red Flags (BLOCK)
 - LSP: subclass silently breaks runtime substitution (no-op override, `NotImplementedException` in production) → §3

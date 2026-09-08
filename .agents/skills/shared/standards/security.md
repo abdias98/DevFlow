@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Security (Technology-Agnostic)
 
-> **Version:** 2.3.1 | **Last Updated:** 2026-09-07
+> **Version:** 2.4.0 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All tool names and code fragments are illustrative. Replace them with the actual libraries, services, and conventions of the detected stack.
 
@@ -54,7 +54,7 @@ Apply these principles to all code you design, generate, or review.
   - Trust that a library or framework will automatically prevent all injection — always understand the safe usage patterns and apply them.
 
 ## 5. Dependency Security
-- **What:** Third-party code inherits its vulnerabilities into your project.
+- **What:** Third-party code inherits its vulnerabilities into your project. This section covers the security angle (OWASP A08: Software and Data Integrity Failures); for the full supply-chain discipline (pinning, licenses, auditing cadence, transitive footprint), see [dependencies.md](./dependencies.md) — that standard owns the topic in depth.
 - **DO:**
   - Prefer well-maintained, actively audited dependencies with a strong security track record.
   - Keep dependencies up to date. Apply security patches promptly — automate vulnerability scanning in the CI/CD pipeline (e.g., dependency audit tools).
@@ -85,13 +85,30 @@ Apply these principles to all code you design, generate, or review.
 - **Logging & Monitoring:** Log security-relevant events (logins, permission changes, access denials, input validation failures). Set up alerts for suspicious patterns.
 - **Secure Defaults:** Every component should default to a secure configuration. Developers must explicitly opt in to less secure settings when absolutely necessary.
 
-## 8. Security Interactions & Trade‑offs
+## 8. Additional OWASP Top 10 (2021) Coverage
+
+- **What:** targeted coverage for OWASP Top 10 (2021) categories not already addressed by the sections above.
+- **CSRF** (a Broken Access Control variant, A01):
+  - **DO:** Use anti-CSRF tokens (synchronizer token pattern) for state-changing requests submitted from a browser session, or rely on `SameSite=Lax`/`Strict` cookies as the primary defense for same-site-only flows.
+  - **DO:** Require re-authentication or a fresh CSRF token before a sensitive state change (password change, payment, account deletion).
+  - **DON'T:** Rely on `SameSite=None` cookies for a state-changing endpoint with no token-based defense in depth.
+- **Insecure Deserialization** (part of A08: Software and Data Integrity Failures):
+  - **DO:** Deserialize only trusted, signed, or schema-validated payloads. Prefer data formats with no executable-code capability (JSON) over ones that do (native object serialization, pickled objects).
+  - **DON'T:** Deserialize untrusted input with a mechanism capable of instantiating arbitrary types or executing code as a side effect.
+- **Mass Assignment / Over-Posting** (A04: Insecure Design, and A01: Broken Access Control):
+  - **DO:** Bind requests to an explicit, allowlisted DTO/input model — never directly to the domain or persistence entity.
+  - **DON'T:** Bind the full request body onto an entity that has fields (`role`, `isAdmin`, `balance`) the client should never be able to set.
+- **Insecure Design** (A04):
+  - **DO:** Threat-model security-sensitive flows before implementation, not only at code-review time — this is what the Validation Gate's Security Scan step exists to force at the design stage (`devflow/SKILL.md` → Step 2, Phase 2).
+  - **DON'T:** Treat security purely as a code-review-time concern; a flawed design (no rate limiting by design, trust boundaries never identified) cannot be fully fixed by patching individual lines afterward.
+
+## 9. Security Interactions & Trade‑offs
 - **Validation + Error Handling:** Good input validation reduces the risk of injection and data corruption. Proper error handling ensures that even when validation fails, no internal details are leaked.
 - **Authentication + Secrets:** Even strong authentication is useless if the secret keys used to sign tokens are compromised. Secrets management is foundational to authentication.
 - **Dependency Security + Patching:** A vulnerable library can bypass all your input validation and authentication. Regular patching is a non‑negotiable part of defense in depth.
 - **Performance + Security:** Rate limiting and encryption add overhead, but they are essential. Never disable them for performance without a documented, approved exception and compensating controls.
 
-## 9. Code Review Checklist
+## 10. Code Review Checklist
 When reviewing, verify:
 - [ ] All external inputs are validated using allowlists at the system boundary.
 - [ ] Authentication uses a proven standard; authorization is enforced at the service layer, not just the UI.
@@ -102,7 +119,7 @@ When reviewing, verify:
 - [ ] Sensitive endpoints have rate limiting and abuse prevention.
 - [ ] Communication uses TLS; sensitive data at rest is encrypted.
 
-## 10. Severity Classification
+## 11. Severity Classification
 
 Use when raising findings in code review or the Validation Gate. Always cite this file and section (e.g., `security.md §3`).
 
@@ -112,7 +129,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | 🟡 **WARN** | Missing rate limiting on sensitive endpoint (§7); HTTP used without redirect to HTTPS (§7); dependency with known moderate vulnerability (§5); `localStorage` used for non-sensitive tokens with no documented rationale (§2); incomplete input validation (allows but does not reject all bad input) (§1) |
 | 🟢 **INFO** | Missing HSTS header (§7); no structured logging of security events (§7); dependency lock file absent (§5); minor information disclosure in non-production environment (§6) |
 
-## 11. Applying This Standard with a Limited Scope
+## 12. Applying This Standard with a Limited Scope
 
 When applying security rules to a **specific set of files or modules** (the declared Core scope), follow these constraints:
 

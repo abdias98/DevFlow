@@ -4,6 +4,12 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.10.0 — 2026-09-07
+
+### Updated standards — 2.10.0
+- **`security.md`** (→ v2.4.0): new `## 8. Additional OWASP Top 10 (2021) Coverage` — CSRF (tokens/`SameSite`), insecure deserialization, mass assignment/over-posting, and Insecure Design (A04, threat-modeling tie to the Validation Gate). §5 (Dependency Security) now cross-references `dependencies.md` as the standard that owns A08's supply-chain depth. Sections after the new one renumbered: Security Interactions §9, Code Review Checklist §10, Severity Classification §11, Limited Scope §12. New red flags registered in `standards-quick-card.md`.
+- `devflow-reverse/SKILL.md` Step 8b and `reverse-template.md`'s Vulnerability Findings table: OWASP taxonomy updated from the 2017 list (Injection, Broken Auth, Sensitive Data Exposure, XXE, ...) to OWASP Top 10 (2021) A01–A10. Refs: F18, Wave 13.
+
 ## 2.9.5 — 2026-09-07
 
 ### Updated standards — 2.9.5
