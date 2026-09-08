@@ -4,6 +4,16 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.14.0 — 2026-09-08
+
+### New standards — 2.14.0
+- **`event-driven-architecture.md`** (new, v1.0.0): the 16th standard — producers/consumers as a public contract, delivery guarantees (at-least-once by default; cross-links `concurrency.md` §5 for the idempotency mechanism this requires), event schema versioning, ordering (most transports don't guarantee it globally), dead-letter queues for poison messages, Event Sourcing vs. simple notification (pick the lightest pattern a stated requirement justifies), and CQRS (§7 — applied only with a concrete, current reason; explicitly flags the common failure mode of adopting it as a default "best practice" with no measured symptom driving it, cross-linking `design-principles.md` §2 YAGNI). Conditional standard ("apply only if the project uses events/queues/streams"), registered in `standards-quick-card.md` and `critical-friend.md`'s scan table alongside `rest-api.md`/`ui-design.md`. Linked from the agents that design or implement architecture (`devflow-architect`, `devflow-plan`, `devflow-implement`, `devflow-review`, `devflow-debug`, `devflow-perf`, and the standalone agents that already load `rest-api.md` conditionally). Was previously a single unexplained row in `project-design.md`'s pattern-selection table, with no actual rules — `project-design.md` (→ v2.3.1) now cross-links to it from that row instead of standing alone. Refs: F56, Wave 15.
+
+## 2.13.0 — 2026-09-08
+
+### New standards — 2.13.0
+- **`design-principles.md`** (new, v1.0.0): DRY, YAGNI, Separation of Concerns, and Technology Agnosticism — the 4 transversal design principles that apply to every DevFlow cycle (lifecycle and standalone alike), unconditional on stack or feature type, unlike domain-specific standards. Registered as "Always — every request" in `standards-quick-card.md` and `critical-friend.md`'s scan table, and linked from every agent that writes or reviews code (10 standalone agents + `devflow-implement`, `devflow-plan`, `devflow-architect`, `devflow-review`, `devflow-debug`). Not linked from the 3 purely documentation-producing standalone agents (`devflow-docs`, `devflow-templates`, `devflow-tutorial`), which write no production code these principles apply to. Refs: F54, Wave 15.
+
 ## 2.12.0 — 2026-09-08
 
 ### Updated standards — 2.12.0

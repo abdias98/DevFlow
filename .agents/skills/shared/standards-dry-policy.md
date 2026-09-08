@@ -22,6 +22,7 @@ When a topic is covered by more than one standard:
 | Supply-chain / dependency vulnerability depth | `dependencies.md` | `security.md` §5 |
 | Fire-and-forget error handling, sync-over-async | `concurrency.md` §4 | `performance.md` §4 |
 | Per-layer architectural testability | `clean-architecture.md` §5 | `testing.md` (intro) |
+| Consumer-side idempotency / dedup mechanism | `concurrency.md` §5 | `event-driven-architecture.md` §2 |
 
 When you find a new overlap, add the pair here after resolving it — this table is the audit trail of "who owns what," so the next overlap has precedent to follow instead of reinventing the resolution.
 

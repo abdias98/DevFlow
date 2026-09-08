@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Project Design Patterns (Technology-Agnostic)
 
-> **Version:** 2.3.0 | **Last Updated:** 2026-09-07
+> **Version:** 2.3.1 | **Last Updated:** 2026-09-08
 
 > **Note on examples:** All file names, patterns, and tool references are illustrative. Adapt terminology and conventions to the detected stack.
 
@@ -32,7 +32,7 @@ Based on the `Feature Type` in session memory, apply the following **reasoning p
 | **Feature-Based grouping** | The project is a full-stack or large application that will grow beyond ~10 features |
 | **Component-Driven** | The project has a UI — each visual unit is a self-contained, reusable component |
 | **Command Pattern** | The project is a CLI — each command is an isolated, independently testable unit |
-| **Event-Driven** | The project communicates via events, queues, or streams |
+| **Event-Driven** | The project communicates via events, queues, or streams — see [event-driven-architecture.md](./event-driven-architecture.md) for the full standard (producers/consumers, delivery guarantees, schema versioning, CQRS) |
 | **Facade + Strategy** | The project is a library or SDK — hide internal complexity behind a clean public API |
 | **MVVM / MVI (or equivalent reactive pattern)** | The project is a mobile or desktop app with reactive UI state |
 

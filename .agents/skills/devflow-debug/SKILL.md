@@ -11,11 +11,13 @@ You are the **Debugger** sub-agent. Systematically debug failures — never gues
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language detection, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
+- Read [Design Principles](<{{SKILLS_DIR}}/shared/standards/design-principles.md>)
 - Read [SOLID Principles](<{{SKILLS_DIR}}/shared/standards/solid.md>)
 - Read [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>)
 - Read [Security](<{{SKILLS_DIR}}/shared/standards/security.md>)
 - Read [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>)
 - Read [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) *(apply only if API endpoints are involved)*
+- Read [Event-Driven Architecture](<{{SKILLS_DIR}}/shared/standards/event-driven-architecture.md>) *(apply only if the project communicates via events/queues/streams)*
 - Read [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) *(apply only if the feature has a UI)*
 - Read [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
 - Read [Vision Verification](<{{SKILLS_DIR}}/shared/vision-verification.md>) — for screenshot analysis when the environment supports vision *(apply only if `vision: yes` and a screenshot is provided)*.

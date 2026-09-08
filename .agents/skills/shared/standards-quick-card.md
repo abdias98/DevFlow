@@ -67,6 +67,10 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 - Dependency with a license incompatible with the product's distribution model → §5
 - Lockfile removed/ignored so builds are non-reproducible → §2
 
+## event-driven-architecture.md — Red Flags (BLOCK) *(apply only if the project uses events/queues/streams)*
+- Non-idempotent side effect (charge, ship, notify) triggered directly from an event handler with no dedup guard → §2
+- Failed event retried forever with no dead-letter path, blocking the queue/partition behind it → §5
+
 ## project-design.md — Red Flags (BLOCK)
 - Business logic in entry point (main/index) → §3
 - Circular dependency between modules with no resolution path → §3
@@ -84,6 +88,11 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 - Direct commit to a protected branch (`main`/`master`) without a PR → §2 → BLOCK
 - Vague commit message with no scope or actionable description → §1 → WARN
 - Multiple unrelated changes bundled in one commit → §1 → WARN
+
+## design-principles.md — Red Flags *(always applies — every request, every cycle)*
+- The same business rule/validation/calculation reimplemented in 2+ places, already diverging → §1 → WARN
+- A new abstraction, config layer, or architectural pattern added with no current concrete requirement → §2 → WARN
+- Domain/business logic directly importing a specific ORM/framework/vendor SDK type → §4 → WARN
 
 ---
 
