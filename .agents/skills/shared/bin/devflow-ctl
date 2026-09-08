@@ -588,17 +588,25 @@ artifacts_required() {
     plan)       printf '%s\n' "Digest" "File Map" "Task" "Self-Review" ;;
     review)     printf '%s\n' "Summary" "Findings" "Verdict" ;;
     validation) printf '%s\n' "Assumptions" "Standards Scan" "Contradictions" "Security" "Architecture Risks" "Alternatives" ;;
+    feature)    printf '%s\n' "Summary" "Definition of Done" "Files Changed" "Tasks Completed" "Tests" "Self-Review" ;;
+    bugfix)     printf '%s\n' "Bug Report" "Root Cause" "Reproduction Test" "Fix Applied" "Verification" "Definition of Done" ;;
+    refactor)   printf '%s\n' "Scope" "Changes Applied" "Regression Guard" "Definition of Done" ;;
+    perf)       printf '%s\n' "Summary" "Static Analysis Findings" "Benchmark Results" "Recommendations" ;;
+    migration)  printf '%s\n' "Schema Changes" "Migration Files Generated" "Compatibility Analysis" "Rollback Plan" ;;
+    contract)   printf '%s\n' "Endpoints Validated" "Contract Definition" "Discrepancies" "Coverage Summary" ;;
+    docs)       printf '%s\n' "Documentation Generated" "Artifact Sources Used" ;;
+    reverse)    printf '%s\n' "Project Overview" "Generated Artifacts" "Stack Profile" "Known Unknowns" ;;
     *) return 1 ;;
   esac
 }
 
 cmd_artifacts() {
-  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation> <path>"
+  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse> <path>"
   local type="${2:-}" path="${3:-}"
   [[ -n "$type" && -n "$path" ]] || die "usage: devflow-ctl artifacts check <type> <path>"
   [[ -f "$path" ]] || fail "artifact not found at $path — it was never saved with create_file"
   local required missing=()
-  required="$(artifacts_required "$type")" || die "unknown artifact type '$type' (spec|plan|review|validation)"
+  required="$(artifacts_required "$type")" || die "unknown artifact type '$type' (spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse)"
   while IFS= read -r section; do
     grep -qiE "^#{1,4} .*${section}" "$path" || missing+=("$section")
   done <<< "$required"

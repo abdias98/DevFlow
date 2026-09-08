@@ -211,7 +211,7 @@ Pass to the Reviewer:
 
 ## ⚠️ Completion Protocol
 
-Before ending your response, you MUST confirm:
+Before ending your response, run `devflow-ctl artifacts check reverse docs/devflow/reverse/YYYY-MM-DD-{slug}-reverse.md --slug {slug}`. On exit 1, fix the missing section and re-check before proceeding. Then confirm:
 
 ```markdown
 ✅ Report saved: docs/devflow/reverse/YYYY-MM-DD-{slug}-reverse.md

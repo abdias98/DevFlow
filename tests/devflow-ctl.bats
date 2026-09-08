@@ -346,6 +346,80 @@ setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
   [[ "$output" == *"code patterns (SAST)"* ]]
 }
 
+# ── Artifacts check — standalone types (F28) ───────────────────────────────────
+
+@test "artifacts check: feature — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Summary\n## Definition of Done\n## Files Changed\n## Tasks Completed\n## Tests\n## Self-Review\n' > "$f"
+  run "$CTL" artifacts check feature "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: feature — a missing section fails" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Summary\n' > "$f"
+  run "$CTL" artifacts check feature "$f"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing required section"* ]]
+}
+
+@test "artifacts check: bugfix — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Bug Report\n## Root Cause\n## Reproduction Test\n## Fix Applied\n## Verification\n## Definition of Done\n' > "$f"
+  run "$CTL" artifacts check bugfix "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: refactor — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Scope\n## Changes Applied\n## Regression Guard\n## Definition of Done\n' > "$f"
+  run "$CTL" artifacts check refactor "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: perf — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Summary\n## Static Analysis Findings\n## Benchmark Results\n## Recommendations\n' > "$f"
+  run "$CTL" artifacts check perf "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: migration — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Schema Changes\n## Migration Files Generated\n## Compatibility Analysis\n## Rollback Plan\n' > "$f"
+  run "$CTL" artifacts check migration "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: contract — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Endpoints Validated\n## Contract Definition\n## Discrepancies\n## Coverage Summary\n' > "$f"
+  run "$CTL" artifacts check contract "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: docs — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Documentation Generated\n## Artifact Sources Used\n' > "$f"
+  run "$CTL" artifacts check docs "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: reverse — a complete report passes" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Project Overview\n## Generated Artifacts\n## Stack Profile\n## Known Unknowns\n' > "$f"
+  run "$CTL" artifacts check reverse "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: unknown type is a usage error" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Anything\n' > "$f"
+  run "$CTL" artifacts check bogus "$f"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"unknown artifact type"* ]]
+}
+
 # ── Clean safety (F27) ──────────────────────────────────────────────────────────
 
 @test "clean: a freshly-released session survives (grace period, not stale yet)" {

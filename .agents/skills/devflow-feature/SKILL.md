@@ -254,6 +254,8 @@ Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/s
 
 Emit this block ONLY after Step 11 concludes — never before the Reviewer has returned a verdict. It must reflect the final state:
 
+Before emitting it, run `devflow-ctl artifacts check feature docs/devflow/features/YYYY-MM-DD-{slug}-feature.md --slug {slug}`. On exit 1, the report is missing a required section — fix it and re-check before proceeding; do NOT emit the block over a failing check.
+
 ```markdown
 ✅ Feature complete: docs/devflow/features/YYYY-MM-DD-{slug}-feature.md
 🔍 Reviewer verdict: {APPROVED | CHANGES REQUESTED → resolved | escalated}

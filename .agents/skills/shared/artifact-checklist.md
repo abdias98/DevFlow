@@ -96,6 +96,34 @@ Validated by: **Reviewer** (before Step 4 — save)
 - [ ] **Review Mode** declared — Cycle or Standalone
 - [ ] **Reference artifact** path present — spec, plan, feature, refactor, or bug-fix document
 
+## Standalone Agent Reports
+
+Validated by: **each standalone agent**, via `devflow-ctl artifacts check {type} {path}`, before its Completion Protocol block. These mirror the lifecycle checks above but for the 8 standalone-only artifact types the CLI's `artifacts_required()` recognizes.
+
+### Feature Report (`docs/devflow/features/*.md`) — type `feature`
+- [ ] **Summary**, **Definition of Done**, **Files Changed**, **Tasks Completed**, **Tests**, **Self-Review**
+
+### Bug-Fix Report (`docs/devflow/bug-fixes/*.md`) — type `bugfix`
+- [ ] **Bug Report**, **Root Cause**, **Reproduction Test**, **Fix Applied**, **Verification**, **Definition of Done**
+
+### Refactor Report (`docs/devflow/refactors/*.md`) — type `refactor`
+- [ ] **Scope**, **Changes Applied**, **Regression Guard**, **Definition of Done**
+
+### Performance Report (`docs/devflow/performance/*.md`) — type `perf`
+- [ ] **Summary**, **Static Analysis Findings**, **Benchmark Results**, **Recommendations**
+
+### Migration Report (`docs/devflow/migrations/*.md`) — type `migration`
+- [ ] **Schema Changes**, **Migration Files Generated**, **Compatibility Analysis**, **Rollback Plan**
+
+### Contract Report (`docs/devflow/contracts/*.md`) — type `contract`
+- [ ] **Endpoints Validated**, **Contract Definition**, **Discrepancies**, **Coverage Summary**
+
+### Documentation Report (`docs/devflow/documentation/*.md`) — type `docs`
+- [ ] **Documentation Generated**, **Artifact Sources Used**
+
+### Reverse Engineering Report (`docs/devflow/reverse/*.md`) — type `reverse`
+- [ ] **Project Overview**, **Generated Artifacts**, **Stack Profile**, **Known Unknowns** (unconditional sections only — Quick mode omits API Endpoints/Dependencies/Tech Debt, so those are not required)
+
 ## Traceability Matrix (`docs/devflow/session/{slug}/traceability.md`)
 
 Validated by: **Planner** (after generation), **Orchestrator** (Step 8 entry)

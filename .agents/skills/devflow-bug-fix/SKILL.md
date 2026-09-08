@@ -247,7 +247,7 @@ Release the session: run `devflow-ctl lock release`, then delete `docs/devflow/s
 
 ## ⚠️ Completion Protocol (ALL MODELS)
 
-Before ending your response, you MUST confirm:
+Before ending your response, run `devflow-ctl artifacts check bugfix docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md --slug {slug}`. On exit 1, fix the missing section and re-check before proceeding. Then confirm:
 
 ```markdown
 ✅ File saved: docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md
