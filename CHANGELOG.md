@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.8.1] — 2026-09-08
+
+> A second real end-to-end `/devflow` cycle (Node/TS, natural-language request with zero technical vocabulary) validated that the Wave 15 standards activate on their own merit — the Architect chose an event-driven design, explicitly rejected CQRS citing YAGNI, and applied all 4 Design Principles with evidence traceable into code comments, none of it prompted. That same cycle also surfaced this release's single fix: it never generated `traceability.md`.
+
+### 🐛 Fixed
+
+- **`traceability.md`'s chain of custody was only half-real.** `shared/traceability-matrix.md` declares a 4-step contract (Planner writes → Implementer updates → Reviewer validates → Finalizer reports), but `devflow-implement/SKILL.md` and `devflow-review/SKILL.md` had zero mentions of the file — nothing caught a cycle that skipped it until the Finalizer, the last phase, too late to act on a coverage gap. `devflow-plan`'s Step 8a gains the `(MANDATORY)` label every other artifact-generation step already had (it was the only one without it); the Implementer now updates `Impl File`/`Status` per wave instead of only once at the end; the Reviewer's Cycle Mode gains a "Traceability check" alongside the existing scope-audit hook, running `devflow-ctl traceability check` (Wave 16) and treating an uncovered row as WARN/BLOCK depending on whether it maps to a DoD criterion. (F60)
+
 ## [4.8.0] — 2026-09-08
 
 > Wave 16 (3 PRs, F57–F59) — the last places where the framework still asked the LLM to do arithmetic or counting over a markdown table instead of verifying it deterministically. Criterion applied: does the check have a single, objectively computable answer? → tool. Does it require judgment? → prose, left untouched.
