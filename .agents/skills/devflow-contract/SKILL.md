@@ -78,6 +78,8 @@ Before generating any test file, present the planned contract tests (endpoints c
 
 ### Step 4 — Generate Contract Tests
 
+For each test file: run `devflow-ctl scope check {file} --slug {slug}` — if it exits 1, STOP and ask the user for explicit approval (then `devflow-ctl scope add {glob} --slug {slug}`, e.g. the project's test directory).
+
 For each endpoint, generate a contract test file if none exists:
 
 1. Use the detected test framework conventions.

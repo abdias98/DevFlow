@@ -20,7 +20,7 @@ display_name: "Visual Studio Code"
 # ── Capabilities (environment probe — see shared/environment-probe.md) ───────
 capabilities:
   subagents: true
-  vision: false
+  vision: true
   terminal: true
   filesystem: true
 

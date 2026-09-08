@@ -6,6 +6,12 @@
 #   3. Missing required sections in SKILL.md files
 #   4. Unreferenced files in shared/
 #   5. Version header presence in standards
+#   11. Skill ↔ prompt parity (every devflow-* skill has a mirror .prompt.md)
+#   12. Standards integrity (no orphans, no duplicate numbering, mandatory
+#       sections, lightweight citation-vs-content semantic check, Quick Card
+#       and Critical Friend registration)
+#   13. Standalone enforcement matrix (init/lock check/scope/approval gate/
+#       closing order per standalone agent)
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -105,7 +111,7 @@ while IFS= read -r shared_file; do
     warn "$rel — no other skill file references this file"
     $FIX_MODE && echo "       FIX: add a reference in the relevant SKILL.md or remove the file if unused"
   fi
-done < <(find "$SKILLS_DIR/shared" -name "*.md" -not -path "*/standards/*" -not -name "CHANGELOG.md" -not -name "i18n-*.md" -type f)
+done < <(find "$SKILLS_DIR/shared" -name "*.md" -not -name "CHANGELOG.md" -not -name "i18n-*.md" -type f)
 
 # ── 5. Version headers in standards ──────────────────────────────────────────
 header "5. Version headers in standards"
@@ -358,6 +364,188 @@ if [[ -f package.json ]]; then
 else
   warn "package.json not found — skipping version sync check (run from the repo root)"
 fi
+
+# ── 11. Skill ↔ prompt parity ────────────────────────────────────────────────
+header "11. Skill ↔ prompt parity"
+
+PROMPTS_DIR_CHECK=".github/prompts"
+
+if [[ -d "$PROMPTS_DIR_CHECK" ]]; then
+  parity_errors=0
+  # Every devflow-* skill directory (plus the orchestrator "devflow") must have a mirror prompt.
+  while IFS= read -r skill_dir; do
+    name=$(basename "$skill_dir")
+    prompt_file="$PROMPTS_DIR_CHECK/$name.prompt.md"
+    if [[ ! -f "$prompt_file" ]]; then
+      fail "$skill_dir — no mirror prompt found at $prompt_file"
+      $FIX_MODE && echo "       FIX: create $prompt_file following the format of an existing prompt"
+      ((parity_errors++)) || true
+    fi
+  done < <(find "$SKILLS_DIR" -maxdepth 1 -type d \( -name "devflow" -o -name "devflow-*" \))
+
+  # Every devflow*.prompt.md must have a mirror skill directory.
+  while IFS= read -r prompt_file; do
+    name=$(basename "$prompt_file" .prompt.md)
+    skill_dir="$SKILLS_DIR/$name"
+    if [[ ! -d "$skill_dir" ]]; then
+      fail "$prompt_file — no mirror skill directory found at $skill_dir"
+      $FIX_MODE && echo "       FIX: create $skill_dir/SKILL.md or remove the orphaned prompt"
+      ((parity_errors++)) || true
+    fi
+  done < <(find "$PROMPTS_DIR_CHECK" -maxdepth 1 -name "devflow*.prompt.md" -type f)
+
+  [[ $parity_errors -eq 0 ]] && green "Every devflow-* skill has a mirror prompt and vice versa"
+else
+  warn "$PROMPTS_DIR_CHECK/ not found — skipping skill/prompt parity check (run from the repo root)"
+fi
+
+# ── 12. Standards integrity ──────────────────────────────────────────────────
+header "12. Standards integrity"
+
+STANDARDS_DIR="$SKILLS_DIR/shared/standards"
+STD_ERRORS_BEFORE=$ERRORS
+
+if [[ -d "$STANDARDS_DIR" ]]; then
+  while IFS= read -r std_file; do
+    std_name=$(basename "$std_file")
+
+    # 12.1 — No orphans: every standard must be referenced by >=1 SKILL.md outside standards/.
+    if ! grep -rl "$std_name" "$SKILLS_DIR" --include="SKILL.md" 2>/dev/null | grep -q .; then
+      fail "$std_file — orphaned: no SKILL.md references '$std_name'"
+      $FIX_MODE && echo "       FIX: link it from a relevant SKILL.md's Rules block, or remove it if unused"
+    fi
+
+    # 12.2 — Numbering: no duplicate "## N." headings.
+    dup_numbers=$(grep -oP '^## \K[0-9]+(?=\.)' "$std_file" | sort | uniq -d || true)
+    if [[ -n "$dup_numbers" ]]; then
+      while IFS= read -r n; do
+        fail "$std_file — duplicate section number '## $n.' (used more than once)"
+      done <<< "$dup_numbers"
+    fi
+
+    # 12.3 — Mandatory sections.
+    for required in "Severity Classification" "Code Review Checklist" "Applying This Standard with a Limited Scope"; do
+      if ! grep -q "$required" "$std_file" 2>/dev/null; then
+        fail "$std_file — missing mandatory section: '$required'"
+        $FIX_MODE && echo "       FIX: add a '## N. $required' section"
+      fi
+    done
+    if ! grep -qE '^\*\*Version:\*\*|^> \*\*Version:\*\*' "$std_file" 2>/dev/null; then
+      fail "$std_file — missing version header (expected '> **Version:** X.Y.Z')"
+    fi
+
+    # 12.4 — Lightweight semantic citation check: a "(§N)" trigger should share a
+    # significant word (>=5 letters, common words excluded) with the *body* of
+    # section N it cites — not just its 2-3 word title, which is too sparse and
+    # produces near-total false positives against real, on-topic citations.
+    STOPWORDS_RE='^(their|there|these|those|which|where|while|about|would|could|should|being|other|after|before|within|without|every|always|never|applied|applies|applying|instead|through|between|because|standard|section|following|reviewed|generated)$'
+    while IFS=$'\t' read -r sect_num sect_body; do
+      [[ -z "$sect_num" ]] && continue
+      body_words=$(tr 'A-Z' 'a-z' <<<"$sect_body" | grep -oE '[a-z]{5,}' | grep -vE "$STOPWORDS_RE" | sort -u || true)
+      [[ -z "$body_words" ]] && continue
+      while IFS= read -r ctx; do
+        [[ -z "$ctx" ]] && continue
+        ctx_words=$(tr 'A-Z' 'a-z' <<<"$ctx" | grep -oE '[a-z]{5,}' | grep -vE "$STOPWORDS_RE" || true)
+        match=false
+        while IFS= read -r w; do
+          [[ -z "$w" ]] && continue
+          if grep -qx "$w" <<<"$body_words"; then match=true; break; fi
+        done <<< "$ctx_words"
+        if ! $match; then
+          warn "$std_file — citation '(§$sect_num)' shares no significant term with section §$sect_num's body: \"${ctx:0:80}...\""
+        fi
+      done < <(grep -oP "[^;.|]*\(§${sect_num}\)" "$std_file" 2>/dev/null || true)
+    done < <(awk '
+      /^## [0-9]+\./ {
+        if (n != "") print n "\t" body;
+        line = $0; sub(/^## /, "", line); split(line, parts, ".");
+        n = parts[1]; body = "";
+        next
+      }
+      { body = body " " $0 }
+      END { if (n != "") print n "\t" body }
+    ' "$std_file")
+
+    # 12.5 — Registered in the Quick Card and critical-friend.md's scan table.
+    if [[ -f "$SKILLS_DIR/shared/standards-quick-card.md" ]] && ! grep -q "$std_name" "$SKILLS_DIR/shared/standards-quick-card.md" 2>/dev/null; then
+      warn "$std_file — not registered in standards-quick-card.md"
+    fi
+    if [[ -f "$SKILLS_DIR/shared/critical-friend.md" ]] && ! grep -q "$std_name" "$SKILLS_DIR/shared/critical-friend.md" 2>/dev/null; then
+      warn "$std_file — not registered in critical-friend.md's scan table"
+    fi
+  done < <(find "$STANDARDS_DIR" -name "*.md" -not -name "CHANGELOG.md" -type f)
+
+  [[ $ERRORS -eq $STD_ERRORS_BEFORE ]] && green "All standards pass the integrity check (no orphans, no duplicate numbering, all mandatory sections present)"
+else
+  warn "$STANDARDS_DIR/ not found — skipping standards integrity check (run from the repo root)"
+fi
+
+# ── 13. Standalone enforcement matrix ────────────────────────────────────────
+header "13. Standalone enforcement matrix"
+
+# The 10 standalone agents (standalone-execution.md's canonical list).
+STANDALONE_ALL=(
+  "devflow-feature" "devflow-bug-fix" "devflow-refactor" "devflow-perf"
+  "devflow-migrate" "devflow-contract" "devflow-docs" "devflow-templates"
+  "devflow-tutorial" "devflow-reverse"
+)
+# Agents that write outside docs/devflow/ (real production/source files) — these
+# must gate every edit through `devflow-ctl scope check`. The rest (perf is
+# read-only by design; docs, templates, tutorial, reverse write only within
+# docs/devflow/ or their own report) don't need it.
+STANDALONE_WRITES_PRODUCTION=(
+  "devflow-feature" "devflow-bug-fix" "devflow-refactor"
+  "devflow-migrate" "devflow-contract"
+)
+
+_in_list() {
+  local needle="$1"; shift
+  local x
+  for x in "$@"; do [[ "$x" == "$needle" ]] && return 0; done
+  return 1
+}
+
+for agent in "${STANDALONE_ALL[@]}"; do
+  skill_file="$SKILLS_DIR/$agent/SKILL.md"
+  if [[ ! -f "$skill_file" ]]; then
+    warn "Expected $skill_file — file not found (agent may have been removed)"
+    continue
+  fi
+
+  if ! grep -q "devflow-ctl init" "$skill_file" 2>/dev/null; then
+    fail "$skill_file — does not run 'devflow-ctl init' (session never initialized)"
+  fi
+  if ! grep -q "lock check" "$skill_file" 2>/dev/null; then
+    fail "$skill_file — does not run 'devflow-ctl lock check' (F12: no lifecycle-conflict guard)"
+  fi
+  if _in_list "$agent" "${STANDALONE_WRITES_PRODUCTION[@]}"; then
+    if ! grep -qE "scope check|scope impact" "$skill_file" 2>/dev/null; then
+      fail "$skill_file — writes production files but has no 'devflow-ctl scope check' gate"
+    fi
+    if ! grep -qE '_confirmation`? \|' "$skill_file" 2>/dev/null; then
+      fail "$skill_file — writes production files but has no approval-gate row"
+    fi
+  fi
+
+  # Closing order (F01): the last 'lock release' must come after the
+  # Auto-Invoke-Reviewer step and after the metrics-finalization step —
+  # never before, or the session is gone before those steps can read it.
+  reviewer_line=$(grep -niE 'Auto-Invoke Reviewer' "$skill_file" | head -1 | cut -d: -f1 || true)
+  finalize_line=$(grep -niE 'Finalize .*metrics' "$skill_file" | tail -1 | cut -d: -f1 || true)
+  release_line=$(grep -n 'lock release' "$skill_file" | tail -1 | cut -d: -f1 || true)
+  if [[ -z "$release_line" ]]; then
+    fail "$skill_file — no 'devflow-ctl lock release' found (session is never released)"
+  else
+    if [[ -n "$reviewer_line" && "$release_line" -lt "$reviewer_line" ]]; then
+      fail "$skill_file — 'lock release' (line $release_line) comes before Auto-Invoke Reviewer (line $reviewer_line) — F01 closing-order violation"
+    fi
+    if [[ -n "$finalize_line" && "$release_line" -lt "$finalize_line" ]]; then
+      fail "$skill_file — 'lock release' (line $release_line) comes before metrics finalization (line $finalize_line) — F01 closing-order violation"
+    fi
+  fi
+done
+
+[[ $ERRORS -eq 0 ]] && green "All standalone agents satisfy the enforcement matrix (init, lock check, scope, approval gate, closing order)"
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""

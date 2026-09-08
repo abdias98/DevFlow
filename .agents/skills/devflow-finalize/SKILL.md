@@ -119,13 +119,9 @@ Present this to the user: *"Here's a PR description you can use when creating th
    - Check if `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md` exists.
    - If NOT present: copy `docs/devflow/session/{slug}/validation-report.md` to that path before deleting.
    - If accepted risks exist in `context.md` under `## Accepted Risks`: ensure they are in the archived report.
-2. Confirm with the user that all artifacts are saved and the feature is complete.
-3. Delete all session memory files in the session path (`docs/devflow/session/{slug}/`), following [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>):
-    - `context.md`
-    - `phase-state.md`
-    - `test-registry.md`
-    - `traceability.md`
-    - `validation-report.md` *(session copy — persistent copy already in `docs/devflow/validations/`)*
+2. **Archive autonomous-mode artifacts, if present.** If `docs/devflow/session/{slug}/autonomous-log.md` or `send-to-user.md` exist (autonomous mode was active this cycle), copy each to `docs/devflow/summaries/YYYY-MM-DD-{slug}-autonomous-log.md` / `-send-to-user.md` before deleting — see [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>). If neither file exists, skip this step.
+3. Confirm with the user that all artifacts are saved and the feature is complete.
+4. **Release the lock, then delete the whole session directory** (`docs/devflow/session/{slug}/`) — run `devflow-ctl lock release --slug {slug}`, then remove the directory itself, not a hand-picked file list. This is deliberate: a fixed list of filenames (`context.md`, `phase-state.md`, ...) silently leaves behind anything not on it — exactly how `autonomous-log.md` and `send-to-user.md` were orphaned before this fix. Deleting the directory guarantees nothing survives that wasn't archived in steps 1–2.
 
 ### Step 6 — Final Confirmation
 
