@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.11.1 — 2026-09-08
+
+### Updated standards — 2.11.1
+- **`testing.md`** (→ v1.3.0): §1 (Test Pyramid) now explicitly recognizes concurrency/load tests as orthogonal to the unit/integration/E2E pyramid, cross-linking `concurrency.md` §2 — a feature with a business-critical concurrency invariant needs this test budgeted separately, not treated as already covered by pyramid counts. Refs: F51, Wave 15.
+
 ## 2.11.0 — 2026-09-08
 
 ### Updated standards — 2.11.0
