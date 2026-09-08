@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Security (Technology-Agnostic)
 
-> **Version:** 2.3.0 | **Last Updated:** 2026-09-07
+> **Version:** 2.3.1 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All tool names and code fragments are illustrative. Replace them with the actual libraries, services, and conventions of the detected stack.
 
@@ -112,7 +112,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | 🟡 **WARN** | Missing rate limiting on sensitive endpoint (§7); HTTP used without redirect to HTTPS (§7); dependency with known moderate vulnerability (§5); `localStorage` used for non-sensitive tokens with no documented rationale (§2); incomplete input validation (allows but does not reject all bad input) (§1) |
 | 🟢 **INFO** | Missing HSTS header (§7); no structured logging of security events (§7); dependency lock file absent (§5); minor information disclosure in non-production environment (§6) |
 
-## 10. Applying This Standard with a Limited Scope
+## 11. Applying This Standard with a Limited Scope
 
 When applying security rules to a **specific set of files or modules** (the declared Core scope), follow these constraints:
 

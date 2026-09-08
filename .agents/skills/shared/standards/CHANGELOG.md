@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.9.1 — 2026-09-07
+
+### Updated standards — 2.9.1
+- **`security.md`** (→ v2.3.1): fixed a duplicate `## 10.` — *Severity Classification* keeps §10, *Applying This Standard with a Limited Scope* is renumbered to §11. `security.md` is the most-cited standard in the framework; every `security.md §10` citation was ambiguous before this fix (a repo-wide sweep found none actually pointing at the scope block). Refs: F14, Wave 13.
+
 ## 2.9.0 — 2026-09-07
 
 ### Updated standards — 2.9.0
