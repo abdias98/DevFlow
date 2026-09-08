@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Testing (Technology-Agnostic)
 
-> **Version:** 1.2.1 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.2 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** All tool names, directory names, and code fragments are illustrative. Replace them with the actual test runner, utilities, and conventions of the detected stack.
 
@@ -135,7 +135,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 | Severity | Triggers |
 |----------|---------|
-| 🔴 **BLOCK** | Bug fix applied with no regression test (§5); test asserts on nothing — always passes regardless of code behavior (§4); test file missing for a new feature that modifies domain logic (§4) |
+| 🔴 **BLOCK** | Bug fix applied with no regression test (§5); test has no real assertions — always passes regardless of code behavior (§4); test file missing for a new feature that modifies domain logic (§4) |
 | 🟡 **WARN** | Test verifies implementation details instead of behavior (§2); multiple unrelated assertions in one test producing unreadable failures (§2); test relies on execution order — fails when run in isolation (§6); real `sleep`/`delay` in test body (§8); no edge case or error scenario covered for a feature (§4) |
 | 🟢 **INFO** | Test name does not describe the scenario clearly (§7); test file not mirroring source structure (§7); in-memory alternative available but not used (test is slow but not blocking) (§8) |
 

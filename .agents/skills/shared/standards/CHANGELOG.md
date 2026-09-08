@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.10.2 — 2026-09-07
+
+### Updated standards — 2.10.2
+- **`security.md`** (→ v2.4.2), **`accessibility.md`** (→ v1.2.2), **`concurrency.md`** (→ v1.2.1), **`rest-api.md`** (→ v2.3.2), **`testing.md`** (→ v1.2.2), **`clean-architecture.md`** (→ v2.3.2): reworded 9 Severity-table triggers so each shares a real term with the section body it cites, closing the last warnings from the §12 lightweight semantic citation check (validate-framework.sh) — required for the plan's global Definition of Done (0 errors and 0 warnings on the final tree). No normative change; wording only. Part of the 4.6.0 release.
+
 ## 2.10.1 — 2026-09-07
 
 ### Updated standards — 2.10.1

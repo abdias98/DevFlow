@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Accessibility (a11y) (Technology-Agnostic)
 
-> **Version:** 1.2.1 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.2 | **Last Updated:** 2026-09-07
 
 > **Note on examples:** Element names, ARIA attributes, and APIs are illustrative (web-oriented). Map them to the accessibility API of the detected platform (web/ARIA, iOS/UIKit accessibility, Android/TalkBack, desktop toolkits). The principles are universal; the primitives differ.
 
@@ -101,7 +101,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 |----------|---------|
 | 🔴 **BLOCK** | Interactive element (button, link, form field, control) not keyboard-operable, or missing an accessible name/role, blocking a core user flow (§3, §5); `aria-hidden="true"` (or equivalent) on a focusable element creating an unreachable trap (§5); keyboard trap with no exit (§3); form input with no programmatic label on a critical flow (§6) |
 | 🟡 **WARN** | Text/UI below the WCAG AA contrast minimum (§2); missing or invisible focus indicator (§4); meaning conveyed by color alone (§1); validation error shown by color only, or not tied to the field (§6); informative image/icon with no text alternative (§1); motion that ignores reduced-motion preference (§7); touch target below **24×24 CSS px** with no exception applying — the WCAG 2.2 AA floor (§7) |
-| 🟢 **INFO** | ARIA used where a native semantic element would suffice (§5); async update not announced via a live region (§7); zoom/reflow not yet verified to 200% (§7); focus order slightly out of step with visual order (§4); touch target at/above 24×24 but below the **44×44** recommended (AAA) size (§7) |
+| 🟢 **INFO** | ARIA used where a native semantic element would suffice (§5); asynchronous update not announced via a live region (§7); zoom/text scaling not yet verified to 200% (§7); focus order slightly out of step with visual order (§4); touch target at/above 24×24 but below the **44×44** recommended (AAA) size (§7) |
 
 ## 10. Applying This Standard with a Limited Scope
 
