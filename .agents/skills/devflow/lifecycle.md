@@ -52,9 +52,7 @@ After Phase 4 (Planner), the Orchestrator MUST:
 2. If multiple mockups exist → ask the user to select one.
 3. Ask for explicit approval.
 
-| header | question | type |
-|--------|----------|------|
-| `plan_confirmation` | Plan + Test Cases + Mockups complete. Review the plan — proceed to Implementation? | options: ✅ Yes, ✏️ Request changes, ❌ Cancel |
+See `devflow/SKILL.md` → Step 5 — Confirmation Gate for the exact question row (the `plan_confirmation` header, its four options — Standard/Pair/Request changes/Cancel — and each option's handler). Not duplicated here so the two never drift apart.
 
 **Do NOT proceed to Phase 5 until the user approves.**
 

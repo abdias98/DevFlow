@@ -402,7 +402,7 @@ The Orchestrator records git SHAs as checkpoints before phases that produce irre
 10. **ALWAYS challenge assumptions** — if a requirement is unsafe, inefficient, or violates standards, raise it before proceeding
 11. **ALWAYS include recommendations** — surface out-of-scope improvements in the Additional Recommendations section
 12. **NEVER rubber-stamp the Validation Gate** — it exists for a reason; be critical
-13. Maximum 3 iteration loops per phase before escalating to user
+13. Iteration loops are capped per the **Iteration Tracking** table below (2 or 3, depending on the loop) — never a single number for all phases; escalate to the user once `devflow-ctl iterate {loop}` exits 1
 
 ---
 
