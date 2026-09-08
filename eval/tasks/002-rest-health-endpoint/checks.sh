@@ -1,3 +1,5 @@
+# shellcheck shell=bash
+# (sourced by eval/bin/devflow-eval, not executed directly -- no shebang)
 # Checks for 002-rest-health-endpoint. CWD is the result workspace.
 
 # Process — reported, but does not gate pass/fail (a bare baseline won't earn it).

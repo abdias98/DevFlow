@@ -1,3 +1,5 @@
+# shellcheck shell=bash
+# (sourced by eval/bin/devflow-eval, not executed directly -- no shebang)
 # Checks for 001-cli-json-flag. CWD is the result workspace.
 # Each `check <weight> "<desc>" <cmd...>` earns its weight on exit 0.
 #

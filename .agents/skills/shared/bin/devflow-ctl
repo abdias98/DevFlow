@@ -530,8 +530,8 @@ cmd_scope() {
           printf 'path\trelation\n%s\n' "$results"
         fi
         if $record; then
-          local path rel added=0
-          while IFS=$'\t' read -r path rel; do
+          local path added=0
+          while IFS=$'\t' read -r path _; do
             [[ -n "$path" ]] || continue
             fm_list impact | grep -qxF "$path" || { fm_list_add impact "$path"; ((added++)) || true; }
           done <<< "$results"
@@ -541,7 +541,7 @@ cmd_scope() {
         $record || die "usage: devflow-ctl scope impact <file> [--record] (bare --record with no file scans every file already in the declared scope)"
         local globs; globs="$(fm_list scope)"
         [[ -n "$globs" ]] || fail "no scope declared for session '$SLUG' — declare it with 'scope add' before running impact analysis"
-        local f glob matched added=0 path rel
+        local f glob matched added=0 path
         while IFS= read -r f; do
           f="${f#./}"
           [[ "$f" == docs/devflow/* ]] && continue
@@ -550,7 +550,7 @@ cmd_scope() {
             if _glob_match "$f" "$glob"; then matched=true; break; fi
           done <<< "$globs"
           $matched || continue
-          while IFS=$'\t' read -r path rel; do
+          while IFS=$'\t' read -r path _; do
             [[ -n "$path" ]] || continue
             fm_list impact | grep -qxF "$path" || { fm_list_add impact "$path"; ((added++)) || true; }
           done < <(_scope_impact_discover "$f" | sort -u)
@@ -1060,9 +1060,9 @@ _metrics_recalculate_averages() {
   total_cycles="$(grep -c '^| [0-9]' "$AGGREGATE_FILE" 2>/dev/null || true)"
   total_cycles="${total_cycles:-0}"
 
-  avg_duration="$(LC_NUMERIC=C awk -F'|' '/^\| [0-9]/{gsub(/ /,"",$6); if ($6 ~ /^[0-9]+$/) {s+=$6; c++}} END{if (c>0) printf "%.1f", s/c; else print "—"}' "$AGGREGATE_FILE")"
-  avg_blocks="$(LC_NUMERIC=C awk -F'|' '/^\| [0-9]/{gsub(/ /,"",$8); if ($8 ~ /^[0-9]+$/) {s+=$8; c++}} END{if (c>0) printf "%.1f", s/c; else print "0"}' "$AGGREGATE_FILE")"
-  avg_test_pass="$(LC_NUMERIC=C awk -F'|' '/^\| [0-9]/{gsub(/[ %]/,"",$9); if ($9 ~ /^[0-9]+$/) {s+=$9; c++}} END{if (c>0) printf "%.0f", s/c; else print "—"}' "$AGGREGATE_FILE")"
+  avg_duration="$(LC_ALL=C awk -F'|' '/^\| [0-9]/{gsub(/ /,"",$6); if ($6 ~ /^[0-9]+$/) {s+=$6; c++}} END{if (c>0) printf "%.1f", s/c; else print "—"}' "$AGGREGATE_FILE")"
+  avg_blocks="$(LC_ALL=C awk -F'|' '/^\| [0-9]/{gsub(/ /,"",$8); if ($8 ~ /^[0-9]+$/) {s+=$8; c++}} END{if (c>0) printf "%.1f", s/c; else print "0"}' "$AGGREGATE_FILE")"
+  avg_test_pass="$(LC_ALL=C awk -F'|' '/^\| [0-9]/{gsub(/[ %]/,"",$9); if ($9 ~ /^[0-9]+$/) {s+=$9; c++}} END{if (c>0) printf "%.0f", s/c; else print "—"}' "$AGGREGATE_FILE")"
   [[ "$avg_test_pass" != "—" ]] && avg_test_pass="${avg_test_pass}%"
 
   existing_category="$(awk -F'|' '/Most frequent BLOCK category/{gsub(/^ +| +$/,"",$3); print $3; exit}' "$AGGREGATE_FILE")"
@@ -1221,7 +1221,7 @@ cmd_clean() {
     local slug status locked_by locked_since epoch_now epoch_lock age
     slug="$(basename "$(dirname "$statefile")")"
     if $force; then
-      rm -rf "$SESSION_ROOT/$slug"
+      rm -rf "$SESSION_ROOT/${slug:?}"
       echo "  removed: $slug (--force)"
       ((removed++)) || true
       continue
@@ -1241,7 +1241,7 @@ cmd_clean() {
     [[ "$epoch_lock" != 0 ]] || continue  # no valid timestamp — leave it alone
     age=$(( (epoch_now - epoch_lock) / 60 ))
     if [[ $age -ge $STALE_LOCK_MINUTES ]]; then
-      rm -rf "$SESSION_ROOT/$slug"
+      rm -rf "$SESSION_ROOT/${slug:?}"
       if [[ "$locked_by" == "none" || -z "$locked_by" ]]; then
         echo "  removed: $slug (unlocked for ${age} min)"
       else

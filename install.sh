@@ -308,7 +308,7 @@ if [ -d "$SCRIPT_DIR/.agents/skills" ]; then
 else
   echo "📥 Downloading from GitHub: $DEVFLOW_REPO"
   TEMP_DIR=$(mktemp -d)
-  trap "rm -rf '$TEMP_DIR'" EXIT
+  trap 'rm -rf "${TEMP_DIR:?}"' EXIT
   if ! git clone --depth 1 "$DEVFLOW_REPO" "$TEMP_DIR" 2>/dev/null; then
     echo "❌ Failed to clone repository. Check your internet connection or GitHub access."
     exit 1
@@ -397,7 +397,6 @@ if ! grep -q "^id:" "$SELECTED_PROFILE" 2>/dev/null; then
   echo "❌ Selected profile is invalid or corrupted."
   exit 1
 fi
-selected_id="$(parse_yaml_value "$SELECTED_PROFILE" "" "id")"
 echo "📍 Selected: $EDITOR_NAME"
 
 echo "📍 Skills   → $SKILLS_DIR"

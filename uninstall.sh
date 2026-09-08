@@ -60,7 +60,7 @@ if [ -d "$SCRIPT_DIR/editor-profiles" ]; then
 else
   echo "📥 Downloading profiles from GitHub: $DEVFLOW_REPO"
   TEMP_DIR=$(mktemp -d)
-  trap "rm -rf '$TEMP_DIR'" EXIT
+  trap 'rm -rf "${TEMP_DIR:?}"' EXIT
   if ! command -v git >/dev/null 2>&1; then
     echo "❌ Git is required to download editor profiles, but it is not installed or not in PATH."
     exit 1
