@@ -35,6 +35,7 @@
 #   knowledge add <file>                             Add a knowledge base entry from a file
 #   backlog add <file> <reason> [--severity b|i|f]    Record a deferred (Outside-zone) finding
 #   backlog list [--area <glob>]                      List deferred findings, optionally by area
+#   metrics aggregate <metrics-file>                  Append a cycle's metrics to _aggregate.md, recompute averages
 #   sessions                                         List all active DevFlow sessions with phase and state
 #   clean [--force]                                  Remove sessions unlocked/stale ≥30 min (never `status: cancelled`); --force removes all
 #   scan [secrets|sca|sast|all]                      Deterministic security scan (exit 1 on findings)
@@ -921,6 +922,148 @@ cmd_backlog() {
   esac
 }
 
+# ── Metrics aggregation (deterministic) ───────────────────────────────────────
+# Moves "recalculate the averages" from LLM arithmetic over a markdown table to
+# a tool that actually adds. Only the 4 Averages rows with a real column behind
+# them in Cycle History are computed; the other 2 (most frequent BLOCK
+# category, phase with most retries) have no structured column to derive from
+# and are left as an explicit manual note rather than silently faked.
+
+AGGREGATE_FILE="${DEVFLOW_AGGREGATE_FILE:-docs/devflow/metrics/_aggregate.md}"
+
+# Extracts "N" from the first line matching a label like "Tests created" or
+# "BLOCK findings" (with or without a "(Reviewer)"/"(first run)" suffix),
+# tolerating the two per-cycle metrics formats (full lifecycle vs standalone).
+_metrics_field() {
+  local file="$1" label="$2"
+  grep -m1 -E "^\| ${label}" "$file" 2>/dev/null | grep -oP '\|\s*\K[0-9]+(?=\s*(/|\s*\(|\s*\|))' | head -1 || true
+}
+
+_metrics_aggregate() {
+  local file="$1"
+  local slug type date duration blocks tests test_pass_pct iterations
+
+  slug="$(grep -m1 '^# DevFlow Metrics' "$file" | grep -oP '(?<=— )[a-zA-Z0-9-]+' | head -1 || true)"
+  [[ -n "$slug" ]] || die "metrics aggregate: could not find slug in '# DevFlow Metrics — {slug}' header"
+  type="$(grep -m1 '^# DevFlow Metrics' "$file" | grep -oP '(?<=standalone: )[a-zA-Z-]+(?=\))' || true)"
+  type="${type:-full}"
+
+  date="$(grep -m1 -E '^\*\*(Cycle started|Started):\*\*' "$file" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1 || true)"
+  date="${date:-unknown}"
+
+  duration="$(grep -m1 -E '^\| \*\*TOTAL\*\*' "$file" | grep -oP '\|\s*\*\*\K[0-9]+(?=\*\*\s*\|\s*$)' || true)"
+  duration="${duration:-—}"
+
+  tests="$(_metrics_field "$file" 'Tests created')"; tests="${tests:-0}"
+  blocks="$(_metrics_field "$file" 'BLOCK findings')"; blocks="${blocks:-0}"
+
+  test_pass_pct="$(grep -m1 'Tests passing' "$file" | grep -oP '\(\K[0-9]+(?=%\))' || true)"
+  test_pass_pct="${test_pass_pct:-—}"
+
+  if grep -q '^## Iterations' "$file" 2>/dev/null; then
+    iterations="$(awk '/^## Iterations/{f=1;next} /^## /{f=0} f' "$file" \
+      | grep -oP '^\|[^|]*\|[^|]*\|\s*\K[0-9]+' | awk '{s+=$1} END{print s+0}' || true)"
+  else
+    iterations="$(_metrics_field "$file" 'Reviewer iterations')"; iterations="${iterations:-0}"
+  fi
+  iterations="${iterations:-0}"
+
+  mkdir -p "$(dirname "$AGGREGATE_FILE")"
+  if [[ ! -f "$AGGREGATE_FILE" ]]; then
+    {
+      echo "# DevFlow Aggregate Metrics"
+      echo ""
+      echo "> Updated: $(now_iso)"
+      echo ""
+      echo "## Cycle History"
+      echo ""
+      echo "| # | Date | Type | Feature | Duration | Tasks | BLOCKs | Test Pass % | Iterations |"
+      echo "|---|------|------|---------|:--------:|:-----:|:------:|:----------:|:----------:|"
+    } > "$AGGREGATE_FILE"
+  fi
+
+  local n; n="$(grep -c '^| [0-9]' "$AGGREGATE_FILE" 2>/dev/null || true)"
+  local row_num=$(( ${n:-0} + 1 ))
+  local test_pass_display="—"
+  [[ "$test_pass_pct" != "—" ]] && test_pass_display="${test_pass_pct}%"
+  local newrow="| $row_num | $date | $type | $slug | $duration | $tests | $blocks | $test_pass_display | $iterations |"
+
+  # A plain `>>` only works the first time. On every run after the first, the
+  # file already ends with a "## Averages" section -- appending blindly would
+  # land the new row *after* it, where _metrics_recalculate_averages's own
+  # truncate-and-rebuild step would discard it along with the stale section.
+  # Insert the row immediately after the last existing data row instead (not
+  # merely "before ## Averages" -- that would leave the blank line separating
+  # the table from the next section in between the two rows, splitting the
+  # markdown table in two).
+  local last_row_line; last_row_line="$(grep -n '^| [0-9]\+ |' "$AGGREGATE_FILE" 2>/dev/null | tail -1 | cut -d: -f1 || true)"
+  if [[ -n "$last_row_line" ]]; then
+    sed -i "${last_row_line}a\\${newrow}" "$AGGREGATE_FILE"
+  else
+    echo "$newrow" >> "$AGGREGATE_FILE"
+  fi
+
+  _metrics_recalculate_averages
+  ok "metrics from '$file' appended to $AGGREGATE_FILE (row #$row_num); averages recalculated"
+}
+
+# Recomputes the Averages section from the Cycle History table, replacing it
+# in place. Only touches rows with a name this function knows how to compute;
+# "Most frequent BLOCK category" and "Phase with most retries" have no source
+# column and are preserved as manual entries (or left as a placeholder on the
+# first run) rather than fabricated.
+_metrics_recalculate_averages() {
+  local total_cycles avg_duration avg_blocks avg_test_pass existing_category existing_phase
+
+  total_cycles="$(grep -c '^| [0-9]' "$AGGREGATE_FILE" 2>/dev/null || true)"
+  total_cycles="${total_cycles:-0}"
+
+  avg_duration="$(LC_NUMERIC=C awk -F'|' '/^\| [0-9]/{gsub(/ /,"",$6); if ($6 ~ /^[0-9]+$/) {s+=$6; c++}} END{if (c>0) printf "%.1f", s/c; else print "—"}' "$AGGREGATE_FILE")"
+  avg_blocks="$(LC_NUMERIC=C awk -F'|' '/^\| [0-9]/{gsub(/ /,"",$8); if ($8 ~ /^[0-9]+$/) {s+=$8; c++}} END{if (c>0) printf "%.1f", s/c; else print "0"}' "$AGGREGATE_FILE")"
+  avg_test_pass="$(LC_NUMERIC=C awk -F'|' '/^\| [0-9]/{gsub(/[ %]/,"",$9); if ($9 ~ /^[0-9]+$/) {s+=$9; c++}} END{if (c>0) printf "%.0f", s/c; else print "—"}' "$AGGREGATE_FILE")"
+  [[ "$avg_test_pass" != "—" ]] && avg_test_pass="${avg_test_pass}%"
+
+  existing_category="$(awk -F'|' '/Most frequent BLOCK category/{gsub(/^ +| +$/,"",$3); print $3; exit}' "$AGGREGATE_FILE")"
+  existing_category="${existing_category:-manual entry — no structured column to derive this from}"
+  existing_phase="$(awk -F'|' '/Phase with most retries/{gsub(/^ +| +$/,"",$3); print $3; exit}' "$AGGREGATE_FILE")"
+  existing_phase="${existing_phase:-manual entry — no structured column to derive this from}"
+
+  # Strip any existing "## Averages" section (from the first "##" of that
+  # heading to end of file) and append a freshly computed one.
+  local tmp; tmp="$(mktemp)"
+  awk '/^## Averages/{exit} {print}' "$AGGREGATE_FILE" > "$tmp"
+  # Trim trailing blank lines left by the strip before re-appending.
+  sed -i -e :a -e '/^\s*$/{$d;N;ba' -e '}' "$tmp" 2>/dev/null || true
+  {
+    cat "$tmp"
+    echo ""
+    echo ""
+    echo "## Averages (last $total_cycles cycles)"
+    echo ""
+    echo "| Metric | Value |"
+    echo "|--------|-------|"
+    echo "| Avg. cycle duration | ${avg_duration} min |"
+    echo "| Avg. BLOCKs per cycle | ${avg_blocks} |"
+    echo "| Avg. test pass rate (first run) | ${avg_test_pass} |"
+    echo "| Most frequent BLOCK category | ${existing_category} |"
+    echo "| Phase with most retries | ${existing_phase} |"
+    echo "| Total cycles completed | ${total_cycles} |"
+  } > "$AGGREGATE_FILE"
+  rm -f "$tmp"
+}
+
+cmd_metrics() {
+  case "${1:-}" in
+    aggregate)
+      local metrics_file="${2:-}"
+      [[ -n "$metrics_file" ]] || die "usage: devflow-ctl metrics aggregate <metrics-file>"
+      [[ -f "$metrics_file" ]] || die "metrics aggregate: file not found at $metrics_file"
+      _metrics_aggregate "$metrics_file"
+      ;;
+    *) die "usage: devflow-ctl metrics aggregate <metrics-file>" ;;
+  esac
+}
+
 # ── Sessions list ─────────────────────────────────────────────────────────────
 # Lists all active DevFlow sessions with phase, mode, and lock state.
 
@@ -1374,6 +1517,7 @@ case "$CMD" in
   capabilities) cmd_capabilities "$@" ;;
   knowledge)  cmd_knowledge "$@" ;;
   backlog)    cmd_backlog "$@" ;;
+  metrics)    cmd_metrics "$@" ;;
   sessions)   cmd_sessions "$@" ;;
   clean)      cmd_clean "$@" ;;
   scan)       cmd_scan "$@" ;;

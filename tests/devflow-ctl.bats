@@ -927,3 +927,129 @@ setup_knowledge() { export DEVFLOW_KNOWLEDGE_FILE="$BATS_TEST_TMPDIR/learnings.m
   [ "$status" -eq 2 ]
   [[ "$output" == *"numeric phase required"* ]]
 }
+
+# ── Metrics aggregation (F57) ────────────────────────────────────────────────
+
+setup_metrics() { export DEVFLOW_AGGREGATE_FILE="$BATS_TEST_TMPDIR/_aggregate.md"; }
+
+write_full_metrics() {
+  cat > "$BATS_TEST_TMPDIR/full-metrics.md" << 'EOF'
+# DevFlow Metrics — demo-full
+
+**Cycle started:** 2026-09-08T10:00:00Z
+**Cycle completed:** 2026-09-08T11:30:00Z
+**Feature:** demo-full
+**Stack:** TypeScript · Express · Jest
+
+## Timing
+
+| Phase | Started | Completed | Duration (min) |
+|-------|---------|-----------|:--------------:|
+| Phase 1: Brainstormer | t | t | 5 |
+| **TOTAL** | **t** | **t** | **90** |
+
+## Iterations
+
+| Loop | Phases | Count | Max |
+|------|--------|:----:|:---:|
+| Validation Gate → Brainstormer | 2 ↔ 1 | 0 | 2 |
+| Implementer ↔ Reviewer | 5 ↔ 6 | 1 | 3 |
+
+## Quality
+
+| Metric | Value |
+|--------|-------|
+| BLOCK findings | 2 |
+| Tests created | 12 |
+| Tests passing (first run) | 11/12 (91%) |
+EOF
+}
+
+write_standalone_metrics() {
+  cat > "$BATS_TEST_TMPDIR/feat-metrics.md" << 'EOF'
+# DevFlow Metrics — demo-feat (standalone: feature)
+
+**Started:** 2026-09-08T12:00:00Z
+**Completed:** 2026-09-08T12:20:00Z
+**Agent:** Feature Agent
+**Stack:** TypeScript · Express · Jest
+
+## Quality
+
+| Metric | Value |
+|--------|-------|
+| Files created | 2 |
+| Tests created | 4 |
+| BLOCK findings (Reviewer) | 0 |
+| Reviewer iterations | 1 |
+EOF
+}
+
+@test "metrics aggregate: creates _aggregate.md with header and first row" {
+  setup_metrics
+  write_full_metrics
+  run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/full-metrics.md"
+  [ "$status" -eq 0 ]
+  [ -f "$DEVFLOW_AGGREGATE_FILE" ]
+  grep -q "| 1 | 2026-09-08 | full | demo-full | 90 | 12 | 2 | 91% | 1 |" "$DEVFLOW_AGGREGATE_FILE"
+}
+
+@test "metrics aggregate: standalone format uses BLOCK findings (Reviewer) and Reviewer iterations" {
+  setup_metrics
+  write_standalone_metrics
+  run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/feat-metrics.md"
+  [ "$status" -eq 0 ]
+  grep -q "| 1 | 2026-09-08 | feature | demo-feat | — | 4 | 0 | — | 1 |" "$DEVFLOW_AGGREGATE_FILE"
+}
+
+@test "metrics aggregate: a second run inserts a second row without splitting the table" {
+  setup_metrics
+  write_full_metrics
+  write_standalone_metrics
+  "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/full-metrics.md" >/dev/null
+  run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/feat-metrics.md"
+  [ "$status" -eq 0 ]
+  grep -q "| 1 | " "$DEVFLOW_AGGREGATE_FILE"
+  grep -q "| 2 | " "$DEVFLOW_AGGREGATE_FILE"
+  # The two data rows must be contiguous -- no blank line between them.
+  local row1_line row2_line
+  row1_line="$(grep -n '^| 1 |' "$DEVFLOW_AGGREGATE_FILE" | cut -d: -f1)"
+  row2_line="$(grep -n '^| 2 |' "$DEVFLOW_AGGREGATE_FILE" | cut -d: -f1)"
+  [ "$row2_line" -eq "$((row1_line + 1))" ]
+}
+
+@test "metrics aggregate: recomputes Avg. BLOCKs per cycle across all rows" {
+  setup_metrics
+  write_full_metrics
+  write_standalone_metrics
+  "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/full-metrics.md" >/dev/null
+  run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/feat-metrics.md"
+  [ "$status" -eq 0 ]
+  grep -q "Avg. BLOCKs per cycle | 1.0" "$DEVFLOW_AGGREGATE_FILE"
+  grep -q "Total cycles completed | 2" "$DEVFLOW_AGGREGATE_FILE"
+}
+
+@test "metrics aggregate: preserves a manually-edited BLOCK category across recalculation" {
+  setup_metrics
+  write_full_metrics
+  "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/full-metrics.md" >/dev/null
+  sed -i 's/Most frequent BLOCK category | .*/Most frequent BLOCK category | Missing validation |/' "$DEVFLOW_AGGREGATE_FILE"
+  write_standalone_metrics
+  run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/feat-metrics.md"
+  [ "$status" -eq 0 ]
+  grep -q "Most frequent BLOCK category | Missing validation" "$DEVFLOW_AGGREGATE_FILE"
+}
+
+@test "metrics aggregate: fails clearly when the metrics file is missing" {
+  setup_metrics
+  run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/nonexistent.md"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"file not found"* ]]
+}
+
+@test "metrics aggregate: requires a file argument" {
+  setup_metrics
+  run "$CTL" metrics aggregate
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"usage: devflow-ctl metrics aggregate"* ]]
+}

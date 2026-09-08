@@ -245,7 +245,7 @@ Pass to the Reviewer:
   - **Deduplication rule:** if a pattern or anti-pattern already exists in By Topic, do NOT duplicate it — append this refactor's slug to the existing entry's source list instead.
 - If there is genuinely nothing new worth recording (trivial refactor, no findings), skip the write-back and note that in the metrics file.
 
-After the Reviewer concludes (APPROVED, or BLOCKs resolved/escalated), finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 2): set the completed timestamp; fill files modified, tests created (regression test, if any), the Reviewer's BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions (`scope add` count). Then append a row to `docs/devflow/metrics/_aggregate.md` (create if missing) with `Type = refactor`, Tasks = tests created, Test Pass % = `—` in Pair mode or the actual rate in Standard/CI, Iterations = Reviewer loops; recalculate averages. See the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) → Generation Rules → Standalone agents.
+After the Reviewer concludes (APPROVED, or BLOCKs resolved/escalated), finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 2): set the completed timestamp; fill files modified, tests created (regression test, if any), the Reviewer's BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions (`scope add` count). Then run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` to append the row and recompute the averages that have a real column behind them — do NOT recalculate by reading the table yourself. See the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) → Generation Rules → Standalone agents.
 
 ### Step 11 — Release Session
 

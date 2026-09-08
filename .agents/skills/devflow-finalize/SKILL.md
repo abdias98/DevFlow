@@ -59,7 +59,7 @@ Gather:
   - Read `context.md` → DoD coverage.
   - Read `traceability.md` → coverage percentage.
   - Fill all remaining values in `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`.
-  - Append a new row to `docs/devflow/metrics/_aggregate.md` and recalculate averages.
+  - Run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` — it appends the row to `_aggregate.md` and recomputes the 4 Averages that have a real column behind them (cycle duration, BLOCKs, test pass rate, total cycles). Do NOT recompute these by reading the table yourself. "Most frequent BLOCK category" and "Phase with most retries" have no structured column to derive from — the command leaves them as a manual entry; fill or update them yourself from this cycle's review/iteration data if you have something concrete to add.
 - **Append to knowledge base** (`docs/devflow/knowledge-base/learnings.md`):
   - Extract reusable patterns from the Architect's spec (design patterns, component structures).
   - Extract anti-patterns from the Reviewer's BLOCK/WARN findings.

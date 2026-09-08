@@ -147,11 +147,10 @@ Standalone agents (Feature, Bug-Fix, Refactor) record a **lightweight** metrics 
 6. Save the completed metrics file.
 
 ### Finalizer (after metrics saved)
-1. Read `docs/devflow/metrics/_aggregate.md` (create if missing).
-2. Append a new row to the Cycle History table (Type = `full`).
-3. Recalculate averages across all cycles.
+1. Run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`. This appends the row to `_aggregate.md` (creating the file if missing, with `Type = full` read from the metrics file's own header) and recomputes the 4 Averages rows that have a real column behind them (avg. cycle duration, avg. BLOCKs per cycle, avg. test pass rate, total cycles completed) — deterministically, not by reading the table yourself.
+2. "Most frequent BLOCK category" and "Phase with most retries" have no structured column in Cycle History to derive from; the command leaves them untouched (a manual entry on the first row, or whatever was there before). Update them yourself only if you have something concrete to add for this cycle.
 
 ### Standalone agents (Feature / Bug-Fix / Refactor)
-1. **At session init** (right after `devflow-ctl init`): create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the *Standalone Agent Metrics Format* with the header (slug, agent, stack, started timestamp). Leave quality values empty.
+1. **At session init** (right after `devflow-ctl init`): create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the *Standalone Agent Metrics Format* with the header `# DevFlow Metrics — {slug} (standalone: {feature|bug-fix|refactor})` (slug, agent, stack, started timestamp). Leave quality values empty.
 2. **After the auto-invoked Reviewer returns:** fill files created/modified, tests created, the Reviewer's BLOCK/WARN/INFO counts, Reviewer iterations, and scope additions (`scope add` count); set the completed timestamp. Save the file.
-3. Append a row to `_aggregate.md` (create if missing) with Type = the agent name (`feature` | `bug-fix` | `refactor`); Tasks = tests created, Test Pass % = `—`, Iterations = Reviewer loops. Recalculate averages.
+3. Run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` — it reads the `(standalone: {type})` suffix from the header to set `Type` in the new row automatically (Tasks = tests created, Test Pass % = `—`, Iterations = Reviewer loops), and recomputes averages the same way the Finalizer does.
