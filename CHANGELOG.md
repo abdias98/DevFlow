@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.9.0] — 2026-09-08
+
+> Wave 17 (2 PRs, F61–F63) — detection, not capability. Sixteen waves had only ever added things the framework could *do*; this one adds three ways for it to notice that something is wrong. The check for the F60 class, a linter over the bash kernel, and a second locale in CI. Between them they found a `rm -rf` that could delete every session, a locale guard that had been inert since Wave 16, and a test that asserted a decimal point without testing one. All three by execution — none would have survived contact with a code review, because none of them was visible to one.
+>
+> Also the first wave executed through DevFlow's own lifecycle on this repository rather than driven by hand: real session, spec and plan passing `artifacts check`, traceability at 100%, review recording its own defects. `docs/devflow/specs`, `plans` and `reviews` had been empty since the framework was created.
+>
+> Deliberately **not** in this wave: the context-budget instrumentation and the standards manifest, both held until the eval harness can say whether they are worth their cost.
 
 ### 🐛 Fixed
 
