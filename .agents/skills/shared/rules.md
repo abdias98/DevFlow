@@ -340,12 +340,24 @@ See [task-supervisor.md](./task-supervisor.md) for the canonical pattern: when t
 
 ## INFO Notes & Violation Reporting
 
-- When a code smell, architectural violation, or potential improvement is found in a file outside the scope, add an INFO note following this format:
-  - **In code:** a comment starting with `// INFO:` (or language‑appropriate comment) briefly describing the issue and the recommended fix.
-  - **In plans/reports:** a bullet under a dedicated `## Observations` section.
-  - **In agent output:** include in the `### Additional Recommendations` section.
-- INFO notes must never modify behavior; they only inform.
-- **Elevation rule:** If the issue is a SECURITY vulnerability, DATA LOSS risk, or ARCHITECTURAL VIOLATION that contradicts a core standard, the agent MUST elevate it to the user as a WARNING before proceeding with any other work. Do not silently continue.
+When work surfaces a code smell, architectural violation, or potential improvement outside the Core — something that isn't one of the six closed Impact Zone coherence reasons (Scope-Locking — Three Zones above) — **record it in the deferred backlog first**, then optionally leave a pointer. The backlog is the record; a comment is, at most, a signpost to it.
+
+1. **Backlog first:** run `devflow-ctl backlog add {file} "{one-line reason}" --severity {block|incomplete|info}`.
+2. **Optional comment, second:** only when there's a real anchor in a file you can actually edit (a Core or justified Impact Zone file) — a comment starting with `// INFO:` (or the language's equivalent) briefly describing the issue and pointing at the backlog entry's ID. Never the only record of the finding.
+3. **In plans/reports:** a bullet under a dedicated `## Observations` section, citing the backlog ID.
+4. **In agent output:** include in the `### Additional Recommendations` section, citing the backlog ID.
+
+INFO notes (backlog entries of any severity) must never modify behavior; they only inform.
+
+**Three severities, not two:**
+
+| Severity | Meaning | Can it be silently dropped? |
+|---|---|---|
+| 🔴 **BLOCK** | Security vulnerability, data-loss risk, or architectural violation contradicting a core standard | Never — elevate to the user as a WARNING immediately, before any other work (unchanged from before) |
+| 🟠 **INCOMPLETE** | The Core change is functionally incoherent without this, but it doesn't meet the Impact Zone's six closed coherence reasons — fixing it now would mean expanding scope | Never — must survive to the next cycle in the backlog; the Reviewer reports it explicitly, it is never downgraded to a plain INFO note that quietly disappears |
+| 🟢 **INFO** | A genuine improvement or observation with no coherence dependency | Yes, in the sense that acting on it is the user's call — but it still gets a backlog entry, not just a comment, so the next cycle in that area sees it |
+
+**Elevation rule (BLOCK, unchanged):** If the issue is a SECURITY vulnerability, DATA LOSS risk, or ARCHITECTURAL VIOLATION that contradicts a core standard, the agent MUST elevate it to the user as a WARNING before proceeding with any other work. Do not silently continue.
 
 ## Error Handling & Communication
 

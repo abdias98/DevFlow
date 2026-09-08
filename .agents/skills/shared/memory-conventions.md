@@ -237,6 +237,7 @@ checkpoints:                    # rollback SHAs, recorded via `devflow-ctl check
 | `reverse/` | Reverse engineering analysis reports | `YYYY-MM-DD-{slug}-reverse-design.md` |
 | `metrics/` | Cycle quality metrics + aggregate trends | `YYYY-MM-DD-{slug}-metrics.md` |
 | `knowledge-base/` | Cross-cycle learnings, patterns, and anti-patterns | `learnings.md` (appended per cycle) |
+| `backlog/` | Deferred findings from the Outside zone (rules.md → Scope-Locking — Three Zones) — never cleaned at session end, read by the Brainstormer/Architect of the next cycle touching the same area | `deferred.md` (appended per finding, via `devflow-ctl backlog add`) |
 
 ## Memory Rules
 

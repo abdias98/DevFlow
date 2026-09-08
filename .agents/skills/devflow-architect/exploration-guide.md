@@ -58,6 +58,8 @@ These values are used by ALL downstream agents (Implementer, Tester, Refactorer,
 
 ### 9. Consumer & Dependent Discovery ⚠️ MANDATORY — WRITES SPEC
 
+**Backlog check, before anything else in this sub-step:** run `devflow-ctl backlog list --area {glob(s) covering the area this feature touches}` and surface any matching entries to the user in the Understanding Summary or spec — something was deferred here before (rules.md → Scope-Locking — Three Zones) and this design may now be the moment to address it, or may reintroduce the same gap if it doesn't.
+
 For each existing component the design will modify (as opposed to purely new files), run `devflow-ctl scope impact {file}` — the deterministic, language-agnostic discovery from `rules.md` → Scope-Locking — Three Zones. This is read-only; it does not record anything into the session yet (that happens in the Plan and Implementer phases).
 
 **MANDATORY OUTPUT:** Record the discovered dependents and dependencies in the spec under `## Impact Analysis`:
