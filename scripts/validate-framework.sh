@@ -10,6 +10,8 @@
 #   12. Standards integrity (no orphans, no duplicate numbering, mandatory
 #       sections, lightweight citation-vs-content semantic check, Quick Card
 #       and Critical Friend registration)
+#   13. Standalone enforcement matrix (init/lock check/scope/approval gate/
+#       closing order per standalone agent)
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -477,6 +479,73 @@ if [[ -d "$STANDARDS_DIR" ]]; then
 else
   warn "$STANDARDS_DIR/ not found — skipping standards integrity check (run from the repo root)"
 fi
+
+# ── 13. Standalone enforcement matrix ────────────────────────────────────────
+header "13. Standalone enforcement matrix"
+
+# The 10 standalone agents (standalone-execution.md's canonical list).
+STANDALONE_ALL=(
+  "devflow-feature" "devflow-bug-fix" "devflow-refactor" "devflow-perf"
+  "devflow-migrate" "devflow-contract" "devflow-docs" "devflow-templates"
+  "devflow-tutorial" "devflow-reverse"
+)
+# Agents that write outside docs/devflow/ (real production/source files) — these
+# must gate every edit through `devflow-ctl scope check`. The rest (perf is
+# read-only by design; docs, templates, tutorial, reverse write only within
+# docs/devflow/ or their own report) don't need it.
+STANDALONE_WRITES_PRODUCTION=(
+  "devflow-feature" "devflow-bug-fix" "devflow-refactor"
+  "devflow-migrate" "devflow-contract"
+)
+
+_in_list() {
+  local needle="$1"; shift
+  local x
+  for x in "$@"; do [[ "$x" == "$needle" ]] && return 0; done
+  return 1
+}
+
+for agent in "${STANDALONE_ALL[@]}"; do
+  skill_file="$SKILLS_DIR/$agent/SKILL.md"
+  if [[ ! -f "$skill_file" ]]; then
+    warn "Expected $skill_file — file not found (agent may have been removed)"
+    continue
+  fi
+
+  if ! grep -q "devflow-ctl init" "$skill_file" 2>/dev/null; then
+    fail "$skill_file — does not run 'devflow-ctl init' (session never initialized)"
+  fi
+  if ! grep -q "lock check" "$skill_file" 2>/dev/null; then
+    fail "$skill_file — does not run 'devflow-ctl lock check' (F12: no lifecycle-conflict guard)"
+  fi
+  if _in_list "$agent" "${STANDALONE_WRITES_PRODUCTION[@]}"; then
+    if ! grep -qE "scope check|scope impact" "$skill_file" 2>/dev/null; then
+      fail "$skill_file — writes production files but has no 'devflow-ctl scope check' gate"
+    fi
+    if ! grep -qE '_confirmation`? \|' "$skill_file" 2>/dev/null; then
+      fail "$skill_file — writes production files but has no approval-gate row"
+    fi
+  fi
+
+  # Closing order (F01): the last 'lock release' must come after the
+  # Auto-Invoke-Reviewer step and after the metrics-finalization step —
+  # never before, or the session is gone before those steps can read it.
+  reviewer_line=$(grep -niE 'Auto-Invoke Reviewer' "$skill_file" | head -1 | cut -d: -f1 || true)
+  finalize_line=$(grep -niE 'Finalize .*metrics' "$skill_file" | tail -1 | cut -d: -f1 || true)
+  release_line=$(grep -n 'lock release' "$skill_file" | tail -1 | cut -d: -f1 || true)
+  if [[ -z "$release_line" ]]; then
+    fail "$skill_file — no 'devflow-ctl lock release' found (session is never released)"
+  else
+    if [[ -n "$reviewer_line" && "$release_line" -lt "$reviewer_line" ]]; then
+      fail "$skill_file — 'lock release' (line $release_line) comes before Auto-Invoke Reviewer (line $reviewer_line) — F01 closing-order violation"
+    fi
+    if [[ -n "$finalize_line" && "$release_line" -lt "$finalize_line" ]]; then
+      fail "$skill_file — 'lock release' (line $release_line) comes before metrics finalization (line $finalize_line) — F01 closing-order violation"
+    fi
+  fi
+done
+
+[[ $ERRORS -eq 0 ]] && green "All standalone agents satisfy the enforcement matrix (init, lock check, scope, approval gate, closing order)"
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""

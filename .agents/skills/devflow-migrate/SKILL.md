@@ -96,6 +96,8 @@ Before generating any migration file, present the planned changes (schema change
 
 ### Step 5 — Generate Migration Files
 
+For each migration file: run `devflow-ctl scope check {file} --slug {slug}` — if it exits 1, STOP and ask the user for explicit approval (then `devflow-ctl scope add {glob} --slug {slug}`, e.g. the project's migrations directory).
+
 For each schema change:
 1. Generate the migration file following project conventions.
 2. Include both `up` and `down` methods (or equivalent).
