@@ -131,14 +131,38 @@ Format:
 
 These are informational — the user decides whether to act on them. They do NOT count as scope violations.
 
-## Scope-Locking (Flexible)
+## Scope-Locking — Three Zones
 
-- **ONLY modify files explicitly requested by the user** or files that are a **direct, hard dependency** of the requested change. A direct dependency is one that, if not updated, would cause the in-scope change to fail compilation or break the build in an obvious way. Examples: renaming a method requires updating immediate callers within the same module; changing a type signature requires updating direct references. It does NOT include: restructuring project folders, updating DI registrations, modifying base classes that affect many unrelated modules, or "improving" nearby code.
-- **NEVER make opportunistic changes** — if you notice a code smell in an unrelated file, raise it as an **Additional Recommendation** instead of fixing it silently.
-- **Before each file edit**, verify the file is within the approved scope.
-- **If a change requires touching files outside the declared scope**, STOP and ask the user for explicit confirmation before proceeding. Wait for the user's response — do not assume consent.
-- **Exception: Flow Artifacts.** Files created by a skill as part of its required procedure (plans, reports, specs, refactor summaries, bug-fix reports, and any other artifact whose path is defined in Memory Conventions) are always allowed, even if the user's declared scope did not include them. These are not subject to the scope-locking restriction.
-- After completing work, list all files that were modified. If any file is outside the original scope, flag it clearly and explain why it was necessary.
+A change to the **Core** almost always has ripple effects: a renamed function breaks its callers, a changed type breaks its consumers, a new field needs a migration. Treating every one of those as equally "outside scope" forces a false choice between silently expanding scope and leaving the Core change in a broken, half-finished state. Scope is not binary — it is three zones, each with its own permission:
+
+### Core
+
+The exact files/globs approved via `devflow-ctl init --scope` (or added later through `scope add`, with the user's explicit approval). Free to edit anything within the approved plan — this is unchanged from before.
+
+### Impact Zone
+
+Files that **depend on**, or are a **dependency of**, the Core — discovered and recorded in the plan rather than found ad hoc mid-implementation (see `devflow-ctl scope impact` and the Planner's Impact Zone block). Editable **only** for one of six closed reasons — a coherence change, never a scope expansion:
+
+1. A signature, type, or contract broken by the Core change.
+2. An existing test that covers the changed symbol.
+3. A barrel/index/re-export that exposes the changed symbol.
+4. A DTO, schema, or type directly derived from the one that changed.
+5. A DI/route registration strictly necessary for the Core to function.
+6. API documentation of the touched symbol.
+
+Every other kind of change in the Impact Zone is forbidden — refactoring, "improving while I'm here," a cosmetic rename, folder restructuring, or touching a base class that affects unrelated modules. **`NEVER make opportunistic changes`** — a code smell noticed along the way is an **Additional Recommendation**, never a silent fix, in the Impact Zone exactly as much as in the Core.
+
+Before editing an Impact Zone file, run `devflow-ctl scope justify {file} "{reason}"` — this records why the edit was necessary and is what `devflow-ctl scope audit` (the Reviewer's deterministic gate) checks for. It is lighter than full user confirmation because the reason is one of the six closed, mechanical categories above — not a judgment call.
+
+### Outside
+
+Everything else. No edits, ever, without the user explicitly approving a scope addition (`scope add`) first — **STOP and ask; do not assume consent.** When work surfaces something here that isn't a coherence fix — a real improvement, a bug in unrelated code, a debt item — it goes to the deferred backlog with a severity, not to a silent `// INFO:` comment (see the backlog mechanism referenced from INFO Notes & Violation Reporting).
+
+### Applies everywhere
+
+- **Before each file edit**, know which zone it's in — Core, Impact Zone (with a justification ready), or Outside (with explicit approval already granted).
+- **Exception: Flow Artifacts.** Files created by a skill as part of its required procedure (plans, reports, specs, refactor summaries, bug-fix reports, and any other artifact whose path is defined in Memory Conventions) are always allowed, in any zone, even if the user's declared scope did not include them.
+- After completing work, list every file touched outside the Core, tagged with its zone: Impact Zone (+ the coherence reason) or an explicitly approved Outside addition. An untagged file outside the Core is a scope violation regardless of intent.
 
 ## Test Execution Policy
 
@@ -157,8 +181,8 @@ These are informational — the user decides whether to act on them. They do NOT
 
 ## Approval & Confirmation
 
-- **Any change outside the declared scope requires explicit user confirmation.** This includes renaming public APIs, modifying configuration files, updating dependencies, or altering folder structure.
-- **Do not proceed with a plan that includes out-of-scope changes until the user explicitly approves those specific changes.**
+- **Any change in the Outside zone requires explicit user confirmation.** This includes renaming public APIs, modifying configuration files, updating dependencies, or altering folder structure. An Impact Zone coherence change (see Scope-Locking above) does NOT require this full confirmation — `scope justify` is its approval mechanism, because the reason is one of six closed, mechanical categories rather than a judgment call.
+- **Do not proceed with a plan that includes Outside-zone changes until the user explicitly approves those specific changes.**
 - Present options clearly and wait for the user's selection. Do not time out or assume a default.
 
 ## CI/CD Mode
