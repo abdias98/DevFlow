@@ -126,10 +126,11 @@ After all subagents in a wave return, the Implementer runs **supervisor checks**
 After supervisor findings are resolved:
 
 1. Verify all tasks completed successfully (files exist, tests pass in Standard mode).
-2. **Standard mode:** auto-commit each task sequentially (never parallelize git commands) with the planned message from the plan.
-3. **Pair mode:** present all tasks in the wave for user approval. After approval, tell the user the commit commands.
-4. If any subagent failed (before supervisor) → run `devflow-ctl iterate implement_debug --slug {slug}`. On exit 0, diagnose and re-dispatch the failed task. On exit 1 (limit exceeded), stop and escalate to the user with the failure output instead of re-dispatching again.
-5. Proceed to the next wave.
+2. **Update `traceability.md`** (session memory): for each task in this wave, find the row(s) whose `Task` column names it, fill in `Impl File` with the actual path written, and set `Status` to `✅ DONE`. This is the Implementer's half of the traceability contract (`shared/traceability-matrix.md` → "Updated by: Implementer") — do it per wave, not only once at the end, so a task that never gets to Step 4 (escalated, abandoned) doesn't leave a stale row nobody looks at again.
+3. **Standard mode:** auto-commit each task sequentially (never parallelize git commands) with the planned message from the plan.
+4. **Pair mode:** present all tasks in the wave for user approval. After approval, tell the user the commit commands.
+5. If any subagent failed (before supervisor) → run `devflow-ctl iterate implement_debug --slug {slug}`. On exit 0, diagnose and re-dispatch the failed task. On exit 1 (limit exceeded), stop and escalate to the user with the failure output instead of re-dispatching again.
+6. Proceed to the next wave.
 
 **Sequential fallback:** If the editor does not support parallel subagent invocation, execute tasks sequentially within each wave (they are independent, so order doesn't matter). The synthesis step is identical — only the execution order changes. See [parallel-subagents.md](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) → Fallback.
 
@@ -157,6 +158,8 @@ Update `test-registry.md` and `phase-state`:
 ```markdown
 - [x] Phase 5: Implementer — all {N} tasks complete
 ```
+
+Confirm `traceability.md` is current: every row for a task completed this cycle should already say `✅ DONE` with an `Impl File` (from Step 2b-ii, per wave). If any row for a completed task is still `⬜ PENDING`/`🟡 IN PROGRESS`, update it now — don't leave it for the Reviewer to catch. This does not require every row to be `DONE` yet (a row belonging to a task that genuinely wasn't reached this cycle stays pending); it only guards against rows the Implementer forgot to update along the way.
 
 ### Step 4.5 — Lint / Typecheck Gate
 
