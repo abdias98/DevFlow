@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **`validate-framework.sh` §15 — Multi-agent contract integrity.** The first behavioural check in a validator whose other 14 sections are all structural. A `shared/` document opts in by naming the artifact it governs (`**Contract artifact:** \`path\``) above its existing `**<Verb> by:** <Agent>` participant block; §15 then asserts that every named agent's `SKILL.md` actually references that artifact. Discovery is declaration-driven rather than a hardcoded file list, so a new contract is covered the moment it is written. An agent name that maps to no skill directory is an ERROR, never a skip — a typo must not silently disable enforcement for that participant. Verified against the bug that motivated it: reverting the F60 fix makes §15 fail with two errors naming `devflow-implement` and `devflow-review`. (F61, Wave 17)
+- **`tests/validate-framework.bats`** — first test suite for the validator (9 tests): positive, negative (the F60 shape), multi-participant reporting, unmapped agent, missing `SKILL.md`, empty tree, token derivation, token length floor, and multi-contract independence. Fixture-driven, with no production seam: the suite `cd`s into a throwaway framework tree and runs the real script, asserting on §15's own output block rather than the process exit code.
+
 ## [4.8.1] — 2026-09-08
 
 > A second real end-to-end `/devflow` cycle (Node/TS, natural-language request with zero technical vocabulary) validated that the Wave 15 standards activate on their own merit — the Architect chose an event-driven design, explicitly rejected CQRS citing YAGNI, and applied all 4 Design Principles with evidence traceable into code comments, none of it prompted. That same cycle also surfaced this release's single fix: it never generated `traceability.md`.

@@ -15,6 +15,8 @@
 #   14. Standards duplication (DRY) — flags near-identical prose lines shared
 #       between two standards, outside the intentionally-shared Limited Scope
 #       closing block
+#   15. Multi-agent contract integrity — every agent a shared/ contract names
+#       must actually reference the artifact it governs (the F60 class)
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -581,6 +583,137 @@ if [[ -d "$STANDARDS_DIR" ]]; then
   [[ $dup_warnings -eq 0 ]] && green "No unresolved duplication found between standards"
 else
   warn "$STANDARDS_DIR/ not found — skipping standards duplication check (run from the repo root)"
+fi
+
+# ── 15. Multi-agent contract integrity ───────────────────────────────────────
+header "15. Multi-agent contract integrity"
+
+# Checks 1-14 are structural: headings, template variables, cross-references,
+# numbering, mandatory sections, lexical duplication. None of them verifies that
+# a *behavioural* contract declared in shared/ is actually honoured by the
+# agents it names.
+#
+# F60 is what that costs. `shared/traceability-matrix.md` declared a four-step
+# chain of custody -- Planner writes, Implementer updates, Reviewer validates,
+# Finalizer reports -- while devflow-implement/SKILL.md and
+# devflow-review/SKILL.md contained zero references to the file. Half the
+# contract was fiction and all 14 checks were green.
+#
+# A shared/ document opts into this check by naming the artifact it governs
+# directly above its participant list:
+#
+#   **Contract artifact:** `docs/devflow/session/{slug}/traceability.md`
+#   **Written by:** Planner (initial generation from spec + plan)
+#   **Updated by:** Implementer (file paths + status per task)
+#
+# Discovery is driven by that line, not by a hardcoded file list (the reason
+# §13's per-agent matrix could never be reused): a new contract is covered the
+# moment someone writes one.
+
+# Declared agent name -> skill directory. An unmapped name is an ERROR rather
+# than a skip: a typo like "Reviewr" would otherwise silently disable
+# enforcement for that participant, which is the exact failure mode this check
+# exists to close.
+_contract_skill_dir() {
+  case "$1" in
+    Orchestrator) echo "devflow" ;;
+    Planner)      echo "devflow-plan" ;;
+    Implementer)  echo "devflow-implement" ;;
+    Reviewer)     echo "devflow-review" ;;
+    Finalizer)    echo "devflow-finalize" ;;
+    Architect)    echo "devflow-architect" ;;
+    Brainstormer) echo "devflow-brainstorm" ;;
+    Debugger)     echo "devflow-debug" ;;
+    *)            echo "" ;;
+  esac
+}
+
+# The stable fragment of the artifact's basename -- what a SKILL.md would have
+# to name -- with the date and slug placeholders removed.
+#   docs/devflow/session/{slug}/traceability.md        -> traceability.md
+#   docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md  -> metrics.md
+_contract_token() {
+  local t; t="$(basename "$1")"
+  t="${t//YYYY-MM-DD/}"; t="${t//\{slug\}/}"; t="${t//\{date\}/}"
+  # Removing adjacent placeholders leaves runs of separators ("--metrics.md"),
+  # so collapse them before trimming -- a single ${t#-} would keep one.
+  sed -E 's/-+/-/g; s/^-//; s/-$//' <<< "$t"
+}
+
+# Below this length a token stops discriminating and starts matching incidental
+# prose, which would make the whole check pass by accident.
+CONTRACT_TOKEN_MIN_LEN=6
+
+SHARED_DIR="$SKILLS_DIR/shared"
+
+if [[ -d "$SHARED_DIR" ]]; then
+  contracts_found=0
+  contract_errors=0
+
+  while IFS= read -r contract_file; do
+    [[ -n "$contract_file" ]] || continue
+    ((contracts_found++)) || true
+
+    artifact="$(grep -m1 '^\*\*Contract artifact:\*\*' "$contract_file" \
+                | sed -E 's/^\*\*Contract artifact:\*\* *`?([^`]*)`?.*/\1/' || true)"
+    if [[ -z "$artifact" ]]; then
+      fail "$(basename "$contract_file") — '**Contract artifact:**' declared but no path could be parsed"
+      $FIX_MODE && echo "       FIX: write the path in backticks, e.g. **Contract artifact:** \`docs/devflow/session/{slug}/traceability.md\`"
+      ((contract_errors++)) || true
+      continue
+    fi
+
+    token="$(_contract_token "$artifact")"
+    if [[ ${#token} -lt $CONTRACT_TOKEN_MIN_LEN ]]; then
+      fail "$(basename "$contract_file") — artifact token '$token' is too short (< $CONTRACT_TOKEN_MIN_LEN chars) to identify $artifact reliably"
+      $FIX_MODE && echo "       FIX: give the artifact a distinctive basename, or the check cannot tell a real reference from incidental prose"
+      ((contract_errors++)) || true
+      continue
+    fi
+
+    participants=0
+    while IFS= read -r decl_line; do
+      [[ -n "$decl_line" ]] || continue
+      # '**Updated by:** Implementer (file paths + status per task)' -> 'Implementer'
+      agent="$(sed -E 's/^\*\*[A-Za-z ]+ by:\*\* *([A-Za-z]+).*/\1/' <<< "$decl_line")"
+      [[ -n "$agent" ]] || continue
+      ((participants++)) || true
+
+      skill_dir="$(_contract_skill_dir "$agent")"
+      if [[ -z "$skill_dir" ]]; then
+        fail "$(basename "$contract_file") — declares participant '$agent', which maps to no known skill directory"
+        $FIX_MODE && echo "       FIX: correct the name, or add '$agent' to _contract_skill_dir() in this script"
+        ((contract_errors++)) || true
+        continue
+      fi
+
+      skill_file="$SKILLS_DIR/$skill_dir/SKILL.md"
+      if [[ ! -f "$skill_file" ]]; then
+        fail "$(basename "$contract_file") — declares '$agent' ($skill_dir) but $skill_file does not exist"
+        ((contract_errors++)) || true
+        continue
+      fi
+
+      if ! grep -q "$token" "$skill_file" 2>/dev/null; then
+        fail "$skill_dir/SKILL.md — declared in $(basename "$contract_file") as '$agent' for $artifact, but does not reference '$token' (F60-class: the contract names an agent that never touches the artifact)"
+        $FIX_MODE && echo "       FIX: add the step that reads or writes $artifact to $skill_file, or remove '$agent' from the contract"
+        ((contract_errors++)) || true
+      fi
+    done < <(grep -E '^\*\*[A-Za-z ]+ by:\*\*' "$contract_file" || true)
+
+    if [[ $participants -eq 0 ]]; then
+      fail "$(basename "$contract_file") — declares an artifact but names no participants ('**<Verb> by:** <Agent>')"
+      ((contract_errors++)) || true
+    fi
+  done < <(grep -rl '^\*\*Contract artifact:\*\*' "$SHARED_DIR" --include='*.md' 2>/dev/null || true)
+
+  if [[ $contracts_found -eq 0 ]]; then
+    green "No multi-agent contract declarations found in $SHARED_DIR/ — nothing to verify"
+  elif [[ $contract_errors -eq 0 ]]; then
+    green "All $contracts_found declared multi-agent contract(s) are honoured by every participant they name"
+  fi
+else
+  warn "$SHARED_DIR/ not found — skipping multi-agent contract check (run from the repo root)"
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────

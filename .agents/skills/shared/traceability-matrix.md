@@ -2,6 +2,7 @@
 
 This session memory file (`docs/devflow/session/{slug}/traceability.md`) cross-references requirements through the full development pipeline: Problem Statement → Architecture Spec → Plan Tasks → Tests → Implementation.
 
+**Contract artifact:** `docs/devflow/session/{slug}/traceability.md`
 **Written by:** Planner (initial generation from spec + plan)
 **Updated by:** Implementer (file paths + status per task)
 **Validated by:** Reviewer (coverage check)
