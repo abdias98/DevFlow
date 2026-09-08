@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.8.0] — 2026-09-08
+
+> Wave 16 (3 PRs, F57–F59) — the last places where the framework still asked the LLM to do arithmetic or counting over a markdown table instead of verifying it deterministically. Criterion applied: does the check have a single, objectively computable answer? → tool. Does it require judgment? → prose, left untouched.
+
+### ✨ Added
+
+- **`devflow-ctl metrics aggregate <metrics-file>`** — appends a cycle's row to `docs/devflow/metrics/_aggregate.md` (creating it if missing) and recomputes the 4 Averages rows that have a real column behind them (avg. cycle duration, avg. BLOCKs per cycle, avg. test pass rate, total cycles). "Most frequent BLOCK category" and "Phase with most retries" have no structured column to derive from — left as an explicit manual entry instead of silently faked. `devflow-finalize` and the `feature`/`bug-fix`/`refactor` standalone agents now invoke it instead of describing manual recalculation. (F57)
+- **`devflow-ctl traceability check <file>`** — counts covered vs. total requirements per `Source` and overall from a `traceability.md` matrix, exits 1 with the list of uncovered requirement IDs when coverage is <100%. The lifecycle's Finalizer gate, the Reviewer's validation step, and the metrics Generation Rules now run this instead of eyeballing the table. (F58)
+- **`devflow-ctl artifacts check plan <path> --spec <spec-path>`** (new optional flag, backward compatible when omitted) — if the spec's `## Concurrency Strategy` declares a real invariant (not "N/A"), requires the plan to contain concurrency-test vocabulary (concurrent, simultaneous, race condition, thread, `Promise.all`, `asyncio.gather`, etc.). A presence check, not a correctness judgment — the same class of gap `scan_secrets` catches for committed secrets. `devflow-plan` runs it on its own output before saving the plan as final, so the Planner fixes a missing concurrency task immediately instead of the Finalizer discovering it in Phase 8. (F59)
+
+### 🐛 Fixed
+
+- Three real bugs found while building `metrics aggregate`: a bare (non `-E`/`-P`) `grep '\|'` where GNU grep's BRE treats `\|` as alternation instead of a literal pipe, matching the entire file instead of nothing; a row-insertion bug that silently discarded every row after the first because appending with `>>` landed new rows after an already-existing `## Averages` section; and several new `grep | grep` pipelines with no `|| true` under this script's `set -euo pipefail`, aborting silently on a first-grep miss (same failure class fixed for `backlog`/`knowledge` in earlier waves). Also fixed a locale bug where `awk`'s `printf "%.1f"` produced a comma decimal separator under a non-C `LC_NUMERIC`.
+
 ## [4.7.0] — 2026-09-08
 
 > Wave 15 (9 PRs, F47–F56) — findings from validating the 4.6.0 framework end-to-end against two real `/devflow` cycles (Node/TypeScript+Express and Python/FastAPI) on a concurrency-sensitive ticket-sales feature: universal dependency auditing, deterministic rigor for business-critical concurrency, business-event logging, a DRY policy for the standards themselves, and two new standards — Design Principles and Event-Driven Architecture (with CQRS).
