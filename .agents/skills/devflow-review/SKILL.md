@@ -69,6 +69,8 @@ Before any LLM review — and regardless of the skip criteria below — run the 
 
 Treat every scanner finding as a **🔴 BLOCK** in synthesis (a committed secret or a high/critical CVE is never optional), cited as `devflow-ctl scan → {secrets|sca}`. If the scanner exits non-zero, the verdict is **CHANGES REQUESTED** no matter how clean the LLM dimensions look. If a scanner is unavailable the command **skips gracefully** — note the skipped scan in the review so the coverage gap is visible. The scanner *finds*; subagent 1 and the Implementer *explain and fix*.
 
+**Scope audit (Impact Zone).** Also auto-execute (Standard/CI) or ask the user to run (Pair) `devflow-ctl scope audit --slug {slug}` — the deterministic check from rules.md → Scope-Locking — Three Zones. Exit 1 means an Impact Zone file was modified without a recorded `scope justify` — treat it as a **🔴 BLOCK**, cited as `devflow-ctl scope audit`, and route it back to the Implementer the same as a failed `scan`. This only applies when the plan declared an Impact Zone (Wave 12); older plans with none will find nothing to audit.
+
 #### Skip criteria (review inline when ALL hold)
 
 - Only 1-2 files changed.

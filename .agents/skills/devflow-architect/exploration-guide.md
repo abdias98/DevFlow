@@ -6,7 +6,7 @@ This guide is used by the **Architect** during Phase 2. Exploration is **read-on
 
 ## When to Skip
 
-If `AGENTS.md` was found → skip sub-steps 1, 2, 4, 5, 6. Run only **sub-steps 3, 7, and 8**.
+If `AGENTS.md` was found → skip sub-steps 1, 2, 4, 5, 6. Run only **sub-steps 3, 7, 8, and 9**.
 
 ## Sub-steps
 
@@ -55,6 +55,17 @@ Exhaustively explore how the project tests. Discover:
 - Fields: Test Runner, Test Command, Test Command (single file), Test Root, Test Utilities.
 
 These values are used by ALL downstream agents (Implementer, Tester, Refactorer, Bug-Fixer, Feature) to determine how to run tests. If any value cannot be detected, write `unknown` and note it.
+
+### 9. Consumer & Dependent Discovery ⚠️ MANDATORY — WRITES SPEC
+
+For each existing component the design will modify (as opposed to purely new files), run `devflow-ctl scope impact {file}` — the deterministic, language-agnostic discovery from `rules.md` → Scope-Locking — Three Zones. This is read-only; it does not record anything into the session yet (that happens in the Plan and Implementer phases).
+
+**MANDATORY OUTPUT:** Record the discovered dependents and dependencies in the spec under `## Impact Analysis`:
+- One row per component being modified: the component, its dependents (who calls it), and whether each dependent's usage looks like it would need a coherence change if the design proceeds as sketched.
+- `scope impact`'s matching is approximate (whole-word basename, no parser) — note any result that is clearly a false positive (a common name coincidentally matching) so the Planner doesn't have to re-derive that.
+- If the design introduces no changes to existing files (pure addition), state that explicitly — `## Impact Analysis` still exists, with "N/A — no existing components modified."
+
+This is what lets the Plan's Impact Zone block (Planner, Phase 4) start from a real list instead of discovering ripple effects mid-implementation.
 
 ---
 

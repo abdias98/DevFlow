@@ -47,13 +47,13 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 2. Read session memory: `context.md` (tech stack, constraints, Stack Mode) and run `devflow-ctl status --slug {slug}` for the session state.
 3. **Read the plan** — load the plan document from `docs/devflow/plans/`. Read the **File Map** and **task list overview** to understand the full scope. For each task during execution (Step 2), read only that task's **work packet** section — not the entire plan repeatedly. This avoids loading N × (full plan) tokens when only N × (work packet) is needed.
 4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for implementation patterns, anti-patterns, and known pitfalls relevant to the detected stack and the tasks ahead. Apply documented patterns and avoid known mistakes.
-5. **Declare the scope:** register the plan's File Map (Create + Modify lists) with `devflow-ctl scope add {glob} --slug {slug}` for each path, if not already declared.
+5. **Declare the scope:** register the plan's File Map (Create + Modify lists) with `devflow-ctl scope add {glob} --slug {slug}` for each path, if not already declared. Then run `devflow-ctl scope impact --record --slug {slug}` to establish the Impact Zone for the whole declared Core (see rules.md → Scope-Locking — Three Zones) — this covers everything the plan's File Map Impact Zone table names, without re-running discovery per file.
 6. Note Stack Mode: `no` → standard flow, `yes` → stacked flow.
 7. Identify where to start (first unchecked task or resume from checkpoint).
 
 ### Step 2 — Execute Plan
 
-**Before each file edit**, run `devflow-ctl scope check {file} --slug {slug}`. If it exits 1, the file is outside the approved scope: STOP, ask the user for explicit approval, and only after they approve run `devflow-ctl scope add {glob} --slug {slug}` and proceed. Test files and DevFlow artifacts from the plan always pass (Flow Artifacts Exception).
+**Before each file edit**, run `devflow-ctl scope check {file} --slug {slug}`. If it exits 1, the file is outside the approved scope: STOP, ask the user for explicit approval, and only after they approve run `devflow-ctl scope add {glob} --slug {slug}` and proceed. Test files and DevFlow artifacts from the plan always pass (Flow Artifacts Exception). If the check reports **Impact Zone**, confirm the plan's File Map marks this file `touch (coherence)` — if it doesn't, STOP (an Impact Zone edit the plan didn't call for is scope creep, not a coherence fix) — then immediately run `devflow-ctl scope justify {file} "{reason from the plan's Impact Zone table}" --slug {slug}` before making the edit. This is what `scope audit` (run by the Reviewer) checks for.
 
 - **Stack Mode = yes** → Follow the [stacked flow](<{{SKILLS_DIR}}/devflow-implement/stack-flow.md>) (stacked flow has its own ordering; parallel dispatch does not apply).
 - **Stack Mode = no** → Continue to task independence analysis below.
@@ -181,7 +181,7 @@ If the skip criteria are met, proceed directly to Step 6.
    - **Goal:** Verify the implementation matches the plan structurally and stays in scope.
    - **Context:** The plan document, the spec (if architecture-relevant), the list of modified files, and `devflow-ctl scope list --slug {slug}` output. **No access to the Implementer's reasoning.**
    - **Constraints:** Read-only. Do NOT run tests. Do NOT edit files. Do NOT do deep quality/security analysis (that is the Reviewer's job).
-   - **Output format:** Findings list with verdict (PASS / PASS_WITH_WARNINGS / FAIL) and per-finding severity (BLOCK / WARN / INFO) across four axes: structural completeness, scope compliance, plan compliance, obvious issues.
+   - **Output format:** Findings list with verdict (PASS / PASS_WITH_WARNINGS / FAIL) and per-finding severity (BLOCK / WARN / INFO) across five axes: structural completeness, scope compliance, plan compliance, obvious issues, and companion changes (Impact Zone completeness).
 2. Dispatch the verifier (parallel subagent if the editor supports it; otherwise inline with a deliberate context reset — see [verifier-subagent.md](<{{SKILLS_DIR}}/shared/verifier-subagent.md>) → Fallback).
 3. Act on findings:
    - **Any BLOCK:** fix the issue(s), re-dispatch the verifier to confirm the fix, then proceed to Step 6. If a BLOCK cannot be fixed without plan amendment, STOP and ask the user.

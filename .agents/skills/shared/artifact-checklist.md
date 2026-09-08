@@ -52,6 +52,7 @@ Validated by: **Architect** (before Step 5 — save)
 - [ ] **Architecture** section present — high-level design with data flow
 - [ ] **Data Structures** section present — definitions with code snippets (stack-specific terminology)
 - [ ] **Reusability Decisions** table present — at least 1 row (can be "None — new component")
+- [ ] **Impact Analysis** present — dependents/dependencies from `devflow-ctl scope impact` for each modified existing component, or "N/A — no existing components modified"
 - [ ] **Test Architecture** table present — layers, tools, utilities, reference tests
 - [ ] **Risk Assessment** table present — at least 1 risk identified (can be LOW)
 - [ ] **Design Decisions** table present — key decisions with alternatives and reasoning
@@ -69,6 +70,7 @@ Validated by: **Planner** (before Step 8 — persist)
 - [ ] **Rigor** level stated — `light | standard | deep | maximum`
 - [ ] **Plan Digest** present — 10-20 line structured summary (tasks, files to create/modify, key dependencies, risk areas, test strategy, scope)
 - [ ] **File Map** section present — Modify: + Create: lists
+- [ ] **Impact Zone** present with an explicit verdict per file (`touch (coherence)` / `no touch` / `defer`) — or "N/A" if the spec's Impact Analysis found no existing components modified
 - [ ] **At least 1 task** defined with numbered title
 - [ ] **Each task is a work packet** — has **Goal**, **Context**, **Constraints**, **Acceptance criteria**, and **Deliverables**
 - [ ] **Each task has an Implementation guide** with complete code snippets
