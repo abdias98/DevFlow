@@ -750,10 +750,48 @@ artifacts_required() {
   esac
 }
 
+# If the spec declares a real (non-N/A) Concurrency Strategy, the plan must
+# schedule an actual concurrency test (concurrency.md §2 / devflow-plan Step 4)
+# -- not just a sequential unit test. This is a presence check (does the plan
+# mention concurrency-test vocabulary at all), not a correctness judgment: it
+# catches the "nobody scheduled a concurrency test at all" gap, the same way
+# scan_secrets catches "a secret is present" without judging whether the code
+# using it is otherwise well-designed.
+_artifacts_check_concurrency_task() {
+  local plan_path="$1" spec_path="$2"
+  [[ -f "$spec_path" ]] || return 0
+
+  local strategy; strategy="$(awk '
+    /^#+ Concurrency Strategy/ { f=1; next }
+    /^#+ / { if (f) exit }
+    f { print }
+  ' "$spec_path")"
+  [[ -n "$strategy" ]] || return 0
+
+  # No section content, or an explicit N/A -- nothing to require.
+  if echo "$strategy" | grep -qiE '^\s*N/A\b' || [[ -z "$(echo "$strategy" | tr -d '[:space:]')" ]]; then
+    return 0
+  fi
+
+  local keywords='concurrent|concurrency|simultaneous|race condition|thread|Promise\.all|asyncio\.gather|ThreadPoolExecutor|parallel (request|task|call)'
+  if ! grep -qiE "$keywords" "$plan_path" 2>/dev/null; then
+    fail "plan '$plan_path' — spec declares a real Concurrency Strategy but the plan has no task with concurrency-test vocabulary ($keywords) — schedule a real concurrency test (concurrency.md §2), not only a sequential unit test"
+    return 1
+  fi
+  return 0
+}
+
 cmd_artifacts() {
-  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse> <path>"
-  local type="${2:-}" path="${3:-}"
-  [[ -n "$type" && -n "$path" ]] || die "usage: devflow-ctl artifacts check <type> <path>"
+  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse> <path> [--spec <spec-path>]"
+  local type="${2:-}" path="${3:-}" spec_path=""
+  [[ -n "$type" && -n "$path" ]] || die "usage: devflow-ctl artifacts check <type> <path> [--spec <spec-path>]"
+  shift 3
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --spec) spec_path="${2:-}"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
   [[ -f "$path" ]] || fail "artifact not found at $path — it was never saved with create_file"
   local required missing=()
   required="$(artifacts_required "$type")" || die "unknown artifact type '$type' (spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse)"
@@ -762,6 +800,9 @@ cmd_artifacts() {
   done <<< "$required"
   if [[ ${#missing[@]} -gt 0 ]]; then
     fail "artifact '$path' is missing required section(s): ${missing[*]} — complete it before proceeding (see shared/artifact-checklist.md)"
+  fi
+  if [[ "$type" == "plan" && -n "$spec_path" ]]; then
+    _artifacts_check_concurrency_task "$path" "$spec_path"
   fi
   ok "artifact '$path' has all required $type sections"
 }

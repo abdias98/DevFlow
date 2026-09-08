@@ -1115,3 +1115,64 @@ EOF
   [ "$status" -eq 2 ]
   [[ "$output" == *"file not found"* ]]
 }
+
+# ── Plan concurrency-task check (F59) ────────────────────────────────────────
+
+write_valid_plan() {
+  local file="$1" extra_task="${2:-}"
+  cat > "$file" << EOF
+## Digest
+## File Map
+### Task 1: implement purchase
+$extra_task
+## Self-Review
+EOF
+}
+
+write_spec_with_strategy() {
+  cat > "$BATS_TEST_TMPDIR/spec-real.md" << 'EOF'
+## Concurrency Strategy
+
+Use a conditional UPDATE on the tickets table to decrement stock atomically.
+
+## Test Architecture
+EOF
+}
+
+write_spec_na() {
+  cat > "$BATS_TEST_TMPDIR/spec-na.md" << 'EOF'
+## Concurrency Strategy
+
+N/A — no concurrency-sensitive invariant
+
+## Test Architecture
+EOF
+}
+
+@test "artifacts check plan --spec: fails when spec declares a strategy but plan has no concurrency test" {
+  write_spec_with_strategy
+  write_valid_plan "$BATS_TEST_TMPDIR/plan.md"
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/spec-real.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"no task with concurrency-test vocabulary"* ]]
+}
+
+@test "artifacts check plan --spec: passes when the plan has a concurrency-test task" {
+  write_spec_with_strategy
+  write_valid_plan "$BATS_TEST_TMPDIR/plan.md" "### Task 2: concurrency test — simultaneous purchase requests"
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/spec-real.md"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check plan --spec: N/A strategy requires nothing" {
+  write_spec_na
+  write_valid_plan "$BATS_TEST_TMPDIR/plan.md"
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/spec-na.md"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check plan: without --spec, behaves exactly as before (no concurrency check)" {
+  write_valid_plan "$BATS_TEST_TMPDIR/plan.md"
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md"
+  [ "$status" -eq 0 ]
+}

@@ -305,7 +305,7 @@ This phase is ONLY executed when tests fail or a specific bug is identified.
    - [ ] All persistent artifacts exist on disk and are complete — verify with:
      ```
      devflow-ctl artifacts check spec docs/devflow/specs/{file} --slug {slug}
-     devflow-ctl artifacts check plan docs/devflow/plans/{file} --slug {slug}
+     devflow-ctl artifacts check plan docs/devflow/plans/{file} --spec docs/devflow/specs/{spec-file} --slug {slug}
      devflow-ctl artifacts check review docs/devflow/reviews/{file} --slug {slug}
      devflow-ctl artifacts check validation docs/devflow/validations/{file} --slug {slug}
      ```
