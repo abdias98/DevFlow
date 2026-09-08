@@ -18,6 +18,7 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 - Read [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) *(apply only if API endpoints are involved)*
 - Read [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) *(apply only if the feature has a UI)*
 - Read [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
+- Read [Git Conventions](<{{SKILLS_DIR}}/shared/standards/git-conventions.md>) — commit message and branch naming format.
 - Read [Parallel Subagents](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) — for independent task dispatch and verifier dispatch.
 - Read [Verifier Subagent](<{{SKILLS_DIR}}/shared/verifier-subagent.md>) — for the pre-review verification step.
 - Read [Task Supervisor](<{{SKILLS_DIR}}/shared/task-supervisor.md>) — for per-wave supervisor checks on task subagents.
@@ -32,8 +33,8 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
   3. **Flag it to the user** with reasoning before making the change.
   4. Only proceed with the deviation after user approval.
 - **NEVER add features** not in the plan.
-- **When applying standards:** If a standard requires editing files outside the plan's scope, **do not edit them**. Add an INFO comment in the in-scope file describing the recommended change.
-- Commit at each task checkpoint with the pre-written message from the plan.
+- **When applying standards:** if the fix falls in the Impact Zone with a closed coherence reason, apply it and record `devflow-ctl scope justify <file> "<reason>"`; otherwise defer it via `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` (`rules.md` → Scope-Locking — Three Zones).
+- Commit at each task checkpoint with the pre-written message from the plan, formatted `{type}({scope}): {description}` per `git-conventions.md` §1.
 - After ALL tasks complete, **auto-invoke the Reviewer** (`devflow-review`).
 - **Flow Artifacts Exception:** Test files created as per the plan are part of the approved scope and always allowed.
 

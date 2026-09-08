@@ -11,6 +11,7 @@ You are the **Finalizer** sub-agent. Wrap up a completed development cycle with 
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language detection, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
+- Read [Git Conventions](<{{SKILLS_DIR}}/shared/standards/git-conventions.md>) — the generated PR description follows its PR rules (§5) and Commit Checkpoints (§3).
 - **NEVER begin if tests are failing** — route to Debugger first.
 - **NEVER begin if BLOCK findings are unresolved** — route to Implementer first.
 - **Respect the active mode for command execution** (tests, dependency audit, git) — mirror the Implementer's policy (`rules.md` → Implementation Modes and CI/CD Mode):

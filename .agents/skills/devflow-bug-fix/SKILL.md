@@ -13,7 +13,7 @@ You are the **Bug-Fixer** standalone agent. Resolve reported bugs systematically
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
 - Read [Environment Capability Probe](<{{SKILLS_DIR}}/shared/environment-probe.md>) — to check if vision is available for screenshot analysis.
 - **Standards — scan first, load on demand.** Start with the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) (fast BLOCK-trigger scan). Load a full standard **only when** a quick-card red flag matches or the bug's causal chain clearly falls in its domain — do not load every standard upfront:
-  - General: [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
+  - General: [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>) · [Git Conventions](<{{SKILLS_DIR}}/shared/standards/git-conventions.md>)
   - [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) — when API endpoints are involved.
   - [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) · [Accessibility](<{{SKILLS_DIR}}/shared/standards/accessibility.md>) — when a UI component is involved.
   - Cite the specific section in every finding: `{standard}.md §{N} → {BLOCK|WARN|INFO}` (consult each standard's Severity Classification).
@@ -23,7 +23,7 @@ You are the **Bug-Fixer** standalone agent. Resolve reported bugs systematically
 - **Test execution is mode-dependent** — **Pair (default):** NEVER run tests; provide the command and wait for the user's pasted results. **Standard:** auto-run the reproduction test and the full suite, and verify outcomes before committing. **CI:** like Standard, plus fail-fast. See [Mode Selection](#mode-selection) below and rules.md → Test Execution Policy.
 - **ALWAYS get user approval** before applying any fix.
 - **ALWAYS create a reproduction test** before applying the fix (after plan approval).
-- **When applying standards:** If a clean-architecture, SOLID, or other standard requires editing files outside the approved scope, **do not edit them**. Instead, add an INFO comment in the in-scope file describing the recommended change.
+- **When applying standards:** if the fix falls in the Impact Zone with a closed coherence reason, apply it and record `devflow-ctl scope justify <file> "<reason>"`; otherwise defer it via `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` (`rules.md` → Scope-Locking — Three Zones).
 - **Artifacts created by this skill** (plan documents, bug-fix reports at `docs/devflow/bug-fixes/`) are **always allowed**, even if the user's declared scope did not include them. They are not subject to the “outside the declared scope” restriction.
 - Consult `docs/devflow/knowledge-base/debug-patterns.md` if it exists — check for known patterns first.
 
@@ -164,7 +164,7 @@ For each file in the approved plan:
 6. Verify the reproduction test PASSES:
    - **Standard/CI:** run `{Test Command (single file)} {path}`. If it fails → run `devflow-ctl iterate implement_debug --slug {slug}`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
    - **Pair:** ask the user to run the command and paste the output. Do NOT commit until PASS is confirmed.
-7. Commit — Standard/CI auto-executes; Pair instructs the user with the exact command:
+7. Commit (per `git-conventions.md` §1) — Standard/CI auto-executes; Pair instructs the user with the exact command:
    `fix({scope}): {one-line description of the bug}`
 
 ### Step 7 — Inform Verification
