@@ -20,8 +20,11 @@
 #   phase get | set <N>                              Read / record current phase
 #   gate check <name>                                Exit 1 unless gate is open
 #   gate set <name> <value>                          Validated state transition
-#   scope check <file>                               Exit 1 if file outside scope
-#   scope add <glob>                                 Append a glob to the scope
+#   scope check <file>                               Exit 1 unless Core or Impact Zone (see impact)
+#   scope add <glob>                                 Append a glob to the Core scope
+#   scope impact <file> [--record]                   Discover dependents/dependencies; --record persists them
+#   scope justify <file> <reason>                    Record why an Impact Zone edit is a coherence change
+#   scope audit [<file>...]                          Exit 1 if a modified Impact Zone file has no justification
 #   iterate <loop> [--max <N>]                       Increment loop counter; exit 1 over limit
 #   lock check | acquire <agent> [--force] | release Manage the session lock
 #   config set <key> <value> | get <key>             Session settings (branch, pair_mode, mode, phase, rigor)
@@ -418,6 +421,59 @@ _glob_match() {
   _glob_match_rec 0 0
 }
 
+# Repo-wide file listing excluding common build/dependency noise. Read-only,
+# used only for impact discovery (never for anything that writes).
+_scope_repo_files() {
+  find . \
+    -not -path '*/.git/*' \
+    -not -path '*/node_modules/*' \
+    -not -path '*/vendor/*' \
+    -not -path '*/dist/*' \
+    -not -path '*/build/*' \
+    -not -path '*/.next/*' \
+    -not -path '*/.venv/*' \
+    -not -path '*/venv/*' \
+    -not -path '*/__pycache__/*' \
+    -not -path './docs/devflow/*' \
+    -type f 2>/dev/null
+}
+
+# Deterministic, language-agnostic dependent/dependency discovery for one
+# file — no parser, by design (rules.md → Scope-Locking — Three Zones): match
+# the basename with its extension stripped as a whole word elsewhere in the
+# repo (dependents), and resolve import/require/include/use/from/using lines
+# inside the file to other files sharing that basename (dependencies). This
+# is necessarily approximate — common names produce false positives — which
+# is exactly why the Planner classifies each result (touch/skip/defer)
+# instead of the CLI deciding anything on its own.
+_scope_impact_discover() {
+  local target="$1" base f
+  base="$(basename "$target")"
+  base="${base%.*}"
+  [[ -n "$base" ]] || return 0
+
+  while IFS= read -r f; do
+    f="${f#./}"
+    [[ "$f" == "$target" ]] && continue
+    grep -qwF "$base" "$f" 2>/dev/null && printf '%s\tdependent\n' "$f"
+  done < <(_scope_repo_files)
+
+  local tok fbase
+  while IFS= read -r tok; do
+    [[ -z "$tok" || "$tok" == "$base" ]] && continue
+    while IFS= read -r f; do
+      f="${f#./}"
+      [[ "$f" == "$target" ]] && continue
+      fbase="${f##*/}"
+      fbase="${fbase%.*}"
+      [[ "$fbase" == "$tok" ]] && printf '%s\tdependency\n' "$f"
+    done < <(_scope_repo_files)
+  done < <(grep -EiI '\b(import|require|include|use|from|using)\b' "$target" 2>/dev/null \
+            | grep -oE '[A-Za-z0-9_./-]+' \
+            | sed -E 's#.*/##; s#\.[A-Za-z0-9]+$##' \
+            | sort -u)
+}
+
 cmd_scope() {
   resolve_session
   case "${1:-}" in
@@ -428,13 +484,21 @@ cmd_scope() {
       # Flow Artifacts Exception (rules.md): DevFlow's own artifacts are always in scope.
       [[ "$file" == docs/devflow/* ]] && { ok "'$file' is a DevFlow artifact (always allowed)"; return; }
       local globs; globs="$(fm_list scope)"
+      if [[ -n "$globs" ]]; then
+        while IFS= read -r glob; do
+          if _glob_match "$file" "$glob"; then
+            ok "'$file' matches scope glob '$glob' (Core)"
+            return
+          fi
+        done <<< "$globs"
+      fi
+      # Not Core — check the recorded Impact Zone (rules.md → Scope-Locking
+      # — Three Zones) before failing outright.
+      if fm_list impact | grep -qxF "$file"; then
+        ok "'$file' is in the Impact Zone — coherence changes only; run 'scope justify' before editing"
+        return
+      fi
       [[ -n "$globs" ]] || fail "no scope declared for session '$SLUG' — declare it with 'scope add' before editing files"
-      while IFS= read -r glob; do
-        if _glob_match "$file" "$glob"; then
-          ok "'$file' matches scope glob '$glob'"
-          return
-        fi
-      done <<< "$globs"
       fail "'$file' is OUTSIDE the declared scope — ask the user for explicit approval, then 'scope add' it"
       ;;
     add)
@@ -443,7 +507,89 @@ cmd_scope() {
       ok "scope extended with '$2'"
       ;;
     list) fm_list scope ;;
-    *) die "usage: devflow-ctl scope check <file> | add <glob> | list" ;;
+    impact)
+      shift
+      local target="" record=false a
+      for a in "$@"; do
+        case "$a" in
+          --record) record=true ;;
+          *) target="$a" ;;
+        esac
+      done
+      if [[ -n "$target" ]]; then
+        [[ -f "$target" ]] || die "scope impact: file not found: $target"
+        target="${target#./}"
+        local results; results="$(_scope_impact_discover "$target" | sort -u)"
+        if [[ -z "$results" ]]; then
+          echo "no dependents or dependencies found for '$target'"
+        else
+          printf 'path\trelation\n%s\n' "$results"
+        fi
+        if $record; then
+          local path rel added=0
+          while IFS=$'\t' read -r path rel; do
+            [[ -n "$path" ]] || continue
+            fm_list impact | grep -qxF "$path" || { fm_list_add impact "$path"; ((added++)) || true; }
+          done <<< "$results"
+          ok "impact zone updated for '$target' ($added new file(s))"
+        fi
+      else
+        $record || die "usage: devflow-ctl scope impact <file> [--record] (bare --record with no file scans every file already in the declared scope)"
+        local globs; globs="$(fm_list scope)"
+        [[ -n "$globs" ]] || fail "no scope declared for session '$SLUG' — declare it with 'scope add' before running impact analysis"
+        local f glob matched added=0 path rel
+        while IFS= read -r f; do
+          f="${f#./}"
+          [[ "$f" == docs/devflow/* ]] && continue
+          matched=false
+          while IFS= read -r glob; do
+            _glob_match "$f" "$glob" && { matched=true; break; }
+          done <<< "$globs"
+          $matched || continue
+          while IFS=$'\t' read -r path rel; do
+            [[ -n "$path" ]] || continue
+            fm_list impact | grep -qxF "$path" || { fm_list_add impact "$path"; ((added++)) || true; }
+          done < <(_scope_impact_discover "$f" | sort -u)
+        done < <(_scope_repo_files)
+        ok "impact zone recorded: $added new file(s) across the declared scope"
+      fi
+      ;;
+    justify)
+      local jfile="${2:-}" reason="${3:-}"
+      [[ -n "$jfile" && -n "$reason" ]] || die 'usage: devflow-ctl scope justify <file> "<reason>"'
+      jfile="${jfile#./}"
+      fm_list impact | grep -qxF "$jfile" \
+        || die "scope justify: '$jfile' is not in the recorded Impact Zone — run 'scope impact --record' first, or this file belongs in Core/Outside instead"
+      fm_list_add justified "${jfile}::${reason}"
+      ok "'$jfile' justified: $reason"
+      ;;
+    audit)
+      shift
+      local -a files=("$@")
+      if [[ ${#files[@]} -eq 0 ]]; then
+        local f
+        while IFS= read -r f; do
+          [[ -n "$f" ]] && files+=("$f")
+        done < <({ git diff --name-only HEAD 2>/dev/null; git diff --name-only --cached 2>/dev/null; } | sort -u)
+      fi
+      local impact_list justified_list unjustified=() f jline hit
+      impact_list="$(fm_list impact)"
+      justified_list="$(fm_list justified)"
+      for f in "${files[@]}"; do
+        f="${f#./}"
+        grep -qxF "$f" <<< "$impact_list" || continue
+        hit=false
+        while IFS= read -r jline; do
+          [[ "${jline%%::*}" == "$f" ]] && { hit=true; break; }
+        done <<< "$justified_list"
+        $hit || unjustified+=("$f")
+      done
+      if [[ ${#unjustified[@]} -gt 0 ]]; then
+        fail "modified Impact Zone file(s) without a recorded justification: ${unjustified[*]} — run 'scope justify {file} \"{reason}\"' for each"
+      fi
+      ok "all modified Impact Zone files are justified"
+      ;;
+    *) die "usage: devflow-ctl scope check <file> | add <glob> | list | impact <file> [--record] | justify <file> \"<reason>\" | audit [<file>...]" ;;
   esac
 }
 
