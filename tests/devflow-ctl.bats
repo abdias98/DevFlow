@@ -207,6 +207,75 @@ setup() {
   [[ "$output" == *"STALE"* ]]
 }
 
+# ── Scope impact / justify / audit — three-zone model (F39) ───────────────────
+
+setup_impact_repo() {
+  IMPACTDIR="$BATS_TEST_TMPDIR/repo"
+  mkdir -p "$IMPACTDIR/src"
+  printf 'export function formatDate(d) { return d.toISOString(); }\n' > "$IMPACTDIR/src/formatDate.ts"
+  printf "import { formatDate } from './formatDate';\nexport function render(d) { return formatDate(d); }\n" > "$IMPACTDIR/src/userCard.ts"
+  printf 'export const x = 1;\n' > "$IMPACTDIR/src/unrelated.ts"
+}
+
+@test "scope impact: finds a dependent by basename in import statements" {
+  setup_impact_repo
+  "$CTL" init --mode feature --slug im --scope 'src/formatDate.ts'
+  run bash -c "cd '$IMPACTDIR' && '$CTL' scope impact src/formatDate.ts --slug im"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"src/userCard.ts"$'\t'"dependent"* ]]
+  [[ "$output" != *"unrelated.ts"* ]]
+}
+
+@test "scope check: distinguishes Core, Impact Zone, and Outside" {
+  setup_impact_repo
+  "$CTL" init --mode feature --slug im --scope 'src/formatDate.ts'
+  bash -c "cd '$IMPACTDIR' && '$CTL' scope impact src/formatDate.ts --record --slug im" >/dev/null
+
+  run "$CTL" scope check src/formatDate.ts --slug im
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"(Core)"* ]]
+
+  run "$CTL" scope check src/userCard.ts --slug im
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Impact Zone"* ]]
+
+  run "$CTL" scope check src/unrelated.ts --slug im
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"OUTSIDE"* ]]
+}
+
+@test "scope impact --record (no file): scans every file already in the declared scope" {
+  setup_impact_repo
+  "$CTL" init --mode feature --slug im --scope 'src/formatDate.ts'
+  run bash -c "cd '$IMPACTDIR' && '$CTL' scope impact --record --slug im"
+  [ "$status" -eq 0 ]
+  run "$CTL" scope check src/userCard.ts --slug im
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Impact Zone"* ]]
+}
+
+@test "scope justify: a file outside the Impact Zone is a usage error" {
+  setup_impact_repo
+  "$CTL" init --mode feature --slug im --scope 'src/formatDate.ts'
+  run "$CTL" scope justify src/unrelated.ts "reason" --slug im
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"not in the recorded Impact Zone"* ]]
+}
+
+@test "scope audit: fails on a modified, unjustified Impact Zone file; passes once justified" {
+  setup_impact_repo
+  "$CTL" init --mode feature --slug im --scope 'src/formatDate.ts'
+  bash -c "cd '$IMPACTDIR' && '$CTL' scope impact --record --slug im" >/dev/null
+
+  run "$CTL" scope audit src/userCard.ts --slug im
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"src/userCard.ts"* ]]
+
+  "$CTL" scope justify src/userCard.ts "updated caller after signature change" --slug im
+  run "$CTL" scope audit src/userCard.ts --slug im
+  [ "$status" -eq 0 ]
+}
+
 # ── Multi-session resolution (F03) ─────────────────────────────────────────────
 
 @test "resolve_session: 2 sessions, exactly one with an active lock, resolves without --slug" {

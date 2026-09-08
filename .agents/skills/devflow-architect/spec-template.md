@@ -33,6 +33,15 @@ Complete definitions using the detected stack's terminology and naming conventio
 | Existing component | Current purpose | Reusable for | Decision | Justification |
 |--------------------|-----------------|--------------|----------|---------------|
 
+### Impact Analysis
+
+From `devflow-ctl scope impact` (exploration-guide.md sub-step 9) — one row per existing component the design modifies:
+
+| Component | Dependents (who calls it) | Likely coherence change needed? | Notes |
+|-----------|---------------------------|----------------------------------|-------|
+
+If the design introduces no changes to existing files, state "N/A — no existing components modified" instead of an empty table.
+
 ### Test Architecture
 
 | Layer/Area | Test types used | Tool | Available utilities | Reference test |

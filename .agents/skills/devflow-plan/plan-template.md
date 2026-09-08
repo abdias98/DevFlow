@@ -37,7 +37,18 @@
 **Create:**
 - `path/to/new-file` — purpose
 
-*(For web projects, group by Backend / Frontend. For Android, group by layer: Data / Domain / Presentation. For PHP/Laravel, group by: Controllers / Models / Views / Migrations. For CLI, group by: Commands / Services / Config. Adapt as needed.)*
+**Impact Zone:** *(from the spec's `## Impact Analysis` — every file that depends on, or is a dependency of, a Modified file above)*
+
+| File | Verdict | Reason (if touch) |
+|------|---------|--------------------|
+| `path/to/dependent` | touch (coherence) / no touch / defer | {which of the 6 closed coherence reasons — see rules.md → Scope-Locking — Three Zones} |
+
+- **touch (coherence):** the Implementer will edit this file and MUST run `devflow-ctl scope justify {file} "{reason}"` before doing so.
+- **no touch:** in the Impact Zone but nothing here needs to change for this plan.
+- **defer:** something here is worth doing but is NOT a coherence change (a real improvement, unrelated debt) — goes to the deferred backlog, not to this plan's scope.
+- If the spec's Impact Analysis was "N/A — no existing components modified," this table is also N/A.
+
+*(For web projects, group Modify/Create by Backend / Frontend. For Android, group by layer: Data / Domain / Presentation. For PHP/Laravel, group by: Controllers / Models / Views / Migrations. For CLI, group by: Commands / Services / Config. Adapt as needed.)*
 
 ---
 

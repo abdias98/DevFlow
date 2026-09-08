@@ -40,7 +40,7 @@ The verifier is a **fresh-context** subagent. It does NOT inherit the Implemente
 
 ### 2. Verification axes
 
-The verifier checks four axes, in order:
+The verifier checks five axes, in order:
 
 1. **Structural completeness**
    - Do all files in the plan's File Map (Create + Modify lists) exist?
@@ -60,6 +60,11 @@ The verifier checks four axes, in order:
    - Syntax errors visible in the diff (unbalanced braces, missing imports referenced in the same file).
    - Files referenced in code that don't exist (broken imports).
    - TODO/FIXME markers left in production code (WARN).
+
+5. **Companion changes** (Impact Zone completeness — rules.md → Scope-Locking — Three Zones)
+   - Read the plan's File Map **Impact Zone** table. For each row marked `touch (coherence)`, confirm that file was actually modified. A coherence fix the plan called for but the Implementer skipped leaves a dangling caller — the ripple effect the three-zone model exists to catch. Flag a skipped `touch (coherence)` row as **BLOCK** if it looks like it would break compilation/contract, **WARN** otherwise.
+   - For any Impact Zone file marked `no touch`, spot-check that it still doesn't reference the changed symbol in a way the Core change broke (re-run `devflow-ctl scope impact {core file}` if the plan's table looks stale). A dependent that clearly needed a coherence change but was never flagged is a **WARN** — note it for the Reviewer even though it isn't the Implementer's omission to fix on this pass.
+   - This axis only applies when the plan declares an Impact Zone; a plan predating Wave 12 has none, and this axis reports "N/A — no Impact Zone declared."
 
 ### 3. Output format
 
@@ -105,7 +110,7 @@ the Implementer performs the verification **inline** with a deliberate context r
 
 1. Set aside the implementation reasoning.
 2. Re-read the plan's File Map and task list.
-3. Walk through the four verification axes against the actual files on disk.
+3. Walk through the five verification axes against the actual files on disk.
 4. Produce the findings list.
 
 The inline fallback is identical in substance — the key is the **context reset**, not the dispatch mechanism. The verifier's value comes from looking at the implementation with fresh eyes, not from being a separate process.
