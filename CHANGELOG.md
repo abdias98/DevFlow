@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **KISS as the fifth transversal design principle** (`design-principles.md` §5, v1.0.0 → v1.1.0). Written to be distinct from its neighbours rather than a restatement: YAGNI (§2) governs *whether* to build a thing at all, KISS governs the *form* of what does get built — a genuinely required feature implemented through three layers of dynamic dispatch satisfies YAGNI and violates KISS. Judges simplicity by the cost of reading code cold rather than by line count ("simple" is not "short" — a dense one-liner is the same complexity with the names removed), and separates essential complexity, inherent to the problem, from accidental complexity the solution introduced. Premature optimization is framed as unjustified complexity, cross-linking `performance.md` §6 as canonical owner of *how* to measure instead of restating it. Adds a checklist item, a WARN trigger (optimization with no profiling data behind it), an INFO trigger, and a Limited Scope constraint distinguishing cleanup of code the task already touches from a separate simplification that gets backlogged. Registered in `standards-quick-card.md` and `critical-friend.md`; the new `performance.md`/`design-principles.md` overlap is recorded in `standards-dry-policy.md`'s canonical-owner table, as that document requires. §1–§4 were deliberately **not** renumbered — `event-driven-architecture.md` cites §2 and §4 in four places, and citation stability outweighs placing KISS beside YAGNI. (F64)
+
 ## [4.9.0] — 2026-09-08
 
 > Wave 17 (2 PRs, F61–F63) — detection, not capability. Sixteen waves had only ever added things the framework could *do*; this one adds three ways for it to notice that something is wrong. The check for the F60 class, a linter over the bash kernel, and a second locale in CI. Between them they found a `rm -rf` that could delete every session, a locale guard that had been inert since Wave 16, and a test that asserted a decimal point without testing one. All three by execution — none would have survived contact with a code review, because none of them was visible to one.

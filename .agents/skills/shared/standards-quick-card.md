@@ -93,6 +93,7 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 - The same business rule/validation/calculation reimplemented in 2+ places, already diverging → §1 → WARN
 - A new abstraction, config layer, or architectural pattern added with no current concrete requirement → §2 → WARN
 - Domain/business logic directly importing a specific ORM/framework/vendor SDK type → §4 → WARN
+- An optimization trading readability for speed with no profiling data or performance budget behind it → §5 → WARN
 
 ---
 
