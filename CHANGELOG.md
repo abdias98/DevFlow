@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.10.0] — 2026-09-09
+
+> A single addition, from user feedback rather than an audit: `design-principles.md` shipped in Wave 15 with four transversal principles and KISS was not among them. Added as §5, written to draw a real line against YAGNI rather than rephrase it — YAGNI governs *whether* to build a thing, KISS governs the *form* of what does get built.
 
 ### ✨ Added
 
