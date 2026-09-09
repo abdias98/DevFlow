@@ -23,6 +23,7 @@ When a topic is covered by more than one standard:
 | Fire-and-forget error handling, sync-over-async | `concurrency.md` §4 | `performance.md` §4 |
 | Per-layer architectural testability | `clean-architecture.md` §5 | `testing.md` (intro) |
 | Consumer-side idempotency / dedup mechanism | `concurrency.md` §5 | `event-driven-architecture.md` §2 |
+| How to measure before optimizing (profiling, budgets) | `performance.md` §6 | `design-principles.md` §5 |
 
 When you find a new overlap, add the pair here after resolving it — this table is the audit trail of "who owns what," so the next overlap has precedent to follow instead of reinventing the resolution.
 

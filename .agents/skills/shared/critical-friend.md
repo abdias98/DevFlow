@@ -19,7 +19,7 @@ Execute all four checks. If any check raises a concern, present it to the user w
 | Standard | Apply when |
 |----------|------------|
 | `security.md` | Always — every request |
-| `design-principles.md` | Always — every request (DRY, YAGNI, SoC, technology agnosticism apply to every cycle) |
+| `design-principles.md` | Always — every request (DRY, YAGNI, SoC, technology agnosticism, KISS apply to every cycle) |
 | `solid.md` | Any code being written or modified |
 | `clean-architecture.md` | Any structural or design decision |
 | `performance.md` | Data access, loops, async operations, database queries |

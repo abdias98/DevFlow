@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.15.0 — 2026-09-09
+
+### Changed — 2.15.0
+- **`design-principles.md`** (v1.0.0 → v1.1.0): adds **§5 KISS — Keep It Simple**, the fifth transversal principle. Written to be genuinely distinct from its neighbours rather than a restatement of them: YAGNI (§2) governs *whether* to build a thing at all, KISS governs the *form* of what does get built — a required feature implemented through three layers of dynamic dispatch satisfies YAGNI and violates KISS. Judges simplicity by the cost of reading code cold, not by line count ("simple" is not "short" — a dense one-liner is the same complexity with the names removed), and separates essential complexity, inherent to the problem, from accidental complexity the solution introduced. Premature optimization is framed here as unjustified complexity, cross-linking `performance.md` §6 as the canonical owner of *how* to measure rather than restating its rules (per `standards-dry-policy.md`). Adds a checklist item, a WARN trigger (optimization with no profiling data or performance budget) and an INFO trigger (measurably more indirection than a simpler alternative, not yet causing harm), plus a Limited Scope constraint: simplifying code the task already changes is ordinary cleanup, rewriting an over-engineered module the task merely calls is a separate change that gets backlogged. Registered in `standards-quick-card.md` and `critical-friend.md`. §1-§4 were deliberately **not** renumbered — `event-driven-architecture.md` cites `design-principles.md` §2 and §4 in four places, and citation stability outweighs placing KISS next to YAGNI. Refs: F64.
+
 ## 2.14.0 — 2026-09-08
 
 ### New standards — 2.14.0
