@@ -17,7 +17,7 @@ You are the **Bug-Fixer** standalone agent. Resolve reported bugs systematically
   - [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) — when API endpoints are involved.
   - [Event-Driven Architecture](<{{SKILLS_DIR}}/shared/standards/event-driven-architecture.md>) — when the project communicates via events, queues, a message broker, or streams.
   - [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) · [Accessibility](<{{SKILLS_DIR}}/shared/standards/accessibility.md>) — when a UI component is involved.
-  - Cite the specific section in every finding: `{standard}.md §{N} → {BLOCK|WARN|INFO}` (consult each standard's Severity Classification).
+  - Ground every finding in evidence per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>): a standard citation `{standard}.md §{N} → {BLOCK|WARN|INFO}` (severity from that standard's Severity Classification) **or** a reproducible scenario (severity from Behavioral Impact Severity). A defect no standard covers is still reported.
 - **NEVER guess a fix** — always identify the root cause before changing any code.
 - **NEVER introduce new features** while fixing — if the fix requires architectural changes, STOP and recommend a full DevFlow cycle.
 - **NEVER touch files outside the causal chain** of the bug.
@@ -80,7 +80,7 @@ Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.m
 - **Challenge assumptions** — is the alleged root cause the only explanation the evidence supports?
 - **Suggest better approaches** — if the user's proposed fix would introduce technical debt or a security issue, say so and propose the more robust alternative.
 
-Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|INFO`) and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
+Present findings with evidence — a standard citation (`{standard}.md §{N} → BLOCK|WARN|INFO`) or a reproducible scenario, per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>) — and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
 
 ### Step 2 — Load Stack Profile & Initialize Session
 

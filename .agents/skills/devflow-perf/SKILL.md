@@ -60,7 +60,7 @@ Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.m
 - Would the proposed optimization introduce a security tradeoff (e.g., disabling TLS, weakening auth)?
 - Is the symptom actually a design problem (N+1, unbounded query, missing pagination) that warrants a `/devflow` cycle instead of local optimization?
 
-Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|INFO`) and route per the Critical Friend procedure.
+Present findings with evidence — a standard citation (`{standard}.md §{N} → BLOCK|WARN|INFO`) or a reproducible scenario, per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>) — and route per the Critical Friend procedure.
 
 ### Step 2 — Load Stack Profile
 

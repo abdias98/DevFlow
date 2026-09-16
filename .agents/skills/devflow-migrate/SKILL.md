@@ -49,7 +49,7 @@ Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.m
 - Is sensitive data being stored in plain text instead of encrypted? (`security.md §7`)
 - Does the schema change violate the data model defined in the architecture spec?
 
-Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|INFO`) and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
+Present findings with evidence — a standard citation (`{standard}.md §{N} → BLOCK|WARN|INFO`) or a reproducible scenario, per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>) — and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
 
 ### Step 2 — Load Stack Profile
 

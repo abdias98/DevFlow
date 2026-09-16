@@ -104,14 +104,16 @@ Save to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`:
 
 ## Findings
 
+> **Evidence** is `{standard}.md §{N}` or `scenario: {precondition} → {sequence} → observed {X}, expected {Y} per {source}` — see rules.md → Finding Evidence.
+
 ### 🔴 BLOCK (must fix)
-| # | File | Line | Issue | Suggestion |
+| # | File | Line | Issue | Evidence | Suggestion |
 
 ### 🟡 WARN (should fix)
-| # | File | Line | Issue | Suggestion |
+| # | File | Line | Issue | Evidence | Suggestion |
 
 ### 🟢 INFO (optional)
-| # | File | Line | Issue | Suggestion |
+| # | File | Line | Issue | Evidence | Suggestion |
 
 ## Verdict
 ✅ APPROVED — no blockers | 🔄 CHANGES REQUESTED — {N} blockers
