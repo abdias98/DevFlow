@@ -92,6 +92,8 @@ check 1 "has --xml" file_matches help.txt --xml'
   [ "$status" -eq 0 ]
   [[ "$output" == *"001-cli-json-flag"* ]]
   [[ "$output" == *"002-rest-health-endpoint"* ]]
+  [[ "$output" == *"003-order-payment-lifecycle"* ]]
+  [[ "$output" == *"004-project-panel-tab"* ]]
 }
 
 @test "score: usage error when arguments are missing" {
@@ -177,4 +179,114 @@ eval_serve_stop'
   sleep 1
   run pgrep -f evalbats-leakcheck
   [ "$status" -ne 0 ]
+}
+
+# ── init: seeding a workspace from a task fixture ─────────────────────────────
+
+make_fixture_task() {
+  make_task 50 'check 1 "seeded" test -f app.txt'
+  mkdir -p "$TASK/fixture" "$TASK/reference/good"
+  echo "fixture" > "$TASK/fixture/app.txt"
+  echo "base" > "$TASK/fixture/keep.txt"
+  echo "reference" > "$TASK/reference/good/app.txt"
+}
+
+@test "init: copies the fixture into a new workspace" {
+  make_fixture_task
+  run "$EVAL" init "$TASK" "$BATS_TEST_TMPDIR/ws"
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/ws/app.txt")" = "fixture" ]
+  [ -f "$BATS_TEST_TMPDIR/ws/keep.txt" ]
+}
+
+@test "init: --reference overlays a reference on top of the fixture" {
+  make_fixture_task
+  run "$EVAL" init "$TASK" "$BATS_TEST_TMPDIR/ws" --reference good
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/ws/app.txt")" = "reference" ]
+  [ -f "$BATS_TEST_TMPDIR/ws/keep.txt" ]
+}
+
+@test "init: refuses to seed a non-empty destination" {
+  make_fixture_task
+  mkdir -p "$BATS_TEST_TMPDIR/ws"; echo work > "$BATS_TEST_TMPDIR/ws/existing.txt"
+  run "$EVAL" init "$TASK" "$BATS_TEST_TMPDIR/ws"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"not empty"* ]]
+  [ ! -f "$BATS_TEST_TMPDIR/ws/app.txt" ]
+}
+
+@test "init: errors on a task without a fixture or an unknown reference" {
+  make_task 50 'check 1 "x" true'
+  run "$EVAL" init "$TASK" "$BATS_TEST_TMPDIR/ws"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"no fixture"* ]]
+  make_fixture_task
+  run "$EVAL" init "$TASK" "$BATS_TEST_TMPDIR/ws2" --reference missing
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"no reference"* ]]
+}
+
+# ── Calibration of the behavioural golden tasks ───────────────────────────────
+# A behavioural task is only useful if its checks tell implementations apart.
+# Each one ships an untouched fixture, a naive reference that misses a defect
+# class, and a correct reference. The fixture and the naive reference must FAIL,
+# the correct one must PASS, and the naive one must fail on the behavioural
+# check it was written to miss — not on something incidental.
+
+calibrate() { # calibrate <task-id> <fixture|naive|correct>
+  local ws="$BATS_TEST_TMPDIR/cal-$2"
+  if [ "$2" = fixture ]; then
+    "$EVAL" init "$1" "$ws" >/dev/null
+  else
+    "$EVAL" init "$1" "$ws" --reference "$2" >/dev/null
+  fi
+  run "$EVAL" score "$1" "$ws"
+}
+
+requires_node() {
+  command -v node >/dev/null 2>&1 || skip "node not installed"
+  command -v npm  >/dev/null 2>&1 || skip "npm not installed"
+}
+
+@test "calibration 003: untouched fixture fails" {
+  requires_node
+  calibrate 003-order-payment-lifecycle fixture
+  [ "$status" -eq 1 ]
+}
+
+@test "calibration 003: naive reference fails on the concurrency check only" {
+  requires_node
+  calibrate 003-order-payment-lifecycle naive
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"| ❌ | outcome | 3 | [concurrency]"* ]]
+  [ "$(grep -c '| ❌ | outcome' <<<"$output")" -eq 1 ]
+}
+
+@test "calibration 003: correct reference passes every outcome check" {
+  requires_node
+  calibrate 003-order-payment-lifecycle correct
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Outcome:** 18/18 = **100%**"* ]]
+}
+
+@test "calibration 004: untouched fixture fails" {
+  requires_node
+  calibrate 004-project-panel-tab fixture
+  [ "$status" -eq 1 ]
+}
+
+@test "calibration 004: naive reference fails on the ordering check only" {
+  requires_node
+  calibrate 004-project-panel-tab naive
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"| ❌ | outcome | 3 | [ordering]"* ]]
+  [ "$(grep -c '| ❌ | outcome' <<<"$output")" -eq 1 ]
+}
+
+@test "calibration 004: correct reference passes every outcome check" {
+  requires_node
+  calibrate 004-project-panel-tab correct
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Outcome:** 17/17 = **100%**"* ]]
 }

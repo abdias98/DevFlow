@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **Behavioural golden tasks and an eval baseline, taken before touching the review** (`eval/tasks/003-order-payment-lifecycle`, `eval/tasks/004-project-panel-tab`, `eval/baselines/4.10.0.md`). The two existing tasks are first-shot-correct routine work — a capable model passes them bare, so they could never show a verification change doing anything. The new tasks state a normal functional requirement and put most outcome weight on behaviour that requirement *implies* but does not spell out: repetition, invalid transitions, a declined charge, concurrent requests, a tab loading while inactive, switching selection, a late response for an old selection, a failure after a switch. Each ships a `fixture/` (the starting project), a `naive` and a `correct` reference, and checks gated on the happy path so an untouched fixture cannot pass a "X is rejected" check vacuously. Task 004 also measures whether a run propagates a latent flaw from the convention it was told to follow. Calibrated and asserted in bats: fixture 16% / 11%, naive 83% / 82% (each failing on exactly the one behavioural check it was written to miss), correct 100% / 100%, threshold 90. Probe scripts live next to `checks.sh`, outside the workspace, so the run under evaluation can neither read nor edit them. First PR of Wave 18: without a number before the change, no wave can show it improved anything. (F94, Wave 18)
+- **`devflow-eval init <task> <dest> [--reference <name>]`** seeds a result workspace from a task's `fixture/`, optionally overlaying a reference implementation for calibration. Refuses a non-empty destination — a mixed workspace makes the score meaningless. Task-id resolution is now shared by `init` and `score`. (F94, Wave 18)
+
 ## [4.10.0] — 2026-09-09
 
 > A single addition, from user feedback rather than an audit: `design-principles.md` shipped in Wave 15 with four transversal principles and KISS was not among them. Added as §5, written to draw a real line against YAGNI rather than rephrase it — YAGNI governs *whether* to build a thing, KISS governs the *form* of what does get built.

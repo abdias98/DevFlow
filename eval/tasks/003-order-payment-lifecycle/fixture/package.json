@@ -1,0 +1,14 @@
+{
+  "name": "order-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal order service used as the starting workspace for an eval task.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
