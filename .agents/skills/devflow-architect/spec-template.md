@@ -17,6 +17,7 @@ The spec document saved to `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md` MUST
 - **Test strategy:** {unit/integration/e2e — one line}
 - **API changes:** {endpoints added/modified, or "none"}
 - **UI changes:** {components added/modified, or "none"}
+- **Stateful units:** {units in the State & Interaction Matrix, or "none — stateless"}
 ```
 
 ### Context
@@ -53,13 +54,22 @@ Per `concurrency.md` §2: prefer a conditional/compare-and-set update at the dat
 
 If the feature has no shared mutable state or race-prone operation, state "N/A — no concurrency-sensitive invariant" instead of an empty table.
 
+### State & Interaction Matrix
+
+**Required.** For every stateful unit the design adds or changes (UI component or view with state, service/store holding state, workflow or state machine, job, consumer, cache): states × events → observable expected result, each row with its source (DoD, Edge Case, Behavior Scenario from `context.md`, spec section, or existing convention). Cover the normal transitions and every [Transition Prompt](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>) the unit can exhibit — change while in flight, repetition, order, interruption, partial failure, reset vs keep, other actors.
+
+| # | Unit | State (before) | Event | Expected result | Source |
+|---|------|----------------|-------|-----------------|--------|
+
+If the design has no stateful unit, write exactly `N/A — stateless: {one-line reason}`. An empty section fails `devflow-ctl artifacts check spec`.
+
 ### Test Architecture
 
 | Layer/Area | Test types used | Tool | Available utilities | Reference test |
 |------------|-----------------|------|---------------------|----------------|
 
 ### UI Mockups *(if frontend feature)*
-ASCII wireframes with component annotations using the detected stack's syntax. Include: default state, loading state, error state, empty state.
+ASCII wireframes with component annotations using the detected stack's syntax. Include: default state, loading state, error state, empty state — plus every state the State & Interaction Matrix defines for the component (e.g., the state shown while a new selection loads, or after a failure following a success).
 
 ### API Contract *(if backend/API feature)*
 

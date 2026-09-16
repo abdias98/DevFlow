@@ -1175,6 +1175,8 @@ write_valid_plan() {
   cat > "$file" << EOF
 ## Digest
 ## File Map
+## Feature-Level Scenarios
+N/A — stateless (spec)
 ### Task 1: implement purchase
 $extra_task
 ## Self-Review
@@ -1226,5 +1228,105 @@ EOF
 @test "artifacts check plan: without --spec, behaves exactly as before (no concurrency check)" {
   write_valid_plan "$BATS_TEST_TMPDIR/plan.md"
   run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md"
+  [ "$status" -eq 0 ]
+}
+
+# ── Artifacts check — behavior scenarios (F73, F91) ───────────────────────────
+
+write_spec_sections() { # write_spec_sections <file> <matrix-body>
+  cat > "$1" << EOF
+## Spec Digest
+## Context
+## Architecture
+## Data Structures
+## Reusability Decisions
+### State & Interaction Matrix
+$2
+### Test Architecture
+## Risk Assessment
+## Design Decisions
+## Constraints
+EOF
+}
+
+MATRIX_ROWS='| # | Unit | State (before) | Event | Expected result | Source |
+|---|------|----------------|-------|-----------------|--------|
+| M1 | panel | A loaded | select B while A loads | only B shown | DoD 1 |'
+
+write_plan_scenarios() { # write_plan_scenarios <file> <scenarios-body>
+  cat > "$1" << EOF
+## Plan Digest
+## File Map
+## Feature-Level Scenarios
+$2
+### Task 1: panel
+## Self-Review Checklist
+EOF
+}
+
+SCENARIO_ROWS='| # | Given | When | Then | Matrix row | Task | Test file |
+|---|-------|------|------|------------|------|-----------|
+| S1 | A loaded | select B while A loads | only B shown | M1 | Task 1 | panel.test.js |'
+
+@test "artifacts check spec: matrix with rows passes" {
+  write_spec_sections "$BATS_TEST_TMPDIR/spec.md" "$MATRIX_ROWS"
+  run "$CTL" artifacts check spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check spec: explicit N/A — stateless passes" {
+  write_spec_sections "$BATS_TEST_TMPDIR/spec.md" "N/A — stateless: pure formatting helper"
+  run "$CTL" artifacts check spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check spec: missing State & Interaction Matrix fails" {
+  printf '## Spec Digest\n## Context\n## Architecture\n## Data Structures\n## Reusability\n## Test Architecture\n## Risk\n## Design Decisions\n## Constraints\n' > "$BATS_TEST_TMPDIR/spec.md"
+  run "$CTL" artifacts check spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"State & Interaction Matrix"* ]]
+}
+
+@test "artifacts check spec: a matrix heading with only the table header fails" {
+  write_spec_sections "$BATS_TEST_TMPDIR/spec.md" '| # | Unit | State (before) | Event | Expected result | Source |
+|---|------|----------------|-------|-----------------|--------|'
+  run "$CTL" artifacts check spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"neither table rows nor an explicit 'N/A — stateless'"* ]]
+}
+
+@test "artifacts check plan: missing Feature-Level Scenarios fails" {
+  printf '## Plan Digest\n## File Map\n### Task 1: x\n## Self-Review\n' > "$BATS_TEST_TMPDIR/plan.md"
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Feature-Level Scenarios"* ]]
+}
+
+@test "artifacts check plan --spec: real matrix requires scenario rows" {
+  write_spec_sections "$BATS_TEST_TMPDIR/spec.md" "$MATRIX_ROWS"
+  write_plan_scenarios "$BATS_TEST_TMPDIR/plan.md" "N/A — stateless (spec)"
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"spec declares a State & Interaction Matrix but the plan has no Feature-Level Scenarios rows"* ]]
+}
+
+@test "artifacts check plan --spec: real matrix with scenario rows passes" {
+  write_spec_sections "$BATS_TEST_TMPDIR/spec.md" "$MATRIX_ROWS"
+  write_plan_scenarios "$BATS_TEST_TMPDIR/plan.md" "$SCENARIO_ROWS"
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check plan --spec: N/A matrix accepts N/A scenarios" {
+  write_spec_sections "$BATS_TEST_TMPDIR/spec.md" "N/A — stateless: no state"
+  write_plan_scenarios "$BATS_TEST_TMPDIR/plan.md" "N/A — stateless (spec)"
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check plan --spec: a spec that predates the matrix does not require scenario rows" {
+  printf '## Concurrency Strategy\nN/A\n' > "$BATS_TEST_TMPDIR/old-spec.md"
+  write_plan_scenarios "$BATS_TEST_TMPDIR/plan.md" "N/A — stateless (spec)"
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/old-spec.md"
   [ "$status" -eq 0 ]
 }

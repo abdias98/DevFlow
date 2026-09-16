@@ -74,6 +74,8 @@ Set the rigor level with `devflow-ctl config set rigor {level}`. Document the ch
 
 **Decompose the spec into atomic tasks.** Break down the architecture into ordered, testable tasks following TDD order.
 
+**Derive Feature-Level Scenarios.** For every non-N/A row of the spec's `### State & Interaction Matrix`, write at least one Given/When/Then scenario ([behavior-scenarios.md](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>)) and assign it to the task whose code makes it true; its test goes in that task's `🧪 Tests for this Task` under `🔁 Sequence / interaction scenario`, written to fail first. A matrix row with no scenario is a plan gap the Reviewer will route back here. If the spec has no matrix section at all (a spec written before it existed), derive scenarios from `context.md` → `## Behavior Scenarios` and Edge Cases instead, and say so in the plan.
+
 **If the spec's `## Concurrency Strategy` declares a real invariant** (not "N/A"), one of the tasks MUST be a real concurrency test — multiple simultaneous operations racing for the same contended resource, asserting the invariant held — per `concurrency.md` §2. A sequential unit task alone does not satisfy this; add it as its own task rather than folding it into the main implementation task, so the Reviewer can verify it ran (test output, not just presence in the diff).
 
 ### Step 5 — Stack Planning *(only if Stack Mode = yes)*
@@ -105,11 +107,11 @@ Using the [plan template](<{{SKILLS_DIR}}/devflow-plan/plan-template.md>), write
 
 **MANDATORY**: After the plan is complete, generate a traceability matrix using the [traceability matrix template](<{{SKILLS_DIR}}/shared/traceability-matrix.md>) and save it with `create_file` before proceeding to Step 9. This is the first link in a 4-step chain of custody (Planner writes → Implementer updates → Reviewer validates → Finalizer reports) — skipping this step silently breaks the other three, since none of them can validate or report on a file that was never created.
 
-1. Cross-reference each requirement (DoD criteria, Edge Cases from `context.md`, Spec sections, API Contracts, Risk Mitigations) with the plan tasks that address them.
+1. Cross-reference each requirement (DoD criteria, Edge Cases from `context.md`, Behavior Scenarios from the plan's Feature-Level Scenarios, Spec sections, API Contracts, Risk Mitigations) with the plan tasks that address them.
 2. For each requirement, identify the task, test file, and test scenario from the plan.
 3. Leave `Impl File` and `Status` columns empty (filled by the Implementer).
 4. Save the matrix to session memory: `docs/devflow/session/{slug}/traceability.md`.
-5. Compute the Coverage Summary — every DoD criterion and Edge Case must map to at least one task and test. Flag any gaps with a `⚠️` note.
+5. Compute the Coverage Summary — every DoD criterion, Edge Case and Behavior Scenario must map to at least one task and test. Flag any gaps with a `⚠️` note.
 
 ### Step 9 — Persist Plan (MANDATORY)
 

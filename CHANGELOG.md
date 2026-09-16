@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **Behavior scenarios are derived before the tests are written** (`shared/behavior-scenarios.md`). With TDD, code does what its tests describe and nothing more; the plan required a happy path, an edge case and a failure scenario *per task* — unit-level, and phrased as inputs ("empty", "invalid"). Nothing asked for tests of *sequences*: the input changing while work is in flight, an action repeated, results arriving out of order, a step failing after another succeeded, what must reset and what must persist. Those behaviors had no test, so the Implementer's "minimal code to pass" did not handle them — by construction. The canonical pattern defines the chain and eight Transition Prompts, and is wired through every phase that produces the tests:
+  - **Brainstormer / Feature Agent** — a *Transitions & Lifecycle* question category and `## Behavior Scenarios` in the Understanding Summary and `context.md`, in the user's terms (no design).
+  - **Architect** — a required `### State & Interaction Matrix` in the spec: for every stateful unit, states × events → observable expected result, each row with its source; or exactly `N/A — stateless: {reason}`. UI mockup states now include the matrix's transition states. The Spec Digest lists stateful units.
+  - **Planner** — a required `## Feature-Level Scenarios` section: every non-N/A matrix row maps to at least one Given/When/Then scenario with an owning task, whose test appears in that task under `🔁 Sequence / interaction scenario`, written to fail first. Specs written before the matrix existed fall back to `context.md` scenarios and edge cases.
+  - **Feature Agent plan** — a `### Behavior Scenarios` table with owning task and sequence test.
+  - **Traceability** — a `Behavior Scenario` source: one row per scenario, counted by `devflow-ctl traceability check` like DoD criteria and edge cases; late-discovered scenarios are added, not dropped.
+  (F73, F90, F91, Wave 19)
+- **`devflow-ctl artifacts check spec|plan` enforce it.** `spec` requires *State & Interaction Matrix* and `plan` requires *Feature-Level Scenarios*; a heading alone fails — the section needs table rows or an explicit `N/A`. With `--spec`, a plan whose spec has a real matrix fails if its scenarios are N/A or empty. A spec that predates the matrix imposes nothing. Nine bats tests (four fail against the previous `devflow-ctl`); the existing plan fixture gains the section. The Feature Agent's own plan is not machine-checked — `artifacts check` has no feature-plan type. (F73, F91, Wave 19)
+
 ## [4.11.0] — 2026-09-16
 
 > Wave 18 (7 PRs, F65–F72, F78, F82, F83, F94, F95, F96) — the review stops checking only whether code follows the rules and starts checking what the code does. Seventeen waves had built a reviewer that compared changes against standards and against the plan. Defects that break no written rule — an inverted condition, derived state never reset, a side effect performed twice, a caller whose assumption the change broke — had no dimension looking for them, could not be reported without a standard to cite, had no severity ceiling, and were approved consistently by every layer whenever the plan had not imagined the case. An external PR reviewer, with none of those constraints, kept finding them.

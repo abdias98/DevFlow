@@ -98,7 +98,7 @@ Explore ONLY the files relevant to this feature:
 
 ### Step 4 — Generate & Persist Feature Plan
 
-1. Using the [feature plan template](<{{SKILLS_DIR}}/devflow-feature/plan-template.md>), write the complete plan document.
+1. Using the [feature plan template](<{{SKILLS_DIR}}/devflow-feature/plan-template.md>), write the complete plan document — including **Behavior Scenarios**: each scenario from the Understanding Summary gets an owning task and a sequence test in that task ([behavior-scenarios.md](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>)).
 2. **IMMEDIATELY after generating the plan content**, execute `create_file` to save it.
    - **Path**: `docs/devflow/features/YYYY-MM-DD-{slug}-feature-plan.md`
    - This action MUST happen **before** you present anything to the user.

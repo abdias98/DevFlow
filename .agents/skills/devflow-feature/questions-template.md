@@ -11,6 +11,7 @@ Ask these ONLY when the answer is missing or ambiguous — infer what you can fr
 | **Definition of Done** | What are the 1-3 verifiable criteria that prove the feature works? |
 | **Reusable Code** | Is there similar existing code or patterns to follow? Where? |
 | **Dependencies** | Does this depend on other features, libraries, or services? |
+| **Transitions & Lifecycle** | What happens when the input or context changes while work is in flight, the action is repeated, results arrive out of order, or a step fails halfway — and what must reset? Use the [Transition Prompts](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>); ask only what this feature can exhibit. |
 
 ## Feature Type Follow-ups (optional)
 
@@ -39,6 +40,9 @@ Ask these ONLY when the answer is missing or ambiguous — infer what you can fr
 
 ### Reference Implementation
 - {file or pattern to follow, if any}
+
+### Behavior Scenarios
+- When {…}, the user or caller observes {…} — or "None — {reason}"
 
 ### Constraints & Risks
 - {constraint 1}
