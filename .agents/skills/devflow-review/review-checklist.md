@@ -2,6 +2,27 @@
 
 This checklist guides the Reviewer in both Cycle Mode and Standalone Mode. Apply the relevant sections based on the feature type (UI, API, backend, etc.) and the standards loaded.
 
+## Section Ownership
+
+Each check section belongs to exactly one review subagent (`SKILL.md` → Step 3). On the inline path the Reviewer applies all of them itself.
+
+| Section | Subagent |
+|---------|----------|
+| Security (OWASP Top 10) | 1 — Security & Safety |
+| Error Handling | 1 — Security & Safety |
+| Performance | 2 — Performance & Concurrency |
+| Concurrency | 2 — Performance & Concurrency |
+| Code Quality | 3 — Architecture & Design |
+| Architecture Alignment | 3 — Architecture & Design |
+| Test Coverage | 3 — Architecture & Design |
+| Correctness & Behavior | 4 — Correctness & Behavior |
+| API-Specific Checks | 5a — Interfaces |
+| Event-Driven Checks | 5a — Interfaces |
+| UI-Specific Checks | 5b — Presentation |
+| Accessibility | 5b — Presentation |
+| Logging | 5c — Operations |
+| Dependencies | 5c — Operations |
+
 ## Universal Checks (All Reviews)
 
 ### Code Quality
@@ -21,6 +42,7 @@ This checklist guides the Reviewer in both Cycle Mode and Standalone Mode. Apply
 
 ### Architecture Alignment
 - [ ] Implementation matches the spec/plan design.
+- [ ] New code follows the conventions of the plan's reference implementation (or the closest sibling of the same kind) — structure, naming, error handling, state/data-loading organization, test style — or the divergence is recorded (`project-design.md §1`). A defect copied from the reference is a Correctness & Behavior finding, not a reason to diverge silently.
 - [ ] Data flow matches the defined architecture.
 - [ ] No extra components not in the spec/plan (scope creep).
 - [ ] Dependencies point inward (Clean Architecture). 🔴 **BLOCK** if domain code imports infrastructure.
@@ -31,6 +53,7 @@ This checklist guides the Reviewer in both Cycle Mode and Standalone Mode. Apply
 - [ ] No missing memoization or lazy loading where the plan requires it.
 
 ### Test Coverage
+*Test design and presence. Whether the tests would actually catch a defect is judged under Correctness & Behavior.*
 - [ ] All tasks have corresponding tests.
 - [ ] Edge cases from spec/plan are covered.
 - [ ] No test gaps for critical paths.
@@ -94,6 +117,13 @@ Performed by subagent 4 following [correctness-guide.md](./correctness-guide.md)
 - [ ] Request/response body shapes match spec.
 - [ ] Appropriate status codes used (not 200 for errors).
 - [ ] No undocumented endpoints introduced.
+
+## Event-Driven Checks *(apply only if the change produces or consumes events, messages or streams)*
+
+- [ ] Every consumer is idempotent against redelivery (`event-driven-architecture.md §2`).
+- [ ] Schema changes are versioned and additive, never repurposing a field (`event-driven-architecture.md §3`).
+- [ ] No consumer assumes delivery order without a partitioning/ordering key that guarantees it (`event-driven-architecture.md §4`).
+- [ ] A failed event has a dead-letter path with alerting (`event-driven-architecture.md §5`).
 
 ---
 
