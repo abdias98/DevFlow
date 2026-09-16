@@ -4,6 +4,14 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.16.0 — 2026-09-16
+
+### Changed — 2.16.0
+- **`ui-design.md`** (v2.4.2 → v2.5.0): §5 gains a DON'T — an overlay (modal, dialog, drawer) defined inline inside the component that opens it — and §16 gains the matching **WARN** trigger. The rule already existed, but only in `devflow-review/review-checklist.md`, which declared it a **BLOCK** on its own authority while this standard had no trigger for it at all. With the checklist no longer declaring severities, the rule had to live in its standard; it lands as WARN because it is a composition and maintainability concern — a behavioral defect it causes is classified separately by `rules.md` → Behavioral Impact Severity. Refs: F82.
+
+### Fixed — 2.16.0
+- **`standards-quick-card.md`**: the logging red flag "exception caught and silently swallowed" cited `logging.md §5`; since `logging.md` v1.3.0 (2.12.0) renumbered its sections, that rule is §6 (§5 is Business/Audit Event Logging). Refs: F82.
+
 ## 2.15.0 — 2026-09-09
 
 ### Changed — 2.15.0

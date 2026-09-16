@@ -5,7 +5,8 @@
 # Scope: §15 (multi-agent contract integrity) — the first check in the script
 # that verifies behaviour rather than structure, so it is the first that can be
 # wrong in a way inspection won't reveal — plus §16 (finding evidence contract)
-# §17 (review dimension load) and §18 (standards loading & skip signals).
+# §17 (review dimension load), §18 (standards loading & skip signals) and §19
+# (review checklist single source).
 #
 # Run: npm test   (or: ./node_modules/.bin/bats tests/validate-framework.bats)
 #
@@ -364,7 +365,7 @@ mk_review_checklist() {
 
 run_section_18() {
   cd "$FIXTURE" || return 1
-  run bash -c "bash '$VALIDATE' 2>&1 | sed -n '/18. Standards loading/,/════/p'"
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -nE '/18\\. Standards loading/,/19\\. Review checklist single source|════/p'"
 }
 
 mk_loading_baseline() {
@@ -414,4 +415,68 @@ mk_loading_baseline() {
 
   run_section_18
   [[ "$output" == *"missing '### Objective Diff Signals'"* ]]
+}
+
+# ── §19: review checklist single source (F82) ────────────────────────────────
+
+run_section_19() {
+  cd "$FIXTURE" || return 1
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -n '/19. Review checklist single source/,/════/p'"
+}
+
+# Checklist whose check region is the given lines, plus a template that is
+# allowed to carry severity headings.
+mk_checklist_region() {
+  mkdir -p "$(REVIEW_DIR)" "$SHARED/standards"
+  printf '# Std\n\n## 1. Rule One\n\n## 2. Rule Two\n' > "$SHARED/standards/sample.md"
+  {
+    echo "# Review Checklist"
+    echo ""
+    echo "## Universal Checks (All Reviews)"
+    local l; for l in "$@"; do echo "$l"; done
+    echo ""
+    echo "## Review Document Template"
+    echo "### 🔴 BLOCK (must fix)"
+  } > "$(REVIEW_DIR)/review-checklist.md"
+}
+
+@test "§19: sourced items and no severities pass; template severity headings are ignored" {
+  mk_checklist_region "### Code" \
+    '- [ ] Rule one holds (`sample.md §1`).' \
+    '- [ ] Matches the plan *(plan)*.' \
+    '- [ ] Scope respected (`rules.md` → Scope-Locking).'
+
+  run_section_19
+  [[ "$output" == *"[OK]"* ]]
+  [[ "$output" != *"ERROR"* ]]
+}
+
+@test "§19: a severity marker in a check item is an ERROR" {
+  mk_checklist_region "### Code" '- [ ] No secrets. 🔴 **BLOCK** if found (`sample.md §1`).'
+
+  run_section_19
+  [[ "$output" == *"review-checklist.md:5 — declares a severity"* ]]
+}
+
+@test "§19: an item with no source is an ERROR" {
+  mk_checklist_region "### Code" '- [ ] Naming is consistent.'
+
+  run_section_19
+  [[ "$output" == *"review-checklist.md:5 — check item names no source"* ]]
+}
+
+@test "§19: a section intro line can source its items" {
+  mk_checklist_region "### Behavior" \
+    'Performed following correctness-guide.md.' \
+    '- [ ] Logic: conditions and boundaries.'
+
+  run_section_19
+  [[ "$output" != *"names no source"* ]]
+}
+
+@test "§19: citing a section that does not exist is an ERROR" {
+  mk_checklist_region "### Code" '- [ ] Rule nine holds (`sample.md §9`).'
+
+  run_section_19
+  [[ "$output" == *"cites 'sample.md §9' but sample.md has no section §9"* ]]
 }

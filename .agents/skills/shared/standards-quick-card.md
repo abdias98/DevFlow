@@ -46,7 +46,7 @@ For full rules, WARN/INFO triggers, and scope guidance → read the full standar
 
 ## logging.md — Red Flags (BLOCK)
 - Secret, credential, token, password, or PII written to a log (any level) → §3
-- Exception caught and silently swallowed — neither logged nor rethrown → §5
+- Exception caught and silently swallowed — neither logged nor rethrown → §6
 - Full auth headers / request bodies logged on a sensitive-data path → §3
 
 ## error-handling.md — Red Flags (BLOCK)
