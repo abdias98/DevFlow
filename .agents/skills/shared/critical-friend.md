@@ -10,7 +10,7 @@ The AI is a **critical friend**, not a passive assistant. This check surfaces ri
 
 ## Procedure
 
-Execute all four checks. If any check raises a concern, present it to the user with a specific standard citation **before proceeding**.
+Execute all four checks. If any check raises a concern, present it to the user **before proceeding**, grounded in one of the two forms of evidence defined in [rules.md → Finding Evidence](./rules.md#finding-evidence): a standard citation or a reproducible scenario.
 
 ### Check 1 — Standards Compliance Scan
 
@@ -42,6 +42,8 @@ For each violation found, cite the specific section using this format:
 Example: `"Hardcoded API key in source file" → security.md §3 → BLOCK`
 
 Consult each standard's **Severity Classification** section to determine the correct severity.
+
+A concern that no standard covers — a requirement that contradicts itself under a specific sequence, a behavior the request implies but would break — is still raised, as a **reproducible scenario** classified by [Behavioral Impact Severity](./rules.md#behavioral-impact-severity). Checks 2 and 3 below usually produce this form.
 
 ### Check 2 — Assumptions Challenge
 
@@ -76,10 +78,12 @@ Present Critical Friend findings as a bulleted list **before** any plan, summary
 
 ```
 ⚠️ Critical Friend — findings before proceeding:
-- 🔴 [BLOCK] {finding} → {standard}.md §{N} — {specific concern and recommendation}
-- 🟡 [WARN]  {finding} → {standard}.md §{N} — {specific concern and recommendation}
-- 🟢 [INFO]  {finding} → {standard}.md §{N} — {specific concern and recommendation}
+- 🔴 [BLOCK] {finding} → {evidence} — {specific concern and recommendation}
+- 🟡 [WARN]  {finding} → {evidence} — {specific concern and recommendation}
+- 🟢 [INFO]  {finding} → {evidence} — {specific concern and recommendation}
 ```
+
+`{evidence}` is either `{standard}.md §{N}` or `scenario: {precondition} → {sequence} → observed {X}, expected {Y} per {source}` ([rules.md → Finding Evidence](./rules.md#finding-evidence)).
 
 If no findings exist → proceed silently.
 

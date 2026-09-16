@@ -4,7 +4,7 @@
 #
 # Scope: §15 (multi-agent contract integrity) — the first check in the script
 # that verifies behaviour rather than structure, so it is the first that can be
-# wrong in a way inspection won't reveal.
+# wrong in a way inspection won't reveal — and §16 (finding evidence contract).
 #
 # Run: npm test   (or: ./node_modules/.bin/bats tests/validate-framework.bats)
 #
@@ -54,12 +54,12 @@ mk_skill() {
 
 # Runs the validator inside the fixture and keeps only §15's block, so an
 # assertion can never accidentally match another section's output. The range
-# stops at the summary rule: the final "Validation FAILED" line is itself
+# stops at the next section's header (§16) or the summary rule: the final "Validation FAILED" line is itself
 # printed through red(), so letting it in would make every fixture with an
 # unrelated error look like a §15 failure.
 run_section_15() {
   cd "$FIXTURE" || return 1
-  run bash -c "bash '$VALIDATE' 2>&1 | sed -n '/15. Multi-agent contract integrity/,/════/p'"
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -nE '/15\\. Multi-agent contract integrity/,/16\\. Finding evidence contract|════/p'"
 }
 
 # ── Positive: a fully honoured contract ───────────────────────────────────────
@@ -180,4 +180,70 @@ run_section_15() {
   [[ "$output" == *"[ERROR]"* ]]
   [[ "$output" == *"devflow-finalize"* ]]
   [[ "$output" != *"devflow-plan"* ]]
+}
+
+# ── §16: finding evidence contract (F66/F67) ─────────────────────────────────
+
+run_section_16() {
+  cd "$FIXTURE" || return 1
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -n '/16. Finding evidence contract/,/════/p'"
+}
+
+# rules.md with both canonical sections.
+mk_rules_with_evidence() {
+  cat > "$SHARED/rules.md" <<'RULES'
+# Rules
+
+## Finding Evidence
+
+A finding carries a standard citation or a reproducible scenario.
+
+### Behavioral Impact Severity
+
+| Severity | Observable impact |
+|---|---|
+RULES
+}
+
+@test "§16: canonical sections defined once and no citation-only rule passes" {
+  mk_rules_with_evidence
+  mk_skill devflow-review "Ground every finding per rules.md → Finding Evidence."
+
+  run_section_16
+  [[ "$output" == *"[OK]"* ]]
+  [[ "$output" != *"ERROR"* ]]
+}
+
+@test "§16: rules.md without the Finding Evidence section is an ERROR" {
+  printf '# Rules\n\n### Behavioral Impact Severity\n' > "$SHARED/rules.md"
+
+  run_section_16
+  [[ "$output" == *"expected exactly one '## Finding Evidence' heading, found 0"* ]]
+}
+
+@test "§16: a skill reinstating the citation-only rule is an ERROR naming file and line" {
+  mk_rules_with_evidence
+  mk_skill devflow-feature "Intro" \
+    '  - Cite the specific section in every finding: `{standard}.md §{N}`.'
+
+  run_section_16
+  [[ "$output" == *"devflow-feature/SKILL.md:3"* ]]
+  [[ "$output" == *"citation-only finding rule"* ]]
+}
+
+@test "§16: restating the severity table under a heading outside rules.md is an ERROR" {
+  mk_rules_with_evidence
+  printf '# Review\n\n## Behavioral Impact Severity\n' > "$SHARED/review-notes.md"
+
+  run_section_16
+  [[ "$output" == *"review-notes.md — restates the Behavioral Impact Severity table"* ]]
+}
+
+@test "§16: prose that merely references the severity table is not an ERROR" {
+  mk_rules_with_evidence
+  mk_skill devflow-review "Classify it with Behavioral Impact Severity (rules.md)."
+
+  run_section_16
+  [[ "$output" != *"restates"* ]]
+  [[ "$output" == *"[OK]"* ]]
 }

@@ -57,7 +57,7 @@ Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.m
 - Is the failure a symptom of a deeper design problem (missing validation, wrong layer, missing abstraction) that requires a full `/devflow` cycle rather than a local debug?
 - Does the fix require changes beyond the causal chain, signaling architectural implications?
 
-Present findings with standard citations (`{standard}.md §{N} → BLOCK|WARN|INFO`) and route per the Critical Friend procedure.
+Present findings with evidence — a standard citation (`{standard}.md §{N} → BLOCK|WARN|INFO`) or a reproducible scenario, per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>) — and route per the Critical Friend procedure.
 
 ### Step 2 — Reproduce
 

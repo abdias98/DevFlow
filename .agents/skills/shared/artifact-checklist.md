@@ -7,7 +7,7 @@ Every DevFlow artifact MUST be validated against its template before being saved
 Validated by: **Orchestrator** (before Step 3 — Architect)
 
 - [ ] **Goal & Constraints Review** — goal is achievable within stated constraints
-- [ ] **Standards Scan** — scanned with `standards-quick-card.md`; full standard loaded when a red flag matches or the domain clearly applies. Each finding cites `{standard}.md §{N} → {BLOCK|WARN|INFO}`
+- [ ] **Standards Scan** — scanned with `standards-quick-card.md`; full standard loaded when a red flag matches or the domain clearly applies. Each finding carries evidence per `rules.md` → Finding Evidence: `{standard}.md §{N} → {BLOCK|WARN|INFO}` or a reproducible scenario
 - [ ] **Assumptions Challenged** — all fragile or unverified assumptions questioned. If no fragile assumptions exist, state "No fragile assumptions — justification: {reason}" (do NOT invent challenges)
 - [ ] **Contradictions Flagged** — any internal contradictions in requirements surfaced
 - [ ] **Security Scan** — potential vulnerabilities identified (input validation, auth, injection, secrets). Any finding matching the BLOCK triggers below raises a BLOCK immediately
@@ -93,6 +93,7 @@ Validated by: **Reviewer** (before Step 4 — save)
 - [ ] **🟡 WARN** section — even if empty (state "None")
 - [ ] **🟢 INFO** section — even if empty (state "None")
 - [ ] **Every finding has file + line reference** — no vague "somewhere in X"
+- [ ] **Every finding carries evidence** — a standard citation (`{standard}.md §{N}`) or a reproducible scenario with precondition, sequence, observed behavior and the source of the expected behavior (`rules.md` → Finding Evidence). A finding with neither is removed, not softened
 - [ ] **Every BLOCK finding has a specific suggestion** — actionable fix
 - [ ] **Verdict** section present — ✅ APPROVED or 🔄 CHANGES REQUESTED with blocker count
 - [ ] **Review Mode** declared — Cycle or Standalone

@@ -108,13 +108,47 @@ The AI is a **critical friend**, not a passive assistant. Every agent MUST:
 3. **Be honest** — If the user asserts something incorrect, politely but directly state the correction. "I think that's not quite right because..." is always acceptable and encouraged.
 4. **Push back on scope creep** — If the user asks for something that violates standards, introduces tech debt, or conflicts with existing architecture, explain the concern and propose a better path.
 5. **Escalate responsibly** — If a critical issue cannot be resolved within the agent's scope, escalate it clearly. Silence is not an option.
-6. **Cite the standard** — Every challenge MUST reference the specific standard and section that is violated. Opinions without citations are not challenges; they are preferences. Format: `"{violation}" → {standard}.md §{N} → {BLOCK|WARN|INFO}`. Consult each standard's **Severity Classification** section.
+6. **Ground every finding** — Every challenge or review finding MUST carry evidence in one of the two forms defined in [Finding Evidence](#finding-evidence) below: a **standard citation** or a **reproducible scenario**. A finding with neither is not a challenge; it is a preference.
 
-The tone should always be professional and constructive: *"I notice this approach has {X} risk ({standard}.md §{N}). An alternative would be {Y}. Here's why."*
+The tone should always be professional and constructive: *"I notice this approach has {X} risk ({standard}.md §{N}). An alternative would be {Y}. Here's why."* — or, for a behavioral defect: *"If {precondition} and {sequence}, the code at {file:line} does {observed}; the requirement says {expected}."*
 
 For the full step-by-step Critical Friend procedure used by standalone agents, see [critical-friend.md](./critical-friend.md).
 
 The same DRY discipline this section asks agents to enforce on the code they review also applies to the standards themselves — see [standards-dry-policy.md](./standards-dry-policy.md) for how DevFlow keeps its own 16 standards from re-explaining the same rule in two places.
+
+## Finding Evidence
+
+**This is the single definition of what makes a finding valid** — for the Critical Friend check, the Validation Gate, the Verifier, the Task Supervisor and the Reviewer alike. Other documents reference this section; they do not restate it.
+
+Standards describe rules. Many real defects break no rule: an inverted condition, a state that is not reset, work performed twice, a caller whose expectation the change silently breaks. Requiring a standard citation for every finding makes those defects unreportable. A finding is therefore valid when it carries **either** form of evidence:
+
+| Form | Format | Severity comes from |
+|---|---|---|
+| **Standard citation** | `"{violation}" → {standard}.md §{N} → {BLOCK\|WARN\|INFO}` | That standard's **Severity Classification** section |
+| **Reproducible scenario** | `"{defect}" → scenario: {precondition} → {sequence} → observed {X} at {file:line}, expected {Y} per {source} → {BLOCK\|WARN\|INFO}` | [Behavioral Impact Severity](#behavioral-impact-severity) below |
+
+**A scenario is valid only if every part is concrete:**
+
+- **Precondition** — the state the system starts in (data present, selection made, request in flight, prior failure).
+- **Sequence** — the exact inputs or events, in order. Repetition, reordering, concurrency and interruption are sequences too.
+- **Observed** — what the code does, traced through a named code path (`{file:line}`), not guessed. If the path cannot be traced, the finding is a question for the author, not a finding. **Before code exists** (Critical Friend, Validation Gate, Architect, Planner), "observed" is what the request, spec or plan as written would produce, cited by section — the same scenario, traced to the design instead of the code.
+- **Expected** — what should happen, and **where that expectation comes from**: a stated requirement, a DoD criterion, the spec/plan, an API or type contract, the documented behavior of the code being changed, or a convention the project already follows. "I would have done it differently" is not a source.
+
+**Not valid as a scenario:** "this might break under some conditions" (no precondition or sequence), "consider handling edge cases" (no defect), or a style preference dressed up as a sequence.
+
+**When both forms apply**, give both and take the higher severity. A behavioral defect is never downgraded because no standard happens to cover it — the absence of a rule is a coverage gap in the standards, not evidence that the behavior is acceptable.
+
+### Behavioral Impact Severity
+
+**Canonical and transversal.** Classifies a scenario-backed finding by its observable impact, independent of any standard. Standards keep their own Severity Classification for citation-backed findings and do not restate this table.
+
+| Severity | Observable impact |
+|---|---|
+| 🔴 **BLOCK** | The system produces an incorrect result a user or caller can observe; shows or returns data belonging to a different context (another record, user, tenant, selection or request); loses, corrupts, duplicates or leaves partially written data; performs an irreversible or external side effect (charge, send, delete, publish) more or fewer times than intended; or fails a DoD criterion or stated requirement |
+| 🟡 **WARN** | Performs redundant or unnecessary work with a real cost (requests, queries, recomputation, subscriptions) without incorrect results; degrades behavior in a secondary path while the primary path stays correct; leaves an inconsistent state the system or user can recover from without data loss; a stated requirement is met only on the happy path and its failure path is unspecified |
+| 🟢 **INFO** | Robustness that could be improved with no demonstrable failure today — the scenario requires conditions the current callers cannot produce |
+
+When unsure between two levels, choose the lower one and state the uncertainty in the finding — the scenario, not the label, is what the author acts on.
 
 ## Additional Recommendations Section
 
@@ -355,11 +389,11 @@ INFO notes (backlog entries of any severity) must never modify behavior; they on
 
 | Severity | Meaning | Can it be silently dropped? |
 |---|---|---|
-| 🔴 **BLOCK** | Security vulnerability, data-loss risk, or architectural violation contradicting a core standard | Never — elevate to the user as a WARNING immediately, before any other work (unchanged from before) |
+| 🔴 **BLOCK** | Security vulnerability, data-loss risk, architectural violation contradicting a core standard, or observable incorrect behavior classified BLOCK by [Behavioral Impact Severity](#behavioral-impact-severity) | Never — elevate to the user as a WARNING immediately, before any other work (unchanged from before) |
 | 🟠 **INCOMPLETE** | The Core change is functionally incoherent without this, but it doesn't meet the Impact Zone's six closed coherence reasons — fixing it now would mean expanding scope | Never — must survive to the next cycle in the backlog; the Reviewer reports it explicitly, it is never downgraded to a plain INFO note that quietly disappears |
 | 🟢 **INFO** | A genuine improvement or observation with no coherence dependency | Yes, in the sense that acting on it is the user's call — but it still gets a backlog entry, not just a comment, so the next cycle in that area sees it |
 
-**Elevation rule (BLOCK, unchanged):** If the issue is a SECURITY vulnerability, DATA LOSS risk, or ARCHITECTURAL VIOLATION that contradicts a core standard, the agent MUST elevate it to the user as a WARNING before proceeding with any other work. Do not silently continue.
+**Elevation rule (BLOCK):** If the issue is a SECURITY vulnerability, DATA LOSS risk, ARCHITECTURAL VIOLATION that contradicts a core standard, or OBSERVABLE INCORRECT BEHAVIOR classified BLOCK by Behavioral Impact Severity, the agent MUST elevate it to the user as a WARNING before proceeding with any other work. Do not silently continue.
 
 ## Error Handling & Communication
 

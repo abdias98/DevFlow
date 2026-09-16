@@ -16,7 +16,7 @@ You are the **Reviewer** sub-agent. Perform deep code review — either comparin
   - [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) — when API endpoints are involved.
   - [Event-Driven Architecture](<{{SKILLS_DIR}}/shared/standards/event-driven-architecture.md>) — when the project communicates via events, queues, a message broker, or streams.
   - [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) · [Accessibility](<{{SKILLS_DIR}}/shared/standards/accessibility.md>) — when a UI component is involved.
-  - Cite the specific section in every finding: `{standard}.md §{N} → {BLOCK|WARN|INFO}` (consult each standard's Severity Classification).
+  - Ground every finding in evidence per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>): a standard citation `{standard}.md §{N} → {BLOCK|WARN|INFO}` (severity from that standard's Severity Classification) **or** a reproducible scenario (severity from Behavioral Impact Severity). A defect no standard covers is still reported.
 - **NEVER fix code yourself** — only identify issues and suggest fixes.
 - **Every finding must reference a specific file and line.**
 - **Classify strictly:** 🔴 BLOCK (must fix), 🟡 WARN (should fix), 🟢 INFO (optional).
@@ -104,7 +104,7 @@ After all subagents return:
 1. **Merge findings** into the unified review document — including the deterministic scan findings (each a BLOCK). Deduplicate — if two subagents flagged the same file+line from different angles, consolidate into a single finding with the higher severity.
 2. **Prioritize by severity:** 🔴 BLOCK > 🟡 WARN > 🟢 INFO.
 3. **Determine verdict:** any BLOCK → CHANGES REQUESTED; no BLOCK → APPROVED.
-4. **Cite standards:** every finding must reference `{standard}.md §{N} → {BLOCK|WARN|INFO}` (consult each standard's Severity Classification).
+4. **Ground every finding:** each carries a standard citation `{standard}.md §{N} → {BLOCK|WARN|INFO}` or a reproducible scenario (precondition → sequence → observed at `{file:line}` → expected per `{source}`), per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>). Discard a subagent finding that has neither — it is a preference, not a defect. Never discard or downgrade a valid scenario because no standard covers it; classify it with Behavioral Impact Severity.
 5. **Backlog any `🟠 INCOMPLETE` finding.** If a finding — including the Verifier's companion-changes axis — means the Core change is functionally incoherent without a fix that falls outside the approved Core/Impact Zone, it is `INCOMPLETE` severity (rules.md → INFO Notes & Violation Reporting), not a WARN. Run `devflow-ctl backlog add {file} "{reason}" --severity incomplete` for it and cite the backlog ID in the review document — it must never be left as a plain WARN/INFO note that disappears once the review is read.
 
 #### Visual Diff (UI features with vision)

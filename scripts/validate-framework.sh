@@ -17,6 +17,9 @@
 #       closing block
 #   15. Multi-agent contract integrity — every agent a shared/ contract names
 #       must actually reference the artifact it governs (the F60 class)
+#   16. Finding evidence contract — rules.md defines Finding Evidence and
+#       Behavioral Impact Severity once; no skill reinstates citation-only
+#       findings or restates the severity table (F66/F67)
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -705,6 +708,59 @@ if [[ -d "$SHARED_DIR" ]]; then
   fi
 else
   warn "$SHARED_DIR/ not found — skipping multi-agent contract check (run from the repo root)"
+fi
+
+# ── 16. Finding evidence contract ────────────────────────────────────────────
+header "16. Finding evidence contract"
+# F66/F67. rules.md used to say "Opinions without citations are not challenges;
+# they are preferences", and every review/critical-friend document repeated a
+# citation-only finding format. A defect no standard covers — an inverted
+# condition, a state never reset, a side effect performed twice — had no valid
+# form, so it was dropped. rules.md now defines two forms of evidence (citation
+# or reproducible scenario) and a transversal Behavioral Impact Severity table.
+#
+# This check keeps it that way:
+#   16.1 rules.md defines both sections, exactly once.
+#   16.2 no other document restates the severity table under its own heading
+#        (a second copy drifts — standards-dry-policy.md).
+#   16.3 no document reinstates the citation-only phrasing that caused F66.
+#        Per-standard "Always cite this file and section" lines are fine: they
+#        govern how to cite *that* standard, not whether a finding needs one.
+
+RULES_FILE="$SKILLS_DIR/shared/rules.md"
+EVIDENCE_ERRORS_BEFORE=$ERRORS
+LEGACY_CITATION_ONLY=(
+  "Opinions without citations are not challenges"
+  "Cite the specific section in every finding"
+  "Present findings with standard citations"
+  "every finding must reference \`{standard}.md"
+)
+
+if [[ -f "$RULES_FILE" ]]; then
+  for heading in '^## Finding Evidence$' '^### Behavioral Impact Severity$'; do
+    n="$(grep -cE "$heading" "$RULES_FILE" || true)"
+    if [[ "$n" -ne 1 ]]; then
+      fail "shared/rules.md — expected exactly one '${heading//[\^\$]/}' heading, found $n"
+      $FIX_MODE && echo "       FIX: rules.md is the single definition of finding evidence and behavioral severity (F66/F67)"
+    fi
+  done
+
+  while IFS= read -r f; do
+    [[ "$f" == "$RULES_FILE" ]] && continue
+    fail "${f#"$SKILLS_DIR"/} — restates the Behavioral Impact Severity table under its own heading; reference rules.md → Behavioral Impact Severity instead"
+  done < <(grep -rlE '^#+ .*Behavioral Impact Severity' "$SKILLS_DIR" --include='*.md' 2>/dev/null || true)
+
+  for phrase in "${LEGACY_CITATION_ONLY[@]}"; do
+    while IFS= read -r hit; do
+      [[ -n "$hit" ]] || continue
+      fail "${hit#"$SKILLS_DIR"/} — citation-only finding rule ('${phrase}'): a defect no standard covers becomes unreportable (F66)"
+      $FIX_MODE && echo "       FIX: accept a standard citation OR a reproducible scenario — reference rules.md → Finding Evidence"
+    done < <(grep -rnF -- "$phrase" "$SKILLS_DIR" --include='*.md' 2>/dev/null | grep -v '/standards/CHANGELOG.md' | cut -d: -f1,2 || true)
+  done
+
+  [[ $ERRORS -eq $EVIDENCE_ERRORS_BEFORE ]] && green "Finding evidence is defined once in rules.md; no document restricts findings to standard citations"
+else
+  warn "$RULES_FILE not found — skipping finding evidence check (run from the repo root)"
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
