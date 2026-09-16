@@ -52,6 +52,18 @@
 
 ---
 
+## Feature-Level Scenarios
+
+> **Required.** Derived from the spec's `### State & Interaction Matrix` ([behavior-scenarios.md](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>)). Every non-N/A matrix row maps to at least one scenario. These test *sequences and interactions* — select A then B, send then send again, fail step 2 after step 1 — and assert the final observable outcome. Unit tests per task stay; these are in addition.
+
+| # | Given | When | Then | Matrix row | Task | Test file |
+|---|-------|------|------|------------|------|-----------|
+| S1 | {precondition} | {event sequence} | {observable outcome} | M1 | Task N | `path` |
+
+*(If the spec matrix is `N/A — stateless`, write `N/A — stateless (spec)`.)*
+
+---
+
 ### Task N: {Title}
 
 > **Risk:** 🔴 HIGH / 🟡 MEDIUM / 🟢 LOW — {one-line reason from spec's Risk Assessment} *(omit if LOW and no special notes)*
@@ -116,6 +128,9 @@ Example structure varies by stack:
 
 // ❌ Failure / error scenario
 {test that verifies correct error handling}
+
+// 🔁 Sequence / interaction scenario — S{N} (only for scenarios this task owns)
+{test that drives the unit through the scenario's event sequence and asserts the final observable outcome}
 ```
 
 **Run command:**
@@ -134,6 +149,7 @@ Example structure varies by stack:
 - [ ] Code snippets in the Implementation guide are complete (not partial)
 - [ ] Each task has a `🧪 Tests for this Task` section with complete, runnable test code
 - [ ] Each test section has at least one happy path, one edge case, one failure scenario
+- [ ] **Feature-Level Scenarios** present: every non-N/A row of the spec's State & Interaction Matrix maps to a scenario, and each scenario's test appears in its owning task under `🔁 Sequence / interaction scenario`
 - [ ] Each test section includes the exact run command
 - [ ] Test code uses the detected test framework and follows project conventions
 - [ ] Dependencies between tasks are respected

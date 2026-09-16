@@ -53,6 +53,7 @@ Validated by: **Architect** (before Step 5 — save)
 - [ ] **Data Structures** section present — definitions with code snippets (stack-specific terminology)
 - [ ] **Reusability Decisions** table present — at least 1 row (can be "None — new component")
 - [ ] **Impact Analysis** present — dependents/dependencies from `devflow-ctl scope impact` for each modified existing component, or "N/A — no existing components modified"
+- [ ] **State & Interaction Matrix** present — for every stateful unit, states × events → observable expected result with a source per row, covering the Transition Prompts the unit can exhibit; or exactly `N/A — stateless: {reason}` (`shared/behavior-scenarios.md`)
 - [ ] **Test Architecture** table present — layers, tools, utilities, reference tests
 - [ ] **Risk Assessment** table present — at least 1 risk identified (can be LOW)
 - [ ] **Design Decisions** table present — key decisions with alternatives and reasoning
@@ -77,6 +78,7 @@ Validated by: **Planner** (before Step 8 — persist)
 - [ ] **Each task has commit checkpoint** — `git commit -m "..."` message
 - [ ] **Each task has test code** — `🧪 Tests for this Task` with complete, runnable code
 - [ ] **Each test has happy path, edge case, and failure scenario**
+- [ ] **Feature-Level Scenarios** present — every non-N/A matrix row maps to at least one Given/When/Then scenario with an owning task, and its sequence test appears in that task; or `N/A — stateless (spec)` when the spec matrix is N/A
 - [ ] **Each test includes run command** — exact `{Test Command (single file)}` syntax
 - [ ] **Self-Review Checklist** present — all items checked
 - [ ] **Mockup paths** listed (if UI feature)
@@ -135,6 +137,7 @@ Validated by: **Planner** (after generation), **Orchestrator** (Step 8 entry)
 
 - [ ] **All DoD criteria** have at least 1 row
 - [ ] **All Edge Cases** have at least 1 row
+- [ ] **All Behavior Scenarios** (plan's Feature-Level Scenarios) have exactly 1 row with Source `Behavior Scenario`
 - [ ] **Each row has** Source, Requirement, Task, Test File, Test Scenario
 - [ ] **Coverage Summary** computed — totals per source
 - [ ] **Uncovered Items** table — lists items with 0% coverage + justification

@@ -47,6 +47,13 @@ Save to `docs/devflow/features/YYYY-MM-DD-{slug}-feature-plan.md`:
 **Modify:**
 - `{path}` — {what changes and why}
 
+### Behavior Scenarios
+
+> From the Understanding Summary's Behavior Scenarios ([behavior-scenarios.md](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>)). Each one is owned by a task and has a sequence test in that task. Write `None — {reason}` if the feature has no transitions.
+
+| # | Given | When | Then | Task | Test file |
+|---|-------|------|------|------|-----------|
+
 ### Tasks
 
 > Tasks are ordered by dependency. Each task follows TDD: Red (test first) → Green (production code).
@@ -66,6 +73,9 @@ Save to `docs/devflow/features/YYYY-MM-DD-{slug}-feature-plan.md`:
 
   // ❌ Failure / error scenario
   {test that verifies correct error handling}
+
+  // 🔁 Sequence / interaction scenario — S{N} (only for scenarios this task owns)
+  {test that drives the unit through the scenario's event sequence and asserts the final observable outcome}
   ```
 
 - [ ] **Production code:** `{path/to/file.ext}` *(create / modify)*

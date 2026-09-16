@@ -11,6 +11,7 @@ Use this matrix to analyze the user's request. **Do NOT ask all of these questio
 | **Constraints** | Performance, compatibility, deadlines, tech restrictions? |
 | **Users** | Who will use this? What are their expectations? |
 | **Edge Cases** | Invalid, empty, or unexpected input behavior? |
+| **Transitions & Lifecycle** | What happens when something changes over time: the input or context changes while work is in flight, an action is repeated, results arrive out of order, the user leaves halfway, a step fails after another succeeded? What must reset and what must persist? Use the [Transition Prompts](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>) — ask only what this feature can actually exhibit, in the user's terms, never as design. |
 | **Assumptions** | What is assumed but not explicitly stated? |
 | **Definition of Done** | How to verify it works? What specific output or behavior proves completion? **Universal criteria** (lint, build, tests, no BLOCKs, etc.) are defined in [dod-template.md](<{{SKILLS_DIR}}/shared/dod-template.md>) and apply automatically to every cycle. Only add feature-specific criteria here. |
 | **Feature Type** | web frontend / backend / fullstack / mobile / CLI / library / desktop / other |
@@ -39,6 +40,9 @@ Use this matrix to analyze the user's request. **Do NOT ask all of these questio
 
 ### Edge Cases
 - {edge case 1}
+
+### Behavior Scenarios
+- When {something changes / repeats / fails / arrives out of order}, the user sees {expected outcome} — or "None — {why the feature has no transitions}"
 
 ### Assumptions
 - {assumption 1}
@@ -85,6 +89,9 @@ Use this matrix to analyze the user's request. **Do NOT ask all of these questio
 
 ## Edge Cases
 - {edge case 1}
+
+## Behavior Scenarios
+- When {…}, the user sees {…} — or "None — {reason}" ([behavior-scenarios.md](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>))
 
 ## Assumptions
 - {assumption 1}

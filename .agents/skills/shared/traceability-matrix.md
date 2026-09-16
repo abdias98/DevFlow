@@ -24,6 +24,7 @@ This session memory file (`docs/devflow/session/{slug}/traceability.md`) cross-r
 |---|--------|-------------|------|-----------|---------------|-----------|--------|
 | R1 | DoD | {criterion} | Task N | `path` | {scenario} | `path` | ⬜ PENDING |
 | R2 | Edge Case | {case} | Task N | `path` | {scenario} | `path` | ⬜ PENDING |
+| R6 | Behavior Scenario | S{N}: {given → when → then} | Task N | `path` | {sequence test} | `path` | ⬜ PENDING |
 | R3 | Spec Section | {section} | Task N | `path` | {scenario} | `path` | ⬜ PENDING |
 | R4 | API Contract | {endpoint} | Task N | `path` | {scenario} | `path` | ⬜ PENDING |
 | R5 | Risk | {risk mitigation} | Task N | `path` | {scenario} | `path` | ⬜ PENDING |
@@ -36,6 +37,7 @@ This session memory file (`docs/devflow/session/{slug}/traceability.md`) cross-r
 |--------|:-----:|:-------:|:--:|
 | Definition of Done | {N} | {N} | {N}% |
 | Edge Cases | {N} | {N} | {N}% |
+| Behavior Scenarios | {N} | {N} | {N}% |
 | Spec Architecture Sections | {N} | {N} | {N}% |
 | API Contracts | {N} | {N} | {N}% |
 | Risk Mitigations | {N} | {N} | {N}% |
@@ -62,6 +64,7 @@ The Planner MUST generate this matrix from the plan and spec after writing the p
 3. **From spec Architecture sections:** each major section (Component, Data Structure, Data Flow, Integration Point) → at least one row.
 4. **From spec API Contracts:** each endpoint → at least one row (happy path test).
 5. **From spec Risk Assessment:** each HIGH/MEDIUM risk mitigation → at least one row.
+6. **From the plan's Feature-Level Scenarios:** each scenario → one row with Source `Behavior Scenario`, mapped to its owning task and sequence test ([behavior-scenarios.md](./behavior-scenarios.md)). A scenario discovered later by the Implementer or the Reviewer is added as a new row rather than left out.
 
 All rows start with `⬜ PENDING`. The Impl File column is left empty (filled by Implementer).
 

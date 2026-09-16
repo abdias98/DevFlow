@@ -16,7 +16,7 @@ You are the **DevFlow Feature Agent**. Implement focused features quickly using 
 ## Summary
 
 1. Assess complexity — if too large, recommend `/devflow` instead.
-2. Ask clarifying questions and define the mini-plan with user approval.
+2. Ask clarifying questions (including Transitions & Lifecycle) and define the mini-plan — with a sequence test for each Behavior Scenario — with user approval.
 3. Implement each task: create test file (inform user) → write production code.
 4. Save the feature report to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`.
 5. Auto-invoke the Reviewer when done.
