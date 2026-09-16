@@ -577,6 +577,39 @@ setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
   [ "$status" -eq 0 ]
 }
 
+# ── Artifacts check — review Coverage (F95) ────────────────────────────────────
+
+@test "artifacts check: review — Coverage accounting for Correctness & Behavior passes" {
+  local f="$BATS_TEST_TMPDIR/review.md"
+  printf '## Summary\nok\n## Findings\nnone\n## Verdict\nAPPROVED\n## Coverage\n| 4 — Correctness & Behavior | ✅ | — | consumers read: a.ts |\n' > "$f"
+  run "$CTL" artifacts check review "$f"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check: review — a review without Coverage fails" {
+  local f="$BATS_TEST_TMPDIR/review.md"
+  printf '## Summary\nok\n## Findings\nnone\n## Verdict\nAPPROVED\n' > "$f"
+  run "$CTL" artifacts check review "$f"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing required section(s): Coverage"* ]]
+}
+
+@test "artifacts check: review — an empty Coverage section fails" {
+  local f="$BATS_TEST_TMPDIR/review.md"
+  printf '## Summary\nok\n## Findings\nnone\n## Coverage\n\n## Verdict\nAPPROVED\n' > "$f"
+  run "$CTL" artifacts check review "$f"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"## Coverage is empty"* ]]
+}
+
+@test "artifacts check: review — Coverage that omits Correctness & Behavior fails" {
+  local f="$BATS_TEST_TMPDIR/review.md"
+  printf '## Summary\nok\n## Findings\nnone\n## Verdict\nAPPROVED\n## Coverage\n| 1 — Security & Safety | ✅ | security.md | |\n' > "$f"
+  run "$CTL" artifacts check review "$f"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"does not account for the Correctness & Behavior dimension"* ]]
+}
+
 @test "artifacts check: unknown type is a usage error" {
   local f="$BATS_TEST_TMPDIR/r.md"
   printf '## Anything\n' > "$f"

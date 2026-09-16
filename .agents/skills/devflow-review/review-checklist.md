@@ -170,6 +170,23 @@ Save to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`:
 ### ❓ Open Questions *(optional — not findings, never affect the verdict)*
 - {file:line} — {what would have to be true for this to be a defect; what to check}
 
+## Coverage
+
+> What this review actually examined. An APPROVED verdict is only as strong as this section: a dimension, standard or consumer that is not listed here was not reviewed.
+
+| Dimension | Ran? | Standards loaded in full | Notes |
+|-----------|------|--------------------------|-------|
+| 1 — Security & Safety | ✅ / ⏭ {reason} | {list} | |
+| 2 — Performance & Concurrency | ✅ / ⏭ {reason} | {list} | |
+| 3 — Architecture & Design | ✅ / ⏭ {reason} | {list} | Reference implementation compared: `{path}` / none — closest sibling `{path}` |
+| 4 — Correctness & Behavior | ✅ / ⏭ {reason and signals} | — | Consumers read: {files} / none found — {how searched}; scenarios walked: {N}; open questions: {N} |
+| 5a/5b/5c — Domain | ✅ {groups} / ⏭ no trigger | {list} | |
+
+- **Review path:** parallel / inline — **diff signals present:** {S1…S6 or "none"} (`adaptive-skills.md` → Objective Diff Signals)
+- **Deterministic checks:** `scan all` {clean / findings / skipped: {scanner}} · `scope audit` {clean / findings / n/a} · `traceability check` {clean / {N} rows uncovered / file missing}
+- **Visual diff:** ran / skipped — {no vision / no UI}
+- **Not covered:** {anything the review could not examine and why — or "nothing known"}
+
 ## Verdict
 ✅ APPROVED — no blockers | 🔄 CHANGES REQUESTED — {N} blockers
 ```

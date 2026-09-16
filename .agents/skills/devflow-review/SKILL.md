@@ -69,11 +69,11 @@ Before any LLM review — and regardless of the skip criteria below — run the 
 - **Standard/CI mode:** auto-execute the read-only `devflow-ctl scan all` (committed secrets + dependency CVEs).
 - **Pair mode / standalone outside CI:** ask the user to run `devflow-ctl scan all` and paste the output.
 
-Treat every scanner finding as a **🔴 BLOCK** in synthesis (a committed secret or a high/critical CVE is never optional), cited as `devflow-ctl scan → {secrets|sca}`. If the scanner exits non-zero, the verdict is **CHANGES REQUESTED** no matter how clean the LLM dimensions look. If a scanner is unavailable the command **skips gracefully** — note the skipped scan in the review so the coverage gap is visible. The scanner *finds*; subagent 1 and the Implementer *explain and fix*.
+Treat every scanner finding as a **🔴 BLOCK** in synthesis (a committed secret or a high/critical CVE is never optional), cited as `devflow-ctl scan → {secrets|sca}`. If the scanner exits non-zero, the verdict is **CHANGES REQUESTED** no matter how clean the LLM dimensions look. If a scanner is unavailable the command **skips gracefully** — record the skipped scan in the review's `## Coverage` section so the gap is visible. The scanner *finds*; subagent 1 and the Implementer *explain and fix*.
 
 **Scope audit (Impact Zone).** Also auto-execute (Standard/CI) or ask the user to run (Pair) `devflow-ctl scope audit --slug {slug}` — the deterministic check from rules.md → Scope-Locking — Three Zones. Exit 1 means an Impact Zone file was modified without a recorded `scope justify` — treat it as a **🔴 BLOCK**, cited as `devflow-ctl scope audit`, and route it back to the Implementer the same as a failed `scan`. This only applies when the plan declared an Impact Zone (Wave 12); older plans with none will find nothing to audit.
 
-**Traceability check.** If `docs/devflow/session/{slug}/traceability.md` exists, also auto-execute (Standard/CI) or ask the user to run (Pair) `devflow-ctl traceability check docs/devflow/session/{slug}/traceability.md` — this is the Reviewer's half of the traceability contract (`shared/traceability-matrix.md` → "Validated by: Reviewer"). Exit 1 means at least one requirement row is still `⬜ PENDING`/`🟡 IN PROGRESS`; treat each uncovered row as a **🟡 WARN** by default, escalated to **🔴 BLOCK** if it maps to a DoD criterion or a HIGH-risk mitigation from the spec — route it back to the Implementer to either complete the task or justify the gap, the same as a failed `scan`. If the file doesn't exist for this cycle, note that explicitly as a coverage gap rather than silently skipping it — the Planner's Step 8a should have generated it.
+**Traceability check.** If `docs/devflow/session/{slug}/traceability.md` exists, also auto-execute (Standard/CI) or ask the user to run (Pair) `devflow-ctl traceability check docs/devflow/session/{slug}/traceability.md` — this is the Reviewer's half of the traceability contract (`shared/traceability-matrix.md` → "Validated by: Reviewer"). Exit 1 means at least one requirement row is still `⬜ PENDING`/`🟡 IN PROGRESS`; treat each uncovered row as a **🟡 WARN** by default, escalated to **🔴 BLOCK** if it maps to a DoD criterion or a HIGH-risk mitigation from the spec — route it back to the Implementer to either complete the task or justify the gap, the same as a failed `scan`. If the file doesn't exist for this cycle, record that in `## Coverage` as a gap rather than silently skipping it — the Planner's Step 8a should have generated it.
 
 #### Skip criteria (review inline when ALL hold)
 
@@ -82,13 +82,13 @@ Decided from the diff with the [Objective Diff Signals](<{{SKILLS_DIR}}/shared/a
 - Only 1-2 files changed (at `light` rigor: up to 4).
 - **None** of signals **S3** (side effect), **S4** (contract), **S5** (security surface) or **S6** (performance surface) is present.
 
-State the signals found in the review document when the inline path is taken.
+Record the review path and the signals found in the review's `## Coverage` section — whichever path is taken.
 
 When the skip criteria are met, review the files inline using the [review checklist](<{{SKILLS_DIR}}/devflow-review/review-checklist.md>) — and perform the **Correctness & Behavior** dimension inline too, blind pass first ([correctness-guide.md](<{{SKILLS_DIR}}/devflow-review/correctness-guide.md>) → Sequential Fallback). A small or "mechanical-looking" diff is exactly where an inverted condition or a missed reset hides; the inline path reduces dispatch cost, never the dimensions. Otherwise, dispatch parallel subagents.
 
 #### Parallel dispatch — review subagents
 
-Each subagent reads the complete changed files (not just diff) for context, applies its subset of the [review checklist](<{{SKILLS_DIR}}/devflow-review/review-checklist.md>) and standards, and returns findings as a list: Severity, File+Line, Issue, Evidence, Suggestion. Subagents do NOT write the review document — the Reviewer synthesizes after all return.
+Each subagent reads the complete changed files (not just diff) for context, applies its subset of the [review checklist](<{{SKILLS_DIR}}/devflow-review/review-checklist.md>) and standards, and returns findings as a list — Severity, File+Line, Issue, Evidence, Suggestion — plus the standards it loaded in full, so synthesis can fill `## Coverage`. Subagents do NOT write the review document — the Reviewer synthesizes after all return.
 
 Subagents 1, 2, 3 and 5 review against **rules** (standards). Subagent 4 reviews **behavior**: it reads the changed files plus their direct consumers and tests, does not read the spec or plan until its findings are recorded, and returns scenario-backed findings, each classified as implementation defect, plan gap or deliberate decision. Its brief is [correctness-guide.md](<{{SKILLS_DIR}}/devflow-review/correctness-guide.md>) — pass that document to the subagent instead of summarizing it.
 
@@ -139,11 +139,11 @@ When the condition is met, add a **visual diff** sub-step after synthesis, follo
 3. Compare the mockup against the screenshot using vision tools. Report discrepancies in layout, color, typography, component structure, and responsive behavior.
 4. Merge visual diff findings into the unified review document using the standard severity scale (BLOCK for significant deviations, WARN for minor, INFO for observations).
 
-**When the condition is NOT met** (no vision or no UI): skip this sub-step. Add a note to the review document: "Visual diff skipped — {no vision tools available / feature has no UI}. Code-only review performed." For UI features without vision, recommend manual visual review.
+**When the condition is NOT met** (no vision or no UI): skip this sub-step. Record it in `## Coverage`: "Visual diff skipped — {no vision tools available / feature has no UI}. Code-only review performed." For UI features without vision, recommend manual visual review.
 
 ### Step 4 — Generate Review Document
 
-**Use `create_file` to save** to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`. Follow the template defined in the review checklist. Before saving, validate the review against the [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Review Document section: Summary, all severity sections present, every finding has file+line reference, Verdict clearly stated.
+**Use `create_file` to save** to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`. Follow the template defined in the review checklist, including **`## Coverage`** — built from what each subagent reported (every subagent returns its standards loaded, and Correctness & Behavior its consumers read and scenarios walked) plus the deterministic checks, review path and diff signals. Before saving, validate the review against the [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Review Document section — and run `devflow-ctl artifacts check review {path}` (auto-execute in Standard/CI, ask the user in Pair); it fails a review with no Coverage section or one that does not account for Correctness & Behavior.
 
 ### Step 5 — Route Decision
 
@@ -203,7 +203,7 @@ See Cycle Mode Step 3 for the subagent briefs, standards mapping, and synthesis 
 
 ### Step 4 — Generate Review Document
 
-**Use `create_file` to save** to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`. Include a header indicating standalone mode:
+**Use `create_file` to save** to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`. Follow the same template and `## Coverage` requirement as Cycle Mode Step 4. Include a header indicating standalone mode:
 ```markdown
 **Review Mode:** Standalone (invoked by {Feature Agent | Refactorer | Bug-Fixer | Performance Agent | Migration Agent | Contract Agent | Documentation Agent | Template Agent | Tutorial Agent | Reverse Agent})
 **Reference:** `docs/devflow/{type}/{artifact-file}`

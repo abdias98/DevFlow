@@ -736,7 +736,7 @@ artifacts_required() {
   case "$1" in
     spec)       printf '%s\n' "Digest" "Context" "Architecture" "Data Structures" "Reusability" "Test Architecture" "Risk" "Design Decisions" "Constraints" ;;
     plan)       printf '%s\n' "Digest" "File Map" "Task" "Self-Review" ;;
-    review)     printf '%s\n' "Summary" "Findings" "Verdict" ;;
+    review)     printf '%s\n' "Summary" "Findings" "Verdict" "Coverage" ;;
     validation) printf '%s\n' "Assumptions" "Standards Scan" "Contradictions" "Security" "Architecture Risks" "Alternatives" ;;
     feature)    printf '%s\n' "Summary" "Definition of Done" "Files Changed" "Tasks Completed" "Tests" "Self-Review" ;;
     bugfix)     printf '%s\n' "Bug Report" "Root Cause" "Reproduction Test" "Fix Applied" "Verification" "Definition of Done" ;;
@@ -781,6 +781,29 @@ _artifacts_check_concurrency_task() {
   return 0
 }
 
+# A review's Coverage section must say what was examined -- at minimum the
+# Correctness & Behavior dimension, which is the one that may legitimately be
+# skipped and whose absence is otherwise invisible. An APPROVED verdict with an
+# empty Coverage section is indistinguishable from a review that looked at
+# nothing (F95).
+_artifacts_check_review_coverage() {
+  local review_path="$1"
+  local coverage; coverage="$(awk '
+    /^## Coverage/ { f=1; next }
+    /^## / { if (f) exit }
+    f { print }
+  ' "$review_path")"
+  if [[ -z "$(tr -d '[:space:]' <<< "$coverage")" ]]; then
+    fail "review '$review_path' — ## Coverage is empty: list each dimension run or skipped, standards loaded, consumers read and deterministic checks (devflow-review/review-checklist.md)"
+    return 1
+  fi
+  if ! grep -qi "Correctness" <<< "$coverage"; then
+    fail "review '$review_path' — ## Coverage does not account for the Correctness & Behavior dimension (ran, or skipped with its reason and diff signals)"
+    return 1
+  fi
+  return 0
+}
+
 cmd_artifacts() {
   [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse> <path> [--spec <spec-path>]"
   local type="${2:-}" path="${3:-}" spec_path=""
@@ -803,6 +826,9 @@ cmd_artifacts() {
   fi
   if [[ "$type" == "plan" && -n "$spec_path" ]]; then
     _artifacts_check_concurrency_task "$path" "$spec_path"
+  fi
+  if [[ "$type" == "review" && ${#missing[@]} -eq 0 ]]; then
+    _artifacts_check_review_coverage "$path"
   fi
   ok "artifact '$path' has all required $type sections"
 }
