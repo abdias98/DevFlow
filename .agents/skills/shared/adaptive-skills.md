@@ -56,7 +56,7 @@ The rigor level controls which verification layers run during Phase 5 (Implement
 | **deep** | ✅ (2+ tasks per wave) | ✅ (3+ tasks) | ✅ (parallel multi-dimension) | Per-task checkpoint |
 | **maximum** | ✅ (always) | ✅ (always) | ✅ (parallel + visual diff if available) | Per-task + conservative escalation (2 attempts instead of 3) |
 
-**At `light` rigor:** the Implementer skips the Task Supervisor and Verifier — the Reviewer is the only verification layer. This is appropriate for trivial tasks (rename, typo, comment) where 3 layers of verification is overhead. The Reviewer's own skip criteria are relaxed (review inline even for 3-4 files if changes are mechanical).
+**At `light` rigor:** the Implementer skips the Task Supervisor and Verifier — the Reviewer is the only verification layer. This is appropriate for trivial tasks (rename, typo, comment) where 3 layers of verification is overhead. The Reviewer's own skip criteria are relaxed (review inline even for 3-4 files if changes are mechanical). Inline review still includes the Correctness & Behavior dimension; `light` rigor is the only level at which it may be skipped, and only for a diff with no behavioral change (see `devflow-review/correctness-guide.md` → When This Dimension May Be Skipped).
 
 **At `standard` rigor:** the Implementer skips the Task Supervisor unless there are 5+ tasks, and skips the Verifier unless there are 3+ tasks. The Reviewer runs normally (parallel multi-dimension for non-trivial changes, inline for trivial).
 

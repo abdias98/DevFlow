@@ -75,7 +75,7 @@ When a primitive is unavailable, the framework degrades — it never breaks:
 ### No subagents
 
 - **Architect**: exploration runs sequentially (sub-steps 1→8 in order, no parallel dispatch).
-- **Reviewer**: review runs inline (single pass through the checklist, no parallel multi-dimension dispatch).
+- **Reviewer**: review runs inline (no parallel multi-dimension dispatch). The Correctness & Behavior blind pass runs **first**, before the spec/plan is read, so ordering replaces subagent isolation (see `devflow-review/correctness-guide.md` → Sequential Fallback).
 - **Implementer**: tasks run sequentially (standard TDD procedure, no parallel wave dispatch).
 - **Verifier**: the Implementer performs inline verification with a deliberate context reset (see [verifier-subagent.md](./verifier-subagent.md) → Fallback).
 

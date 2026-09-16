@@ -35,6 +35,17 @@ This checklist guides the Reviewer in both Cycle Mode and Standalone Mode. Apply
 - [ ] Edge cases from spec/plan are covered.
 - [ ] No test gaps for critical paths.
 
+### Correctness & Behavior
+Performed by subagent 4 following [correctness-guide.md](./correctness-guide.md) — blind pass (no spec/plan), then contrast pass. Findings are scenario-backed and classified with `rules.md` → Behavioral Impact Severity.
+- [ ] Every changed unit's inputs, state, side effects, outputs and **consumers** were inventoried — consumers read, not assumed.
+- [ ] Logic: conditions, boundaries, unhandled cases, masking defaults.
+- [ ] State transitions: behavior under changed input/context with work in flight, repetition, reordering; derived state reset or recomputed when its source changes.
+- [ ] Side effects: performed exactly as many times as intended; no work whose result nothing consumes; everything started is released.
+- [ ] Contract with consumers: shape, nullability, ordering, error type and timing each consumer relies on still hold.
+- [ ] Data limits and partial failure: what the inputs can actually produce, and what is left behind when a step fails halfway.
+- [ ] Test adequacy: no plausible single mutation on a behavior-relevant path survives every test (`testing.md §4`).
+- [ ] Each finding classified as implementation defect, plan gap or deliberate decision; untraceable suspicions listed as Open Questions, not findings.
+
 ### Error Handling
 - [ ] No empty catch blocks or catch-and-continue that discards the error. 🔴 **BLOCK** if found (`error-handling.md §2`).
 - [ ] Caught errors are narrowly typed and the original cause is chained when wrapped/translated (`error-handling.md §3`).
@@ -114,6 +125,9 @@ Save to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`:
 
 ### 🟢 INFO (optional)
 | # | File | Line | Issue | Evidence | Suggestion |
+
+### ❓ Open Questions *(optional — not findings, never affect the verdict)*
+- {file:line} — {what would have to be true for this to be a defect; what to check}
 
 ## Verdict
 ✅ APPROVED — no blockers | 🔄 CHANGES REQUESTED — {N} blockers
