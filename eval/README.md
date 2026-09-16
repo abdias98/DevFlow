@@ -22,6 +22,9 @@ it's better" into a number you can regress against.
 
 ```
 1. Pick a golden task            eval/tasks/001-cli-json-flag/
+   (tasks with a fixture/: seed both workspaces first)
+     devflow-eval init 003-order-payment-lifecycle /path/to/workspace-A
+     devflow-eval init 003-order-payment-lifecycle /path/to/workspace-B
 2. Run it through /devflow        → produces workspace A (code + docs/devflow/ artifacts)
 3. Run the SAME prompt bare        → produces workspace B (code only)
 4. Score both:
@@ -65,8 +68,13 @@ percentage. A wave that doesn't move it is cost without benefit.
 
 ```bash
 eval/bin/devflow-eval list
+eval/bin/devflow-eval init  <task-id|task-dir> <dest-dir> [--reference <name>]
 eval/bin/devflow-eval score <task-id|task-dir> <result-dir>
 ```
+
+`init` seeds an empty workspace from the task's `fixture/`. `--reference <name>`
+overlays `reference/<name>/` on top — used to calibrate a task, never for a run
+under evaluation.
 
 Exit code: `0` if the score meets the task's `threshold`, `1` if below, `2` on
 usage error — so it drops straight into CI.
@@ -93,6 +101,52 @@ A task is a directory under `tasks/` with two files:
   Project-specific entrypoints (CLI command, serve command, port) are read from
   environment variables at the top of each `checks.sh` — override them for the
   target project before scoring.
+
+### Optional task files
+
+- `fixture/` — the starting project the run modifies. Required for any task whose
+  checks depend on a known codebase (every behavioural task).
+- `reference/<name>/` — known implementations overlaid on the fixture to prove
+  the checks discriminate. A behavioural task ships at least `naive/` (misses a
+  defect class) and `correct/`.
+- Probe scripts (e.g. `probe.js`) — kept **next to `checks.sh`, outside the
+  workspace**, so the run under evaluation can neither read nor edit them.
+  `checks.sh` locates them with `"$(dirname "${BASH_SOURCE[0]}")"`.
+
+## Behavioural tasks
+
+Tasks `001` and `002` are first-shot-correct routine work: a capable model
+passes them bare, so they measure cost more than benefit. Behavioural tasks
+(`category: behavior`) measure what a verification process exists to catch —
+defects the prompt **implies** but does not spell out:
+
+| Task | Defect classes probed |
+|------|-----------------------|
+| `003-order-payment-lifecycle` | repetition, invalid transitions, partial failure, concurrency, data limits |
+| `004-project-panel-tab` | side effects, transitions on selection change, out-of-order responses, partial failure; propagating a flaw from the convention it was told to follow |
+
+Rules for writing one:
+
+1. **The prompt states a normal functional requirement.** It never names the
+   scenarios the checks probe — the task measures whether the run discovers
+   them. Each `task.md` has a *What the checks probe* section for maintainers;
+   do not paste it into the run.
+2. **Every probed behaviour must follow from the requirement or from existing
+   code in the fixture** — a documented convention, an existing module's
+   behaviour. A check for something neither implies is a trick, not a measure.
+3. **Negative checks are gated on the happy path** ("X is rejected" passes
+   vacuously when X does not exist at all).
+4. **Calibrate:** fixture and `naive` must FAIL, `correct` must PASS, and `naive`
+   must fail on the check it was written to miss. `tests/devflow-eval.bats`
+   asserts all three for every behavioural task.
+5. **Threshold 90:** missing any behavioural class weighted ≥ 2 fails the task.
+
+## Baselines
+
+`baselines/<version>.md` records calibration and scorecards for a DevFlow
+version. Take one before a wave that changes verification and again after its
+release — a wave that does not move the behavioural outcome is cost without
+benefit (`docs/implementation-plan-waves-18-21.md` §8).
 
 ## Tests
 

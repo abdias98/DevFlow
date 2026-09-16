@@ -1,0 +1,13 @@
+{
+  "name": "project-panel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "State layer of a project page UI, used as the starting workspace for an eval task.",
+  "main": "src/panel.js",
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

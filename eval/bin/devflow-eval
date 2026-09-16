@@ -15,7 +15,12 @@
 #
 # Usage:
 #   devflow-eval list
+#   devflow-eval init  <task-dir> <dest-dir> [--reference <name>]
 #   devflow-eval score <task-dir> <result-dir>
+#
+# `init` seeds a result workspace from the task's fixture/ (the starting
+# project a run modifies). --reference overlays reference/<name>/ on top — a
+# known implementation used to calibrate that the checks discriminate.
 #
 # Exit: 0 = score >= task threshold; 1 = below threshold; 2 = usage error.
 
@@ -151,12 +156,43 @@ cmd_list() {
   [[ $found -eq 1 ]] || echo "(no golden tasks found in $TASKS_DIR)"
 }
 
+# Resolve a task id or path to a task directory (dies if it has no task.md).
+resolve_task() { # resolve_task <task-id|task-dir>
+  local t="$1"
+  [[ -d "$t" ]] || t="$TASKS_DIR/$t"
+  [[ -f "$t/task.md" ]] || die "no task.md in $t"
+  printf '%s\n' "$t"
+}
+
+cmd_init() {
+  local task_dir="${1:-}" dest="${2:-}" reference=""
+  [[ -n "$task_dir" && -n "$dest" ]] || die "usage: devflow-eval init <task-dir> <dest-dir> [--reference <name>]"
+  shift 2
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --reference) reference="${2:-}"; [[ -n "$reference" ]] || die "--reference needs a name"; shift 2 ;;
+      *) die "unknown init option '$1'" ;;
+    esac
+  done
+  task_dir="$(resolve_task "$task_dir")" || exit 2
+  [[ -d "$task_dir/fixture" ]] || die "task has no fixture/ to seed a workspace from: $task_dir"
+  if [[ -n "$reference" && ! -d "$task_dir/reference/$reference" ]]; then
+    die "no reference '$reference' in $task_dir/reference/"
+  fi
+  # Never seed on top of existing work — a mixed workspace makes the score meaningless.
+  if [[ -e "$dest" ]] && [[ -n "$(ls -A "$dest" 2>/dev/null)" ]]; then
+    die "destination is not empty: $dest"
+  fi
+  mkdir -p "$dest"
+  cp -R "$task_dir/fixture/." "$dest/"
+  [[ -n "$reference" ]] && cp -R "$task_dir/reference/$reference/." "$dest/"
+  echo "Seeded $dest from $(basename "$task_dir")/fixture${reference:+ + reference/$reference}"
+}
+
 cmd_score() {
   local task_dir="${1:-}" result_dir="${2:-}"
   [[ -n "$task_dir" && -n "$result_dir" ]] || die "usage: devflow-eval score <task-dir> <result-dir>"
-  # Allow passing a task id instead of a full path.
-  [[ -d "$task_dir" ]] || task_dir="$TASKS_DIR/$task_dir"
-  [[ -f "$task_dir/task.md" ]]  || die "no task.md in $task_dir"
+  task_dir="$(resolve_task "$task_dir")" || exit 2
   [[ -f "$task_dir/checks.sh" ]] || die "no checks.sh in $task_dir"
   [[ -d "$result_dir" ]]        || die "result workspace not found: $result_dir"
 
@@ -254,11 +290,12 @@ main() {
   local cmd="${1:-}"; shift || true
   case "$cmd" in
     list)  cmd_list "$@" ;;
+    init)  cmd_init "$@" ;;
     score) cmd_score "$@" ;;
     ""|-h|--help|help)
       grep '^#' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' | sed '/^!/d'
       ;;
-    *) die "unknown command '$cmd' (list|score)" ;;
+    *) die "unknown command '$cmd' (list|init|score)" ;;
   esac
 }
 
