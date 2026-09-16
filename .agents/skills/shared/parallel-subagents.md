@@ -88,7 +88,7 @@ For **exploration** subagents (Architect's codebase scan), context freshness is 
 |-------|-------------|----------|
 | **Architect** (Phase 3) | Parallel codebase exploration | Structure, Dependencies, Test patterns, Reference implementations |
 | **Implementer** (Phase 5) | Parallel independent tasks | Tasks with no inter-task dependency |
-| **Reviewer** (Phase 6) | Parallel multi-dimension review | Security, Performance, Architecture + plan compliance |
+| **Reviewer** (Phase 6) | Parallel multi-dimension review | Security, Performance, Architecture + plan compliance, Correctness & Behavior (blind pass, then contrast) |
 | **Reverse Agent** (standalone) | Parallel reverse-engineering | Architecture, Dependencies, API endpoints |
 | **Performance Agent** (standalone) | Parallel bottleneck analysis | Profiling, N+1 detection, Memory leak inspection |
 

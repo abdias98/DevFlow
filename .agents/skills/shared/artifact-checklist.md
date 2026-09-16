@@ -94,6 +94,7 @@ Validated by: **Reviewer** (before Step 4 — save)
 - [ ] **🟢 INFO** section — even if empty (state "None")
 - [ ] **Every finding has file + line reference** — no vague "somewhere in X"
 - [ ] **Every finding carries evidence** — a standard citation (`{standard}.md §{N}`) or a reproducible scenario with precondition, sequence, observed behavior and the source of the expected behavior (`rules.md` → Finding Evidence). A finding with neither is removed, not softened
+- [ ] **Correctness & Behavior dimension performed** — its findings carry a classification (implementation defect / plan gap / deliberate decision); if it was skipped, the review states why (`devflow-review/correctness-guide.md` → When This Dimension May Be Skipped)
 - [ ] **Every BLOCK finding has a specific suggestion** — actionable fix
 - [ ] **Verdict** section present — ✅ APPROVED or 🔄 CHANGES REQUESTED with blocker count
 - [ ] **Review Mode** declared — Cycle or Standalone

@@ -171,7 +171,7 @@ DevFlow/
 - **Output:** `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`
 - **Actions:**
   - Detect mode: Cycle Mode (full lifecycle) or Standalone Mode (invoked by Feature, Refactor, Bug-Fix, Performance, Migration, Contract, Documentation, Template, Tutorial, or Reverse agents)
-  - **Parallel multi-dimension review** — dispatches 3 subagents (Security & Safety, Performance & Concurrency, Architecture/Quality/Plan Compliance) following [parallel-subagents.md](.agents/skills/shared/parallel-subagents.md). Falls back to inline sequential review for trivial changes.
+  - **Parallel multi-dimension review** — dispatches 4 subagents (Security & Safety, Performance & Concurrency, Architecture/Quality/Plan Compliance, Correctness & Behavior) following [parallel-subagents.md](.agents/skills/shared/parallel-subagents.md). The first three review against standards; Correctness & Behavior ([correctness-guide.md](.agents/skills/devflow-review/correctness-guide.md)) reviews what the code does — a blind pass over the changed code, its consumers and tests before reading the spec/plan, then a contrast pass that classifies each finding as implementation defect, plan gap or deliberate decision. Trivial changes are reviewed inline, but never without the Correctness & Behavior dimension.
   - **Visual diff (optional)** — when `vision: yes` and the feature has a UI, compares the approved mockup against a screenshot of the implemented UI. Reports layout/color/typography discrepancies. See [vision-verification.md](.agents/skills/shared/vision-verification.md).
   - Apply review checklist: code quality, security, architecture alignment, plan compliance, performance, test coverage
   - Classify findings (BLOCK/WARN/INFO)
@@ -422,7 +422,7 @@ DevFlow orchestrates parallel subagent dispatch for independent subtasks. The fr
 |-------|-------------|----------|
 | Architect (Phase 3) | Parallel codebase exploration | Structure & Patterns, Tech Stack, Test Architecture, Reusability |
 | Implementer (Phase 5) | Parallel independent tasks | Tasks with no inter-task dependency (grouped into waves) |
-| Reviewer (Phase 6) | Parallel multi-dimension review | Security & Safety, Performance & Concurrency, Architecture/Quality/Plan |
+| Reviewer (Phase 6) | Parallel multi-dimension review | Security & Safety, Performance & Concurrency, Architecture/Quality/Plan, Correctness & Behavior |
 
 **Pre-review verification:** The Implementer dispatches a fresh-context verifier subagent between implementation and review to catch low-hanging fruit (missing files, scope drift, plan deviations) before the Reviewer spends its budget on deeper analysis.
 
