@@ -4,7 +4,8 @@
 #
 # Scope: §15 (multi-agent contract integrity) — the first check in the script
 # that verifies behaviour rather than structure, so it is the first that can be
-# wrong in a way inspection won't reveal — and §16 (finding evidence contract).
+# wrong in a way inspection won't reveal — plus §16 (finding evidence contract)
+# and §17 (review dimension load).
 #
 # Run: npm test   (or: ./node_modules/.bin/bats tests/validate-framework.bats)
 #
@@ -186,7 +187,7 @@ run_section_15() {
 
 run_section_16() {
   cd "$FIXTURE" || return 1
-  run bash -c "bash '$VALIDATE' 2>&1 | sed -n '/16. Finding evidence contract/,/════/p'"
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -nE '/16\\. Finding evidence contract/,/17\\. Review dimension load|════/p'"
 }
 
 # rules.md with both canonical sections.
@@ -246,4 +247,114 @@ RULES
   run_section_16
   [[ "$output" != *"restates"* ]]
   [[ "$output" == *"[OK]"* ]]
+}
+
+# ── §17: review dimension load (F70) ─────────────────────────────────────────
+
+run_section_17() {
+  cd "$FIXTURE" || return 1
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -n '/17. Review dimension load/,/════/p'"
+}
+
+REVIEW_DIR() { echo "$FIXTURE/.agents/skills/devflow-review"; }
+
+# SKILL.md with one dispatch row per argument: "<name>:<n standards>".
+mk_review_skill() {
+  mkdir -p "$(REVIEW_DIR)"
+  {
+    echo "# Reviewer"
+    echo "| Subagent | Dimension | Standards |"
+    echo "|---|---|---|"
+    # Standard names are letters-only, like the real ones — the check's
+    # pattern does not match digits, so "std-1.md" would count as zero.
+    local names=(alpha beta gamma delta epsilon zeta eta theta iota)
+    local spec name n i links
+    for spec in "$@"; do
+      name="${spec%%:*}"; n="${spec##*:}"; links=""
+      for ((i = 0; i < n; i++)); do links+="[s](<{{SKILLS_DIR}}/shared/standards/${names[$i]}.md>) "; done
+      echo "| **${name}** | dim | ${links}|"
+    done
+  } > "$(REVIEW_DIR)/SKILL.md"
+}
+
+# review-checklist.md: sections as args; ownership rows from $OWNERS ("Section=Owner;...").
+mk_review_checklist() {
+  mkdir -p "$(REVIEW_DIR)"
+  {
+    echo "# Review Checklist"
+    echo ""
+    echo "## Section Ownership"
+    echo ""
+    echo "| Section | Subagent |"
+    echo "|---------|----------|"
+    local pair
+    IFS=';' read -ra pairs <<< "$OWNERS"
+    for pair in "${pairs[@]}"; do echo "| ${pair%%=*} | ${pair##*=} |"; done
+    echo ""
+    echo "## Universal Checks (All Reviews)"
+    local sec
+    for sec in "$@"; do echo ""; echo "### ${sec}"; echo "- [ ] item"; done
+    echo ""
+    echo "## Review Document Template"
+    echo "### 🔴 BLOCK (must fix)"
+  } > "$(REVIEW_DIR)/review-checklist.md"
+}
+
+@test "§17: subagents within the standards cap and fully owned sections pass" {
+  mk_review_skill "1 — Security:2" "3 — Design:5"
+  OWNERS="Security=1 — Security;Code Quality=3 — Design" mk_review_checklist "Security" "Code Quality"
+
+  run_section_17
+  [[ "$output" == *"[OK]"* ]]
+  [[ "$output" != *"ERROR"* ]]
+}
+
+@test "§17: a subagent loading more than 5 standards is an ERROR" {
+  mk_review_skill "3 — Architecture, Quality & Plan Compliance:9"
+  OWNERS="Code Quality=3 — Architecture, Quality & Plan Compliance" mk_review_checklist "Code Quality"
+
+  run_section_17
+  [[ "$output" == *"loads 9 standards (max 5)"* ]]
+}
+
+@test "§17: a checklist section with no owner is an ERROR" {
+  mk_review_skill "1 — Security:2"
+  OWNERS="Security=1 — Security" mk_review_checklist "Security" "Logging"
+
+  run_section_17
+  [[ "$output" == *"section 'Logging' has 0 owners"* ]]
+}
+
+@test "§17: the cap is exclusive — 6 standards is an ERROR, 5 is not" {
+  mk_review_skill "3 — Design:6" "1 — Security:5"
+  OWNERS="Security=1 — Security" mk_review_checklist "Security"
+
+  run_section_17
+  [[ "$output" == *"'3 — Design' loads 6 standards"* ]]
+  [[ "$output" != *"'1 — Security' loads"* ]]
+}
+
+@test "§17: a section owned twice is an ERROR" {
+  mk_review_skill "1 — Security:2" "2 — Perf:2"
+  OWNERS="Security=1 — Security;Security=2 — Perf" mk_review_checklist "Security"
+
+  run_section_17
+  [[ "$output" == *"section 'Security' has 2 owners"* ]]
+}
+
+@test "§17: an owner that is not a subagent in SKILL.md is an ERROR" {
+  mk_review_skill "1 — Security:2"
+  OWNERS="Security=9 — Ghost" mk_review_checklist "Security"
+
+  run_section_17
+  [[ "$output" == *"owned by '9 — Ghost', which is not a subagent"* ]]
+}
+
+@test "§17: a dispatch row with no standard links does not abort the validator" {
+  mk_review_skill "1 — Security:2" "4 — Behavior:0"
+  OWNERS="Security=1 — Security" mk_review_checklist "Security"
+
+  run_section_17
+  [[ "$output" == *"[OK]"* ]]
+  [[ "$output" == *"════"* ]]
 }

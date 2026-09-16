@@ -20,6 +20,9 @@
 #   16. Finding evidence contract — rules.md defines Finding Evidence and
 #       Behavioral Impact Severity once; no skill reinstates citation-only
 #       findings or restates the severity table (F66/F67)
+#   17. Review dimension load — no review subagent loads more than 5
+#       standards; every review-checklist section has exactly one owning
+#       subagent that exists (F70)
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -761,6 +764,64 @@ if [[ -f "$RULES_FILE" ]]; then
   [[ $ERRORS -eq $EVIDENCE_ERRORS_BEFORE ]] && green "Finding evidence is defined once in rules.md; no document restricts findings to standard citations"
 else
   warn "$RULES_FILE not found — skipping finding evidence check (run from the repo root)"
+fi
+
+# ── 17. Review dimension load ────────────────────────────────────────────────
+header "17. Review dimension load"
+# F70. One review subagent used to carry nine standards plus plan compliance
+# while the other two carried two each; the domains at the end of its list got
+# the most superficial review. Two invariants keep the split from eroding:
+#   17.1 no row of the Reviewer's dispatch tables links more than
+#        REVIEW_MAX_STANDARDS distinct standards;
+#   17.2 every check section in review-checklist.md is owned by exactly one
+#        subagent in its Section Ownership table, and that subagent exists in
+#        SKILL.md — a section nobody owns is a section nobody reviews.
+
+REVIEW_SKILL="$SKILLS_DIR/devflow-review/SKILL.md"
+REVIEW_CHECKLIST="$SKILLS_DIR/devflow-review/review-checklist.md"
+REVIEW_MAX_STANDARDS=5
+REVIEW_ERRORS_BEFORE=$ERRORS
+
+if [[ -f "$REVIEW_SKILL" && -f "$REVIEW_CHECKLIST" ]]; then
+  # 17.1 — dispatch rows look like: | **3 — Architecture & Design** | ... |
+  while IFS= read -r row; do
+    name="$(sed -E 's/^\| \*\*([^*]+)\*\*.*/\1/' <<< "$row")"
+    # A row with no standard links (Correctness & Behavior, the Domain header)
+    # makes grep exit 1, which pipefail + set -e would turn into an abort.
+    n="$( { grep -oE 'shared/standards/[a-z-]+\.md' <<< "$row" || true; } | sort -u | wc -l)"
+    if [[ "$n" -gt "$REVIEW_MAX_STANDARDS" ]]; then
+      fail "devflow-review/SKILL.md — subagent '$name' loads $n standards (max $REVIEW_MAX_STANDARDS); split the dimension (F70)"
+    fi
+  done < <(grep -E '^\| \*\*[0-9]+[a-z]? — ' "$REVIEW_SKILL" || true)
+
+  # 17.2 — check sections sit between the first "## Section Ownership" table
+  # and the "## Review Document Template" heading.
+  owners="$(awk '/^## Section Ownership/{f=1;next} f&&/^## /{exit} f&&/^\| [^|-]/' "$REVIEW_CHECKLIST" \
+            | grep -v '^| Section |' || true)"
+  sections="$(awk '/^## Review Document Template/{exit} /^##+ /' "$REVIEW_CHECKLIST" \
+              | sed -E 's/^#+ //; s/ \*\(.*\)\*$//' \
+              | grep -vE '^(Review Checklist|Section Ownership|Universal Checks.*)$' || true)"
+
+  while IFS= read -r sec; do
+    [[ -n "$sec" ]] || continue
+    count="$(awk -F'|' -v s="$sec" '{gsub(/^ +| +$/,"",$2)} $2==s' <<< "$owners" | wc -l)"
+    if [[ "$count" -ne 1 ]]; then
+      fail "devflow-review/review-checklist.md — section '$sec' has $count owners in Section Ownership (expected exactly 1)"
+    fi
+  done <<< "$sections"
+
+  while IFS='|' read -r _ sec owner _; do
+    owner="$(sed -E 's/^ +| +$//g' <<< "$owner")"
+    [[ -n "$owner" ]] || continue
+    if ! grep -qF "| **${owner}**" "$REVIEW_SKILL"; then
+      sec="$(sed -E 's/^ +| +$//g' <<< "$sec")"
+      fail "devflow-review/review-checklist.md — section '$sec' is owned by '$owner', which is not a subagent in devflow-review/SKILL.md"
+    fi
+  done <<< "$owners"
+
+  [[ $ERRORS -eq $REVIEW_ERRORS_BEFORE ]] && green "Every review subagent loads ≤ $REVIEW_MAX_STANDARDS standards and every checklist section has exactly one existing owner"
+else
+  warn "devflow-review SKILL.md or review-checklist.md not found — skipping review dimension load check (run from the repo root)"
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
