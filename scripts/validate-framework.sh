@@ -23,6 +23,10 @@
 #   17. Review dimension load — no review subagent loads more than 5
 #       standards; every review-checklist section has exactly one owning
 #       subagent that exists (F70)
+#   18. Standards loading & skip signals — the Reviewer loads standards by
+#       domain via standards-loading.md, skip criteria use the Objective Diff
+#       Signals, and no quick-card gate or self-assessed "mechanical" skip
+#       criterion remains (F78/F83)
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -822,6 +826,52 @@ if [[ -f "$REVIEW_SKILL" && -f "$REVIEW_CHECKLIST" ]]; then
   [[ $ERRORS -eq $REVIEW_ERRORS_BEFORE ]] && green "Every review subagent loads ≤ $REVIEW_MAX_STANDARDS standards and every checklist section has exactly one existing owner"
 else
   warn "devflow-review SKILL.md or review-checklist.md not found — skipping review dimension load check (run from the repo root)"
+fi
+
+# ── 18. Standards loading & skip signals ─────────────────────────────────────
+header "18. Standards loading & skip signals"
+# F78. The Reviewer had four rules for the same decision: "load every domain in
+# scope", a quick-card gate that loaded a standard only if a BLOCK red flag
+# matched (so WARN rules — most of design and testing — were never read),
+# inline-review criteria, and a standalone list that omitted seven standards.
+# F83. Skip criteria for the inline review and the Verifier depended on the
+# author judging its own change "mechanical".
+#   18.1 shared/standards-loading.md and the Objective Diff Signals exist and
+#        the Reviewer references the loading policy;
+#   18.2 none of the legacy phrasings survive anywhere in the skills.
+
+LOADING_POLICY="$SKILLS_DIR/shared/standards-loading.md"
+ADAPTIVE_SKILLS="$SKILLS_DIR/shared/adaptive-skills.md"
+LOADING_ERRORS_BEFORE=$ERRORS
+LEGACY_LOADING_AND_SKIP=(
+  "quick-card gate"
+  "Changes are mechanical ("
+  "The implementation is mechanical"
+  "if changes are mechanical"
+  "**Always:** SOLID"
+)
+
+if [[ -d "$SKILLS_DIR/shared" ]]; then
+  if [[ ! -f "$LOADING_POLICY" ]]; then
+    fail "shared/standards-loading.md — missing: the canonical rule for when a full standard is loaded (F78)"
+  elif [[ -f "$REVIEW_SKILL" ]] && ! grep -q "standards-loading.md" "$REVIEW_SKILL"; then
+    fail "devflow-review/SKILL.md — does not reference shared/standards-loading.md (F78)"
+  fi
+
+  if [[ -f "$ADAPTIVE_SKILLS" ]] && ! grep -qE '^### Objective Diff Signals$' "$ADAPTIVE_SKILLS"; then
+    fail "shared/adaptive-skills.md — missing '### Objective Diff Signals': skip criteria have nothing objective to reference (F83)"
+  fi
+
+  for phrase in "${LEGACY_LOADING_AND_SKIP[@]}"; do
+    while IFS= read -r hit; do
+      [[ -n "$hit" ]] || continue
+      fail "${hit#"$SKILLS_DIR"/} — legacy loading/skip rule ('${phrase}'): load by domain signal (standards-loading.md) and skip by Objective Diff Signals (F78/F83)"
+    done < <(grep -rnF -- "$phrase" "$SKILLS_DIR" --include='*.md' 2>/dev/null | grep -v '/standards/CHANGELOG.md' | cut -d: -f1,2 || true)
+  done
+
+  [[ $ERRORS -eq $LOADING_ERRORS_BEFORE ]] && green "Reviewer loads standards by domain signal and every skip criterion uses objective diff signals"
+else
+  warn "$SKILLS_DIR/shared not found — skipping standards loading check (run from the repo root)"
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────

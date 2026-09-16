@@ -19,7 +19,7 @@ This document defines the canonical pattern for dispatching a verifier subagent 
 **Skip the verifier when ALL of these hold:**
 - The plan has **1-2 tasks** and modified ≤ 2 files.
 - No deviations from the plan.
-- The implementation is mechanical (e.g., a single utility function with a test).
+- The diff shows none of signals **S3–S6** ([adaptive-skills.md → Objective Diff Signals](./adaptive-skills.md)) — no side effect, contract, security or performance surface. "It's mechanical" is not a criterion: the author is the one least able to see what a change touches.
 
 In the skip case, the Implementer goes directly to the Reviewer (Step 5 in the Implementer procedure).
 

@@ -56,13 +56,33 @@ The rigor level controls which verification layers run during Phase 5 (Implement
 | **deep** | ✅ (2+ tasks per wave) | ✅ (3+ tasks) | ✅ (parallel multi-dimension) | Per-task checkpoint |
 | **maximum** | ✅ (always) | ✅ (always) | ✅ (parallel + visual diff if available) | Per-task + conservative escalation (2 attempts instead of 3) |
 
-**At `light` rigor:** the Implementer skips the Task Supervisor and Verifier — the Reviewer is the only verification layer. This is appropriate for trivial tasks (rename, typo, comment) where 3 layers of verification is overhead. The Reviewer's own skip criteria are relaxed (review inline even for 3-4 files if changes are mechanical). Inline review still includes the Correctness & Behavior dimension; `light` rigor is the only level at which it may be skipped, and only for a diff with no behavioral change (see `devflow-review/correctness-guide.md` → When This Dimension May Be Skipped).
+**At `light` rigor:** the Implementer skips the Task Supervisor and Verifier — the Reviewer is the only verification layer. This is appropriate for trivial tasks (rename, typo, comment) where 3 layers of verification is overhead. The Reviewer's own skip criteria are relaxed (review inline even for 3-4 files when the diff shows none of signals S3–S6 below). Inline review still includes the Correctness & Behavior dimension; `light` rigor is the only level at which it may be skipped, and only for a diff with none of signals S1–S4 (see `devflow-review/correctness-guide.md` → When This Dimension May Be Skipped).
 
 **At `standard` rigor:** the Implementer skips the Task Supervisor unless there are 5+ tasks, and skips the Verifier unless there are 3+ tasks. The Reviewer runs normally (parallel multi-dimension for non-trivial changes, inline for trivial).
 
 **At `deep` rigor:** all 3 verification layers run. Task Supervisor for any wave with 2+ tasks. Verifier for any implementation with 3+ tasks. Reviewer runs parallel multi-dimension. Per-task checkpoints in the Implementer.
 
 **At `maximum` rigor:** all 3 verification layers always run, regardless of task count. The Reviewer also does a visual diff if vision is available. Conservative escalation: 2 failed attempts instead of 3 before escalating to the user. Extra checkpoints at every task boundary.
+
+### Objective Diff Signals
+
+Every skip criterion in the verification chain — Reviewer inline path, Correctness & Behavior skip, Verifier skip — is decided by **signals read from the diff**, never by the author's own judgement that a change is "mechanical", "trivial" or "not sensitive". The agent that wrote the change is the one least able to see what it touches.
+
+| Signal | Present when the diff… |
+|--------|------------------------|
+| **S1 — Control flow** | adds or changes a condition, branch, loop, early return, guard, default/fallback value, or error path |
+| **S2 — State** | reads or writes state that outlives the call: fields, stores, caches, sessions, persistence, module-level or component state, derived/memoized values |
+| **S3 — Side effect** | performs or changes I/O, network calls, persistence, emitted events/messages, subscriptions, listeners, timers, or anything external or irreversible |
+| **S4 — Contract** | changes something another unit consumes: an exported symbol or its signature, return shape, error type, route, schema, event, configuration key, or a public component's props |
+| **S5 — Security surface** | touches authentication/authorization, input parsing or validation, queries or commands built from input, secrets, permissions, or data exposure |
+| **S6 — Performance surface** | touches data access, loops over collections, request/render hot paths, caching, or rendering of collections |
+
+**Reading the signals:**
+- Evaluate them over the **whole diff**, including tests only where the test itself changes production-facing fixtures or configuration.
+- Record which signals were present in the review or verification output whenever a skip criterion is applied — a skip without its signals is indistinguishable from an omission.
+- **When unsure whether a signal is present, treat it as present.**
+
+Typical diffs with **no** signals: formatting, comments, documentation, renames of non-exported identifiers confined to one file, new tests that change no fixture or configuration.
 
 ---
 
