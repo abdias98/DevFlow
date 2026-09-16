@@ -5,7 +5,7 @@
 # Scope: §15 (multi-agent contract integrity) — the first check in the script
 # that verifies behaviour rather than structure, so it is the first that can be
 # wrong in a way inspection won't reveal — plus §16 (finding evidence contract)
-# and §17 (review dimension load).
+# §17 (review dimension load) and §18 (standards loading & skip signals).
 #
 # Run: npm test   (or: ./node_modules/.bin/bats tests/validate-framework.bats)
 #
@@ -253,7 +253,7 @@ RULES
 
 run_section_17() {
   cd "$FIXTURE" || return 1
-  run bash -c "bash '$VALIDATE' 2>&1 | sed -n '/17. Review dimension load/,/════/p'"
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -nE '/17\\. Review dimension load/,/18\\. Standards loading|════/p'"
 }
 
 REVIEW_DIR() { echo "$FIXTURE/.agents/skills/devflow-review"; }
@@ -356,5 +356,62 @@ mk_review_checklist() {
 
   run_section_17
   [[ "$output" == *"[OK]"* ]]
-  [[ "$output" == *"════"* ]]
+  # Reaching the next section's header proves the script did not abort.
+  [[ "$output" == *"18. Standards loading"* ]]
+}
+
+# ── §18: standards loading & skip signals (F78/F83) ──────────────────────────
+
+run_section_18() {
+  cd "$FIXTURE" || return 1
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -n '/18. Standards loading/,/════/p'"
+}
+
+mk_loading_baseline() {
+  echo "# Standards Loading" > "$SHARED/standards-loading.md"
+  printf '# Adaptive\n\n### Objective Diff Signals\n' > "$SHARED/adaptive-skills.md"
+  mkdir -p "$(REVIEW_DIR)"
+  echo "Load standards per standards-loading.md." > "$(REVIEW_DIR)/SKILL.md"
+}
+
+@test "§18: loading policy, diff signals and a referencing Reviewer pass" {
+  mk_loading_baseline
+
+  run_section_18
+  [[ "$output" == *"[OK]"* ]]
+  [[ "$output" != *"ERROR"* ]]
+}
+
+@test "§18: missing standards-loading.md is an ERROR" {
+  mk_loading_baseline
+  rm "$SHARED/standards-loading.md"
+
+  run_section_18
+  [[ "$output" == *"standards-loading.md — missing"* ]]
+}
+
+@test "§18: a Reviewer that does not reference the loading policy is an ERROR" {
+  mk_loading_baseline
+  echo "Scan the quick card." > "$(REVIEW_DIR)/SKILL.md"
+
+  run_section_18
+  [[ "$output" == *"does not reference shared/standards-loading.md"* ]]
+}
+
+@test "§18: a quick-card gate or a self-assessed mechanical skip criterion is an ERROR" {
+  mk_loading_baseline
+  mk_skill devflow-implement "Intro" "- The implementation is mechanical (single utility)."
+  printf 'Standards loading per subagent (quick-card gate): only on red flag.\n' >> "$(REVIEW_DIR)/SKILL.md"
+
+  run_section_18
+  [[ "$output" == *"devflow-implement/SKILL.md:3 — legacy loading/skip rule ('The implementation is mechanical')"* ]]
+  [[ "$output" == *"devflow-review/SKILL.md:2 — legacy loading/skip rule ('quick-card gate')"* ]]
+}
+
+@test "§18: missing Objective Diff Signals section is an ERROR" {
+  mk_loading_baseline
+  echo "# Adaptive" > "$SHARED/adaptive-skills.md"
+
+  run_section_18
+  [[ "$output" == *"missing '### Objective Diff Signals'"* ]]
 }

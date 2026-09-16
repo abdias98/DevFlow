@@ -130,7 +130,7 @@ Once findings are written, reading the plan cannot silently erase them — Pass 
 
 Only when **both** hold, and the skip is stated in the review document with the reason:
 - Rigor is `light` ([adaptive-skills.md](<{{SKILLS_DIR}}/shared/adaptive-skills.md>)).
-- The diff introduces no new or changed conditional branch, no state read or write, no side effect, and no change to a signature or contract a consumer relies on (e.g., formatting, comments, renames confined to one file, documentation).
+- The diff shows **none** of signals **S1–S4** ([adaptive-skills.md → Objective Diff Signals](<{{SKILLS_DIR}}/shared/adaptive-skills.md>)): no control-flow, state, side-effect or contract change. Typical examples: formatting, comments, documentation, renames confined to one file.
 
 When the Reviewer takes its inline path (skip criteria in Step 3), this dimension is still performed — inline, in the order given by the Sequential Fallback.
 

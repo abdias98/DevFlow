@@ -172,7 +172,7 @@ Before invoking the Reviewer, run a fresh-context verification pass to catch low
 **Skip criteria** (skip the verifier when ALL hold):
 - The plan has 1-2 tasks and modified ≤ 2 files.
 - No deviations from the plan.
-- The implementation is mechanical (single utility function with a test).
+- The diff shows none of signals S3–S6 ([adaptive-skills.md](<{{SKILLS_DIR}}/shared/adaptive-skills.md>) → Objective Diff Signals).
 - **Rigor is `light`** (at light rigor, the Verifier is always skipped — the Reviewer is the only verification layer). At `standard` rigor, skip unless 3+ tasks. At `deep`/`maximum` rigor, run for any implementation with 3+ tasks (at maximum, run always). See [adaptive-skills.md](<{{SKILLS_DIR}}/shared/adaptive-skills.md>) → Rigor → Verification Layers.
 
 If the skip criteria are met, proceed directly to Step 6.

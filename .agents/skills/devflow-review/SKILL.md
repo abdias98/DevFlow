@@ -11,7 +11,7 @@ You are the **Reviewer** sub-agent. Perform deep code review — either comparin
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language detection, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
-- **Standards — scan first, then load every domain in scope.** Start with the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) (fast BLOCK-trigger scan). As the review agent, then load the **full** standard for every domain that applies to the changed files — thoroughness first. Skip only domains that clearly do not apply (e.g., no UI → skip UI Design; no API → skip REST API):
+- **Standards — load every standard whose domain applies**, per [Standards Loading](<{{SKILLS_DIR}}/shared/standards-loading.md>): decide from the domain signals in the diff, load the full standard for each one that applies, and use the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) only to scan BLOCK triggers first — never as the gate that decides whether a standard is read. Each review subagent applies this to the standards in its own dispatch row (Step 3). The standards:
   - General: [Design Principles](<{{SKILLS_DIR}}/shared/standards/design-principles.md>) · [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>) · [Git Conventions](<{{SKILLS_DIR}}/shared/standards/git-conventions.md>) — check the diff's own commit messages and branch name.
   - [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) — when API endpoints are involved.
   - [Event-Driven Architecture](<{{SKILLS_DIR}}/shared/standards/event-driven-architecture.md>) — when the project communicates via events, queues, a message broker, or streams.
@@ -77,10 +77,12 @@ Treat every scanner finding as a **🔴 BLOCK** in synthesis (a committed secret
 
 #### Skip criteria (review inline when ALL hold)
 
-- Only 1-2 files changed.
-- Changes are mechanical (formatting, renaming, simple utility addition).
-- No security-sensitive code (no auth, no input handling, no SQL, no secrets).
-- No performance-sensitive code (no hot paths, no queries, no loops over data).
+Decided from the diff with the [Objective Diff Signals](<{{SKILLS_DIR}}/shared/adaptive-skills.md>) (adaptive-skills.md → Objective Diff Signals), never from a judgement that the change is "mechanical":
+
+- Only 1-2 files changed (at `light` rigor: up to 4).
+- **None** of signals **S3** (side effect), **S4** (contract), **S5** (security surface) or **S6** (performance surface) is present.
+
+State the signals found in the review document when the inline path is taken.
 
 When the skip criteria are met, review the files inline using the [review checklist](<{{SKILLS_DIR}}/devflow-review/review-checklist.md>) — and perform the **Correctness & Behavior** dimension inline too, blind pass first ([correctness-guide.md](<{{SKILLS_DIR}}/devflow-review/correctness-guide.md>) → Sequential Fallback). A small or "mechanical-looking" diff is exactly where an inverted condition or a missed reset hides; the inline path reduces dispatch cost, never the dimensions. Otherwise, dispatch parallel subagents.
 
@@ -90,7 +92,7 @@ Each subagent reads the complete changed files (not just diff) for context, appl
 
 Subagents 1, 2, 3 and 5 review against **rules** (standards). Subagent 4 reviews **behavior**: it reads the changed files plus their direct consumers and tests, does not read the spec or plan until its findings are recorded, and returns scenario-backed findings, each classified as implementation defect, plan gap or deliberate decision. Its brief is [correctness-guide.md](<{{SKILLS_DIR}}/devflow-review/correctness-guide.md>) — pass that document to the subagent instead of summarizing it.
 
-**Standards loading per subagent (quick-card gate):** each subagent loads the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) first (~50 lines) and scans for red flags in its dimension. Only if a red flag matches (or the change clearly falls in the standard's domain) does the subagent load the full standard (~200-500 lines). This saves ~60-80% of standards loading cost when no red flags are present. The subagent cites the full standard section in every finding.
+**Standards loading per subagent:** each subagent scans the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) BLOCK triggers for its dimension, then loads the **full** text of every standard in its row whose domain signal is present in the diff ([standards-loading.md](<{{SKILLS_DIR}}/shared/standards-loading.md>)) — whether or not a red flag matched. Cost is controlled by the signals and by the dispatch split, not by skipping standards that apply. The subagent cites the full standard section in every citation-backed finding.
 
 | Subagent | Dimension | Checklist sections | Standards loaded |
 |----------|-----------|-------------------|------------------|
@@ -183,10 +185,7 @@ Used when invoked by Feature Agent, Refactorer, Bug-Fixer, Performance Agent, Mi
    - Reverse: `docs/devflow/reverse/...`
 3. Read `## Stack Profile` from `context.md` to determine `Feature Type` (UI/backend/fullstack/etc.).
 4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for known anti-patterns from previous cycles relevant to the changed files.
-5. Identify which standards to apply based on `Feature Type`:
-   - **Always:** SOLID, Clean Architecture, Security, Performance, Project Design Patterns.
-   - **If UI/frontend:** also UI Design and Accessibility.
-   - **If backend/API:** also REST API Design.
+5. Standards are selected exactly as in Cycle Mode — by the domain signals in the diff ([standards-loading.md](<{{SKILLS_DIR}}/shared/standards-loading.md>)), not by `Feature Type`. `Feature Type` only helps anticipate which Domain groups (Step 3, subagent 5) are likely to trigger.
 
 ### Step 2 — Identify Changed Files
 
