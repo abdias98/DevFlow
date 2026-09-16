@@ -27,6 +27,9 @@
 #       domain via standards-loading.md, skip criteria use the Objective Diff
 #       Signals, and no quick-card gate or self-assessed "mechanical" skip
 #       criterion remains (F78/F83)
+#   19. Review checklist single source — review-checklist.md declares no
+#       severities, every check item names its source, and every
+#       {standard}.md §N it cites exists (F82)
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -804,7 +807,7 @@ if [[ -f "$REVIEW_SKILL" && -f "$REVIEW_CHECKLIST" ]]; then
             | grep -v '^| Section |' || true)"
   sections="$(awk '/^## Review Document Template/{exit} /^##+ /' "$REVIEW_CHECKLIST" \
               | sed -E 's/^#+ //; s/ \*\(.*\)\*$//' \
-              | grep -vE '^(Review Checklist|Section Ownership|Universal Checks.*)$' || true)"
+              | grep -vE '^(Review Checklist|Section Ownership|How to Read This Checklist|Universal Checks.*)$' || true)"
 
   while IFS= read -r sec; do
     [[ -n "$sec" ]] || continue
@@ -872,6 +875,57 @@ if [[ -d "$SKILLS_DIR/shared" ]]; then
   [[ $ERRORS -eq $LOADING_ERRORS_BEFORE ]] && green "Reviewer loads standards by domain signal and every skip criterion uses objective diff signals"
 else
   warn "$SKILLS_DIR/shared not found — skipping standards loading check (run from the repo root)"
+fi
+
+# ── 19. Review checklist single source ───────────────────────────────────────
+header "19. Review checklist single source"
+# F82. review-checklist.md carried its own 🔴 BLOCK markers — seventeen of them —
+# and some contradicted the standards they paraphrased (single responsibility
+# was BLOCK there and WARN in solid.md; an inline modal was BLOCK there and had
+# no trigger at all in ui-design.md). Two sources of truth for severity drift.
+#   19.1 no severity marker or severity word in the check sections;
+#   19.2 every check item names its source — a {standard}.md §N citation,
+#        rules.md, the correctness guide, or *(plan)* — itself or via its
+#        section's intro line;
+#   19.3 every {standard}.md §N cited in the check sections exists.
+
+CHECKLIST_ERRORS_BEFORE=$ERRORS
+STANDARDS_DIR_19="$SKILLS_DIR/shared/standards"
+
+if [[ -f "$REVIEW_CHECKLIST" ]]; then
+  check_region="$(awk '/^## Universal Checks/{f=1} /^## Review Document Template/{f=0} f{print NR": "$0}' "$REVIEW_CHECKLIST")"
+
+  # 19.1
+  while IFS= read -r hit; do
+    [[ -n "$hit" ]] || continue
+    fail "devflow-review/review-checklist.md:${hit%%:*} — declares a severity; cite the rule's source and let its Severity Classification decide (F82)"
+  done < <(grep -E '🔴|🟡|🟢|\b(BLOCK|WARN|INFO)\b' <<< "$check_region" || true)
+
+  # 19.2 — an item is sourced by itself or by a non-item intro line of its section.
+  while IFS= read -r hit; do
+    [[ -n "$hit" ]] || continue
+    fail "devflow-review/review-checklist.md:${hit%%:*} — check item names no source ({standard}.md §N, rules.md, correctness guide, or *(plan)*) (F82)"
+  done < <(awk '
+    function sourced(t) { return t ~ /\.md §[0-9]+/ || t ~ /rules\.md/ || t ~ /correctness-guide/ || t ~ /\*\(plan\)\*/ }
+    /^#+ / { section_sourced = 0; next }
+    /^- \[ \]/ { if (!sourced($0) && !section_sourced) print NR; next }
+    { if (sourced($0)) section_sourced = 1 }
+  ' <(awk '/^## Universal Checks/{f=1} /^## Review Document Template/{f=0} {print (f ? $0 : "")}' "$REVIEW_CHECKLIST") || true)
+
+  # 19.3
+  while IFS= read -r cite; do
+    [[ -n "$cite" ]] || continue
+    std="${cite%% *}"; num="${cite##*§}"
+    if [[ ! -f "$STANDARDS_DIR_19/$std" ]]; then
+      fail "devflow-review/review-checklist.md — cites '$cite' but $std does not exist"
+    elif ! grep -qE "^## ${num}\. " "$STANDARDS_DIR_19/$std"; then
+      fail "devflow-review/review-checklist.md — cites '$cite' but $std has no section §$num"
+    fi
+  done < <(grep -oE '[a-z-]+\.md §[0-9]+' <<< "$check_region" | grep -v '^rules\.md' | sort -u || true)
+
+  [[ $ERRORS -eq $CHECKLIST_ERRORS_BEFORE ]] && green "review-checklist.md declares no severities, every check item names its source, and every cited section exists"
+else
+  warn "devflow-review/review-checklist.md not found — skipping checklist single-source check (run from the repo root)"
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────

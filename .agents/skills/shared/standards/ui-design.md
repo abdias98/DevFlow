@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: UI Design (Technology-Agnostic)
 
-> **Version:** 2.4.2 | **Last Updated:** 2026-09-07
+> **Version:** 2.5.0 | **Last Updated:** 2026-09-16
 
 > **Apply only if:** the project has a user interface (web frontend, mobile app, desktop app, or server-rendered views).
 > If this is a pure API, CLI tool, library, or background worker, skip this standard entirely.
@@ -108,6 +108,7 @@ Color communicates state, guides attention, and reinforces brand — not just de
 - **DON'T:** Create components that reach outside their scope to modify global state or arbitrary DOM nodes / view hierarchy elements.
 - **DON'T:** Over-parameterize components. If a component needs more than 3-4 boolean flags to configure its appearance, split it into focused sub-components or use a `variant` prop with a limited set of values.
 - **DON'T:** Use generic containers (`div`, `span`) as interactive elements — use semantic elements (`button`, `a`, `input`) provided by the platform (also see § 10).
+- **DON'T:** Define an overlay (modal, dialog, drawer, popover with its own content) inline inside the component that opens it. Make it a self-contained component that receives its data and callbacks, so it can be reused, tested and reasoned about apart from its trigger.
 
 ## 6. Interaction States
 
@@ -331,7 +332,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | Severity | Triggers |
 |----------|---------|
 | 🔴 **BLOCK** | Interactive element (button, link, form field) not keyboard-accessible or missing ARIA role/label, blocking core user flows (→ accessibility.md §3, §5); hardcoded secret or sensitive data rendered in UI/template (→ security.md §3) |
-| 🟡 **WARN** | Component introduced without checking for an existing reusable equivalent — duplication confirmed (§3); hardcoded color, spacing, or font value instead of design token (§13); missing interaction state (focus, error, loading, disabled) on an interactive element (§6); no responsive behavior on a new UI component expected to render on mobile (§3); touch target below 24×24 CSS px, the WCAG 2.2 AA floor (→ accessibility.md §7 → WARN); at/above 24×24 but below the 44×44 AAA recommendation (→ accessibility.md §7 → INFO) |
+| 🟡 **WARN** | Component introduced without checking for an existing reusable equivalent — duplication confirmed (§3); hardcoded color, spacing, or font value instead of design token (§13); missing interaction state (focus, error, loading, disabled) on an interactive element (§6); overlay (modal, dialog, drawer) defined inline inside the component that opens it instead of as a self-contained component (§5); no responsive behavior on a new UI component expected to render on mobile (§3); touch target below 24×24 CSS px, the WCAG 2.2 AA floor (→ accessibility.md §7 → WARN); at/above 24×24 but below the 44×44 AAA recommendation (→ accessibility.md §7 → INFO) |
 | 🟢 **INFO** | Minor inconsistency in naming relative to the design system conventions (§13); large list not virtualized but data set is currently small and bounded (§11); component slightly outside the design system pattern but not causing duplication or accessibility issues (§3) |
 
 ## 17. Applying This Standard with a Limited Scope
