@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.17.0 — 2026-09-16
+
+### Changed — 2.17.0
+- **`testing.md`** (v1.3.0 → v1.4.0): §9 *A minimal Green* clarifies that "no extra branches" means no branch without a failing test that demands it. A reachable case of the requested behavior that no test covers is a missing test — written, seen failing, then implemented — not an extra branch to avoid. Minimal Green limits how much code a test justifies; it never justifies leaving a known wrong behavior untested. Paired with `shared/behavior-scenarios.md` → Discovered During Implementation. Refs: F74.
+
 ## 2.16.0 — 2026-09-16
 
 ### Changed — 2.16.0
