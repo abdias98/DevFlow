@@ -29,6 +29,7 @@ For each task in the plan:
    - If PASS → update `test-registry.md` (PASS), update `traceability.md` (fill Impl File, Status = ✅ DONE).
    - If FAIL → stop, re-read the step for typos. If correct, invoke Debugger.
 10. **Pair mode:** Tell the user to run the test. Wait for user to report result.
+    - **Before the task is approved or committed (any mode):** run the **Implementation Self-Check** section of every standard listed in the task's `**Standards constraints:**`. Fix what fails within the task's files (a fix that changes behavior goes through Red → Green again); report what cannot be fixed in scope under `### Additional Recommendations`.
 11. **Pair Mode gate (if `Pair Mode: yes` in `phase-state.md`):**
     - After the task completes successfully, STOP and present the changes.
     - Ask: *"Task {N}/{M} complete: {task title}. Files: {list}. Review and approve?"*

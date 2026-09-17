@@ -73,6 +73,7 @@
 **Goal:** {What should exist at the end of this task — one sentence}
 **Context:** {Relevant files, prior decisions, spec sections, and knowledge-base patterns that inform this task}
 **Constraints:** {What not to touch, assume, or expose — scope boundaries for this task}
+**Standards constraints:** {One line per standard this task's changes apply to: `{standard}.md §{N}` — the concrete rule for this task, taken from the spec's Standards Applied (e.g. `security.md §2` — authorization checked in the use case, not the controller). The Implementer runs each listed standard's Implementation Self-Check before the task is done. Only for a task that changes no code or tests: `N/A — {reason}`.}
 **Acceptance criteria:** {How success will be judged — verifiable conditions, not implementation steps}
 
 **Deliverables:**
@@ -144,7 +145,7 @@ Example structure varies by stack:
 
 ### Self-Review Checklist
 - [ ] All spec requirements are covered
-- [ ] Each task has a **Goal**, **Context**, **Constraints**, **Acceptance criteria**, and **Deliverables** section
+- [ ] Each task has a **Goal**, **Context**, **Constraints**, **Standards constraints**, **Acceptance criteria**, and **Deliverables** section
 - [ ] Each task has a commit checkpoint
 - [ ] Code snippets in the Implementation guide are complete (not partial)
 - [ ] Each task has a `🧪 Tests for this Task` section with complete, runnable test code

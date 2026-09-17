@@ -1178,6 +1178,7 @@ write_valid_plan() {
 ## Feature-Level Scenarios
 N/A — stateless (spec)
 ### Task 1: implement purchase
+**Standards constraints:** `concurrency.md §2` — decrement stock with a conditional update
 $extra_task
 ## Self-Review
 EOF
@@ -1213,7 +1214,8 @@ EOF
 
 @test "artifacts check plan --spec: passes when the plan has a concurrency-test task" {
   write_spec_with_strategy
-  write_valid_plan "$BATS_TEST_TMPDIR/plan.md" "### Task 2: concurrency test — simultaneous purchase requests"
+  write_valid_plan "$BATS_TEST_TMPDIR/plan.md" "### Task 2: concurrency test — simultaneous purchase requests
+**Standards constraints:** \`testing.md §1\` — real concurrency test"
   run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/spec-real.md"
   [ "$status" -eq 0 ]
 }
@@ -1242,6 +1244,10 @@ write_spec_sections() { # write_spec_sections <file> <matrix-body>
 ## Reusability Decisions
 ### State & Interaction Matrix
 $2
+### Standards Applied
+| Standard | Why it applies | Decisions | Where |
+|---|---|---|---|
+| design-principles.md | code changes | single owner per rule | Design Decisions |
 ### Test Architecture
 ## Risk Assessment
 ## Design Decisions
@@ -1260,6 +1266,7 @@ write_plan_scenarios() { # write_plan_scenarios <file> <scenarios-body>
 ## Feature-Level Scenarios
 $2
 ### Task 1: panel
+**Standards constraints:** `ui-design.md §6` — loading and error states
 ## Self-Review Checklist
 EOF
 }
@@ -1328,5 +1335,78 @@ SCENARIO_ROWS='| # | Given | When | Then | Matrix row | Task | Test file |
   printf '## Concurrency Strategy\nN/A\n' > "$BATS_TEST_TMPDIR/old-spec.md"
   write_plan_scenarios "$BATS_TEST_TMPDIR/plan.md" "N/A — stateless (spec)"
   run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/old-spec.md"
+  [ "$status" -eq 0 ]
+}
+
+# ── Artifacts check — standards reach the plan (F80) ──────────────────────────
+
+@test "artifacts check spec: Standards Applied without rows fails" {
+  cat > "$BATS_TEST_TMPDIR/spec.md" << 'EOF'
+## Spec Digest
+## Context
+## Architecture
+## Data Structures
+## Reusability Decisions
+### State & Interaction Matrix
+N/A — stateless: helper
+### Standards Applied
+| Standard | Why it applies | Decisions | Where |
+|---|---|---|---|
+### Test Architecture
+## Risk Assessment
+## Design Decisions
+## Constraints
+EOF
+  run "$CTL" artifacts check spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"'Standards Applied' has no rows"* ]]
+}
+
+@test "artifacts check plan: a task without Standards constraints fails and is named" {
+  cat > "$BATS_TEST_TMPDIR/plan.md" << 'EOF'
+## Plan Digest
+## File Map
+## Feature-Level Scenarios
+N/A — stateless (spec)
+### Task 1: add endpoint
+**Standards constraints:** `rest-api.md §3` — 404 for an unknown id
+#### 🧪 Tests for this Task
+### Task 2: wire client
+**Goal:** call the endpoint
+#### 🧪 Tests for this Task
+## Self-Review Checklist
+EOF
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Task 2: wire client"* ]]
+  [[ "$output" != *"Task 1: add endpoint"* ]]
+}
+
+@test "artifacts check plan: an empty Standards constraints line fails" {
+  cat > "$BATS_TEST_TMPDIR/plan.md" << 'EOF'
+## Plan Digest
+## File Map
+## Feature-Level Scenarios
+N/A — stateless (spec)
+### Task 1: add endpoint
+**Standards constraints:**
+## Self-Review Checklist
+EOF
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Task 1: add endpoint"* ]]
+}
+
+@test "artifacts check plan: N/A standards constraints for a non-code task passes" {
+  cat > "$BATS_TEST_TMPDIR/plan.md" << 'EOF'
+## Plan Digest
+## File Map
+## Feature-Level Scenarios
+N/A — stateless (spec)
+### Task 1: update README
+**Standards constraints:** N/A — documentation only, no code or tests change
+## Self-Review Checklist
+EOF
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md"
   [ "$status" -eq 0 ]
 }

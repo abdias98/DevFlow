@@ -99,6 +99,16 @@ Steps to undo migration/revert API, restore previous behavior, verify rollback s
 | Metric | Target | Current Baseline |
 |--------|--------|------------------|
 
+### Standards Applied
+
+**Required.** One row per standard whose domain the design applies to ([standards-loading.md](<{{SKILLS_DIR}}/shared/standards-loading.md>)) — `design-principles.md` always applies. For each, record the decisions its **Design-Time Decisions** section asks for, and where in this spec they are materialized. This is how a standard reaches the plan and the code instead of only the review.
+
+| Standard | Why it applies (domain signal) | Decisions taken (from its Design-Time Decisions) | Where in this spec |
+|----------|--------------------------------|---------------------------------------------------|--------------------|
+| `design-principles.md` | production code changes | {single owner per rule, what is deliberately not built, simplest sufficient design} | Reusability Decisions, Design Decisions |
+
+A standard whose decisions already have a dedicated section (e.g. `concurrency.md` → Concurrency Strategy, `rest-api.md` → API Contract) gets a row that points there instead of repeating it. An empty table fails `devflow-ctl artifacts check spec`.
+
 ### Design Decisions
 
 | Decision | Alternatives | Reasoning |
