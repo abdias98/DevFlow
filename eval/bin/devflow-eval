@@ -107,17 +107,48 @@ file_matches() { # file_matches <path> <ere>
 #   [[ "$(eval_http GET /health)" == 200 ]]
 #   eval_serve_stop
 #
-# Port defaults to a random high port; override with EVAL_PORT for a fixed one.
-EVAL_PORT="${EVAL_PORT:-$(( 30000 + RANDOM % 10000 ))}"
+# Port defaults to a random port in 20000-29999 — below Linux's ephemeral range
+# (32768-60999), which outbound connections (curl, the project's own tests
+# binding port 0) draw from; the old 30000-39999 range overlapped it and
+# produced intermittent EADDRINUSE. If the service still dies at startup, a new
+# port is tried (up to 3 times) — unless EVAL_PORT was set by the caller, whose
+# fixed port is respected.
+#
+# Readiness waits up to EVAL_SERVE_TIMEOUT seconds (default 30). A fixed 10 s
+# window was too short on loaded CI runners, where `npm start` alone can take
+# several seconds; a longer window costs nothing when the service is fast,
+# because the loop returns on the first answer — and returns at once if the
+# service process has already exited.
+_EVAL_PORT_FIXED=false
+[[ -n "${EVAL_PORT:-}" ]] && _EVAL_PORT_FIXED=true
+_eval_pick_port() { EVAL_PORT=$(( 20000 + RANDOM % 10000 )); }
+[[ -n "${EVAL_PORT:-}" ]] || _eval_pick_port
+EVAL_SERVE_TIMEOUT="${EVAL_SERVE_TIMEOUT:-30}"
 _EVAL_SERVE_PID=""
 
-eval_serve_start() { # eval_serve_start <serve-cmd> [ready-path]
-  local cmd="$1" ready="${2:-/}"
+_eval_serve_try() { # _eval_serve_try <serve-cmd> <ready-path> -> 0 ready, 1 timeout, 2 process died
+  local cmd="$1" ready="$2" attempts
   PORT="$EVAL_PORT" setsid bash -c "$cmd" >"/tmp/eval-serve-$EVAL_PORT.log" 2>&1 &
   _EVAL_SERVE_PID=$!
-  for _ in $(seq 1 40); do
+  attempts=$(( EVAL_SERVE_TIMEOUT * 4 ))
+  for _ in $(seq 1 "$attempts"); do
     curl -s -o /dev/null --max-time 1 "http://127.0.0.1:$EVAL_PORT$ready" 2>/dev/null && return 0
+    # The service died (crash, EADDRINUSE, bad command): waiting longer cannot help.
+    kill -0 "$_EVAL_SERVE_PID" 2>/dev/null || return 2
     sleep 0.25
+  done
+  return 1
+}
+
+eval_serve_start() { # eval_serve_start <serve-cmd> [ready-path]
+  local cmd="$1" ready="${2:-/}" rc
+  for _ in 1 2 3; do
+    _eval_serve_try "$cmd" "$ready"; rc=$?
+    [[ $rc -eq 0 ]] && return 0
+    eval_serve_stop
+    # Only an early death on a port we picked is worth retrying elsewhere.
+    [[ $rc -eq 2 ]] && ! $_EVAL_PORT_FIXED && grep -q EADDRINUSE "/tmp/eval-serve-$EVAL_PORT.log" 2>/dev/null || return 1
+    _eval_pick_port
   done
   return 1
 }
