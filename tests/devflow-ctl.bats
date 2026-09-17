@@ -358,6 +358,17 @@ setup_impact_repo() {
   run "$CTL" capabilities
   [ "$status" -eq 0 ]
   [[ "$output" == *"subagents: unknown"* ]]
+  [[ "$output" == *"runtime: unknown"* ]]
+}
+
+@test "capabilities get: returns a single value for runtime from the marker" {
+  mkdir -p "$BATS_TEST_TMPDIR/bin"
+  cp "$CTL" "$BATS_TEST_TMPDIR/bin/devflow-ctl"
+  printf 'profile: claude-code\nsubagents: true\nruntime: true\n' \
+    > "$BATS_TEST_TMPDIR/.devflow-environment"
+  run "$BATS_TEST_TMPDIR/bin/devflow-ctl" capabilities get runtime
+  [ "$status" -eq 0 ]
+  [ "$output" = "true" ]
 }
 
 @test "capabilities: prints a single space when reading a marker" {

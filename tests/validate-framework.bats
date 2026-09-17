@@ -550,3 +550,37 @@ mk_standard() { # mk_standard <name> [line...]
   [[ "$output" == *"share a near-identical line"*"deliberately long self-check line"* ]]
   [[ "$output" != *"intentionally identical in every standard"* ]]
 }
+
+# ── §9b: editor profile capabilities must declare `runtime` (F76, PR25) ───────
+
+# Writes $FIXTURE/editor-profiles/<name>.yaml with a permissions.strategy of
+# "none" (so §9a never fires) and a capabilities block built from the given
+# "key:value" pairs.
+mk_profile() { # mk_profile <name> [key:value...]
+  mkdir -p "$FIXTURE/editor-profiles"
+  {
+    echo "id: $1"
+    echo "permissions:"
+    echo "  strategy: none"
+    echo "capabilities:"
+    local kv
+    for kv in "${@:2}"; do
+      echo "  ${kv%%:*}: ${kv##*:}"
+    done
+  } > "$FIXTURE/editor-profiles/$1.yaml"
+}
+
+@test "§9b: a profile missing capabilities.runtime is an ERROR" {
+  mk_profile sample subagents:true vision:true terminal:true filesystem:true
+
+  run_section 9 10
+  [[ "$output" == *"ERROR"*"sample.yaml — capabilities.runtime is missing"* ]]
+}
+
+@test "§9b: a profile declaring capabilities.runtime raises no runtime error" {
+  mk_profile sample subagents:true vision:true terminal:true filesystem:true runtime:true
+
+  run_section 9 10
+  [[ "$output" != *"capabilities.runtime"* ]]
+  [[ "$output" != *"ERROR"* ]]
+}

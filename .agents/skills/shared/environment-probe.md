@@ -6,7 +6,7 @@ This document defines the canonical pattern for probing environment capabilities
 
 ---
 
-## The Four Primitives
+## The Five Primitives
 
 | Primitive | What it means | Features that depend on it | Fallback when absent |
 |-----------|---------------|---------------------------|---------------------|
@@ -14,6 +14,7 @@ This document defines the canonical pattern for probing environment capabilities
 | **vision** | The editor has tools that can read images/screenshots | Visual verification (Reviewer visual diff, Debugger screenshot analysis) | Code-only review — no visual diff, no screenshot debugging (see [vision-verification.md](./vision-verification.md) when available) |
 | **terminal** | The editor can execute bash/shell commands | Standard mode (auto-execute tests/git), CI mode, Autonomous mode | Pair mode forced — the agent tells the user each command and waits for confirmation (see [rules.md](./rules.md) → Implementation Modes) |
 | **filesystem** | The editor has a persistent writable filesystem | Knowledge base, session memory, persistent artifacts, `devflow-ctl` state | No DevFlow cycle — filesystem is a hard prerequisite. If unavailable, the Orchestrator stops and informs the user. |
+| **runtime** | The editor can start or drive the system under change (run its CLI/server, or automate a browser against it) | Runtime verification (Reviewer runtime step, executing Feature-Level Scenarios against the running system) | Code-only trace — the Correctness & Behavior contrast pass stands in as the verification (see [runtime-verification.md](./runtime-verification.md) when available) |
 
 ---
 
@@ -29,6 +30,7 @@ capabilities:
   vision: false
   terminal: true
   filesystem: true
+  runtime: true
 ```
 
 The profile author knows what the editor supports. This is a **static declaration**, not runtime detection.
@@ -43,6 +45,7 @@ subagents: true
 vision: true
 terminal: true
 filesystem: true
+runtime: true
 ```
 
 ### 3. Reading (runtime)
@@ -62,6 +65,7 @@ The Orchestrator at Step 0 (Session Initialization) runs `devflow-ctl capabiliti
 | vision | no | Code-only review (no visual diff) |
 | terminal | yes | Standard/CI/Autonomous modes available |
 | filesystem | yes | Knowledge base, session memory, persistent artifacts active |
+| runtime | yes | Runtime verification active (Reviewer runs Feature-Level Scenarios against the live system at `deep`/`maximum` rigor) |
 ```
 
 All downstream agents read this section to know what features are active.
@@ -94,6 +98,11 @@ The synthesis step is identical — only the execution order changes. The framew
 
 - **Hard stop**: the Orchestrator informs the user that DevFlow requires a persistent filesystem and cannot operate. This is the only primitive with no graceful fallback.
 
+### No runtime
+
+- **Reviewer**: no runtime verification sub-step. The Correctness & Behavior contrast pass's code-level trace of each Feature-Level Scenario stands in as the verification (see [runtime-verification.md](./runtime-verification.md) → Fallback).
+- **Standalone agents**: same fallback in their own verification step.
+
 ---
 
 ## When to Re-probe
@@ -121,7 +130,7 @@ Standalone agents (invoked outside the full lifecycle) can run `devflow-ctl capa
 | **Orchestrator** (Phase 0) | Session initialization | Runs the probe, records in `context.md`, informs user of active/degraded features |
 | **Architect** (Phase 3) | Before parallel exploration | `subagents` — if yes, dispatch parallel; if no, sequential |
 | **Implementer** (Phase 5) | Before parallel task dispatch and verifier dispatch | `subagents` — if yes, dispatch parallel; if no, sequential |
-| **Reviewer** (Phase 6) | Before parallel review and visual diff | `subagents` for parallel review; `vision` for visual diff |
+| **Reviewer** (Phase 6) | Before parallel review, visual diff, and runtime verification | `subagents` for parallel review; `vision` for visual diff; `runtime` for runtime verification |
 | **Standalone agents** | Step 1 | All relevant primitives for their features |
 
 See each agent's SKILL.md for the specific check location.

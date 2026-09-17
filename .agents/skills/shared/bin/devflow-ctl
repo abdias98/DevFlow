@@ -938,7 +938,7 @@ cmd_capabilities() {
   case "$action" in
     get)
       local key="${2:-}"
-      [[ -n "$key" ]] || die "usage: devflow-ctl capabilities get <key> (subagents|vision|terminal|filesystem|profile)"
+      [[ -n "$key" ]] || die "usage: devflow-ctl capabilities get <key> (subagents|vision|terminal|filesystem|runtime|profile)"
       local value="unknown"
       if [[ -f "$ENV_FILE" ]]; then
         value="$(grep -E "^${key}:" "$ENV_FILE" 2>/dev/null | head -1 | sed "s/^${key}: *//")"
@@ -958,6 +958,7 @@ cmd_capabilities() {
         echo "vision: unknown"
         echo "terminal: unknown"
         echo "filesystem: unknown"
+        echo "runtime: unknown"
       fi
       ;;
     *)

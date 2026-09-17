@@ -60,9 +60,9 @@ The rigor level controls which verification layers run during Phase 5 (Implement
 
 **At `standard` rigor:** the Implementer skips the Task Supervisor unless there are 5+ tasks, and skips the Verifier unless there are 3+ tasks. The Reviewer runs normally (parallel multi-dimension for non-trivial changes, inline for trivial).
 
-**At `deep` rigor:** all 3 verification layers run. Task Supervisor for any wave with 2+ tasks. Verifier for any implementation with 3+ tasks. Reviewer runs parallel multi-dimension. Per-task checkpoints in the Implementer.
+**At `deep` rigor:** all 3 verification layers run. Task Supervisor for any wave with 2+ tasks. Verifier for any implementation with 3+ tasks. Reviewer runs parallel multi-dimension, including runtime verification if `runtime: yes` and a qualifying scenario exists ([runtime-verification.md](./runtime-verification.md)). Per-task checkpoints in the Implementer.
 
-**At `maximum` rigor:** all 3 verification layers always run, regardless of task count. The Reviewer also does a visual diff if vision is available. Conservative escalation: 2 failed attempts instead of 3 before escalating to the user. Extra checkpoints at every task boundary.
+**At `maximum` rigor:** all 3 verification layers always run, regardless of task count. The Reviewer also does a visual diff if vision is available, and runtime verification if `runtime: yes` and a qualifying scenario exists. Conservative escalation: 2 failed attempts instead of 3 before escalating to the user. Extra checkpoints at every task boundary.
 
 ### Objective Diff Signals
 

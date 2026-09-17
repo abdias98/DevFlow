@@ -37,6 +37,7 @@ capabilities:
   vision: true
   terminal: true
   filesystem: true
+  runtime: true
 
 # ── User directory per OS ─────────────────────────────────────────────────────
 # opencode loads global skills from ~/.agents/skills/ on all platforms.

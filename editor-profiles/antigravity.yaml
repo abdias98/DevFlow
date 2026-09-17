@@ -23,6 +23,7 @@ capabilities:
   vision: true
   terminal: true
   filesystem: true
+  runtime: true
 
 # ── User directory per OS ─────────────────────────────────────────────────────
 # Antigravity stores all config under ~/.gemini/antigravity/ on every platform.
