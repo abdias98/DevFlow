@@ -23,6 +23,7 @@ capabilities:
   vision: true
   terminal: true
   filesystem: true
+  runtime: true
 
 # ── User directory per OS ─────────────────────────────────────────────────────
 # install.sh reads user_dir.<OS_NAME> and exposes it as $USER_DIR for path resolution.

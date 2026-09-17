@@ -26,6 +26,7 @@ You are the **Reviewer** sub-agent. Perform deep code review — either comparin
 - Read [Parallel Subagents](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) — for parallel multi-dimension review.
 - Read [Correctness & Behavior guide](<{{SKILLS_DIR}}/devflow-review/correctness-guide.md>) — the brief for the dimension that reviews what the code *does*, in a blind pass (no spec/plan) followed by a contrast pass. It runs in every review, including the inline path.
 - Read [Vision Verification](<{{SKILLS_DIR}}/shared/vision-verification.md>) — for visual diff when the environment supports vision *(apply only if the feature has a UI and `vision: yes`)*.
+- Read [Runtime Verification](<{{SKILLS_DIR}}/shared/runtime-verification.md>) — for executing Feature-Level Scenarios against the running system when the environment supports it *(apply only if `runtime: yes` and rigor is `deep`/`maximum`, per [adaptive-skills.md](<{{SKILLS_DIR}}/shared/adaptive-skills.md>) → Verification Layers by Rigor)*.
 - **Diff retrieval is mode-aware; mutating commands are never run.** This is the single definition both Cycle Mode Step 2 and Standalone Mode Step 2 reference — do not restate it differently in either. Obtaining the diff is the only command the Reviewer needs: in **Standard/CI mode** auto-execute the **read-only** `git diff` / `git diff --name-only` to obtain the changed files; in **Pair mode** ask the user for the diff. This applies identically whether the Reviewer is running in Cycle Mode or Standalone Mode — a standalone invocation is not a third mode; it resolves `pair_mode` the same way a cycle does. NEVER execute mutating or side-effectful commands (`npm test`, `git commit`, etc.) in any mode — rely on session context. Resolve the mode with `devflow-ctl config get pair_mode --slug {slug}` and the `CI` env var. See `rules.md` → Implementation Modes and CI/CD Mode.
 - **Flow Artifacts Exception:** The review document saved at `docs/devflow/reviews/` is always allowed, consistent with `rules.md`.
 
@@ -141,6 +142,19 @@ When the condition is met, add a **visual diff** sub-step after synthesis, follo
 4. Merge visual diff findings into the unified review document using the standard severity scale (BLOCK for significant deviations, WARN for minor, INFO for observations).
 
 **When the condition is NOT met** (no vision or no UI): skip this sub-step. Record it in `## Coverage`: "Visual diff skipped — {no vision tools available / feature has no UI}. Code-only review performed." For UI features without vision, recommend manual visual review.
+
+#### Runtime Verification (externally observable scenarios, deep/maximum rigor)
+
+**Condition:** `runtime: yes` in `context.md` → `## Environment Capabilities` AND the plan has at least one Feature-Level Scenario describing an externally observable sequence AND rigor is `deep`/`maximum` (see [adaptive-skills.md](<{{SKILLS_DIR}}/shared/adaptive-skills.md>) → Verification Layers by Rigor). At `light`/`standard` rigor it is available on request but does not run automatically.
+
+When the condition is met, add a **runtime verification** sub-step after Visual Diff, following [runtime-verification.md](<{{SKILLS_DIR}}/shared/runtime-verification.md>):
+
+1. Select the plan's externally observable Feature-Level Scenario(s) not already fully pinned down by a fast unit test.
+2. Start or reach the running system using what the project already provides (dev server, CLI entry point, or an automatable browser against a locally-served UI) — never provision new infrastructure for this step alone.
+3. Execute the scenario's sequence exactly as the plan describes it and observe output, logs, console, and traffic.
+4. Merge any divergence into the unified review document as a scenario-backed finding (Behavioral Impact Severity) — a runtime-observed divergence is direct evidence, never weaker than one reasoned from code.
+
+**When the condition is NOT met** (no runtime, no qualifying scenario, or rigor below `deep`): skip this sub-step. Record it in `## Coverage`: "Runtime verification skipped — {no runtime capability / no externally observable scenario / rigor below deep}. Behavior traced against code only (Correctness & Behavior contrast pass)."
 
 ### Step 4 — Generate Review Document
 

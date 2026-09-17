@@ -146,6 +146,7 @@ load_editor_profile() {
   CAP_VISION="$(parse_yaml_value "$yaml" "capabilities" "vision")"
   CAP_TERMINAL="$(parse_yaml_value "$yaml" "capabilities" "terminal")"
   CAP_FILESYSTEM="$(parse_yaml_value "$yaml" "capabilities" "filesystem")"
+  CAP_RUNTIME="$(parse_yaml_value "$yaml" "capabilities" "runtime")"
 }
 
 # copy_devflow_file <src> <dst>
@@ -504,6 +505,7 @@ subagents: ${CAP_SUBAGENTS:-unknown}
 vision: ${CAP_VISION:-unknown}
 terminal: ${CAP_TERMINAL:-unknown}
 filesystem: ${CAP_FILESYSTEM:-unknown}
+runtime: ${CAP_RUNTIME:-unknown}
 EOF
   echo "  ✓ Wrote environment marker: shared/.devflow-environment (profile: $EDITOR_ID)"
 fi

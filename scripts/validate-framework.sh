@@ -326,10 +326,10 @@ GUARDEOF
     has_caps=$(awk '/^capabilities:/{print "x";exit}' "$profile")
     if [[ -z "$has_caps" ]]; then
       fail "$profile — missing capabilities section (see shared/environment-probe.md)"
-      $FIX_MODE && echo "       FIX: add a 'capabilities:' section with subagents, vision, terminal, filesystem"
+      $FIX_MODE && echo "       FIX: add a 'capabilities:' section with subagents, vision, terminal, filesystem, runtime"
       continue
     fi
-    for cap in subagents vision terminal filesystem; do
+    for cap in subagents vision terminal filesystem runtime; do
       val=$(awk '/^capabilities:/{f=1;next} f&&/^[^ ]/{f=0} f&&/^  '"$cap"':/{sub(/^  '"$cap"': */,"");gsub(/["'"'"']/,"");print;exit}' "$profile")
       if [[ -z "$val" ]]; then
         fail "$profile — capabilities.$cap is missing (must be true or false)"

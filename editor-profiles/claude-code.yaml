@@ -45,6 +45,7 @@ capabilities:
   vision: true
   terminal: true
   filesystem: true
+  runtime: true
 
 # ── User directory per OS ─────────────────────────────────────────────────────
 # Claude Code stores all global config under ~/.claude/ on every platform.
