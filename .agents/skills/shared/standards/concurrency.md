@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Concurrency & Async (Technology-Agnostic)
 
-> **Version:** 1.3.0 | **Last Updated:** 2026-09-08
+> **Version:** 1.4.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** All primitives (locks, queues, atomics, async constructs) are illustrative. Replace them with the actual concurrency model and libraries of the detected stack (threads, async/await, actors, goroutines, event loop, etc.).
 
@@ -118,3 +118,25 @@ When reviewing or modifying concurrent code in a **specific set of files**, foll
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 11. Design-Time Decisions
+
+The spec's **Concurrency Strategy** section is where these are stated; this is what it must cover whenever state or work is shared.
+
+- **Shared state inventory** — which state more than one execution context can reach (requests, workers, consumers, tabs) and the single owner of each (§1).
+- **Critical invariants and their mechanism** — each invariant a race could break, and whether a lock, a conditional update in the data store, or a queue protects it, and why that one (§2).
+- **Locking plan** — if locks are used: what each guards, the global acquisition order, and confirmation that no I/O happens while one is held (§3).
+- **Async ownership** — which operations are awaited, how cancellation propagates, and the bound on parallel work (§4).
+- **Redelivery tolerance** — which operations may run more than once, and the idempotency key or dedup mechanism for each (§5).
+- **Background lifecycle** — who starts, supervises and stops each long-running task (§7).
+
+## 12. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] Every compound read-then-write on shared state is atomic (§2).
+- [ ] Each critical invariant is exercised by a real concurrency test, not only a sequential one (§2).
+- [ ] No blocking I/O or external call runs inside a held lock, and every lock is released on all paths (§3).
+- [ ] Every async operation whose failure matters is awaited or observed (§4).
+- [ ] Operations that can be retried or redelivered are idempotent (§5).
+- [ ] Every timer, poller or background task stops when its owner is disposed (§7).

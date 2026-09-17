@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.19.0 — 2026-09-16
+
+### Changed — 2.19.0
+- **Phase sections in the remaining 8 standards** — `concurrency.md` (v1.3.0 → v1.4.0), `logging.md` (v1.3.0 → v1.4.0), `dependencies.md` (v1.2.1 → v1.3.0), `rest-api.md` (v2.3.2 → v2.4.0), `event-driven-architecture.md` (v1.0.0 → v1.1.0), `ui-design.md` (v2.5.0 → v2.6.0), `accessibility.md` (v1.2.2 → v1.3.0), `git-conventions.md` (v1.1.0 → v1.2.0). Same format as 2.18.0: **Design-Time Decisions** and **Implementation Self-Check** appended after the last section, no renumbering, every item citing the section it applies. All 16 standards now carry both. Refs: F79.
+
 ## 2.18.0 — 2026-09-16
 
 ### Changed — 2.18.0

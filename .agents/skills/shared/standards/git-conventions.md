@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Git Conventions (Technology-Agnostic)
 
-> **Version:** 1.1.0 | **Last Updated:** 2026-09-07
+> **Version:** 1.2.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** Branch names, commit scopes, and tag formats are illustrative. Adapt to the team's agreed conventions detected from the existing git history.
 
@@ -108,3 +108,23 @@ When applying git conventions to a **specific set of files or a single change** 
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 9. Design-Time Decisions
+
+The plan settles these — its branch and its commit checkpoints are written before the first line of code.
+
+- **Branch** — the branch type and slug for the cycle (§2).
+- **Commit boundaries** — one commit per task checkpoint, with its message written in the plan (§1, §3).
+- **Breaking changes** — whether any commit breaks an API or behavior, and its footer (§1).
+- **Release impact** — the version bump the change implies when a release follows (§4).
+- **Pull request** — target branch and the artifacts its description links (§5).
+
+## 10. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] Work happens on the cycle's branch, never directly on `main` (§2).
+- [ ] Each commit is one logical change with a `type(scope): description` message in the imperative, under 72 characters (§1).
+- [ ] A task is committed only after test output confirmed it passes (§3).
+- [ ] A commit that breaks an API or behavior carries a `BREAKING CHANGE:` footer (§1).
+- [ ] No force-push rewrote a pull request branch that has already been reviewed (§5).

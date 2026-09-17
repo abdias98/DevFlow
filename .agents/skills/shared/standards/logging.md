@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Logging & Observability (Technology-Agnostic)
 
-> **Version:** 1.3.0 | **Last Updated:** 2026-09-08
+> **Version:** 1.4.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** All logger names, field names, and code fragments are illustrative. Replace them with the actual logging library, format, and conventions of the detected stack.
 
@@ -133,3 +133,23 @@ When reviewing or modifying logging in a **specific set of files**, follow these
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 12. Design-Time Decisions
+
+Decide observability alongside the data flow in the spec — a log added after an incident is a log that was missing during it.
+
+- **Events to record** — the business or audit events each operation emits, separately from its technical diagnostics (§5, §6).
+- **Correlation** — how the request or trace identifier propagates across the components the feature touches (§4).
+- **Sensitive fields** — which fields must never be logged, or must be masked (§3).
+- **Level policy** — what counts as error, warning, info and debug for this feature (§2).
+- **Volume** — high-frequency paths that need sampling or aggregation instead of a line per event (§7).
+
+## 13. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] Log calls use structured, named fields — no concatenated message strings (§1).
+- [ ] No secret, token, credential or personal data reaches any log statement, including on error paths (§3).
+- [ ] Every log line on a request path carries the correlation identifier (§4).
+- [ ] Each handled error is logged with its context where it is handled, not again at every layer it passes through (§6).
+- [ ] No verbose logging runs inside a hot loop without sampling (§7).
