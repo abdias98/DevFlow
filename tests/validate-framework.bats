@@ -501,3 +501,54 @@ mk_checklist_region() {
   run_section_19
   [[ "$output" == *"cites 'sample.md §9' but sample.md has no section §9"* ]]
 }
+
+# ── §12.3 phase sections and §14 duplication after Limited Scope (F79) ────────
+
+run_section() { # run_section <N> <next N> — only section N's output
+  cd "$FIXTURE" || return 1
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -nE '/== $1\\. /,/== $2\\. |════/p'"
+}
+
+# A standard with the three mandatory sections; extra args are appended lines.
+mk_standard() { # mk_standard <name> [line...]
+  mkdir -p "$SHARED/standards"
+  local f="$SHARED/standards/$1.md"; shift
+  {
+    echo "# Std"
+    echo "> **Version:** 1.0.0 | **Last Updated:** 2026-09-16"
+    echo "## 1. Rule"
+    echo "Body about a rule."
+    echo "## 2. Code Review Checklist"
+    echo "## 3. Severity Classification"
+    echo "## 4. Applying This Standard with a Limited Scope"
+    echo "This closing paragraph is intentionally identical in every standard file of the framework template."
+    local l; for l in "$@"; do echo "$l"; done
+  } > "$f"
+}
+
+@test "§12.3: a standard without the phase sections is a WARN, not an ERROR" {
+  mk_standard alpha
+
+  run_section 12 13
+  [[ "$output" == *"alpha.md — missing phase section: 'Design-Time Decisions'"* ]]
+  [[ "$output" == *"alpha.md — missing phase section: 'Implementation Self-Check'"* ]]
+  # Other rules may raise ERRORs on this minimal fixture; none may be a phase-section one.
+  ! grep -q "ERROR.*missing phase section" <<< "$output"
+}
+
+@test "§12.3: a standard with both phase sections raises no phase warning" {
+  mk_standard alpha "## 5. Design-Time Decisions" "- decide" "## 6. Implementation Self-Check" "- [ ] check"
+
+  run_section 12 13
+  [[ "$output" != *"missing phase section"* ]]
+}
+
+@test "§14: bullet lines are compared, and sections after Limited Scope are checked" {
+  local dup="- [ ] A deliberately long self-check line that two standards should never share word for word, ever."
+  mk_standard alpha "## 5. Implementation Self-Check" "$dup"
+  mk_standard beta "## 5. Implementation Self-Check" "$dup"
+
+  run_section 14 15
+  [[ "$output" == *"share a near-identical line"*"deliberately long self-check line"* ]]
+  [[ "$output" != *"intentionally identical in every standard"* ]]
+}

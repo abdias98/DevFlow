@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Error Handling (Technology-Agnostic)
 
-> **Version:** 1.2.2 | **Last Updated:** 2026-09-08
+> **Version:** 1.3.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** All exception types, result wrappers, and code fragments are illustrative. Replace them with the actual error model, libraries, and conventions of the detected stack.
 
@@ -123,3 +123,24 @@ When reviewing or modifying error handling in a **specific set of files**, follo
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 12. Design-Time Decisions
+
+The spec should state these alongside the data flow — error behavior that is not designed gets improvised differently in every handler.
+
+- **Failure modes** — for each operation, the expected outcomes (validation failure, not found, conflict) versus the unexpected ones (§1, §7).
+- **Error vocabulary per layer** — the error types each layer exposes and the points where lower-layer errors are translated (§4).
+- **Caller-facing surface** — what the user or API caller sees for each error category, and how each maps to transport semantics (§5).
+- **Atomicity** — which multi-step changes need a transaction or a compensating action (§6).
+- **Retry policy** — which operations may be retried, how their idempotency is guaranteed, and the attempt bound (§8).
+
+## 13. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] Every catch recovers, translates with the cause chained, or rethrows — none silently discards (§2, §3).
+- [ ] Expected outcomes use the stack's idiom for results or typed errors, not generic exceptions (§7).
+- [ ] Every failure path releases the resources acquired before it (§6).
+- [ ] A failure halfway through leaves no partial write visible to readers (§6).
+- [ ] Retries run only on idempotent operations, with a cap and backoff (§8).
+- [ ] No external response carries a stack trace or internal message (§5).

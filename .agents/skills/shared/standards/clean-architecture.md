@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Clean Architecture (Technology-Agnostic)
 
-> **Version:** 2.3.2 | **Last Updated:** 2026-09-07
+> **Version:** 2.4.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** All code-like fragments and tool references are illustrative. Replace them with the actual libraries, frameworks, and naming conventions of the detected stack.
 
@@ -134,3 +134,24 @@ When you are asked to apply Clean Architecture rules to a **specific set of file
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 9. Design-Time Decisions
+
+The spec's **Architecture** and **Data Structures** sections are where these are decided; an implementation that has to guess them will put code in the wrong layer.
+
+- **Layer of each component** — Entity, Use Case, Adapter or Infrastructure, and the direction of every dependency between them (§1, §2).
+- **Ports and adapters** — the interfaces the application layer declares and the outer-layer adapters that implement them (§2).
+- **Boundary data** — the DTOs that cross the API or UI boundary, and confirmation that no persistence entity crosses it (§3).
+- **Where validation lives** — request shape in the controller, business invariants in entities and value objects (§3).
+- **Cross-cutting attachment** — transaction boundaries, unit of work, logging and authorization hooks, and the layer each is attached in (§4).
+- **Testability per layer** — which layers are tested without mocks, with mocked ports, or against real infrastructure (§5).
+
+## 10. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] No inner-layer file imports a framework, ORM, HTTP or UI package (§1).
+- [ ] Use cases reach persistence and external services only through ports (§2).
+- [ ] No ORM or persistence entity is returned from an endpoint or handed to the UI (§3).
+- [ ] No domain exception extends a framework or transport-specific base type (§3).
+- [ ] Entities are tested with no mocks, and use cases with their ports mocked (§5).

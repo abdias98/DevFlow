@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Project Design Patterns (Technology-Agnostic)
 
-> **Version:** 2.3.1 | **Last Updated:** 2026-09-08
+> **Version:** 2.4.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** All file names, patterns, and tool references are illustrative. Adapt terminology and conventions to the detected stack.
 
@@ -112,3 +112,23 @@ When applying project design rules to a **specific set of files or modules** (th
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 8. Design-Time Decisions
+
+Settle these in the spec before any file is created — placement mistakes compound with every file that follows the first one.
+
+- **Pattern extended** — the architectural pattern the change follows in this codebase, or the reason and approval for departing from it (§1).
+- **Pattern chosen** *(new projects)* — the selected pattern and the alternatives rejected (§2).
+- **Placement** — the module or folder for each new file, and the public surface each module exposes (§3).
+- **Composition root** — where new dependencies are wired (§3).
+- **Documentation impact** — which parts of the Architecture Spec (and the project's agent guide) this feature changes (§4).
+
+## 9. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] Each new file sits where existing files of the same kind live (§1).
+- [ ] No `utils`, `helpers` or `common` dumping ground was created or extended (§3).
+- [ ] The entry point only wires dependencies — no business logic was added there (§3).
+- [ ] No new circular dependency between modules was introduced (§3).
+- [ ] The Architecture Spec or `AGENTS.md` reflects any structural change (§4).

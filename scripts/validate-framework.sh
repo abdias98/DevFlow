@@ -439,6 +439,15 @@ if [[ -d "$STANDARDS_DIR" ]]; then
         $FIX_MODE && echo "       FIX: add a '## N. $required' section"
       fi
     done
+    # Phase sections (F79): a standard written only as a review checklist
+    # reaches the code after it exists. Design-Time Decisions feeds the spec,
+    # Implementation Self-Check the task. WARN while standards are migrated.
+    for required in "Design-Time Decisions" "Implementation Self-Check"; do
+      if ! grep -qE "^## [0-9]+\. ${required}$" "$std_file" 2>/dev/null; then
+        warn "$std_file — missing phase section: '$required' (F79)"
+        $FIX_MODE && echo "       FIX: append '## N. $required' after the last section — never renumber existing sections"
+      fi
+    done
     if ! grep -qE '^\*\*Version:\*\*|^> \*\*Version:\*\*' "$std_file" 2>/dev/null; then
       fail "$std_file — missing version header (expected '> **Version:** X.Y.Z')"
     fi
@@ -559,12 +568,14 @@ done
 # ── 14. Standards duplication (DRY) ──────────────────────────────────────────
 header "14. Standards duplication (DRY)"
 
-# Strips the shared Limited Scope closing block (the six-closed-coherence-
-# reasons paragraph is intentionally identical across every standard -- part
-# of the three-zone scope model template, not an unresolved overlap) plus
-# headings, tables, and blank lines, leaving only substantial prose lines.
+# Strips the shared Limited Scope section (the six-closed-coherence-reasons
+# paragraph is intentionally identical across every standard -- part of the
+# three-zone scope model template, not an unresolved overlap) plus headings,
+# tables, and blank lines, leaving only substantial prose lines. Only that
+# section is skipped: sections appended after it (Design-Time Decisions,
+# Implementation Self-Check) are still checked.
 _std_dup_lines() {
-  awk '/^## [0-9]+\. Applying This Standard with a Limited Scope/{exit} {print}' "$1" \
+  awk '/^## [0-9]+\. Applying This Standard with a Limited Scope/{skip=1; next} /^## [0-9]+\. /{skip=0} !skip{print}' "$1" \
     | grep -vE '^#|^[[:space:]]*$|^\|' \
     | awk 'length($0) >= 80'
 }
@@ -577,7 +588,10 @@ if [[ -d "$STANDARDS_DIR" ]]; then
       a="${_STD_FILES[$_i]}"; b="${_STD_FILES[$_j]}"
       while IFS= read -r line; do
         [[ -z "$line" ]] && continue
-        if grep -qxF "$line" "$b" 2>/dev/null; then
+        # `--`: nearly every prose line in a standard is a "- " bullet, which
+        # grep would otherwise parse as an option and fail silently (2>/dev/null)
+        # -- leaving every bullet uncompared since this check was written.
+        if grep -qxF -- "$line" "$b" 2>/dev/null; then
           warn "$(basename "$a") and $(basename "$b") share a near-identical line — possible unresolved DRY overlap (see standards-dry-policy.md): \"${line:0:90}...\""
           ((dup_warnings++)) || true
         fi
