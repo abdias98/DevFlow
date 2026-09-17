@@ -129,6 +129,7 @@ Performed by subagent 4 following [correctness-guide.md](./correctness-guide.md)
 - [ ] Every interactive component has its loading, error and disabled states (`ui-design.md §6`), and data views have an empty state (`ui-design.md §8`).
 - [ ] No hardcoded visual values — design tokens for color, spacing and typography (`ui-design.md §13`).
 - [ ] Layout uses relative units and responds to the target breakpoints (`ui-design.md §3`).
+- [ ] A response for a selection the user has since navigated away from does not resolve into a currently-visible component's state (`ui-design.md §6`, `state-lifecycle.md §6`).
 
 ### Accessibility
 - [ ] Every interactive element is reachable and operable by keyboard, with no keyboard trap (`accessibility.md §3`).
@@ -146,6 +147,7 @@ Performed by subagent 4 following [correctness-guide.md](./correctness-guide.md)
 - [ ] Request/response body shapes match the spec (`rest-api.md §4`) *(plan)*.
 - [ ] Status codes are correct — never `200` for an error (`rest-api.md §3`).
 - [ ] No undocumented endpoint introduced (`rest-api.md §10`).
+- [ ] A response reflects state as of completion, not data read before a concurrent write to the same resource finished (`concurrency.md §2`).
 
 ## Integration Consumption Checks *(apply only if the change calls an external service, API, or integration it does not control)*
 

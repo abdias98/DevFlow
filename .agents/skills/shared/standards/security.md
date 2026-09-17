@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Security (Technology-Agnostic)
 
-> **Version:** 2.5.0 | **Last Updated:** 2026-09-16
+> **Version:** 2.6.0 | **Last Updated:** 2026-09-17
 
 > **Note on examples:** All tool names and code fragments are illustrative. Replace them with the actual libraries, services, and conventions of the detected stack.
 
@@ -25,10 +25,12 @@ Apply these principles to all code you design, generate, or review.
   - Enforce authorization checks at the service/application layer, never only at the UI or API gateway. Every endpoint and use case must verify the caller's permissions.
   - Apply the principle of least privilege: grant only the permissions required for the specific operation.
   - Implement Role-Based Access Control (RBAC) or Attribute-Based Access Control (ABAC) as appropriate, and audit permission changes.
+  - Re-evaluate authorization from current state on every request — a long-lived session, cached permission set, or token must not keep granting access after the underlying role/permission was revoked.
 - **DON'T:**
   - Roll your own authentication mechanism — cryptography and session management are extremely hard to get right.
   - Store sensitive tokens in browser storage accessible to JavaScript (e.g., `localStorage`, `sessionStorage`). Prefer secure, HTTP‑only cookies.
   - Skip authorization checks on internal endpoints or background jobs, assuming they are safe because they are not public.
+  - Cache an authorization decision across a request boundary in a way that survives a permission change made in between — a session, token, or in-memory flag that was correct when issued is not a substitute for checking current permissions.
 
 ## 3. Secrets Management
 - **What:** Credentials and sensitive configuration must never be in source code.
@@ -126,7 +128,8 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | Severity | Triggers |
 |----------|---------|
 | 🔴 **BLOCK** | Hardcoded secret/credential in source code (§3); custom authentication/cryptography mechanism (§2); unvalidated external input reaching SQL, shell, or LDAP (§1, §4); sensitive tokens stored in `localStorage`/`sessionStorage` (§2); no authentication on a data-mutating or private-data endpoint (§2); stack traces or internal paths exposed in API responses (§6) |
-| 🟡 **WARN** | Missing rate limiting on sensitive endpoint (§7); HTTP used without redirect to HTTPS (§7); dependency with known moderate vulnerability (§5); `localStorage` used for non-sensitive tokens with no documented rationale (§2); incomplete input validation (allows but does not reject all bad input) (§1) |
+| 🟡 **WARN** | Missing rate limiting on sensitive endpoint (§7); HTTP used without redirect to HTTPS (§7); dependency with known moderate vulnerability (§5); `localStorage` used for non-sensitive tokens with no documented rationale (§2); incomplete input validation (allows but does not reject all bad input) (§1); an authorization decision cached or derived from a session/token is not re-evaluated after the underlying permission changes (§2) |
+
 | 🟢 **INFO** | Missing HSTS header — incomplete Transport Security (§7); no structured logging of security events (§7); dependency lock file absent (§5); minor information disclosure in non-production environment (§6) |
 
 ## 12. Applying This Standard with a Limited Scope

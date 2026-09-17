@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: UI Design (Technology-Agnostic)
 
-> **Version:** 2.6.0 | **Last Updated:** 2026-09-16
+> **Version:** 2.7.0 | **Last Updated:** 2026-09-17
 
 > **Apply only if:** the project has a user interface (web frontend, mobile app, desktop app, or server-rendered views).
 > If this is a pure API, CLI tool, library, or background worker, skip this standard entirely.
@@ -129,6 +129,7 @@ Every interactive element must communicate its state clearly. An element without
 - **DO:** Ensure all states are reachable and distinguishable by screen readers via appropriate ARIA attributes (`aria-disabled`, `aria-busy`, `aria-invalid`, `aria-describedby`).
 - **DON'T:** Use the disabled state to hide information. Disabled buttons should still be visible and explain their disabled condition.
 - **DON'T:** Remove `:focus-visible` styles (or the platform-equivalent focus indicator API). If the default focus indicator is visually incompatible, replace it with a custom, equally visible alternative — never remove it.
+- **DON'T:** Apply a Loading/Error/Success state transition to the wrong instance of a component after its underlying selection has changed — a response for a superseded selection must not resolve into a currently-visible component's state (`state-lifecycle.md §6` owns the mechanism; this rule is the visible symptom to catch in review).
 
 ## 7. Motion & Micro-Interactions
 

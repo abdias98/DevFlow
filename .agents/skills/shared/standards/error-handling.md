@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Error Handling (Technology-Agnostic)
 
-> **Version:** 1.3.0 | **Last Updated:** 2026-09-16
+> **Version:** 1.4.0 | **Last Updated:** 2026-09-17
 
 > **Note on examples:** All exception types, result wrappers, and code fragments are illustrative. Replace them with the actual error model, libraries, and conventions of the detected stack.
 
@@ -66,9 +66,11 @@ Apply these principles to all code you design, generate, or review that can fail
 - **DO:**
   - Release resources (connections, files, locks, handles) deterministically on every path, using the language's scope-guard / finally / using / defer mechanism.
   - Keep multi-step state changes atomic — use a transaction or a compensating action so a mid-way failure does not leave inconsistent state.
+  - Handle a failure that occurs *during* cleanup/rollback itself explicitly (log it, chain it, or surface it) — a cleanup action is not guaranteed to succeed just because it runs in a `finally`/`catch` block.
 - **DON'T:**
   - Rely on the success path alone to free resources — an exception will skip it.
   - Leave a partially-mutated aggregate when one of several writes fails.
+  - Let a secondary exception thrown while cleaning up after the original failure silently replace or discard the original error with no trace of either.
 
 ## 7. Errors vs. Control Flow
 
@@ -108,7 +110,8 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | Severity | Triggers |
 |----------|---------|
 | 🔴 **BLOCK** | Empty catch / catch-and-continue that discards the error — no log, no rethrow (§2); raw stack trace, exception message, or internal detail returned to an external caller (§5); failure path leaves a resource leaked or data in an inconsistent/partially-written state (§6); non-idempotent operation retried with no idempotency guard (§8) |
-| 🟡 **WARN** | Catching the base/broadest error type to handle, without rethrow (§3); wrapping an error without chaining the original cause (§3); infrastructure error leaking raw across a layer boundary (§4); exceptions used for ordinary control flow (§7); unbounded or backoff-less retry (§8); continuing with a default/sentinel after a failure instead of failing fast (§1) |
+| 🟡 **WARN** | Catching the base/broadest error type to handle, without rethrow (§3); wrapping an error without chaining the original cause (§3); infrastructure error leaking raw across a layer boundary (§4); exceptions used for ordinary control flow (§7); unbounded or backoff-less retry (§8); continuing with a default/sentinel after a failure instead of failing fast (§1); a failure during cleanup/rollback itself is neither logged nor chained, silently losing either the original or the cleanup error (§6) |
+
 | 🟢 **INFO** | Generic error message could be more actionable (§5); expected outcome modeled as a thrown exception where a result type would read better (§7); missing correlation ID in the surfaced error (§5) |
 
 ## 11. Applying This Standard with a Limited Scope

@@ -4,6 +4,16 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.24.0 — 2026-09-17
+
+### Changed — 2.24.0
+- **Behavioral gap audit (F88)** — every standard reviewed with "what behavioral defect in this domain has no rule or severity?" Three real gaps found and closed, no section renumbered:
+  - **`security.md`** (v2.5.0 → v2.6.0): §2 gains a DO/DON'T pair — an authorization decision cached in a session, token, or in-memory flag must be re-evaluated after the underlying permission changes, not trusted from when it was issued. §11 gains the matching WARN trigger.
+  - **`error-handling.md`** (v1.3.0 → v1.4.0): §6 gains a DO/DON'T pair — a failure during cleanup/rollback itself must be logged or chained, not allowed to silently replace or discard the original error. §9 gains the matching WARN trigger.
+  - **`ui-design.md`** (v2.6.0 → v2.7.0): §6 gains a DON'T — a Loading/Error/Success transition must not resolve into a currently-visible component's state after its underlying selection has changed; the mechanism is `state-lifecycle.md` §6, cited rather than restated (`standards-dry-policy.md`).
+  Every other standard's gap either had no behavioral instance to point to (design-principles, solid, clean-architecture, project-design, testing, dependencies, event-driven-architecture, accessibility, logging, git-conventions) or was already owned by one of Wave 20's four new standards (performance → `state-lifecycle.md` §7, rest-api → `integration-consumption.md` §3, concurrency → cited from all three new standards). The four Wave 20 standards themselves have no review history yet and are deferred to the next audit. Full table: `docs/devflow-audit-review-quality.md` → Apéndice §A. Refs: F88.
+- **`review-checklist.md`** gains two behavior-oriented items citing the sources above: API-Specific Checks (a response reflects state as of completion, not a stale concurrent read — `concurrency.md §2`) and UI-Specific Checks (a response for a superseded selection does not resolve into the wrong component — `ui-design.md §6`, `state-lifecycle.md §6`). Refs: F89.
+
 ## 2.23.0 — 2026-09-17
 
 ### New standards — 2.23.0
