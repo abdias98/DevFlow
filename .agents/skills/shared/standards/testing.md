@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Testing (Technology-Agnostic)
 
-> **Version:** 1.3.0 | **Last Updated:** 2026-09-08
+> **Version:** 1.4.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** All tool names, directory names, and code fragments are illustrative. Replace them with the actual test runner, utilities, and conventions of the detected stack.
 
@@ -116,6 +116,7 @@ Apply these principles to all tests you design, generate, or review. TDD is non-
 - **A minimal Green:**
   - Write the smallest change that makes the failing assertion pass — no extra branches, no unrequested generalization, no unrelated cleanup folded into the same step.
   - A Green that required editing more than the task's declared files, or that also silently fixed a different failing test, is a signal the task was mis-scoped — flag it rather than accepting the extra change quietly.
+  - "No extra branches" means no branch **without a failing test that demands it**. A reachable case of the requested behavior that no test covers is not an extra branch to avoid — it is a missing test: write it, see it fail, then add the branch. Minimal Green limits *how much* code a test justifies; it never justifies leaving a known wrong behavior untested.
 - **When to refactor:** only after Green, only on the code just touched, and only if the full test suite for the affected area still passes afterward with no behavior change. Refactor-while-Green is not an excuse to skip the "minimal" rule above — the sequence is Red → Green → *then* Refactor, never interleaved.
 - **The commit rule:** a Green phase is never committed on the strength of "it should pass now" — it must be committed only after a test-run output (auto-executed in Standard/CI mode, pasted by the user in Pair mode) actually confirms PASS. See `rules.md` → Implementation Modes for the mode-dependent execution rule this section assumes.
 

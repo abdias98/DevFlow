@@ -74,6 +74,7 @@ After each task's Green Phase completes successfully:
 1. Find all rows in the matrix belonging to this task.
 2. Fill in the `Impl File` column with the actual file path.
 3. Update `Status` to `✅ DONE`.
+4. For a missing case discovered while implementing ([behavior-scenarios.md](./behavior-scenarios.md) → Discovered During Implementation), **add** a row with Source `Behavior Scenario (discovered)`, its test and implementation file. `traceability check` counts it under its own source, so discovered cases stay visible in the coverage summary.
 
 ### Reviewer (Phase 6 — validation)
 

@@ -76,6 +76,31 @@ Use these to discover scenarios. They are prompts for thinking, not a form to fi
 
 ---
 
+## Discovered During Implementation
+
+"Write minimal code" and "never add features not in the plan" protect scope. Read literally, they also forbid handling a case the plan forgot — and an Implementer that obeys leaves a defect in place without saying anything. The two situations are different, and are handled differently:
+
+| | **New functionality** | **A missing case of requested behavior** |
+|---|---|---|
+| **What it is** | A capability, option, output, endpoint or UI element nobody asked for | The behavior that *was* asked for is observably wrong in a situation it can actually reach — one of the Transition Prompts, a data limit, a failure path |
+| **The question** | "Is this something the request did not ask for?" | "Would the person who asked for this feature call the current behavior in this situation a bug?" |
+| **Generic example** | Adding an export button to a list view because it seemed useful | Submitting a form twice while the first submission is still in progress creates two records, because the plan only tested a single submit |
+| **Rule** | **Prohibited.** Record it in `### Additional Recommendations`; do not build it | **Required.** Handle it — through a test, never silently |
+
+**Procedure for a missing case:**
+
+1. **State it as a scenario** — Given / When / Then, observable outcome, and the source of the expectation (the requirement it belongs to).
+2. **Red first** — add the sequence test to the owning task's test file and confirm it fails for the right reason (`testing.md §9`). In Pair mode, inform the user exactly as for any other test.
+3. **Minimal Green** — the smallest change that makes the new test pass, within the task's declared files. If the fix needs a file outside them, the normal scope rules apply (`rules.md` → Scope-Locking — Three Zones): an Impact Zone file with a closed coherence reason is justified with `devflow-ctl scope justify`; anything else stops and asks.
+4. **Record it where the next reader will look:**
+   - the plan's `## Feature-Level Scenarios` (or the Feature Agent plan's `### Behavior Scenarios`) gains the row, marked `(discovered)`;
+   - `traceability.md` gains a row with Source `Behavior Scenario (discovered)` — `traceability check` reports it as its own source, so discovered cases stay visible in the coverage summary;
+   - `### Additional Recommendations` names it as a **plan gap**, so the Reviewer and the Finalizer see that the plan missed it.
+
+No prior user approval is needed for a missing case that stays within the task's declared files — the user approved the behavior; this makes it true. Approval **is** needed for new functionality, and for any scope expansion.
+
+---
+
 ## Anti-Patterns
 
 - ❌ **Inputs only** — "empty list, invalid id, null" and nothing about sequences. Input edge cases are necessary, not sufficient.
@@ -84,6 +109,8 @@ Use these to discover scenarios. They are prompts for thinking, not a form to fi
 - ❌ **Scenario tests that assert internals** — "calls fetch once" instead of "shows only B's data"; assert the observable outcome, and assert call counts only when the count *is* the requirement (e.g., "charges once").
 - ❌ **Every prompt for every unit** — a stateless formatter has no "change while in flight". Ask what can happen.
 - ❌ **Leaving a late-discovered scenario out of the plan** — record it (plan + traceability) even if it was found in review.
+- ❌ **"It wasn't in the plan"** as the reason a reachable wrong behavior was left in place — that is a missing case, and it is required.
+- ❌ **Fixing a missing case silently** — no test, no record: the next change breaks it again and nobody knows the plan had a gap.
 
 ---
 
@@ -94,4 +121,5 @@ Use these to discover scenarios. They are prompts for thinking, not a form to fi
 | **Brainstormer** | Transitions & Lifecycle category; `## Behavior Scenarios` in the Understanding Summary and `context.md` |
 | **Architect** | `### State & Interaction Matrix` in the spec |
 | **Planner** | Derives `## Feature-Level Scenarios`; scenario tests in the owning task; `Behavior Scenario` rows in `traceability.md` |
-| **Feature Agent** | Transitions & Lifecycle questions; `### Behavior Scenarios` in its plan with owning task and test |
+| **Feature Agent** | Transitions & Lifecycle questions; `### Behavior Scenarios` in its plan with owning task and test; handles missing cases found while implementing |
+| **Implementer** | Handles missing cases found while implementing (Discovered During Implementation), recording each as `(discovered)` |

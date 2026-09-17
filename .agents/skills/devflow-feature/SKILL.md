@@ -142,7 +142,7 @@ For each task in the approved plan:
 **🟢 Green Phase:**
 1. Read the target file (if modifying existing).
 2. Write the production code using `create_file` or `replace_file_content`.
-3. Keep it minimal — only what makes the test pass.
+3. Keep it minimal — only what makes the test pass. If writing it reveals a missing case of the requested behavior (a reachable situation where it is observably wrong and no test covers it), handle it through its own Red → Green and record it as `(discovered)` — never silently, never skipped ([behavior-scenarios.md](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>) → Discovered During Implementation). New functionality is still out of scope.
 4. Verify the test PASSES:
    - **Standard/CI:** run `{Test Command (single file)} {test path}`. If it fails → run `devflow-ctl iterate implement_debug --slug {slug}`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
    - **Pair:** ask the user to run the command and paste the output. Do NOT commit until PASS is confirmed.

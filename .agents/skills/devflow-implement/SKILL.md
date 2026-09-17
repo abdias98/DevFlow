@@ -20,7 +20,7 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 - Read [Parallel Subagents](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) — for independent task dispatch and verifier dispatch.
 - Read [Verifier Subagent](<{{SKILLS_DIR}}/shared/verifier-subagent.md>) — for the pre-review verification step.
 - Read [Task Supervisor](<{{SKILLS_DIR}}/shared/task-supervisor.md>) — for per-wave supervisor checks on task subagents.
-- Write **minimal code** to pass tests — nothing more, nothing less.
+- Write **minimal code for the requested behavior — complete, not partial.** The tests define the minimum; they do not excuse a reachable wrong behavior the plan forgot. See [Discovered During Implementation](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>) (behavior-scenarios.md).
 - Follow the plan **step by step** — do not skip or reorder.
 - For each task: Red phase (create test file, inform user) → Green phase (write code to pass, inform user).
 - **NEVER run tests.** Provide the exact command and let the user execute it. **Exception (Standard mode):** When `Pair Mode: no` is set, auto-execute tests, branches, commits, and git SHAs. See `rules.md` → `## Implementation Modes`.
@@ -30,7 +30,8 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
   2. If yes, **document the proposed deviation** in an INFO comment or `## Additional Recommendations` section.
   3. **Flag it to the user** with reasoning before making the change.
   4. Only proceed with the deviation after user approval.
-- **NEVER add features** not in the plan.
+- **NEVER add features** not in the plan — no capability, option, output or element nobody asked for; record the idea in `### Additional Recommendations` instead.
+- **ALWAYS handle a missing case of requested behavior** you find while implementing — a situation the requested behavior can actually reach and gets observably wrong (change while in flight, repetition, order, partial failure, data limit). Handle it through its own Red → Green, record it as `(discovered)` in the plan's Feature-Level Scenarios and in `traceability.md`, and name it as a plan gap in `### Additional Recommendations`. The question that separates the two: *would the person who asked for this feature call the current behavior a bug?* ([behavior-scenarios.md](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>) → Discovered During Implementation)
 - **When applying standards:** if the fix falls in the Impact Zone with a closed coherence reason, apply it and record `devflow-ctl scope justify <file> "<reason>"`; otherwise defer it via `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` (`rules.md` → Scope-Locking — Three Zones).
 - Commit at each task checkpoint with the pre-written message from the plan, formatted `{type}({scope}): {description}` per `git-conventions.md` §1.
 - After ALL tasks complete, **auto-invoke the Reviewer** (`devflow-review`).
