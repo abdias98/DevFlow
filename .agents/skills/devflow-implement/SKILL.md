@@ -109,7 +109,7 @@ After all subagents in a wave return, the Implementer runs **supervisor checks**
    - **Goal:** Verify task {N} implementation matches its work packet and stays in scope.
    - **Context — READ:** plan.md (ONLY task {N}'s work packet), {files declared in task N's deliverables}. **DO NOT READ:** other tasks' sections, the full plan, context.md, standards, the Implementer's reasoning.
    - **Constraints:** Read-only. Do NOT run tests. Do NOT edit files. Check against **acceptance criteria** (NOT implementation guide). Run `devflow-ctl scope check {file} --slug {slug}` for each modified file.
-   - **Output:** Findings table (BLOCK/WARN/INFO) across 3 axes: plan compliance, scope compliance, obvious issues. Verdict: PASS / PASS_WITH_WARNINGS / FAIL.
+   - **Output:** Findings table (BLOCK/WARN/INFO) across 4 axes: plan compliance, scope compliance, obvious issues, behavior paths (acceptance criteria and owned scenarios ↔ code paths). Verdict: PASS / PASS_WITH_WARNINGS / FAIL.
 
 2. **Cross-task consistency check (fresh context):** Dispatch one check that verifies interfaces across all tasks in the wave:
    - **Goal:** Verify that tasks in wave {N} produced consistent interfaces and no conflicts.
@@ -184,7 +184,7 @@ If the skip criteria are met, proceed directly to Step 6.
    - **Goal:** Verify the implementation matches the plan structurally and stays in scope.
    - **Context:** The plan document, the spec (if architecture-relevant), the list of modified files, and `devflow-ctl scope list --slug {slug}` output. **No access to the Implementer's reasoning.**
    - **Constraints:** Read-only. Do NOT run tests. Do NOT edit files. Do NOT do deep quality/security analysis (that is the Reviewer's job).
-   - **Output format:** Findings list with verdict (PASS / PASS_WITH_WARNINGS / FAIL) and per-finding severity (BLOCK / WARN / INFO) across five axes: structural completeness, scope compliance, plan compliance, obvious issues, and companion changes (Impact Zone completeness).
+   - **Output format:** Findings list with verdict (PASS / PASS_WITH_WARNINGS / FAIL) and per-finding severity (BLOCK / WARN / INFO) across six axes: structural completeness, scope compliance, plan compliance, obvious issues, companion changes (Impact Zone completeness), and behavior paths (acceptance criteria and Feature-Level Scenarios ↔ code paths).
 2. Dispatch the verifier (parallel subagent if the editor supports it; otherwise inline with a deliberate context reset — see [verifier-subagent.md](<{{SKILLS_DIR}}/shared/verifier-subagent.md>) → Fallback).
 3. Act on findings:
    - **Any BLOCK:** fix the issue(s), re-dispatch the verifier to confirm the fix, then proceed to Step 6. If a BLOCK cannot be fixed without plan amendment, STOP and ask the user.

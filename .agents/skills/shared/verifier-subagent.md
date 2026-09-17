@@ -40,7 +40,7 @@ The verifier is a **fresh-context** subagent. It does NOT inherit the Implemente
 
 ### 2. Verification axes
 
-The verifier checks five axes, in order:
+The verifier checks six axes, in order:
 
 1. **Structural completeness**
    - Do all files in the plan's File Map (Create + Modify lists) exist?
@@ -65,6 +65,14 @@ The verifier checks five axes, in order:
    - Read the plan's File Map **Impact Zone** table. For each row marked `touch (coherence)`, confirm that file was actually modified. A coherence fix the plan called for but the Implementer skipped leaves a dangling caller — the ripple effect the three-zone model exists to catch. Flag a skipped `touch (coherence)` row as **BLOCK** if it looks like it would break compilation/contract, **WARN** otherwise.
    - For any Impact Zone file marked `no touch`, spot-check that it still doesn't reference the changed symbol in a way the Core change broke (re-run `devflow-ctl scope impact {core file}` if the plan's table looks stale). A dependent that clearly needed a coherence change but was never flagged is a **WARN** — note it for the Reviewer even though it isn't the Implementer's omission to fix on this pass.
    - This axis only applies when the plan declares an Impact Zone; a plan predating Wave 12 has none, and this axis reports "N/A — no Impact Zone declared."
+
+6. **Behavior paths** (static — acceptance criteria and scenarios ↔ code paths)
+   - For each **acceptance criterion** of each task and each row of the plan's **Feature-Level Scenarios** (and the spec's State & Interaction Matrix rows they map to): is there a code path that produces the expected outcome — and is there **no** path that contradicts it?
+   - Trace statically, the way a reader would: which function handles the event, which branch runs, what state it leaves. This is a bounded check against the plan's own claims, not a hunt for new defects — that is the Reviewer's Correctness & Behavior dimension.
+   - **No path found** for a criterion or scenario → **WARN** ("criterion S2: no code path produces the reset of X").
+   - **A path that contradicts it** — traceable as a reproducible scenario (`rules.md` → Finding Evidence) → **BLOCK**: a stated acceptance criterion or scenario the code demonstrably fails is a failed requirement under Behavioral Impact Severity.
+   - A scenario owned by a task with **no sequence test** in that task's test file → **WARN**.
+   - Plans without Feature-Level Scenarios (written before the section existed) check acceptance criteria only.
 
 ### 3. Output format
 
@@ -110,7 +118,7 @@ the Implementer performs the verification **inline** with a deliberate context r
 
 1. Set aside the implementation reasoning.
 2. Re-read the plan's File Map and task list.
-3. Walk through the five verification axes against the actual files on disk.
+3. Walk through the six verification axes against the actual files on disk.
 4. Produce the findings list.
 
 The inline fallback is identical in substance — the key is the **context reset**, not the dispatch mechanism. The verifier's value comes from looking at the implementation with fresh eyes, not from being a separate process.
@@ -122,6 +130,7 @@ The inline fallback is identical in substance — the key is the **context reset
 - ❌ **Verifier inherits Implementer context** — confirmation bias defeats the purpose. The verifier MUST have fresh context (or a deliberate inline reset).
 - ❌ **Verifier runs tests** — test execution is the user's responsibility (Pair mode) or auto-run (Standard mode). The verifier is static analysis only.
 - ❌ **Verifier does deep quality review** — that is the Reviewer's job. The verifier catches structural/scope/plan-compliance issues, not SOLID violations or security vulnerabilities.
+- ❌ **Behavior-paths axis turned into a defect hunt** — it checks the plan's own claims (acceptance criteria, owned scenarios) against code paths; finding defects the plan never described is the Reviewer's Correctness & Behavior dimension.
 - ❌ **Skip the verifier for non-trivial implementations** — the Reviewer's budget is better spent on deeper analysis when low-hanging fruit is already caught.
 - ❌ **Dispatch a verifier for trivial implementations** — the dispatch overhead exceeds the benefit. Use the skip criteria above.
 
@@ -136,7 +145,7 @@ The verifier, task supervisor, and Reviewer are complementary, not redundant:
 | **When** | After each wave (before commit) | After ALL waves (before review) | After verifier passes |
 | **Scope** | Per-wave (tasks in one wave) | Global (all tasks, all waves) | All changed files |
 | **Context** | Fresh, narrow (work packet + task files) | Fresh, broader (full plan + all files) | Fresh, full (diff + spec + plan + standards) |
-| **What it checks** | Plan compliance per task, scope per task, cross-task interfaces | Structural completeness, scope global, plan compliance global | Quality, security, performance, architecture, visual diff |
+| **What it checks** | Plan compliance per task, scope per task, behavior paths per task, cross-task interfaces | Structural completeness, scope global, plan compliance global, companion changes, behavior paths global | Quality, security, performance, architecture, correctness & behavior, visual diff |
 | **Output** | Findings per task + cross-task verdict | Findings list (BLOCK/WARN/INFO) | Review verdict (BLOCK/WARN/INFO) |
 | **Action on BLOCK** | Implementer fixes, re-checks that task | Implementer fixes, re-verifies | Routes back to Implementer via Debugger |
 | **Action on BLOCK** | Implementer fixes, re-verifies | Routes back to Implementer via Debugger |
