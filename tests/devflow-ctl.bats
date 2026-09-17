@@ -1005,7 +1005,7 @@ EOF
 
 # ── Metrics aggregation (F57) ────────────────────────────────────────────────
 
-setup_metrics() { export DEVFLOW_AGGREGATE_FILE="$BATS_TEST_TMPDIR/_aggregate.md"; }
+setup_metrics() { export DEVFLOW_AGGREGATE_FILE="$BATS_TEST_TMPDIR/_aggregate.md"; export DEVFLOW_ESCAPE_FILE="$BATS_TEST_TMPDIR/escapes.md"; }
 
 write_full_metrics() {
   cat > "$BATS_TEST_TMPDIR/full-metrics.md" << 'EOF'
@@ -1146,6 +1146,35 @@ EOF
   run "$CTL" metrics aggregate
   [ "$status" -eq 2 ]
   [[ "$output" == *"usage: devflow-ctl metrics aggregate"* ]]
+}
+
+@test "metrics aggregate: escape rate is n/a with no escapes.md" {
+  setup_metrics
+  write_full_metrics
+  run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/full-metrics.md"
+  [ "$status" -eq 0 ]
+  grep -qF "Escape rate (cycles with a post-approval defect) | n/a — no escapes recorded yet" "$DEVFLOW_AGGREGATE_FILE"
+}
+
+@test "metrics aggregate: escape rate counts only cycles with a matching slug" {
+  setup_metrics
+  write_full_metrics
+  write_standalone_metrics
+  "$CTL" escape add --class logic --layer implementer --ref r --note n --slug demo-full >/dev/null
+  "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/full-metrics.md"
+  run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/feat-metrics.md"
+  [ "$status" -eq 0 ]
+  grep -qF "Escape rate (cycles with a post-approval defect) | 50% (1/2 cycles)" "$DEVFLOW_AGGREGATE_FILE"
+}
+
+@test "metrics aggregate: escape rate is stable under a hostile locale" {
+  setup_metrics
+  write_full_metrics
+  "$CTL" escape add --class logic --layer implementer --ref r --note n --slug demo-full >/dev/null
+  run bash -c "LC_ALL=es_ES.UTF-8 '$CTL' metrics aggregate '$BATS_TEST_TMPDIR/full-metrics.md'"
+  [ "$status" -eq 0 ]
+  grep -qF "Escape rate (cycles with a post-approval defect) | 100% (1/1 cycles)" "$DEVFLOW_AGGREGATE_FILE"
+  ! grep -q "100," "$DEVFLOW_AGGREGATE_FILE"
 }
 
 # ── Traceability coverage (F58) ──────────────────────────────────────────────
@@ -1451,4 +1480,100 @@ N/A — stateless (spec)
 EOF
   run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md"
   [ "$status" -eq 0 ]
+}
+
+# ── Escape analysis (F92) ─────────────────────────────────────────────────────
+
+setup_escape() { export DEVFLOW_ESCAPE_FILE="$BATS_TEST_TMPDIR/escapes.md"; }
+
+@test "escape add: creates the file with header + table and records a row" {
+  setup_escape
+  run "$CTL" escape add --class state-transitions --layer plan-tests --ref "PR#42" --note "Tab loaded stale data" --slug demo-cycle
+  [ "$status" -eq 0 ]
+  [ -f "$DEVFLOW_ESCAPE_FILE" ]
+  grep -q "^# Escape Analysis" "$DEVFLOW_ESCAPE_FILE"
+  grep -q "| E1 | state-transitions | plan-tests | PR#42 | Tab loaded stale data | demo-cycle |" "$DEVFLOW_ESCAPE_FILE"
+}
+
+@test "escape add: ids increment across calls" {
+  setup_escape
+  "$CTL" escape add --class logic --layer implementer --ref r1 --note n1 >/dev/null
+  run "$CTL" escape add --class logic --layer implementer --ref r2 --note n2
+  [ "$status" -eq 0 ]
+  grep -q "^| E2 |" "$DEVFLOW_ESCAPE_FILE"
+}
+
+@test "escape add: --slug defaults to 'unknown' outside a session" {
+  setup_escape
+  run "$CTL" escape add --class logic --layer implementer --ref r --note n
+  [ "$status" -eq 0 ]
+  grep -q "| unknown |" "$DEVFLOW_ESCAPE_FILE"
+}
+
+@test "escape add: rejects an invalid class" {
+  setup_escape
+  run "$CTL" escape add --class bogus --layer implementer --ref r --note n
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"--class must be one of"* ]]
+}
+
+@test "escape add: rejects an invalid layer" {
+  setup_escape
+  run "$CTL" escape add --class logic --layer bogus --ref r --note n
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"--layer must be one of"* ]]
+}
+
+@test "escape add: accepts a reviewer:<dimension> layer" {
+  setup_escape
+  run "$CTL" escape add --class caller-contract --layer "reviewer:correctness-behavior" --ref r --note n
+  [ "$status" -eq 0 ]
+  grep -q "reviewer:correctness-behavior" "$DEVFLOW_ESCAPE_FILE"
+}
+
+@test "escape add: rejects a missing required option" {
+  setup_escape
+  run "$CTL" escape add --class logic --layer implementer --note n
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"usage: devflow-ctl escape add"* ]]
+}
+
+@test "escape list: reports 'not found' when no escapes recorded yet" {
+  setup_escape
+  run "$CTL" escape list
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"No escape analysis found"* ]]
+}
+
+@test "escape list: --layer filters to matching rows only" {
+  setup_escape
+  "$CTL" escape add --class logic --layer implementer --ref r1 --note n1 >/dev/null
+  "$CTL" escape add --class logic --layer verifier --ref r2 --note n2 >/dev/null
+  run "$CTL" escape list --layer verifier
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"r2"* ]]
+  [[ "$output" != *"r1"* ]]
+}
+
+@test "escape report: counts by layer and class, and matches under a hostile locale" {
+  setup_escape
+  "$CTL" escape add --class state-transitions --layer plan-tests --ref r1 --note n1 >/dev/null
+  "$CTL" escape add --class side-effects --layer implementer --ref r2 --note n2 >/dev/null
+  "$CTL" escape add --class standard-design --layer standard-missing --ref r3 --note n3 >/dev/null
+  run "$CTL" escape report
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Total escapes: 3"* ]]
+  [[ "$output" == *"plan-tests"*"1"* ]]
+  # F63 precedent: LC_NUMERIC/LC_ALL must not introduce a locale-formatted number.
+  run bash -c "LC_ALL=es_ES.UTF-8 '$CTL' escape report"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Total escapes: 3"* ]]
+  [[ "$output" != *","* ]]
+}
+
+@test "escape report: says 'not found' when there is nothing recorded" {
+  setup_escape
+  run "$CTL" escape report
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"No escape analysis found"* ]]
 }

@@ -35,6 +35,9 @@
 #   knowledge add <file>                             Add a knowledge base entry from a file
 #   backlog add <file> <reason> [--severity b|i|f]    Record a deferred (Outside-zone) finding
 #   backlog list [--area <glob>]                      List deferred findings, optionally by area
+#   escape add --class <c> --layer <l> --ref <r> --note <n>  Record a post-approval defect
+#   escape list [--layer <layer>]                     List escapes, optionally by layer
+#   escape report                                      Escape counts by layer and class
 #   metrics aggregate <metrics-file>                  Append a cycle's metrics to _aggregate.md, recompute averages
 #   traceability check <file>                         Count Source/TOTAL coverage in a traceability matrix; exit 1 if <100%
 #   sessions                                         List all active DevFlow sessions with phase and state
@@ -1095,6 +1098,110 @@ cmd_backlog() {
   esac
 }
 
+# ── Escape analysis (F92) ──────────────────────────────────────────────────────
+# A defect found AFTER a cycle was approved -- the only ground truth for
+# whether the review chain actually caught what it should have. Not
+# session-scoped; survives across cycles at a fixed path like the knowledge
+# base and the backlog.
+
+ESCAPE_FILE="${DEVFLOW_ESCAPE_FILE:-docs/devflow/knowledge-base/escapes.md}"
+
+_escape_valid_class() {
+  case "$1" in
+    logic|state-transitions|side-effects|caller-contract|data-limits|partial-failure|standard-design) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# layer is one of the fixed six, or "reviewer:<dimension>" with any non-empty
+# dimension -- the dimension name is free text (subagent names may change),
+# so only the "reviewer:" prefix shape is validated, not an enum of dimensions.
+_escape_valid_layer() {
+  case "$1" in
+    brainstorm|spec|plan-tests|implementer|verifier|standard-missing) return 0 ;;
+    reviewer:?*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+cmd_escape() {
+  case "${1:-}" in
+    add)
+      shift
+      local class="" layer="" ref="" note="" slug="" i
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --class) class="${2:-}"; shift 2 ;;
+          --layer) layer="${2:-}"; shift 2 ;;
+          --ref)   ref="${2:-}";   shift 2 ;;
+          --note)  note="${2:-}";  shift 2 ;;
+          --slug)  slug="${2:-}";  shift 2 ;;
+          *) die "escape add: unknown option '$1'" ;;
+        esac
+      done
+      [[ -n "$class" && -n "$layer" && -n "$ref" && -n "$note" ]] || \
+        die 'usage: devflow-ctl escape add --class <class> --layer <layer> --ref "<PR#/issue/incident>" --note "<description>" [--slug <cycle-slug>]'
+      _escape_valid_class "$class" || die "escape add: --class must be one of logic|state-transitions|side-effects|caller-contract|data-limits|partial-failure|standard-design (got '$class')"
+      _escape_valid_layer "$layer" || die "escape add: --layer must be one of brainstorm|spec|plan-tests|implementer|verifier|standard-missing|reviewer:<dimension> (got '$layer')"
+      mkdir -p "$(dirname "$ESCAPE_FILE")"
+      if [[ ! -f "$ESCAPE_FILE" ]]; then
+        {
+          echo "# Escape Analysis"
+          echo ""
+          echo "Defects found after a DevFlow cycle reported APPROVED (shared/escape-analysis.md). Not a blame log -- instrumentation for whether the review chain actually caught what it should have."
+          echo ""
+          echo "| ID | Class | Layer | Ref | Note | Cycle | Date |"
+          echo "|----|-------|-------|-----|------|-------|------|"
+        } > "$ESCAPE_FILE"
+      fi
+      local n; n="$(grep -c '^| E[0-9]' "$ESCAPE_FILE" 2>/dev/null || true)"
+      local id="E$((${n:-0} + 1))"
+      # Pipes in free text would break the table -- neutralize them.
+      ref="${ref//|/-}"; note="${note//|/-}"
+      echo "| $id | $class | $layer | $ref | $note | ${slug:-${SLUG:-unknown}} | $(now_iso) |" >> "$ESCAPE_FILE"
+      ok "escape entry $id recorded ($class / $layer)"
+      ;;
+    list)
+      [[ -f "$ESCAPE_FILE" ]] || { echo "No escape analysis found at $ESCAPE_FILE"; exit 0; }
+      local layer_filter=""
+      [[ "${2:-}" == "--layer" ]] && layer_filter="${3:-}"
+      if [[ -z "$layer_filter" ]]; then
+        cat "$ESCAPE_FILE"
+      else
+        echo "| ID | Class | Layer | Ref | Note | Cycle | Date |"
+        echo "|----|-------|-------|-----|------|-------|------|"
+        awk -F'|' -v want="$layer_filter" '
+          /^\| E[0-9]/ {
+            layer = $4; gsub(/^ +| +$/, "", layer)
+            if (layer == want) print
+          }
+        ' "$ESCAPE_FILE"
+      fi
+      ;;
+    report)
+      if [[ ! -f "$ESCAPE_FILE" ]]; then
+        echo "No escape analysis found at $ESCAPE_FILE"
+        exit 0
+      fi
+      echo "Escape Report — $ESCAPE_FILE"
+      echo ""
+      local total; total="$(grep -c '^| E[0-9]' "$ESCAPE_FILE" 2>/dev/null || true)"
+      total="${total:-0}"
+      echo "Total escapes: $total"
+      echo ""
+      if [[ "$total" -eq 0 ]]; then
+        exit 0
+      fi
+      echo "By layer:"
+      awk -F'|' '/^\| E[0-9]/{l=$4; gsub(/^ +| +$/,"",l); c[l]++} END{for (k in c) printf "  %-24s %d\n", k, c[k]}' "$ESCAPE_FILE" | LC_ALL=C sort -k2 -rn
+      echo ""
+      echo "By class:"
+      awk -F'|' '/^\| E[0-9]/{l=$3; gsub(/^ +| +$/,"",l); c[l]++} END{for (k in c) printf "  %-24s %d\n", k, c[k]}' "$ESCAPE_FILE" | LC_ALL=C sort -k2 -rn
+      ;;
+    *) die 'usage: devflow-ctl escape add --class <class> --layer <layer> --ref "<ref>" --note "<note>" [--slug <slug>] | list [--layer <layer>] | report' ;;
+  esac
+}
+
 # ── Metrics aggregation (deterministic) ───────────────────────────────────────
 # Moves "recalculate the averages" from LLM arithmetic over a markdown table to
 # a tool that actually adds. Only the 4 Averages rows with a real column behind
@@ -1201,6 +1308,22 @@ _metrics_recalculate_averages() {
   existing_phase="$(awk -F'|' '/Phase with most retries/{gsub(/^ +| +$/,"",$3); print $3; exit}' "$AGGREGATE_FILE")"
   existing_phase="${existing_phase:-manual entry — no structured column to derive this from}"
 
+  # Escape rate (F93): the fraction of aggregated cycles with at least one
+  # recorded post-approval escape whose Cycle column matches that cycle's
+  # slug. This is the only aggregate metric about outcome rather than
+  # process -- optional, since escapes.md may not exist yet.
+  local escape_rate="n/a — no escapes recorded yet"
+  if [[ -f "$ESCAPE_FILE" && "$total_cycles" -gt 0 ]]; then
+    local slugs_with_escape
+    slugs_with_escape="$(awk -F'|' '/^\| E[0-9]/{s=$7; gsub(/^ +| +$/,"",s); print s}' "$ESCAPE_FILE" | sort -u)"
+    local cycles_with_escape=0 cycle_slug
+    while IFS= read -r cycle_slug; do
+      [[ -n "$cycle_slug" ]] || continue
+      grep -qxF -- "$cycle_slug" <<< "$slugs_with_escape" && ((cycles_with_escape++)) || true
+    done < <(awk -F'|' '/^\| [0-9]/{s=$5; gsub(/^ +| +$/,"",s); print s}' "$AGGREGATE_FILE")
+    escape_rate="$(LC_ALL=C awk -v c="$cycles_with_escape" -v t="$total_cycles" 'BEGIN{printf "%.0f%% (%d/%d cycles)", (t>0 ? c*100/t : 0), c, t}')"
+  fi
+
   # Strip any existing "## Averages" section (from the first "##" of that
   # heading to end of file) and append a freshly computed one.
   local tmp; tmp="$(mktemp)"
@@ -1221,6 +1344,7 @@ _metrics_recalculate_averages() {
     echo "| Most frequent BLOCK category | ${existing_category} |"
     echo "| Phase with most retries | ${existing_phase} |"
     echo "| Total cycles completed | ${total_cycles} |"
+    echo "| Escape rate (cycles with a post-approval defect) | ${escape_rate} |"
   } > "$AGGREGATE_FILE"
   rm -f "$tmp"
 }
@@ -1761,6 +1885,7 @@ case "$CMD" in
   capabilities) cmd_capabilities "$@" ;;
   knowledge)  cmd_knowledge "$@" ;;
   backlog)    cmd_backlog "$@" ;;
+  escape)     cmd_escape "$@" ;;
   metrics)    cmd_metrics "$@" ;;
   traceability) cmd_traceability "$@" ;;
   sessions)   cmd_sessions "$@" ;;

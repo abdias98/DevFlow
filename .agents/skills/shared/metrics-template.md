@@ -55,6 +55,7 @@ Metrics are recorded per cycle and saved to `docs/devflow/metrics/YYYY-MM-DD-{sl
 | DoD criteria met | {N}/{N} ({N}%) |
 | Traceability coverage | {N}% |
 | Rollbacks performed | {N} |
+| Escapes after APPROVED | {N} — rows in `docs/devflow/knowledge-base/escapes.md` whose Cycle column matches this slug, or 0 if none recorded |
 
 ## Reviewer Categories
 
@@ -63,6 +64,12 @@ Metrics are recorded per cycle and saved to `docs/devflow/metrics/YYYY-MM-DD-{sl
 | 🔴 BLOCK | {e.g., "Missing validation (2), Hardcoded secret (1)"} |
 | 🟡 WARN | {e.g., "Naming inconsistency (3), Missing memoization (1)"} |
 | 🟢 INFO | {e.g., "Code smell in unrelated file (2)"} |
+
+## Escape Layers *(only if Escapes after APPROVED > 0)*
+
+| Layer | Count |
+|-------|:-----:|
+| {e.g., "reviewer:correctness-behavior"} | {N} |
 
 ## Notes
 
@@ -123,6 +130,7 @@ Standalone agents (Feature, Bug-Fix, Refactor) record a **lightweight** metrics 
 | INFO findings (Reviewer) | {N} |
 | Reviewer iterations | {N} |
 | Scope additions (`scope add`) | {N} |
+| Escapes after APPROVED | {N} — see `docs/devflow/knowledge-base/escapes.md`, filtered to this cycle's slug |
 
 ## Notes
 
