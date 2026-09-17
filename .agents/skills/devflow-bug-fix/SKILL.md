@@ -228,6 +228,8 @@ Pass to the Reviewer:
 ### Step 11 — Record Metrics & Write Back Knowledge
 
 **Write back to the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — the Bug-Fixer READS it in Step 2; it must also CONTRIBUTE so future bug-fixes reuse what was learned. This is in addition to the stack-specific pattern already appended to `docs/devflow/knowledge-base/debug-patterns.md` in Step 9 — that file is a quick lookup table for known error signatures, while `learnings.md` is the framework's cross-cycle memory read by every agent:
+
+**Escape analysis first** ([escape-analysis.md](<{{SKILLS_DIR}}/shared/escape-analysis.md>)): if a prior cycle in this same area was already approved, ask the user whether it received any external correction since (a PR review comment, a QA bug, an incident). If yes, classify and record each with `devflow-ctl escape add --class <class> --layer <layer> --ref "<ref>" --note "<note>" --slug {slug}`, and add its anti-pattern below alongside this cycle's own findings. Skip silently if this is the area's first bug-fixes cycle.
 - Extract the root cause pattern and fix strategy applied successfully.
 - Extract anti-patterns from any BLOCK/WARN findings raised by the Reviewer.
 - **Add to BOTH sections**, following the same conventions as the lifecycle Finalizer:

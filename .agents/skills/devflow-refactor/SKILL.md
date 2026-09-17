@@ -237,6 +237,8 @@ Pass to the Reviewer:
 ### Step 10 — Record Metrics & Write Back Knowledge
 
 **Write back to the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — the Refactorer READS it in Step 2; it must also CONTRIBUTE so future refactors reuse what was learned:
+
+**Escape analysis first** ([escape-analysis.md](<{{SKILLS_DIR}}/shared/escape-analysis.md>)): if a prior cycle in this same area was already approved, ask the user whether it received any external correction since (a PR review comment, a QA bug, an incident). If yes, classify and record each with `devflow-ctl escape add --class <class> --layer <layer> --ref "<ref>" --note "<note>" --slug {slug}`, and add its anti-pattern below alongside this cycle's own findings. Skip silently if this is the area's first refactors cycle.
 - Extract reusable patterns applied successfully (structural improvements, patterns that resolved the pain points from Step 1).
 - Extract anti-patterns from any BLOCK/WARN findings raised by self-review or the Reviewer.
 - **Add to BOTH sections**, following the same conventions as the lifecycle Finalizer:
