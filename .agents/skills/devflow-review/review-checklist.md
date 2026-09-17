@@ -21,6 +21,7 @@ Each check section belongs to exactly one review subagent (`SKILL.md` → Step 3
 | API-Specific Checks | 5a — Interfaces |
 | Event-Driven Checks | 5a — Interfaces |
 | Integration Consumption Checks | 5a — Interfaces |
+| Design Patterns Checks | 5d — Structural Patterns |
 | UI-Specific Checks | 5b — Presentation |
 | Accessibility | 5b — Presentation |
 | Logging | 5c — Operations |
@@ -159,6 +160,14 @@ Performed by subagent 4 following [correctness-guide.md](./correctness-guide.md)
 - [ ] Schema changes are versioned and additive, never repurposing a field (`event-driven-architecture.md §3`).
 - [ ] No consumer assumes delivery order without a partitioning/ordering key that guarantees it (`event-driven-architecture.md §4`).
 - [ ] A failed event has a dead-letter path with alerting (`event-driven-architecture.md §5`).
+
+---
+
+## Design Patterns Checks *(apply only if the change introduces or extends a new abstraction, extension point, or variant-handling structure)*
+
+- [ ] The pattern used solves a problem the code actually has — not applied because it's a recognizable name (`design-patterns.md §1`).
+- [ ] An extension point was introduced only where a second concrete variant exists or is a stated near-term requirement (`design-patterns.md §3`).
+- [ ] Where the codebase already solves this class of problem, the new code follows the existing pattern or explicitly justifies diverging (`design-patterns.md §2`).
 
 ---
 

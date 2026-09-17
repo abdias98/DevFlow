@@ -106,6 +106,10 @@ Fast-scan list of the most critical **BLOCK triggers** per standard. It is a fir
 - Vague commit message with no scope or actionable description → §1 → WARN
 - Multiple unrelated changes bundled in one commit → §1 → WARN
 
+## design-patterns.md — Red Flags *(no BLOCK by default — see the standard's own Severity Classification)*
+- A Strategy/Factory/Decorator-style extension point introduced for a single current implementation with no stated second variant → §3 → WARN
+- A second, different solution to a problem the codebase already solves with an established pattern, no recorded reason → §2 → WARN
+
 ## design-principles.md — Red Flags *(always applies — every request, every cycle)*
 - The same business rule/validation/calculation reimplemented in 2+ places, already diverging → §1 → WARN
 - A new abstraction, config layer, or architectural pattern added with no current concrete requirement → §2 → WARN

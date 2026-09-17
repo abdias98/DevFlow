@@ -33,6 +33,9 @@ When a topic is covered by more than one standard:
 | Query-efficiency judgment (N+1, unbounded results) vs. the indexing that access patterns require | `performance.md` §2 | `data-persistence.md` §5 |
 | Authorization for who may see a tenant's data vs. the schema/query mechanism enforcing isolation | `security.md` §2 | `data-persistence.md` §7 |
 | Short-critical-section discipline for in-process locks vs. the same discipline for database transactions | `concurrency.md` §3 | `data-persistence.md` §3 |
+| YAGNI (general: don't build for a hypothetical need) vs. its application to pattern/extension-point selection specifically | `design-principles.md` §2 | `design-patterns.md` §3 |
+| Architectural pattern selection (layering, feature-based, hexagonal) vs. tactical pattern selection within a layer | `project-design.md` §2 | `design-patterns.md` §1 |
+| OCP: extend rather than modify tested code vs. which tactical pattern implements that extension | `solid.md` §2 | `design-patterns.md` §1 |
 
 When you find a new overlap, add the pair here after resolving it — this table is the audit trail of "who owns what," so the next overlap has precedent to follow instead of reinventing the resolution.
 

@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.23.0 — 2026-09-17
+
+### New standards — 2.23.0
+- **`design-patterns.md`** (new, v1.0.0): the 20th standard — a problem→pattern→when-not-to catalog (Strategy, Factory, Adapter, Repository, Observer/Pub-Sub, State, Command, Decorator, Facade, Builder), the rule to follow an existing project precedent before introducing a second solution to the same problem (§2), that an extension point earns its complexity only with a real or stated second variant (§3, the pattern-selection application of `design-principles.md` §2 YAGNI), and composition over inheritance for variant behavior (§4). Deliberately **no BLOCK trigger by default** — pattern selection is a design-quality concern, not a correctness/safety invariant. Three canonical-owner boundaries recorded in `standards-dry-policy.md` against `design-principles.md` §2, `project-design.md` §2 (architectural vs. tactical pattern selection), and `solid.md` §2 (OCP vs. which pattern implements the extension). Registered in `standards-quick-card.md`, `critical-friend.md`, `standards-loading.md`; linked from Architect, Planner, Implementer. New Reviewer Domain group **5d — Structural Patterns** (single-standard group — subagent 3 was already at the 5-standard cap and design-patterns.md belongs conceptually there, so it is dispatched conditionally instead). Refs: F87, Wave 20.
+
 ## 2.22.0 — 2026-09-17
 
 ### New standards — 2.22.0

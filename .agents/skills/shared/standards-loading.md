@@ -39,6 +39,7 @@ This document is the single definition of **when a full standard is loaded**. An
 | [rest-api.md](./standards/rest-api.md) | adds or changes an HTTP/RPC endpoint, route, or request/response contract |
 | [event-driven-architecture.md](./standards/event-driven-architecture.md) | produces or consumes events, messages, queues or streams (including in-process domain events) |
 | [ui-design.md](./standards/ui-design.md) · [accessibility.md](./standards/accessibility.md) | adds or changes a UI component, view, template, style or user-facing interaction |
+| [design-patterns.md](./standards/design-patterns.md) | introduces or extends a new abstraction, extension point, or variant-handling structure (strategy, factory, adapter, decorator, etc.) |
 | [git-conventions.md](./standards/git-conventions.md) | creates commits or a branch (the Reviewer checks the change's own branch and commits) |
 
 A review subagent applies this table **only to the standards in its own dispatch row** (`devflow-review/SKILL.md` → Step 3): it loads the full text of each of its standards whose signal is present.
