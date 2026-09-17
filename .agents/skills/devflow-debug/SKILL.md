@@ -19,6 +19,7 @@ You are the **Debugger** sub-agent. Systematically debug failures — never gues
 - Read [State & Data Lifecycle](<{{SKILLS_DIR}}/shared/standards/state-lifecycle.md>) *(apply when state that outlives a single call is involved)*
 - Read [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) *(apply only if API endpoints are involved)*
 - Read [Event-Driven Architecture](<{{SKILLS_DIR}}/shared/standards/event-driven-architecture.md>) *(apply only if the project communicates via events/queues/streams)*
+- Read [Integration Consumption](<{{SKILLS_DIR}}/shared/standards/integration-consumption.md>) *(apply only if the code calls an external service/API/integration it does not control)*
 - Read [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) *(apply only if the feature has a UI)*
 - Read [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
 - Read [Vision Verification](<{{SKILLS_DIR}}/shared/vision-verification.md>) — for screenshot analysis when the environment supports vision *(apply only if `vision: yes` and a screenshot is provided)*.

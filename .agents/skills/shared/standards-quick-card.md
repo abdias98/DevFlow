@@ -68,6 +68,11 @@ Fast-scan list of the most critical **BLOCK triggers** per standard. It is a fir
 - Context-scoped state not reset on a context change — the previous context's data is attributed to the new one → §4
 - A cache/memoization key omits a parameter the value depends on, serving one context's answer to another → §8
 
+## integration-consumption.md — Red Flags (BLOCK)
+- Non-idempotent operation (charge, send, create) retried against an external integration with no idempotency guard → concurrency.md §5
+- No timeout on an outbound call whose hang can exhaust a shared resource pool → §1
+- Raw, unvalidated provider response passed directly into domain/business logic, crashing on a malformed field → §7
+
 ## dependencies.md — Red Flags (BLOCK)
 - Release with a known critical/high dependency vulnerability and no documented mitigation → §3
 - Dependency installed from an untrusted source or with integrity verification disabled → §4
