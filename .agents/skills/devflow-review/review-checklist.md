@@ -10,9 +10,10 @@ Each check section belongs to exactly one review subagent (`SKILL.md` → Step 3
 |---------|----------|
 | Security (OWASP Top 10) | 1 — Security & Safety |
 | Error Handling | 1 — Security & Safety |
-| Performance | 2 — Performance, Concurrency & State |
-| Concurrency | 2 — Performance, Concurrency & State |
-| State & Data Lifecycle | 2 — Performance, Concurrency & State |
+| Performance | 2 — Performance, Concurrency & Data |
+| Concurrency | 2 — Performance, Concurrency & Data |
+| State & Data Lifecycle | 2 — Performance, Concurrency & Data |
+| Data Persistence | 2 — Performance, Concurrency & Data |
 | Code Quality | 3 — Architecture & Design |
 | Architecture Alignment | 3 — Architecture & Design |
 | Test Coverage | 3 — Architecture & Design |
@@ -94,6 +95,13 @@ Performed by subagent 4 following [correctness-guide.md](./correctness-guide.md)
 - [ ] Context-scoped state resets on a context change before the new context's data arrives (`state-lifecycle.md §4`).
 - [ ] Every subscription, timer or listener a piece of state opens has a matching teardown (`state-lifecycle.md §5`).
 - [ ] Cache/memoization keys include every parameter the cached value depends on (`state-lifecycle.md §8`).
+
+### Data Persistence *(apply only if a persisted schema or migration is touched)*
+- [ ] Known invariants are enforced at the schema level where supported, not only in application code (`data-persistence.md §1`).
+- [ ] Any new migration has a rollback path, and a breaking change is sequenced across deploys (`data-persistence.md §2`).
+- [ ] A multi-step write that must be atomic is wrapped in a transaction or equivalent (`data-persistence.md §3`).
+- [ ] A new query pattern has a supporting index (`data-persistence.md §5`).
+- [ ] Multi-tenant queries and writes are scoped by tenant (`data-persistence.md §7`).
 
 ### Concurrency *(apply only if concurrent/async code is present)*
 - [ ] No non-atomic check-then-act / read-modify-write on shared state (`concurrency.md §2`).
@@ -193,7 +201,7 @@ Save to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`:
 | Dimension | Ran? | Standards loaded in full | Notes |
 |-----------|------|--------------------------|-------|
 | 1 — Security & Safety | ✅ / ⏭ {reason} | {list} | |
-| 2 — Performance, Concurrency & State | ✅ / ⏭ {reason} | {list} | |
+| 2 — Performance, Concurrency & Data | ✅ / ⏭ {reason} | {list} | |
 | 3 — Architecture & Design | ✅ / ⏭ {reason} | {list} | Reference implementation compared: `{path}` / none — closest sibling `{path}` |
 | 4 — Correctness & Behavior | ✅ / ⏭ {reason and signals} | — | Consumers read: {files} / none found — {how searched}; scenarios walked: {N}; open questions: {N} |
 | 5a/5b/5c — Domain | ✅ {groups} / ⏭ no trigger | {list} | |

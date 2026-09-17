@@ -73,6 +73,11 @@ Fast-scan list of the most critical **BLOCK triggers** per standard. It is a fir
 - No timeout on an outbound call whose hang can exhaust a shared resource pool → §1
 - Raw, unvalidated provider response passed directly into domain/business logic, crashing on a malformed field → §7
 
+## data-persistence.md — Red Flags (BLOCK)
+- A migration with no rollback path ships a breaking change that strands the previous app version mid-deploy → §2
+- A multi-step write that must be atomic has no transaction, and a partial failure leaves inconsistent data → §3
+- A query or write in a multi-tenant system omits the tenant identifier, exposing or modifying another tenant's data → §7
+
 ## dependencies.md — Red Flags (BLOCK)
 - Release with a known critical/high dependency vulnerability and no documented mitigation → §3
 - Dependency installed from an untrusted source or with integrity verification disabled → §4
