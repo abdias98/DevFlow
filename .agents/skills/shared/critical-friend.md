@@ -14,7 +14,7 @@ Execute all four checks. If any check raises a concern, present it to the user *
 
 ### Check 1 — Standards Compliance Scan
 
-**Start with the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>)** — scan BLOCK triggers first. If a red flag matches, load the full standard and cite the specific section. This saves context compared to loading all standards upfront.
+**Load standards per [Standards Loading](<{{SKILLS_DIR}}/shared/standards-loading.md>)** — scan the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) BLOCK triggers first, then load the full standard for every row below whose *Apply when* condition the request meets, whether or not a red flag matched. The Quick Card finds the most severe problems fast; it does not decide which standards are read, because it lists BLOCK triggers only and most design, structure and testing rules are WARN.
 
 | Standard | Apply when |
 |----------|------------|

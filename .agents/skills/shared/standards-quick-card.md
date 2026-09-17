@@ -1,9 +1,11 @@
 # Standards Quick Card
 
-Fast-scan reference for the Critical Friend check. Each entry shows the most critical BLOCK triggers only.
-For full rules, WARN/INFO triggers, and scope guidance → read the full standard.
+Fast-scan list of the most critical **BLOCK triggers** per standard. It is a first pass so the most severe problems are never missed — **not** a gate that decides whether a standard is read.
 
-> **How to use:** Scan this card first. If a red flag matches → load the full standard → cite `{standard}.md §{N} → BLOCK` in your finding.
+> **How to use:**
+> 1. Decide which standards apply with the domain signals in [standards-loading.md](./standards-loading.md), and load the **full** text of each one — whether or not anything below matches. Most design, structure and testing rules are WARN and never appear on this card.
+> 2. Scan this card for the applicable standards first. A match is cited as `{standard}.md §{N} → BLOCK`.
+> 3. Apply the rest of each loaded standard for WARN/INFO findings.
 
 ---
 

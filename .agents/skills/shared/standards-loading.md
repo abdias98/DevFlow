@@ -54,4 +54,10 @@ A review subagent applies this table **only to the standards in its own dispatch
 
 | Agent | Application |
 |-------|-------------|
+| **Orchestrator** (Validation Gate) | Loads every standard the request's domain applies to before scanning for BLOCKs |
+| **Critical Friend** (all standalone agents) | Check 1 loads every standard whose *Apply when* condition the request meets |
+| **Architect** | Loads the standards whose conditions the design meets, including Testing for the Test Architecture and the State & Interaction Matrix |
+| **Planner** | Loads the standards the design applies to, to write per-task constraints |
+| **Implementer** | Decides the applicable standards per task and passes them in each task subagent's brief |
+| **Feature Agent · Bug-Fixer · Refactorer** | Load the standards their change applies to; inline self-review covers all of them |
 | **Reviewer** (Phase 6 / standalone review) | Each review subagent loads the full standards of its dispatch row whose signals are present; the inline path loads all standards whose signals are present |

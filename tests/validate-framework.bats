@@ -383,6 +383,27 @@ mk_loading_baseline() {
   [[ "$output" != *"ERROR"* ]]
 }
 
+@test "§18: an agent still loading standards only on a red flag is an ERROR" {
+  mk_loading_baseline
+  mk_skill devflow-plan "Intro" "- **Standards — scan first, load on demand.** Load a full standard only when a quick-card red flag matches or the design clearly applies."
+
+  run_section_18
+  [[ "$output" == *"devflow-plan/SKILL.md:3 — legacy loading/skip rule ('scan first, load on demand')"* ]]
+  [[ "$output" == *"('red flag matches or')"* ]]
+}
+
+@test "§18: a standard with no domain-signal row is an ERROR" {
+  mk_loading_baseline
+  mkdir -p "$SHARED/standards"
+  echo "# Std" > "$SHARED/standards/alpha.md"
+  echo "# Std" > "$SHARED/standards/beta.md"
+  printf '| Standard | Load when |\n|---|---|\n| [alpha.md](./standards/alpha.md) | always |\n' >> "$SHARED/standards-loading.md"
+
+  run_section_18
+  [[ "$output" == *"no domain-signal row for beta.md"* ]]
+  [[ "$output" != *"no domain-signal row for alpha.md"* ]]
+}
+
 @test "§18: missing standards-loading.md is an ERROR" {
   mk_loading_baseline
   rm "$SHARED/standards-loading.md"
