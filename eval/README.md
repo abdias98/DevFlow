@@ -148,6 +148,11 @@ version. Take one before a wave that changes verification and again after its
 release — a wave that does not move the behavioural outcome is cost without
 benefit (`docs/implementation-plan-waves-18-21.md` §8).
 
+`baselines/runs/<version>/` holds the actual artifacts (plan, feature report,
+review, `scorecard.json`) a recorded run produced, so a scorecard number in
+the version's `.md` file can be traced back to what the run actually wrote —
+not only the workspace's final code, which the scorecard already captures.
+
 ## Tests
 
 The engine is itself covered by `tests/devflow-eval.bats` (run `npm test`). It
