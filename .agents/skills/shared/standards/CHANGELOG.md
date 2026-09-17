@@ -4,6 +4,14 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.18.0 — 2026-09-16
+
+### Changed — 2.18.0
+- **Phase sections in the first 8 standards** — `design-principles.md` (v1.1.0 → v1.2.0), `solid.md` (v2.3.0 → v2.4.0), `clean-architecture.md` (v2.3.2 → v2.4.0), `project-design.md` (v2.3.1 → v2.4.0), `security.md` (v2.4.2 → v2.5.0), `error-handling.md` (v1.2.2 → v1.3.0), `testing.md` (v1.4.0 → v1.5.0), `performance.md` (v2.3.2 → v2.4.0). Each gains two sections **appended after its last section, with no renumbering** (every existing `§N` citation stays valid):
+  - **Design-Time Decisions** — what the spec must decide and record for this domain, and in which spec section; every item cites the section whose rule it applies.
+  - **Implementation Self-Check** — 5–6 checks the author confirms before marking a task done. Phrased as the author's own verification ("no query runs inside a loop over unbounded input"), not as a reviewer's checklist, and not a copy of the Code Review Checklist.
+  Until now every standard was written for review only — its mandatory sections were Severity Classification, Code Review Checklist and Limited Scope — so a standard reached the code after the code existed. Refs: F79.
+
 ## 2.17.0 — 2026-09-16
 
 ### Changed — 2.17.0

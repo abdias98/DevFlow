@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Testing (Technology-Agnostic)
 
-> **Version:** 1.4.0 | **Last Updated:** 2026-09-16
+> **Version:** 1.5.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** All tool names, directory names, and code fragments are illustrative. Replace them with the actual test runner, utilities, and conventions of the detected stack.
 
@@ -153,3 +153,24 @@ When reviewing or adding tests to a **specific set of files**, follow these cons
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 13. Design-Time Decisions
+
+The spec's **Test Architecture** and **State & Interaction Matrix** carry these decisions ([behavior-scenarios.md](../behavior-scenarios.md)); the plan turns them into tests.
+
+- **Test level per behavior** — unit, integration or end-to-end, plus a concurrency test wherever a business-critical invariant is contended (§1).
+- **Seams** — what is replaced at port boundaries and what runs against real or in-memory implementations (§3).
+- **Scenarios** — happy path, edge cases and failures per task, plus the feature-level sequence scenarios derived from the matrix (§4).
+- **Test data and isolation** — factories or fixtures, and how state is reset between tests (§6).
+- **Regression coverage** — the reproduction test for each bug the change fixes (§5).
+
+## 14. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] Each new test was seen failing for the right reason before the production code was written (§9).
+- [ ] Assertions check observable outcomes, not internal calls — unless a call count is itself the requirement (§2).
+- [ ] Mocks sit only at port boundaries, and the unit under test is never mocked (§3).
+- [ ] Tests pass in isolation and in any order, with no shared mutable state (§6).
+- [ ] No real sleep or delay — time is controlled (§8).
+- [ ] Every test name describes the behavior and scenario, readable without opening the code (§7).

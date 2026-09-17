@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: SOLID Principles (Technology-Agnostic)
 
-> **Version:** 2.3.0 | **Last Updated:** 2026-09-07
+> **Version:** 2.4.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** All code-like fragments use generic pseudo-code or abstract concepts (e.g., “HTTP client”, “ORM entity”, “service locator”) to avoid dependence on any specific language or framework. Adapt the concrete syntax to the detected stack.
 
@@ -110,3 +110,23 @@ When you are asked to apply SOLID principles to a **specific set of files or mod
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 10. Design-Time Decisions
+
+Decide these while designing the classes and interfaces, and record the non-obvious ones in the spec's **Design Decisions** — they are expensive to change once code depends on them.
+
+- **Responsibility split** — which class or module owns which reason to change (§1).
+- **Real variation points** — where behavior varies *today* and is extended through polymorphism or a strategy, versus where a plain conditional is enough (§2, §6).
+- **Contracts of new abstractions** — the preconditions, postconditions and invariants every implementation must honor (§3).
+- **Client-shaped interfaces** — each consumer of a new interface and the methods it actually needs (§4).
+- **Injected dependencies** — what each high-level unit depends on as an abstraction, and where the composition root wires the concrete implementation (§5).
+
+## 11. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] Every new class and function name states one responsibility — no "and", "or" or catch-all "Manager" (§1).
+- [ ] A new variant was added without editing an existing tested switch, or the conditional is local and its growth is not expected (§2).
+- [ ] Every implementation honors the full contract of its base type — no no-op or throwing overrides (§3).
+- [ ] No implementer stubs an interface method it does not need (§4).
+- [ ] No infrastructure or external client is instantiated with `new` inside domain or application code; it arrives through the constructor (§5).

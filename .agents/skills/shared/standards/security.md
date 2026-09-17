@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Security (Technology-Agnostic)
 
-> **Version:** 2.4.2 | **Last Updated:** 2026-09-07
+> **Version:** 2.5.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** All tool names and code fragments are illustrative. Replace them with the actual libraries, services, and conventions of the detected stack.
 
@@ -151,3 +151,25 @@ When applying security rules to a **specific set of files or modules** (the decl
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 13. Design-Time Decisions
+
+These belong in the spec's **Risk Assessment**, **API Contract** and **Design Decisions** — a threat that is only considered at review time is usually a design flaw by then (§8, Insecure Design).
+
+- **Trust boundaries** — every entry point of external input and the component that validates it (§1).
+- **Authorization per operation** — who may perform each action, and the layer that enforces it, including background jobs and internal endpoints (§2).
+- **Secrets** — which credentials the feature needs and how they are injected at runtime (§3).
+- **Sensitive data** — which data is sensitive, where it is stored, whether it is encrypted, and where it is exposed (§7).
+- **Abuse cases** — brute force, enumeration, CSRF and mass assignment for each sensitive flow, and the control for each (§7, §8).
+- **Failure surface** — what an external caller sees when an operation fails (§6).
+
+## 14. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] Every new external input is validated server-side against an allowlist before it is used (§1).
+- [ ] Every new operation checks authorization in the application layer, not only in the UI or gateway (§2).
+- [ ] Queries and commands built from input use parameters — no string concatenation (§4).
+- [ ] No secret, token or credential appears in code, fixtures, logs or error messages (§3).
+- [ ] Requests are bound to allowlisted DTOs, never directly to entities (§8).
+- [ ] Error responses stay generic; technical detail goes only to internal logs (§6).

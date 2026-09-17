@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Performance (Technology-Agnostic)
 
-> **Version:** 2.3.2 | **Last Updated:** 2026-09-07
+> **Version:** 2.4.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** All patterns and code fragments are illustrative. Adapt syntax and tool names to the detected stack.
 
@@ -126,3 +126,24 @@ When applying performance rules to a **specific set of files or modules** (the d
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 11. Design-Time Decisions
+
+State these in the spec — in **Performance Budget** when the feature is performance-sensitive, otherwise in **Design Decisions** — so data-access shape is decided before code fixes it in place.
+
+- **Data volumes** — expected size and growth of each collection and query result (§1, §2).
+- **Access pattern** — queries per operation, pagination, and the indexes they need (§2).
+- **Caching** — what is cached, its TTL, invalidation and fallback — or an explicit decision not to cache (§3).
+- **Asynchrony** — timeouts for every I/O call, and which independent calls run in parallel (§4).
+- **Budget and measurement** — the performance budget, if any, and how it will be measured (§6).
+
+## 12. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] No query or remote call runs inside a loop over input whose size is not bounded (§2).
+- [ ] Every collection returned from a repository or API is bounded or paginated (§2).
+- [ ] Every I/O call has a timeout, and independent calls are not needlessly sequential (§4).
+- [ ] Every acquired connection or handle is released on all paths (§5).
+- [ ] Every cache write has a TTL and is invalidated when its source changes (§3).
+- [ ] No optimization was added without a measurement noted beside it (§6).

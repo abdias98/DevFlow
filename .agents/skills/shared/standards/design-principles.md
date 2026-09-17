@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Design Principles (Technology-Agnostic)
 
-> **Version:** 1.1.0 | **Last Updated:** 2026-09-09
+> **Version:** 1.2.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** All code-like fragments are illustrative. Replace them with the actual language/framework conventions of the detected stack.
 
@@ -90,3 +90,23 @@ When reviewing or modifying code in a **specific set of files**, follow these co
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 9. Design-Time Decisions
+
+Record these in the spec's **Design Decisions** and **Reusability Decisions** so the Planner and Implementer inherit them instead of re-deciding them in code.
+
+- **Single owner per rule** — for every business rule, validation or calculation the feature touches, name the existing implementation that will be reused, or state why a new one is needed and what happens to the old one (§1).
+- **Needed now vs. speculative** — which requested capabilities have a current requirement, and which flexibility is deliberately *not* built yet (§2).
+- **Axis of change per module** — for each new or changed module, the one reason it would change (§3).
+- **Framework boundary** — which vendor, ORM or framework types may appear in which layer, and which ports the project owns instead (§4).
+- **Simplest sufficient design** — the least machinery that meets the requirements; any extra indirection names the current requirement or measurement that pays for it (§5).
+
+## 10. Implementation Self-Check
+
+Before marking a task done, the author of the code confirms:
+
+- [ ] Searched for existing logic that already implements each rule or validation before duplicating it (§1).
+- [ ] No parameter, hook, option or abstraction was added without a current caller (§2).
+- [ ] Each changed unit can be described in one sentence without "and" joining unrelated concerns (§3).
+- [ ] No vendor SDK, ORM or framework type was imported into domain or business code (§4).
+- [ ] No layer only forwards calls to the next one; a reader can follow the change without the plan (§5).
