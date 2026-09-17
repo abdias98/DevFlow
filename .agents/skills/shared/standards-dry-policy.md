@@ -27,6 +27,9 @@ When a topic is covered by more than one standard:
 | Server-side cache mechanics (TTL, eviction, invalidation strategy) vs. general state invalidation | `performance.md` §3 | `state-lifecycle.md` §3 |
 | Background/process-level task lifecycle vs. state-holding subscriptions/timers | `concurrency.md` §7 | `state-lifecycle.md` §5 |
 | Async throughput cost of unnecessary work vs. state loaded/computed with no consumer | `performance.md` §4 | `state-lifecycle.md` §7 |
+| Client-side retry safety / idempotency mechanism vs. when a retry is appropriate at all | `concurrency.md` §5 | `integration-consumption.md` §3 |
+| General transient-failure retry rule vs. the integration-boundary application of it | `error-handling.md` §8 | `integration-consumption.md` §3 |
+| Keeping a translated boundary shape out of inner layers vs. performing the translation | `clean-architecture.md` | `integration-consumption.md` §7 |
 
 When you find a new overlap, add the pair here after resolving it — this table is the audit trail of "who owns what," so the next overlap has precedent to follow instead of reinventing the resolution.
 

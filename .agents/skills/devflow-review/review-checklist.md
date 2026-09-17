@@ -19,6 +19,7 @@ Each check section belongs to exactly one review subagent (`SKILL.md` → Step 3
 | Correctness & Behavior | 4 — Correctness & Behavior |
 | API-Specific Checks | 5a — Interfaces |
 | Event-Driven Checks | 5a — Interfaces |
+| Integration Consumption Checks | 5a — Interfaces |
 | UI-Specific Checks | 5b — Presentation |
 | Accessibility | 5b — Presentation |
 | Logging | 5c — Operations |
@@ -136,6 +137,13 @@ Performed by subagent 4 following [correctness-guide.md](./correctness-guide.md)
 - [ ] Request/response body shapes match the spec (`rest-api.md §4`) *(plan)*.
 - [ ] Status codes are correct — never `200` for an error (`rest-api.md §3`).
 - [ ] No undocumented endpoint introduced (`rest-api.md §10`).
+
+## Integration Consumption Checks *(apply only if the change calls an external service, API, or integration it does not control)*
+
+- [ ] Every outbound call has an explicit timeout (`integration-consumption.md §1`).
+- [ ] Retries only happen on idempotent operations or with an idempotency key, bounded with backoff (`integration-consumption.md §3`).
+- [ ] A distinct failure state is exposed to callers — not indistinguishable from "still loading" (`integration-consumption.md §4`).
+- [ ] The provider's raw response is parsed into an owned type at the boundary before reaching domain code (`integration-consumption.md §7`).
 
 ## Event-Driven Checks *(apply only if the change produces or consumes events, messages or streams)*
 

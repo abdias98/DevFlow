@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.21.0 — 2026-09-17
+
+### New standards — 2.21.0
+- **`integration-consumption.md`** (new, v1.0.0): the 18th standard — the client (consumer) side of calling an external service/API/integration the project does not control, distinct from `rest-api.md` (server side) and `event-driven-architecture.md` (async producer/consumer contracts): timeouts on every call (§1), cancellation propagation (§2), retries only on idempotent operations with bounded backoff (§3), observable loading/error states (§4), partial/paginated/stale response handling (§5), a degradation strategy (§6), typed contracts at the boundary (§7). Four canonical-owner boundaries recorded in `standards-dry-policy.md`: `concurrency.md` §5 keeps the idempotency mechanism, `error-handling.md` §8 keeps the general retry rule, `clean-architecture.md` keeps inner-layer isolation from the translated shape — this standard owns *when* a client retry is safe, the integration-boundary application of the retry rule, and *performing* the boundary translation. Registered in `standards-quick-card.md`, `critical-friend.md`, `standards-loading.md`. Reviewer's Domain group 5a — Interfaces extended to trigger on external integration calls, now carrying 3 standards (rest-api, event-driven-architecture, integration-consumption), under the 5-standard cap. Refs: F85, Wave 20.
+
 ## 2.20.0 — 2026-09-17
 
 ### New standards — 2.20.0

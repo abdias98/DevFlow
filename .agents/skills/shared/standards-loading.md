@@ -33,6 +33,7 @@ This document is the single definition of **when a full standard is loaded**. An
 | [concurrency.md](./standards/concurrency.md) | uses async work, promises/futures, threads, locks, background jobs, timers, shared mutable state, or message consumers |
 | [logging.md](./standards/logging.md) | emits logs, traces or metrics, or adds a catch block |
 | [state-lifecycle.md](./standards/state-lifecycle.md) | introduces or modifies state that outlives a single call: a store, cache, session, subscription, or registry |
+| [integration-consumption.md](./standards/integration-consumption.md) | calls an external service, API, or integration the project does not control |
 | [dependencies.md](./standards/dependencies.md) | changes a dependency manifest, lockfile, or build/CI dependency configuration |
 | [rest-api.md](./standards/rest-api.md) | adds or changes an HTTP/RPC endpoint, route, or request/response contract |
 | [event-driven-architecture.md](./standards/event-driven-architecture.md) | produces or consumes events, messages, queues or streams (including in-process domain events) |
