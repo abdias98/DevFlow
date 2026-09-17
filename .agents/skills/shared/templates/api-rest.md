@@ -1,6 +1,8 @@
 # Reference Template: API REST
 
 > **This is a reference guide, not a rigid spec.** The Architect adapts these patterns to the actual project's conventions, ORM, framework, and existing code. Priority order: AGENTS.md → project template → exploration → this reference.
+>
+> **Project-specific idioms win.** When `docs/devflow/knowledge-base/standards-profile.md` exists, it records how *this* project actually expresses each pattern, with real files. Use this reference only to know what to look for; generate the profile with `/devflow-templates standards-profile`.
 
 ## Typical Layer Structure
 

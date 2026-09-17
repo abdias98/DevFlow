@@ -21,7 +21,9 @@ Run the Template Agent to generate project-specific architecture templates.
 4. Generate `docs/devflow/templates/project-architecture.md` from real patterns.
 5. Auto-invoke Reviewer in Standalone Mode.
 
-**NEVER modify source code.** Only template files.
+With `standards-profile`: generate or update `docs/devflow/knowledge-base/standards-profile.md` — how this project expresses each applicable standard (where responsibilities live, idioms, primitives, known deviations), every row backed by a real file — with its own approval gate.
+
+**NEVER modify source code.** Only template and knowledge-base files.
 
 ## Project Type or Context
 

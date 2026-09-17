@@ -1,6 +1,8 @@
 # Reference Template: Fullstack
 
 > **This is a reference guide, not a rigid spec.** Combines API REST + Web Frontend patterns. The Architect applies the relevant backend and frontend templates to their respective packages. In monorepos, each package gets its own profile under `## Stack Profiles`.
+>
+> **Project-specific idioms win.** When `docs/devflow/knowledge-base/standards-profile.md` exists, it records how *this* project actually expresses each pattern, with real files. Use this reference only to know what to look for; generate the profile with `/devflow-templates standards-profile`.
 
 ## Monorepo Structure (recommended)
 

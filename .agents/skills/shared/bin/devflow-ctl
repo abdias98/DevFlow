@@ -31,7 +31,7 @@
 #   checkpoint set <name> <sha> | get <name>         Record / read rollback SHAs
 #   artifacts check <type> <path>                    Validate required sections
 #   capabilities [get <key>]                         Print environment capabilities (from .devflow-environment)
-#   knowledge list                                   List entries in the knowledge base
+#   knowledge list                                   List knowledge base entries and the standards profile status
 #   knowledge add <file>                             Add a knowledge base entry from a file
 #   backlog add <file> <reason> [--severity b|i|f]    Record a deferred (Outside-zone) finding
 #   backlog list [--area <glob>]                      List deferred findings, optionally by area
@@ -968,6 +968,24 @@ cmd_capabilities() {
 # Entries are ### headings under ## Cycle History.
 
 KNOWLEDGE_FILE="${DEVFLOW_KNOWLEDGE_FILE:-docs/devflow/knowledge-base/learnings.md}"
+STANDARDS_PROFILE_FILE="${DEVFLOW_STANDARDS_PROFILE:-docs/devflow/knowledge-base/standards-profile.md}"
+
+# The standards profile sits next to learnings.md and is read at the same
+# points; listing it here makes a missing or stale profile visible (F81).
+_knowledge_profile_summary() {
+  echo ""
+  if [[ ! -f "$STANDARDS_PROFILE_FILE" ]]; then
+    echo "Standards profile: not found at $STANDARDS_PROFILE_FILE"
+    echo "Run '/devflow-templates standards-profile' to translate the standards into this project's idioms."
+    return 0
+  fi
+  local rows updated
+  # Data rows of every table: lines starting with "|" minus header and separator rows.
+  rows="$(awk '/^\|/ { if ($0 ~ /^\|[- |:]*\|$/) { sep=1; next } if (!sep) { next } n++ ; next } { sep=0 } END { print n+0 }' "$STANDARDS_PROFILE_FILE")"
+  updated="$(grep -m1 -oE 'Last updated:\*\* [0-9]{4}-[0-9]{2}-[0-9]{2}' "$STANDARDS_PROFILE_FILE" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' || true)"
+  echo "Standards profile: $STANDARDS_PROFILE_FILE"
+  echo "Rows: $rows · Last updated: ${updated:-unknown}"
+}
 
 cmd_knowledge() {
   case "${1:-}" in
@@ -975,6 +993,7 @@ cmd_knowledge() {
       if [[ ! -f "$KNOWLEDGE_FILE" ]]; then
         echo "Knowledge base not found at $KNOWLEDGE_FILE"
         echo "Run '/devflow-templates bootstrap-knowledge' to create it from historical artifacts."
+        _knowledge_profile_summary
         exit 0
       fi
       local entries
@@ -983,6 +1002,7 @@ cmd_knowledge() {
       echo "Entries: $entries"
       echo ""
       grep '^### ' "$KNOWLEDGE_FILE" 2>/dev/null || echo "(no entries yet)"
+      _knowledge_profile_summary
       ;;
     add)
       local entry_file="${2:-}"

@@ -12,6 +12,7 @@ This document is the single definition of **when a full standard is loaded**. An
 2. **Load the full standard** for every domain that applies. Do not load standards whose domain does not apply.
 3. **Use the [Standards Quick Card](./standards-quick-card.md) for what it is:** a fast list of BLOCK triggers to scan first, so the most severe findings are never missed. A Quick Card with no matching red flag is **not** a reason to skip a standard whose domain applies.
 4. **When unsure whether a domain applies, load it.** The cost of reading a standard is bounded; the cost of a missed rule is a correction after the PR.
+5. **Apply it through the project's idioms.** If `docs/devflow/knowledge-base/standards-profile.md` exists, it says how each standard is expressed in this codebase — which primitive, which location, which canonical example. A standard applied generically, in a shape the project does not use, is a consistency finding even when the rule itself is met.
 
 "Clearly does not apply" means a signal is absent, not that the change looks small or routine.
 
