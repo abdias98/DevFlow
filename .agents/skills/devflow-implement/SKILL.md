@@ -11,7 +11,7 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language detection, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
-- **Standards — scan first, load on demand.** Start with the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) (fast BLOCK-trigger scan). Load a full standard **only when** a quick-card red flag matches or the task clearly falls in its domain — do not load every standard upfront:
+- **Standards — load every standard whose domain applies** to the task, per [Standards Loading](<{{SKILLS_DIR}}/shared/standards-loading.md>): decide from its domain signals, load the full text of each standard that applies (not only those with a matching red flag), and scan the [Standards Quick Card](<{{SKILLS_DIR}}/shared/standards-quick-card.md>) BLOCK triggers first — never as the gate that decides whether a standard is read. When unsure whether a domain applies, load it. The standards:
   - General: [Design Principles](<{{SKILLS_DIR}}/shared/standards/design-principles.md>) · [SOLID](<{{SKILLS_DIR}}/shared/standards/solid.md>) · [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>) · [Security](<{{SKILLS_DIR}}/shared/standards/security.md>) · [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>) · [Testing](<{{SKILLS_DIR}}/shared/standards/testing.md>) · [Logging](<{{SKILLS_DIR}}/shared/standards/logging.md>) · [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) · [Concurrency](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) · [Dependencies](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) · [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
   - [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) — when API endpoints are involved.
   - [Event-Driven Architecture](<{{SKILLS_DIR}}/shared/standards/event-driven-architecture.md>) — when the project communicates via events, queues, a message broker, or streams.
@@ -93,7 +93,7 @@ Each subagent's brief:
 | Field | Content |
 |-------|---------|
 | **Goal** | Implement this task following Red→Green TDD. |
-| **Context** | **READ:** the task's work packet from the plan (Goal, Context, Constraints, Acceptance criteria, Deliverables, Implementation guide), relevant standards, Stack Profile test commands. **DO NOT READ:** other tasks' sections, the full plan, context.md, standards not relevant to this task. |
+| **Context** | **READ:** the task's work packet from the plan (Goal, Context, Constraints, Acceptance criteria, Deliverables, Implementation guide); the **full text of every standard whose domain signal the task's changes present** — the Implementer lists them in the brief, decided per [standards-loading.md](<{{SKILLS_DIR}}/shared/standards-loading.md>); Stack Profile test commands. **DO NOT READ:** other tasks' sections, the full plan, context.md, standards whose domain does not apply to this task. |
 | **Constraints** | Write ONLY to the task's declared files. Follow TDD Red→Green. Do NOT commit — the Implementer handles commits after wave synthesis. Run `devflow-ctl scope check {file} --slug {slug}` before each edit. |
 | **Output format** | Task complete — files created/modified, test command, test result (Standard mode) or test command for user (Pair mode). |
 

@@ -841,13 +841,20 @@ header "18. Standards loading & skip signals"
 # author judging its own change "mechanical".
 #   18.1 shared/standards-loading.md and the Objective Diff Signals exist and
 #        the Reviewer references the loading policy;
-#   18.2 none of the legacy phrasings survive anywhere in the skills.
+#   18.2 none of the legacy phrasings survive anywhere in the skills — the
+#        Reviewer's quick-card gate (F78) and every other agent's "scan first,
+#        load on demand / only when a red flag matches" (F77);
+#   18.3 every standard has a row in standards-loading.md's signal table.
 
 LOADING_POLICY="$SKILLS_DIR/shared/standards-loading.md"
 ADAPTIVE_SKILLS="$SKILLS_DIR/shared/adaptive-skills.md"
 LOADING_ERRORS_BEFORE=$ERRORS
 LEGACY_LOADING_AND_SKIP=(
   "quick-card gate"
+  "scan first, load on demand"
+  "If a red flag matches"
+  "red flag matches or"
+  "full standard loaded when a red flag matches"
   "Changes are mechanical ("
   "The implementation is mechanical"
   "if changes are mechanical"
@@ -861,6 +868,16 @@ if [[ -d "$SKILLS_DIR/shared" ]]; then
     fail "devflow-review/SKILL.md — does not reference shared/standards-loading.md (F78)"
   fi
 
+  # 18.3 — every standard has a domain-signal row, or no agent can decide to load it.
+  if [[ -f "$LOADING_POLICY" && -d "$SKILLS_DIR/shared/standards" ]]; then
+    while IFS= read -r std_file; do
+      std_name="$(basename "$std_file")"
+      if ! grep -qE "^\|.*\(\./standards/${std_name//./\\.}\)" "$LOADING_POLICY"; then
+        fail "shared/standards-loading.md — no domain-signal row for $std_name: agents have no rule for when to load it (F77)"
+      fi
+    done < <(find "$SKILLS_DIR/shared/standards" -maxdepth 1 -name '*.md' ! -name 'CHANGELOG.md' | sort)
+  fi
+
   if [[ -f "$ADAPTIVE_SKILLS" ]] && ! grep -qE '^### Objective Diff Signals$' "$ADAPTIVE_SKILLS"; then
     fail "shared/adaptive-skills.md — missing '### Objective Diff Signals': skip criteria have nothing objective to reference (F83)"
   fi
@@ -872,7 +889,7 @@ if [[ -d "$SKILLS_DIR/shared" ]]; then
     done < <(grep -rnF -- "$phrase" "$SKILLS_DIR" --include='*.md' 2>/dev/null | grep -v '/standards/CHANGELOG.md' | cut -d: -f1,2 || true)
   done
 
-  [[ $ERRORS -eq $LOADING_ERRORS_BEFORE ]] && green "Reviewer loads standards by domain signal and every skip criterion uses objective diff signals"
+  [[ $ERRORS -eq $LOADING_ERRORS_BEFORE ]] && green "Every agent loads standards by domain signal, every standard has a signal row, and every skip criterion uses objective diff signals"
 else
   warn "$SKILLS_DIR/shared not found — skipping standards loading check (run from the repo root)"
 fi
