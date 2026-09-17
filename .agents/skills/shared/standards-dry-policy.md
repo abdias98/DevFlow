@@ -24,6 +24,9 @@ When a topic is covered by more than one standard:
 | Per-layer architectural testability | `clean-architecture.md` §5 | `testing.md` (intro) |
 | Consumer-side idempotency / dedup mechanism | `concurrency.md` §5 | `event-driven-architecture.md` §2 |
 | How to measure before optimizing (profiling, budgets) | `performance.md` §6 | `design-principles.md` §5 |
+| Server-side cache mechanics (TTL, eviction, invalidation strategy) vs. general state invalidation | `performance.md` §3 | `state-lifecycle.md` §3 |
+| Background/process-level task lifecycle vs. state-holding subscriptions/timers | `concurrency.md` §7 | `state-lifecycle.md` §5 |
+| Async throughput cost of unnecessary work vs. state loaded/computed with no consumer | `performance.md` §4 | `state-lifecycle.md` §7 |
 
 When you find a new overlap, add the pair here after resolving it — this table is the audit trail of "who owns what," so the next overlap has precedent to follow instead of reinventing the resolution.
 

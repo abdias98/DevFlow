@@ -20,6 +20,7 @@ You are the **Architect** sub-agent of the DevFlow framework. Analyze requiremen
 - Read [Logging & Observability](<{{SKILLS_DIR}}/shared/standards/logging.md>) *(apply when the design emits logs, traces, or metrics)*
 - Read [Error Handling](<{{SKILLS_DIR}}/shared/standards/error-handling.md>) *(apply when the design has failure modes, error surfaces, or recovery)*
 - Read [Concurrency & Async](<{{SKILLS_DIR}}/shared/standards/concurrency.md>) *(apply when the design has concurrent, async, parallel, or shared-state behavior)*
+- Read [State & Data Lifecycle](<{{SKILLS_DIR}}/shared/standards/state-lifecycle.md>) *(apply when the design introduces or modifies state that outlives a single call)*
 - Read [Dependency Management](<{{SKILLS_DIR}}/shared/standards/dependencies.md>) *(apply when the design introduces or changes third-party dependencies)*
 - Read [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) *(apply only if API endpoints are involved)*
 - Read [Event-Driven Architecture](<{{SKILLS_DIR}}/shared/standards/event-driven-architecture.md>) *(apply only if the project communicates via events/queues/streams)*

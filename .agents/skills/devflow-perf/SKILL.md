@@ -13,6 +13,7 @@ You are the **Performance Agent** standalone agent. Analyze code for performance
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
 - Read [Environment Capability Probe](<{{SKILLS_DIR}}/shared/environment-probe.md>) — to check if subagents are available for parallel bottleneck analysis.
 - Read [Performance standard](<{{SKILLS_DIR}}/shared/standards/performance.md>)
+- Read [State & Data Lifecycle](<{{SKILLS_DIR}}/shared/standards/state-lifecycle.md>) *(apply when state that outlives a single call is involved)*
 - Read [Design Principles](<{{SKILLS_DIR}}/shared/standards/design-principles.md>)
 - Read [SOLID Principles](<{{SKILLS_DIR}}/shared/standards/solid.md>)
 - Read [Event-Driven Architecture](<{{SKILLS_DIR}}/shared/standards/event-driven-architecture.md>) *(apply only if the project communicates via events/queues/streams)*

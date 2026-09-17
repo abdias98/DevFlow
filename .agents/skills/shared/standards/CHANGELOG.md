@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.20.0 — 2026-09-17
+
+### New standards — 2.20.0
+- **`state-lifecycle.md`** (new, v1.0.0): the 17th standard — ownership of state that outlives a single call (one writer per value), derived vs. stored state, invalidation on dependency change, context-scoped reset, subscription/timer/listener teardown, out-of-order async results (cross-linking `behavior-scenarios.md`'s Order and Change-while-in-flight Transition Prompts), work performed only when consumed, and cache key completeness. Transversal — applies whenever a change introduces or modifies state, not gated behind a project-type condition like the conditional standards. Three canonical-owner cross-references recorded in `standards-dry-policy.md`: server-side cache mechanics stay with `performance.md` §3, background-process lifecycle stays with `concurrency.md` §7, async throughput cost stays with `performance.md` §4 — this standard owns invalidation triggers, teardown-for-state, and async-result staleness respectively. Registered in `standards-quick-card.md`, `critical-friend.md`'s scan table, and `standards-loading.md`'s domain-signal table. Linked from Architect, Planner, Implementer, Debugger, Performance Agent, and the Reviewer's subagent 2 (renamed *Performance, Concurrency & State*, still within the 5-standard cap). Refs: F84, Wave 20.
+
 ## 2.19.0 — 2026-09-16
 
 ### Changed — 2.19.0

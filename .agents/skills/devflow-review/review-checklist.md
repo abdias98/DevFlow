@@ -10,8 +10,9 @@ Each check section belongs to exactly one review subagent (`SKILL.md` → Step 3
 |---------|----------|
 | Security (OWASP Top 10) | 1 — Security & Safety |
 | Error Handling | 1 — Security & Safety |
-| Performance | 2 — Performance & Concurrency |
-| Concurrency | 2 — Performance & Concurrency |
+| Performance | 2 — Performance, Concurrency & State |
+| Concurrency | 2 — Performance, Concurrency & State |
+| State & Data Lifecycle | 2 — Performance, Concurrency & State |
 | Code Quality | 3 — Architecture & Design |
 | Architecture Alignment | 3 — Architecture & Design |
 | Test Coverage | 3 — Architecture & Design |
@@ -85,6 +86,13 @@ Performed by subagent 4 following [correctness-guide.md](./correctness-guide.md)
 - [ ] Errors are translated at layer boundaries (`error-handling.md §4`).
 - [ ] No raw stack trace, exception message or internal detail returned to an external caller (`error-handling.md §5`).
 - [ ] Resources are released and multi-step state changes are atomic on every failure path (`error-handling.md §6`).
+
+### State & Data Lifecycle *(apply only if state that outlives a single call is present)*
+- [ ] Every piece of state has exactly one write path — no second independent writer (`state-lifecycle.md §1`).
+- [ ] Async updates to state discard a result superseded by a newer request for the same state (`state-lifecycle.md §6`).
+- [ ] Context-scoped state resets on a context change before the new context's data arrives (`state-lifecycle.md §4`).
+- [ ] Every subscription, timer or listener a piece of state opens has a matching teardown (`state-lifecycle.md §5`).
+- [ ] Cache/memoization keys include every parameter the cached value depends on (`state-lifecycle.md §8`).
 
 ### Concurrency *(apply only if concurrent/async code is present)*
 - [ ] No non-atomic check-then-act / read-modify-write on shared state (`concurrency.md §2`).
@@ -177,7 +185,7 @@ Save to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`:
 | Dimension | Ran? | Standards loaded in full | Notes |
 |-----------|------|--------------------------|-------|
 | 1 — Security & Safety | ✅ / ⏭ {reason} | {list} | |
-| 2 — Performance & Concurrency | ✅ / ⏭ {reason} | {list} | |
+| 2 — Performance, Concurrency & State | ✅ / ⏭ {reason} | {list} | |
 | 3 — Architecture & Design | ✅ / ⏭ {reason} | {list} | Reference implementation compared: `{path}` / none — closest sibling `{path}` |
 | 4 — Correctness & Behavior | ✅ / ⏭ {reason and signals} | — | Consumers read: {files} / none found — {how searched}; scenarios walked: {N}; open questions: {N} |
 | 5a/5b/5c — Domain | ✅ {groups} / ⏭ no trigger | {list} | |
