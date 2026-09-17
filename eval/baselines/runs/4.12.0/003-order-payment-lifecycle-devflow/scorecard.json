@@ -1,0 +1,16 @@
+{
+  "task": "003-order-payment-lifecycle",
+  "score_earned": 19,
+  "score_total": 20,
+  "percent": 95,
+  "outcome_earned": 18,
+  "outcome_total": 18,
+  "outcome_percent": 100,
+  "process_earned": 1,
+  "process_total": 2,
+  "process_percent": 50,
+  "threshold": 90,
+  "passed": true,
+  "checks_passed": 12,
+  "checks_failed": 1
+}
