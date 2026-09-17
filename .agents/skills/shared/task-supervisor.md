@@ -40,11 +40,12 @@ Each check is a fresh-context subagent. It does NOT inherit the Implementer's re
 | **Constraints** | Read-only. Do NOT run tests. Do NOT edit files. Check against **acceptance criteria** (NOT implementation guide — the guide is a guide, the criteria are the contract). Run `devflow-ctl scope check {file}` for each modified file. |
 | **Output format** | Findings table + verdict (see below). |
 
-**Three verification axes:**
+**Four verification axes:**
 
 1. **Plan compliance** — Does the implementation satisfy the task's acceptance criteria? For each criterion: is it met, partially met, or missing? Missing criteria → BLOCK. Partially met → WARN.
 2. **Scope compliance** — Run `devflow-ctl scope check {file}` for each file the task subagent reported as modified. Any file outside declared scope → BLOCK. Files in the plan's File Map for this task → PASS.
 3. **Obvious issues** — Syntax errors visible in the code (unbalanced braces, missing imports within the same file). Broken imports (file references something that doesn't exist). TODO/FIXME left in production code → WARN.
+4. **Behavior paths** — For each acceptance criterion in the work packet, and each Feature-Level Scenario the task owns: is there a code path in the task's files that produces the expected outcome, and none that contradicts it? No path → WARN. A contradicting path, traceable as a reproducible scenario (`rules.md` → Finding Evidence) → BLOCK. An owned scenario with no sequence test → WARN. Static and bounded to the work packet — the same axis the [Verifier](./verifier-subagent.md) applies globally.
 
 **Output format:**
 
