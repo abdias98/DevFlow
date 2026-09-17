@@ -441,10 +441,10 @@ if [[ -d "$STANDARDS_DIR" ]]; then
     done
     # Phase sections (F79): a standard written only as a review checklist
     # reaches the code after it exists. Design-Time Decisions feeds the spec,
-    # Implementation Self-Check the task. WARN while standards are migrated.
+    # Implementation Self-Check the task. Mandatory for every standard.
     for required in "Design-Time Decisions" "Implementation Self-Check"; do
       if ! grep -qE "^## [0-9]+\. ${required}$" "$std_file" 2>/dev/null; then
-        warn "$std_file — missing phase section: '$required' (F79)"
+        fail "$std_file — missing phase section: '$required' (F79)"
         $FIX_MODE && echo "       FIX: append '## N. $required' after the last section — never renumber existing sections"
       fi
     done

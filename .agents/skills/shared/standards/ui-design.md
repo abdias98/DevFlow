@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: UI Design (Technology-Agnostic)
 
-> **Version:** 2.5.0 | **Last Updated:** 2026-09-16
+> **Version:** 2.6.0 | **Last Updated:** 2026-09-16
 
 > **Apply only if:** the project has a user interface (web frontend, mobile app, desktop app, or server-rendered views).
 > If this is a pure API, CLI tool, library, or background worker, skip this standard entirely.
@@ -361,3 +361,26 @@ When applying UI design rules to a **specific set of files or modules** (the dec
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 18. Design-Time Decisions
+
+The mockup and the spec's **UI Mockups** section carry these decisions; the **State & Interaction Matrix** covers the states that change over time.
+
+- **Reuse** — the existing components and design-system patterns the feature uses, and each new component with the reason no existing one fits (§1, §5).
+- **Component boundaries** — presentational versus container components, and where each gets its data (§5).
+- **Interaction states** — for each interactive element: default, hover, focus, active, disabled, loading, error and success (§6).
+- **Content** — empty states and information density for each view (§8).
+- **Forms** — validation timing and the wording of error messages (§9).
+- **Responsive behavior** — layout at each target breakpoint (§3).
+- **Heavy UI** — what is lazy-loaded, and which lists are virtualized or paginated (§11).
+
+## 19. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] Colors, spacing and typography come from design tokens — no hardcoded visual values (§13).
+- [ ] Every interactive element renders all of its designed states (§6).
+- [ ] Every data view renders an empty state with a helpful message (§8).
+- [ ] Overlays are self-contained components, not defined inline in the component that opens them (§5).
+- [ ] The layout was checked at each target breakpoint (§3).
+- [ ] Large lists are virtualized or paginated (§11).

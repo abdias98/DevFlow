@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Dependency Management & Supply Chain (Technology-Agnostic)
 
-> **Version:** 1.2.1 | **Last Updated:** 2026-09-07
+> **Version:** 1.3.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** All manifest files, lockfiles, audit tools, and registries are illustrative. Replace them with the actual package manager and ecosystem of the detected stack (npm, pip, Maven, Cargo, Go modules, Composer, NuGet, etc.).
 
@@ -117,3 +117,24 @@ When reviewing or modifying dependencies in a **specific set of files**, follow 
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 11. Design-Time Decisions
+
+When a design needs a new dependency, record the decision in the spec's **Design Decisions** — adding one takes a line; removing one later rarely does.
+
+- **Need** — the capability that requires a new dependency, and the standard-library or existing-dependency alternatives ruled out (§1).
+- **Health** — maintenance activity, maintainers and open advisories of the chosen package (§1, §3).
+- **License** — compatibility with how the product is distributed (§5).
+- **Placement** — runtime dependency or development/build-only (§7).
+- **Footprint** — the transitive dependencies it brings in, and whether that tree is acceptable (§7).
+
+## 12. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] The manifest uses a bounded version range, and the lockfile is updated and committed (§2).
+- [ ] The audit command was run, and no new critical or high advisory lacks a documented mitigation (§3).
+- [ ] The package name was verified against typosquatting and installed from the official registry with integrity checks on (§4).
+- [ ] The license was checked against the project's allowed-license policy (§5).
+- [ ] Development and test tooling was not added as a runtime dependency (§7).
+- [ ] Any upgrade of existing dependencies sits in its own commit, apart from feature changes (§6).

@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Accessibility (a11y) (Technology-Agnostic)
 
-> **Version:** 1.2.2 | **Last Updated:** 2026-09-07
+> **Version:** 1.3.0 | **Last Updated:** 2026-09-16
 
 > **Note on examples:** Element names, ARIA attributes, and APIs are illustrative (web-oriented). Map them to the accessibility API of the detected platform (web/ARIA, iOS/UIKit accessibility, Android/TalkBack, desktop toolkits). The principles are universal; the primitives differ.
 
@@ -115,3 +115,25 @@ When reviewing or modifying accessibility in a **specific set of files**, follow
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 11. Design-Time Decisions
+
+Decide these in the mockup and the spec, not after — keyboard flow and semantics are structure, and structure is expensive to retrofit.
+
+- **Keyboard flow** — tab order, expected keys, and where focus moves when dialogs and menus open and close (§3).
+- **Semantics** — the native element for each control, and the ARIA pattern for any custom widget (§5).
+- **Text alternatives** — for every image, icon and chart that carries meaning (§1).
+- **Contrast** — the palette's text and component contrast against WCAG AA (§2).
+- **Form errors** — how errors are identified in text and tied to their fields (§6).
+- **Dynamic content** — which asynchronous updates are announced, and how motion preferences are honored (§7).
+
+## 12. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] The whole flow was completed using the keyboard only (§3).
+- [ ] Focus is visible on every focusable element (§4).
+- [ ] Every control has an accessible name, and no focusable element carries `aria-hidden` (§5).
+- [ ] Contrast was verified with a contrast analyzer, not by eye (§2).
+- [ ] Form errors appear in text, are tied to their field, and focus moves to the first one (§6).
+- [ ] Asynchronous updates are announced, and reduced-motion preferences are respected (§7).

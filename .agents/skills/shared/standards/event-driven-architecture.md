@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Event-Driven Architecture (Technology-Agnostic)
 
-> **Version:** 1.0.0 | **Last Updated:** 2026-09-08
+> **Version:** 1.1.0 | **Last Updated:** 2026-09-16
 
 > **Apply only if:** the project communicates via events, message queues, a message broker, or streams (producers publishing, consumers subscribing) — including in-process domain events dispatched after a transaction commits.
 > If the project has no asynchronous event/message flow, skip this standard entirely.
@@ -116,3 +116,24 @@ When reviewing or modifying event-driven code in a **specific set of files**, fo
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 11. Design-Time Decisions
+
+Record these for every event produced or consumed — in the spec's **Architecture** and **Design Decisions** — before any handler exists.
+
+- **Event catalog** — each event named as a past fact, with its producer, consumers and payload (§1).
+- **Delivery assumption** — the guarantee the transport provides and each consumer's dedup mechanism (§2).
+- **Schema evolution** — the version of each event and its compatibility policy (§3).
+- **Ordering** — which consumers need order, and the partition or ordering key that provides it (§4).
+- **Failure path** — retry bound, dead-letter destination and alerting for each consumer (§5).
+- **Pattern weight** — notification, event-carried state or event sourcing, with the requirement that justifies anything heavier than notification (§6, §7).
+
+## 12. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] Every handler with a side effect has a dedup guard against redelivery (§2).
+- [ ] Payload changes are additive — no field repurposed or removed in place (§3).
+- [ ] No handler depends on an order its partition key does not guarantee (§4).
+- [ ] A failed event reaches the dead-letter path — no infinite retry, no silent drop (§5).
+- [ ] Producers carry no consumer-specific logic (§1).

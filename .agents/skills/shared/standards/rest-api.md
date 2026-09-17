@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: REST API Design (Technology-Agnostic)
 
-> **Version:** 2.3.2 | **Last Updated:** 2026-09-07
+> **Version:** 2.4.0 | **Last Updated:** 2026-09-16
 
 > **Apply only if:** the project has HTTP endpoints, REST controllers, or API contracts.
 > If this is a CLI, library, background worker, or frontend-only project, skip this standard entirely.
@@ -196,3 +196,26 @@ When applying REST API design rules to a **specific set of files or modules** (t
 **Handling violations outside the Core scope** (per [`rules.md`](../rules.md) → Scope-Locking — Three Zones): a file is either in the **Impact Zone** (a dependent or dependency of a file already in Core, discoverable via `devflow-ctl scope impact <file>`) or **Outside**.
 - **Impact Zone + one of the six closed coherence reasons** (broken caller, broken import, contract violation, duplicated logic the task just introduced, a test that now fails, a type/schema that must change together): fix it, then record `devflow-ctl scope justify <file> "<reason>"`.
 - **Impact Zone without a closed coherence reason, or Outside entirely:** do not edit it. Defer it instead: `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` — use `incomplete` if the in-scope change is functionally incoherent without that follow-up, `info` if it is a separate improvement.
+
+## 15. Design-Time Decisions
+
+The spec's **API Contract** section records these for every endpoint added or changed — a contract decided in code is a contract its consumers discover by breaking.
+
+- **Resources and paths** — the resource each endpoint exposes and its naming (§1).
+- **Methods and safety** — the HTTP method of each operation, and which operations are safe or idempotent (§2, §9).
+- **Status codes per outcome** — including every error case the operation can produce (§3).
+- **Request and response shapes** — bodies, envelope and field naming (§4).
+- **Compatibility** — whether the change is additive or breaking, and how it is versioned (§5).
+- **Collections** — pagination, filtering and sorting, with default and maximum page size (§6).
+- **Error format and authentication** — the error body used, and who may call each endpoint (§7, §8).
+
+## 16. Implementation Self-Check
+
+Before marking a task done:
+
+- [ ] Each endpoint returns exactly the status codes the contract names — never `200` carrying an error (§3).
+- [ ] No state change is reachable through `GET` (§2).
+- [ ] Collection endpoints enforce a maximum page size (§6).
+- [ ] Error responses use the project's error format (§7).
+- [ ] Operations the contract declares idempotent behave identically when repeated (§9).
+- [ ] The API specification includes the endpoint, with request/response examples, and matches the implementation (§10).

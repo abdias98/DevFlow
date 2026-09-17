@@ -526,14 +526,12 @@ mk_standard() { # mk_standard <name> [line...]
   } > "$f"
 }
 
-@test "§12.3: a standard without the phase sections is a WARN, not an ERROR" {
+@test "§12.3: a standard without the phase sections is an ERROR" {
   mk_standard alpha
 
   run_section 12 13
-  [[ "$output" == *"alpha.md — missing phase section: 'Design-Time Decisions'"* ]]
-  [[ "$output" == *"alpha.md — missing phase section: 'Implementation Self-Check'"* ]]
-  # Other rules may raise ERRORs on this minimal fixture; none may be a phase-section one.
-  ! grep -q "ERROR.*missing phase section" <<< "$output"
+  grep -q "ERROR.*alpha.md — missing phase section: 'Design-Time Decisions'" <<< "$output"
+  grep -q "ERROR.*alpha.md — missing phase section: 'Implementation Self-Check'" <<< "$output"
 }
 
 @test "§12.3: a standard with both phase sections raises no phase warning" {
