@@ -107,3 +107,54 @@ and `standards/CHANGELOG.md`, and link from the `Rules` of applicable agents.
 ```
 Wave 1 → release → Wave 2 → release → Wave 3 → release → Wave 4 (major)
 ```
+
+---
+
+## Waves 18–21 — Review quality & standards coverage (F65–F96)
+
+> Detailed plan: `docs/implementation-plan-waves-18-21.md` (kept local, not committed — the
+> canonical PR-by-PR breakdown). Audit: `docs/devflow-audit-review-quality.md`. Impartiality
+> constraint: standards/rules improve by **defect class**, never designed around a specific
+> reported bug — see memory `review-improvements-impartial.md`.
+
+### Wave 18 — Review quality (Finding Evidence, Correctness & Behavior dimension, 5-way subagent split)
+
+| PR | Branch | Finding | Status |
+|----|--------|---------|--------|
+| PR1–PR7 | various | F65–F72: `rules.md` Finding Evidence + Behavioral Impact Severity, `correctness-guide.md`, Reviewer subagent split (up to 5a–5d), eval tasks 003/004 | ✅ #138–#144 |
+| PR8 | `chore/release-4.11.0` | release | ✅ #145 → **4.11.0** |
+
+### Wave 19 — Apply upstream (Brainstorm→Plan carry Behavior Scenarios, standards reach every phase)
+
+| PR | Branch | Finding | Status |
+|----|--------|---------|--------|
+| PR9–PR16 | various | F73–F75, F77, F79–F81, F90, F91: `behavior-scenarios.md`, Design-Time Decisions/Implementation Self-Check on all 16 standards, standards profile, verifier behavior-paths axis | ✅ #146–#153 |
+| PR17 | `chore/release-4.12.0` | release | ✅ #154 → **4.12.0** |
+| — | baseline run | real `/devflow-feature` executions (tasks 003/004), not just calibration | ✅ #155 |
+
+### Wave 20 — Coverage (4 new standards + behavioral gap audit)
+
+| PR | Branch | Finding | Status |
+|----|--------|---------|--------|
+| PR18–PR21 | various | F84–F87: `state-lifecycle.md`, `integration-consumption.md`, `data-persistence.md`, `design-patterns.md` (17th–20th standards) | ✅ #156–#159 |
+| PR22 | `feat/behavioral-gap-audit` | F88, F89: audit of all 20 standards → 3 real gaps closed (`security.md`, `error-handling.md`, `ui-design.md`) | ✅ #161 (redo of stranded #160) |
+| PR23 | `chore/release-4.13.0` | release | ✅ #164 (redo of stranded #162; #163 was a no-op revert, see below) → **4.13.0** |
+
+> **Incident, closed:** #158/#160/#162 landed on a stale intermediate branch instead of `main`
+> (GitHub does not retarget a stacked PR's base when the upstream branch merges but isn't
+> deleted) despite `gh pr view` reporting `MERGED`. Diagnosed via `git merge-base --is-ancestor`,
+> fixed by cherry-picking onto fresh branches off `origin/main` (#161, #164). Root cause closed:
+> `delete_branch_on_merge` activated on the repo.
+
+### Wave 21 — Calibration & runtime verification
+
+| PR | Branch | Finding | Status |
+|----|--------|---------|--------|
+| PR24 | `feat/ctl-escape-analysis` | F92, F93: `escape-analysis.md`, `devflow-ctl escape add\|list\|report`, escape rate in `metrics aggregate` | ✅ #165 |
+| PR25 | `feat/runtime-behavior-verification` | F76: `runtime-verification.md`, fifth environment primitive (`runtime`), Reviewer runtime step at deep/maximum rigor | ✅ #166 |
+| PR26 | `feat/eval-behavioral-suite` | F94(b): expand to ≥6 behavioral eval tasks across ≥3 project types, `eval/README.md`, `eval/baselines/README.md` comparison table | ⏸ deferred — shipping PR27 first per explicit user instruction; revisit after 4.14.0 |
+| PR27 | `chore/release-4.14.0` | release | 🟢 in progress → **4.14.0** |
+
+> **32/32 findings (F65–F96) have at least one PR.** PR26 is the one item shipped after its
+> release instead of before — `eval/baselines/4.14.0.md` §2 records why explicitly rather than
+> fabricating a comparison the current 2-task suite can't support.
