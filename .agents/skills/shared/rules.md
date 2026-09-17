@@ -72,10 +72,10 @@ Session state lives in the **YAML frontmatter** of `docs/devflow/session/{slug}/
   | Agent | Reads from context.md |
   |-------|----------------------|
   | Validation Gate | Goal, Definition of Done, Constraints, Assumptions |
-  | Architect | Goal, Constraints, Stack Profile (if exists), Knowledge Base |
-  | Planner | Goal, Definition of Done, Stack Profile, Architect Findings, Validator Findings |
+  | Architect | Goal, Constraints, Edge Cases, Behavior Scenarios, Stack Profile (if exists), Knowledge Base |
+  | Planner | Goal, Definition of Done, Edge Cases, Behavior Scenarios, Stack Profile, Architect Findings, Validator Findings |
   | Implementer | Goal, Stack Profile, Knowledge Base |
-  | Reviewer | Definition of Done, Stack Profile, Validator Findings |
+  | Reviewer | Definition of Done, Behavior Scenarios, Stack Profile, Validator Findings *(Correctness & Behavior reads them only in its contrast pass)* |
   | Debugger | Stack Profile (Test Commands), Knowledge Base |
   | Finalizer | Definition of Done, all artifacts list |
 
