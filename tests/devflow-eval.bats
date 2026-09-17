@@ -181,6 +181,18 @@ eval_serve_stop'
   [ "$status" -ne 0 ]
 }
 
+@test "helper: eval_serve_start returns at once when the service process exits" {
+  printf 'process.exit(1);\n' > "$RESULT/server.js"
+  make_task 50 'if eval_serve_start "node server.js" /; then check 1 "started" true; else check 1 "started" false; fi
+eval_serve_stop'
+  local start=$SECONDS
+  EVAL_SERVE_TIMEOUT=30 run "$EVAL" score "$TASK" "$RESULT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"0/1"* ]]
+  # A dead service must not burn the whole readiness window.
+  [ $(( SECONDS - start )) -lt 10 ]
+}
+
 # ── init: seeding a workspace from a task fixture ─────────────────────────────
 
 make_fixture_task() {
@@ -242,6 +254,10 @@ calibrate() { # calibrate <task-id> <fixture|naive|correct>
     "$EVAL" init "$1" "$ws" --reference "$2" >/dev/null
   fi
   run "$EVAL" score "$1" "$ws"
+  # Printed only when the test fails: which checks failed, and the service log,
+  # so a CI failure is diagnosable instead of a bare "status -eq 0 failed".
+  echo "$output" | grep -E 'Outcome|❌' || true
+  cat /tmp/eval-serve-*.log 2>/dev/null | tail -20 || true
 }
 
 requires_node() {
