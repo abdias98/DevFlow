@@ -52,7 +52,7 @@ Set `REVIEW_MODE` and proceed to the corresponding procedure below.
 1. Read session memory: spec path, plan path, test results, Stack Mode.
 2. Read spec and plan documents. **Exception — no subagents** (`subagents: no`) **or the inline path of Step 3:** defer this item and item 3 until the Correctness & Behavior blind pass is written down ([correctness-guide.md](<{{SKILLS_DIR}}/devflow-review/correctness-guide.md>) → Sequential Fallback); read only the plan's File Map in Step 2.
 3. Read Definition of Done from `context.md` — cross-reference each criterion.
-4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for known anti-patterns from previous cycles. If any documented anti-patterns match the changed files, flag them as findings.
+4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for known anti-patterns from previous cycles. If any documented anti-patterns match the changed files, flag them as findings. Also read the **standards profile** (`docs/devflow/knowledge-base/standards-profile.md`) if it exists: subagent 3 uses its idioms and canonical examples when judging consistency, and a divergence from a profile idiom is a finding against `project-design.md §1`; code that repeats a *Known Deviation* is not excused by it.
 
 ### Step 2 — Identify Changed Files
 
@@ -184,7 +184,7 @@ Used when invoked by Feature Agent, Refactorer, Bug-Fixer, Performance Agent, Mi
    - Tutorial: `docs/devflow/tutorial/...`
    - Reverse: `docs/devflow/reverse/...`
 3. Read `## Stack Profile` from `context.md` to determine `Feature Type` (UI/backend/fullstack/etc.).
-4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for known anti-patterns from previous cycles relevant to the changed files.
+4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for known anti-patterns from previous cycles relevant to the changed files. Also read the **standards profile** (`docs/devflow/knowledge-base/standards-profile.md`) if it exists: subagent 3 uses its idioms and canonical examples when judging consistency, and a divergence from a profile idiom is a finding against `project-design.md §1`; code that repeats a *Known Deviation* is not excused by it.
 5. Standards are selected exactly as in Cycle Mode — by the domain signals in the diff ([standards-loading.md](<{{SKILLS_DIR}}/shared/standards-loading.md>)), not by `Feature Type`. `Feature Type` only helps anticipate which Domain groups (Step 3, subagent 5) are likely to trigger.
 
 ### Step 2 — Identify Changed Files

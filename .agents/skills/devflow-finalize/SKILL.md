@@ -68,6 +68,7 @@ Gather:
     - **By Topic** — add patterns under the relevant topic (Testing, Security, Architecture, Performance, Stack-Specific). If the topic section is empty, create it. If a pattern already exists there, append the new cycle slug as a source. This is the primary section agents read.
     - **Cycle History** — add a chronological entry under `### {slug} — {date}` with the full set of patterns, anti-patterns, and decisions. This is the traceability log.
   - **Deduplication rule:** if a pattern or anti-pattern already exists in By Topic from a previous cycle, do NOT duplicate it — instead, append the new cycle slug to the existing entry's source list. Only add a new entry if the pattern is genuinely new.
+- **Update the standards profile** (`docs/devflow/knowledge-base/standards-profile.md`) when this cycle introduced or changed a convention — a new place a responsibility lives, a new primitive, a new idiom for a standard, or a deviation that was fixed. Update the affected rows in place with a canonical example from this cycle and set *Last updated*. If the profile does not exist, recommend `/devflow-templates standards-profile` in the final summary instead of creating it here.
 - **Update project template** (`docs/devflow/templates/project-architecture.md`):
   - Merge patterns discovered in this cycle into the project template.
   - If the file doesn't exist yet, invoke `devflow-templates` to generate it from accumulated artifacts.

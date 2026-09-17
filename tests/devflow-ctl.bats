@@ -837,7 +837,10 @@ setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
 
 # ── Knowledge base: list / add (F22) ────────────────────────────────────────────
 
-setup_knowledge() { export DEVFLOW_KNOWLEDGE_FILE="$BATS_TEST_TMPDIR/learnings.md"; }
+setup_knowledge() {
+  export DEVFLOW_KNOWLEDGE_FILE="$BATS_TEST_TMPDIR/learnings.md"
+  export DEVFLOW_STANDARDS_PROFILE="$BATS_TEST_TMPDIR/standards-profile.md"
+}
 
 @test "knowledge list: reports 'not found' when the KB doesn't exist yet" {
   setup_knowledge
@@ -863,6 +866,45 @@ setup_knowledge() { export DEVFLOW_KNOWLEDGE_FILE="$BATS_TEST_TMPDIR/learnings.m
   [ "$status" -eq 0 ]
   [[ "$output" == *"Entries: 0"* ]]
   [[ "$output" != *$'Entries: 0\n0'* ]]
+}
+
+@test "knowledge list: says how to create a missing standards profile" {
+  setup_knowledge
+  echo "# KB" > "$DEVFLOW_KNOWLEDGE_FILE"
+  run "$CTL" knowledge list
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Standards profile: not found"* ]]
+  [[ "$output" == *"/devflow-templates standards-profile"* ]]
+}
+
+@test "knowledge list: summarizes an existing standards profile (data rows and last update)" {
+  setup_knowledge
+  echo "# KB" > "$DEVFLOW_KNOWLEDGE_FILE"
+  cat > "$DEVFLOW_STANDARDS_PROFILE" << 'EOF'
+# Standards Profile — demo
+**Generated:** 2026-09-01 · **Last updated:** 2026-09-16 (demo-cycle)
+
+| Responsibility | Location | Example |
+|---|---|---|
+| Business rules | src/domain | `src/domain/order.ts` |
+| Data access | src/repositories | `src/repositories/orders.ts` |
+
+| Need | Use | Avoid | Example |
+|---|---|---|---|
+| Cancellation | AbortController | ignoring stale results | `src/api/client.ts` |
+EOF
+  run "$CTL" knowledge list
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Rows: 3 · Last updated: 2026-09-16"* ]]
+}
+
+@test "knowledge list: reports the profile even when learnings.md is missing" {
+  setup_knowledge
+  printf '| A | B |\n|---|---|\n| x | y |\n' > "$DEVFLOW_STANDARDS_PROFILE"
+  run "$CTL" knowledge list
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Knowledge base not found"* ]]
+  [[ "$output" == *"Rows: 1 · Last updated: unknown"* ]]
 }
 
 @test "knowledge add: fails when the entry file does not exist" {

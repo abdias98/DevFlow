@@ -1,6 +1,8 @@
 # Reference Template: Mobile App
 
 > **This is a reference guide, not a rigid spec.** Adapt to the actual framework (React Native, Flutter, SwiftUI, Jetpack Compose) and platform conventions. Priority: AGENTS.md → project template → exploration → this reference.
+>
+> **Project-specific idioms win.** When `docs/devflow/knowledge-base/standards-profile.md` exists, it records how *this* project actually expresses each pattern, with real files. Use this reference only to know what to look for; generate the profile with `/devflow-templates standards-profile`.
 
 ## Typical Structure (React Native / Flutter)
 

@@ -11,7 +11,8 @@ You are the **Template Agent** standalone agent. Generate and maintain project-s
 ## Rules
 
 - Read [common rules](<{{SKILLS_DIR}}/shared/rules.md>) — language, tool fallback, file persistence, **Scope-Locking**, **Test Execution Policy**.
-- **NEVER modify source code** — only template files in `docs/devflow/templates/` and knowledge base files in `docs/devflow/knowledge-base/`.
+- **NEVER modify source code** — only template files in `docs/devflow/templates/` and knowledge base files in `docs/devflow/knowledge-base/` (including the standards profile).
+- **Three procedures:** Project Template Generation (default), Knowledge Base Bootstrap (`bootstrap-knowledge`), and Standards Profile (`standards-profile`).
 - **Pre-defined templates** in `shared/templates/` are reference guides, not rigid specs. The Architect always adapts to the actual codebase. Priority: AGENTS.md → project template → exploration → this reference.
 - **Artifacts created by this skill** are **always allowed**.
 
@@ -126,6 +127,40 @@ Pass to Reviewer:
 ### Step 7 — Release Session
 
 **Entry condition:** the Reviewer (Step 6) has returned a verdict. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the project template is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
+
+---
+
+## Procedure — Standards Profile
+
+> **When to use:** invoke with argument `standards-profile` when `docs/devflow/knowledge-base/standards-profile.md` does not exist, or when the project's conventions changed enough that its rows are stale. The profile translates the technology-agnostic standards into this project's concrete idioms — where each responsibility lives, how each applicable standard is expressed, which primitive the project uses for recurring needs, and where the code knowingly deviates. Architect, Planner, Implementer and Reviewer read it next to `learnings.md`.
+
+### Step P1 — Gather Sources
+
+1. Read `AGENTS.md`, `docs/devflow/templates/project-architecture.md` and `docs/devflow/knowledge-base/learnings.md` if they exist.
+2. Load the matching reference template from `shared/templates/{type}.md` — as a checklist of responsibilities to look for, never as content.
+3. Decide which standards apply to this project with the domain signals in [standards-loading.md](<{{SKILLS_DIR}}/shared/standards-loading.md>).
+
+### Step P2 — Explore for Real Examples
+
+For each responsibility, applicable standard and primitive in the [standards profile template](<{{SKILLS_DIR}}/devflow-templates/standards-profile-template.md>), find **how the code actually does it** and **one file that shows it**. Read-only. Prefer the most recent and most-used example over an old one-off. When the code does two things for the same need, record the dominant one as the idiom and the other under *Known Deviations*.
+
+A row you cannot back with a real file is left out — never filled from the reference template or from general knowledge of the framework.
+
+### Step P3 — Approval Gate
+
+| header | question | type |
+|--------|----------|------|
+| `profile_confirmation` | About to {create | update} `standards-profile.md` with {N} responsibility rows, {N} standard idioms, {N} primitives and {N} known deviations. Proceed? | options: ✅ Approve, ✏️ Adjust, ❌ Cancel |
+
+**STOP. Do NOT write the profile until the user approves.** ✏️ Adjust → revise and re-present; ❌ Cancel → `devflow-ctl lock release` and stop.
+
+### Step P4 — Persist
+
+Save to `docs/devflow/knowledge-base/standards-profile.md` following the template. If it exists, **update rows in place** and set *Last updated* — do not append a second copy of a table.
+
+### Step P5 — Review and Release
+
+Auto-invoke the Reviewer (Standalone Mode) with `Invoking agent: Template Agent` and the profile path, then finalize metrics, run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` — same closing order as Step 6–7 above.
 
 ---
 
