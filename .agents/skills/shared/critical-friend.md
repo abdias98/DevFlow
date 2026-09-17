@@ -20,6 +20,7 @@ Execute all four checks. If any check raises a concern, present it to the user *
 |----------|------------|
 | `security.md` | Always — every request |
 | `design-principles.md` | Always — every request (DRY, YAGNI, SoC, technology agnosticism, KISS apply to every cycle) |
+| `design-patterns.md` | A new abstraction, extension point, or variant-handling structure (strategy/factory/adapter/decorator/etc.) is introduced or extended |
 | `solid.md` | Any code being written or modified |
 | `clean-architecture.md` | Any structural or design decision |
 | `performance.md` | Data access, loops, async operations, database queries |
@@ -33,6 +34,7 @@ Execute all four checks. If any check raises a concern, present it to the user *
 | `concurrency.md` | Concurrent/async/parallel code, shared mutable state, locks, background tasks, message consumers |
 | `state-lifecycle.md` | Any state that outlives a single call: a UI store, a server-side cache, a session, a subscription, a registry |
 | `integration-consumption.md` | The code calls an external service, API, or integration it does not control |
+| `data-persistence.md` | Defining/modifying a persisted schema, writing a migration, or a multi-step write against durable storage |
 | `dependencies.md` | Adding/updating/removing a dependency, editing manifests or lockfiles, build/CI config |
 | `event-driven-architecture.md` | The project communicates via events, message queues, a message broker, or streams — including in-process domain events |
 | `git-conventions.md` | Any commit, branch creation, or PR being prepared |

@@ -4,6 +4,16 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.23.0 — 2026-09-17
+
+### New standards — 2.23.0
+- **`design-patterns.md`** (new, v1.0.0): the 20th standard — a problem→pattern→when-not-to catalog (Strategy, Factory, Adapter, Repository, Observer/Pub-Sub, State, Command, Decorator, Facade, Builder), the rule to follow an existing project precedent before introducing a second solution to the same problem (§2), that an extension point earns its complexity only with a real or stated second variant (§3, the pattern-selection application of `design-principles.md` §2 YAGNI), and composition over inheritance for variant behavior (§4). Deliberately **no BLOCK trigger by default** — pattern selection is a design-quality concern, not a correctness/safety invariant. Three canonical-owner boundaries recorded in `standards-dry-policy.md` against `design-principles.md` §2, `project-design.md` §2 (architectural vs. tactical pattern selection), and `solid.md` §2 (OCP vs. which pattern implements the extension). Registered in `standards-quick-card.md`, `critical-friend.md`, `standards-loading.md`; linked from Architect, Planner, Implementer. New Reviewer Domain group **5d — Structural Patterns** (single-standard group — subagent 3 was already at the 5-standard cap and design-patterns.md belongs conceptually there, so it is dispatched conditionally instead). Refs: F87, Wave 20.
+
+## 2.22.0 — 2026-09-17
+
+### New standards — 2.22.0
+- **`data-persistence.md`** (new, v1.0.0): the 19th standard — schema invariants enforced at the storage layer (§1), migrations that are reversible and backward-compatible across a rolling deploy (§2), transactional boundaries for multi-step writes (§3), referential integrity (§4), indexing driven by query patterns (§5), an explicit logical-vs-physical deletion decision (§6), and multi-tenant data isolation (§7). Three canonical-owner boundaries recorded in `standards-dry-policy.md`: `performance.md` §2 keeps the query-efficiency judgment, `security.md` §2 keeps tenant-data authorization, `concurrency.md` §3 keeps short-critical-section discipline generally — this standard owns the indexing that access patterns require, the schema/query mechanism enforcing tenant isolation, and the same discipline applied to database transactions. Registered in `standards-quick-card.md`, `critical-friend.md`, `standards-loading.md`; linked from the Reviewer's subagent 2 (renamed *Performance, Concurrency & Data*, now 4 standards under the 5-cap) and, per the plan, wired into `devflow-migrate` as its primary consumer (backward-compatibility check now cites `data-persistence.md §2` explicitly). Refs: F86, Wave 20.
+
 ## 2.21.0 — 2026-09-17
 
 ### New standards — 2.21.0
