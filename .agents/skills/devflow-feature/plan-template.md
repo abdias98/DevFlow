@@ -60,6 +60,8 @@ Save to `docs/devflow/features/YYYY-MM-DD-{slug}-feature-plan.md`:
 
 #### Task 1: {title}
 
+- **Standards constraints:** `{standard}.md §{N}` — {the concrete rule for this task} *(one line per standard the task applies to; run each one's Implementation Self-Check before the task is done)*
+
 - [ ] **Test file:** `{path/to/test.ext}`
   ```{language}
   {Complete test code — ready to paste. Use detected test framework conventions.

@@ -19,7 +19,7 @@ Run the Planner phase of the DevFlow lifecycle.
 2. Ask the Stack Mode question (conditional — only if the feature is large and spans multiple layers).
 3. Explore existing code patterns, test conventions, and reference implementations.
 4. Generate HTML mockups (if UI feature).
-5. Break down the spec into atomic, ordered tasks with complete code snippets, test code, and commit messages; derive Feature-Level Scenarios from the spec's State & Interaction Matrix, each with an owning task and a sequence test.
+5. Break down the spec into atomic, ordered tasks with complete code snippets, test code, and commit messages; derive Feature-Level Scenarios from the spec's State & Interaction Matrix, each with an owning task and a sequence test; give every task its Standards constraints (`{standard}.md §N` + the concrete rule), drawn from the spec's Standards Applied.
 6. Save the plan to `docs/devflow/plans/YYYY-MM-DD-{slug}.md`.
 7. If invoked as part of the full lifecycle, hand control back to the Orchestrator for the Confirmation Gate. If invoked standalone, present the plan to the user for approval and STOP.
 

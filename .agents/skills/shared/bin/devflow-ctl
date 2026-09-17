@@ -734,7 +734,7 @@ cmd_checkpoint() {
 # against markdown headings). Kept in sync with shared/artifact-checklist.md.
 artifacts_required() {
   case "$1" in
-    spec)       printf '%s\n' "Digest" "Context" "Architecture" "Data Structures" "Reusability" "State & Interaction Matrix" "Test Architecture" "Risk" "Design Decisions" "Constraints" ;;
+    spec)       printf '%s\n' "Digest" "Context" "Architecture" "Data Structures" "Reusability" "State & Interaction Matrix" "Standards Applied" "Test Architecture" "Risk" "Design Decisions" "Constraints" ;;
     plan)       printf '%s\n' "Digest" "File Map" "Feature-Level Scenarios" "Task" "Self-Review" ;;
     review)     printf '%s\n' "Summary" "Findings" "Verdict" "Coverage" ;;
     validation) printf '%s\n' "Assumptions" "Standards Scan" "Contradictions" "Security" "Architecture Risks" "Alternatives" ;;
@@ -824,6 +824,39 @@ _artifacts_check_scenarios_vs_matrix() { # <plan> <spec>
   return 0
 }
 
+# Standards reach the code only through artifacts (F80): the spec records the
+# design-time decisions of every applicable standard, and every task of the
+# plan carries its own standards constraints -- task subagents read only their
+# work packet, so a decision that is not written there does not reach them.
+_artifacts_check_standards_applied() { # <spec>
+  local body; body="$(_artifacts_section_body "$1" "Standards Applied")"
+  if ! _artifacts_has_rows "$body"; then
+    fail "spec '$1' — 'Standards Applied' has no rows: record the Design-Time Decisions of every standard whose domain applies (design-principles.md always does)"
+    return 1
+  fi
+  return 0
+}
+
+_artifacts_check_task_standards_constraints() { # <plan>
+  local missing
+  missing="$(awk '
+    function close_task() { if (title != "" && !has) print title }
+    /^#+ / {
+      lvl = index($0, " ") - 1
+      if (title != "" && lvl <= tlvl) { close_task(); title = "" }
+      if ($0 ~ /^#+ Task [0-9]+/) { title = $0; sub(/^#+ /, "", title); tlvl = lvl; has = 0 }
+      next
+    }
+    title != "" && /^(- )?\*\*Standards constraints:\*\*[[:space:]]*[^[:space:]]/ { has = 1 }
+    END { close_task() }
+  ' "$1")"
+  if [[ -n "$missing" ]]; then
+    fail "plan '$1' — task(s) without a non-empty '**Standards constraints:**' line: $(tr '\n' ';' <<< "$missing" | sed 's/;$//; s/;/; /g') — list each applicable {standard}.md §N with the concrete rule, or 'N/A — {reason}' for a task that changes no code"
+    return 1
+  fi
+  return 0
+}
+
 # A review's Coverage section must say what was examined -- at minimum the
 # Correctness & Behavior dimension, which is the one that may legitimately be
 # skipped and whose absence is otherwise invisible. An APPROVED verdict with an
@@ -869,9 +902,11 @@ cmd_artifacts() {
   fi
   if [[ "$type" == "spec" ]]; then
     _artifacts_check_behavior_section "$path" "State & Interaction Matrix" "State & Interaction Matrix"
+    _artifacts_check_standards_applied "$path"
   fi
   if [[ "$type" == "plan" ]]; then
     _artifacts_check_behavior_section "$path" "Feature-Level Scenarios" "Feature-Level Scenarios"
+    _artifacts_check_task_standards_constraints "$path"
   fi
   if [[ "$type" == "plan" && -n "$spec_path" ]]; then
     _artifacts_check_concurrency_task "$path" "$spec_path"

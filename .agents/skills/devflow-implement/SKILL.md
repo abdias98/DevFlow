@@ -93,8 +93,8 @@ Each subagent's brief:
 | Field | Content |
 |-------|---------|
 | **Goal** | Implement this task following Red→Green TDD. |
-| **Context** | **READ:** the task's work packet from the plan (Goal, Context, Constraints, Acceptance criteria, Deliverables, Implementation guide); the **full text of every standard whose domain signal the task's changes present** — the Implementer lists them in the brief, decided per [standards-loading.md](<{{SKILLS_DIR}}/shared/standards-loading.md>); Stack Profile test commands. **DO NOT READ:** other tasks' sections, the full plan, context.md, standards whose domain does not apply to this task. |
-| **Constraints** | Write ONLY to the task's declared files. Follow TDD Red→Green. Do NOT commit — the Implementer handles commits after wave synthesis. Run `devflow-ctl scope check {file} --slug {slug}` before each edit. |
+| **Context** | **READ:** the task's work packet from the plan (Goal, Context, Constraints, **Standards constraints**, Acceptance criteria, Deliverables, Implementation guide); the **full text of every standard whose domain signal the task's changes present** — the Implementer lists them in the brief, decided per [standards-loading.md](<{{SKILLS_DIR}}/shared/standards-loading.md>); Stack Profile test commands. **DO NOT READ:** other tasks' sections, the full plan, context.md, standards whose domain does not apply to this task. |
+| **Constraints** | Write ONLY to the task's declared files. Follow TDD Red→Green. Before reporting the task complete, run the **Implementation Self-Check** of every standard in the task's Standards constraints and fix what fails within scope. Do NOT commit — the Implementer handles commits after wave synthesis. Run `devflow-ctl scope check {file} --slug {slug}` before each edit. |
 | **Output format** | Task complete — files created/modified, test command, test result (Standard mode) or test command for user (Pair mode). |
 
 After all subagents in a wave return, the Implementer runs **supervisor checks** before synthesizing:

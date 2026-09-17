@@ -54,6 +54,7 @@ Validated by: **Architect** (before Step 5 — save)
 - [ ] **Reusability Decisions** table present — at least 1 row (can be "None — new component")
 - [ ] **Impact Analysis** present — dependents/dependencies from `devflow-ctl scope impact` for each modified existing component, or "N/A — no existing components modified"
 - [ ] **State & Interaction Matrix** present — for every stateful unit, states × events → observable expected result with a source per row, covering the Transition Prompts the unit can exhibit; or exactly `N/A — stateless: {reason}` (`shared/behavior-scenarios.md`)
+- [ ] **Standards Applied** table present — one row per standard whose domain applies (`design-principles.md` always), with the decisions from its Design-Time Decisions and where the spec materializes them
 - [ ] **Test Architecture** table present — layers, tools, utilities, reference tests
 - [ ] **Risk Assessment** table present — at least 1 risk identified (can be LOW)
 - [ ] **Design Decisions** table present — key decisions with alternatives and reasoning
@@ -73,7 +74,7 @@ Validated by: **Planner** (before Step 8 — persist)
 - [ ] **File Map** section present — Modify: + Create: lists
 - [ ] **Impact Zone** present with an explicit verdict per file (`touch (coherence)` / `no touch` / `defer`) — or "N/A" if the spec's Impact Analysis found no existing components modified
 - [ ] **At least 1 task** defined with numbered title
-- [ ] **Each task is a work packet** — has **Goal**, **Context**, **Constraints**, **Acceptance criteria**, and **Deliverables**
+- [ ] **Each task is a work packet** — has **Goal**, **Context**, **Constraints**, **Standards constraints** (`{standard}.md §N` — concrete rule, or `N/A — {reason}` for a task that changes no code), **Acceptance criteria**, and **Deliverables**
 - [ ] **Each task has an Implementation guide** with complete code snippets
 - [ ] **Each task has commit checkpoint** — `git commit -m "..."` message
 - [ ] **Each task has test code** — `🧪 Tests for this Task` with complete, runnable code
