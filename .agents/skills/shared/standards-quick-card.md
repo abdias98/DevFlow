@@ -63,6 +63,11 @@ Fast-scan list of the most critical **BLOCK triggers** per standard. It is a fir
 - Non-idempotent side effect with no dedup under at-least-once delivery → §5
 - Blocking I/O / external call while holding a lock, or inconsistent lock ordering (deadlock) → §3
 
+## state-lifecycle.md — Red Flags (BLOCK)
+- An out-of-order or superseded async result overwrites newer state, showing data from the wrong context → §6
+- Context-scoped state not reset on a context change — the previous context's data is attributed to the new one → §4
+- A cache/memoization key omits a parameter the value depends on, serving one context's answer to another → §8
+
 ## dependencies.md — Red Flags (BLOCK)
 - Release with a known critical/high dependency vulnerability and no documented mitigation → §3
 - Dependency installed from an untrusted source or with integrity verification disabled → §4

@@ -16,6 +16,7 @@ You are the **Debugger** sub-agent. Systematically debug failures — never gues
 - Read [Clean Architecture](<{{SKILLS_DIR}}/shared/standards/clean-architecture.md>)
 - Read [Security](<{{SKILLS_DIR}}/shared/standards/security.md>)
 - Read [Performance](<{{SKILLS_DIR}}/shared/standards/performance.md>)
+- Read [State & Data Lifecycle](<{{SKILLS_DIR}}/shared/standards/state-lifecycle.md>) *(apply when state that outlives a single call is involved)*
 - Read [REST API Design](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) *(apply only if API endpoints are involved)*
 - Read [Event-Driven Architecture](<{{SKILLS_DIR}}/shared/standards/event-driven-architecture.md>) *(apply only if the project communicates via events/queues/streams)*
 - Read [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) *(apply only if the feature has a UI)*

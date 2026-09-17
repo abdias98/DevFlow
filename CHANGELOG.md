@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **`state-lifecycle.md` — the 17th standard: state and data lifecycle** (v1.0.0). Sixteen standards covered algorithmic performance, server-side caching, thread/process concurrency and event delivery — none owned the class of defect an external PR review kept finding: a UI tab requesting data it doesn't need, an account-receivable view not resetting when the customer changes, a slow response overwriting a faster one. This standard is transversal (applies whenever a change introduces or modifies state that outlives a single call, not gated behind a project-type condition) and covers: single ownership per value (§1), derived vs. stored state (§2), invalidation on dependency change (§3), context-scoped reset (§4), subscription/timer/listener teardown (§5), out-of-order async results — cross-linking `behavior-scenarios.md`'s Order and Change-while-in-flight Transition Prompts (§6), work performed only when consumed (§7), and cache key completeness (§8). Three canonical-owner boundaries recorded in `standards-dry-policy.md`: `performance.md` §3 keeps server-side cache mechanics, `concurrency.md` §7 keeps background-process lifecycle, `performance.md` §4 keeps the throughput angle of unnecessary async work — this standard owns the invalidation trigger, the state-holding teardown, and the async-result staleness respectively. Registered in `standards-quick-card.md`, `critical-friend.md` and `standards-loading.md`; linked from Architect, Planner, Implementer, Debugger, Performance Agent, and the Reviewer's subagent 2 (renamed *Performance, Concurrency & State* — still within the 5-standard cap `validate-framework.sh` §17 enforces). `standards/CHANGELOG.md` → 2.20.0. (F84, Wave 20)
+
+---
+
 ## [4.12.0] — 2026-09-16
 
 > Wave 19 (9 PRs, F73–F75, F77, F79–F81, F90, F91) — the improvements Wave 18 made to the *review* move upstream, to the phases that *produce* the code. Wave 18 taught the Reviewer to look for defects that break no written rule; this wave removes the reasons those defects were written in the first place.
