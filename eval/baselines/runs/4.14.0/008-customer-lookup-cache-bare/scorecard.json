@@ -1,0 +1,16 @@
+{
+  "task": "008-customer-lookup-cache",
+  "score_earned": 15,
+  "score_total": 17,
+  "percent": 88,
+  "outcome_earned": 15,
+  "outcome_total": 15,
+  "outcome_percent": 100,
+  "process_earned": 0,
+  "process_total": 2,
+  "process_percent": 0,
+  "threshold": 90,
+  "passed": true,
+  "checks_passed": 8,
+  "checks_failed": 2
+}

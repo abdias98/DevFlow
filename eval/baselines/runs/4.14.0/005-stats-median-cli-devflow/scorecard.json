@@ -1,0 +1,16 @@
+{
+  "task": "005-stats-median-cli",
+  "score_earned": 17,
+  "score_total": 18,
+  "percent": 94,
+  "outcome_earned": 16,
+  "outcome_total": 16,
+  "outcome_percent": 100,
+  "process_earned": 1,
+  "process_total": 2,
+  "process_percent": 50,
+  "threshold": 90,
+  "passed": true,
+  "checks_passed": 11,
+  "checks_failed": 1
+}

@@ -1,0 +1,137 @@
+diff --git a/src/cli.js b/src/cli.js
+index 14f7175..075cd90 100644
+--- a/src/cli.js
++++ b/src/cli.js
+@@ -1,8 +1,26 @@
+ 'use strict';
+ 
++const fs = require('node:fs');
+ const { createStore, NoteError } = require('./store');
+ 
+-const USAGE = 'usage: notes <add <id> <title> | list>\n';
++const USAGE = 'usage: notes <add <id> <title> | list | import <file.json>>\n';
++
++function readImportFile(source) {
++  let text;
++  try {
++    text = fs.readFileSync(source, 'utf8');
++  } catch (err) {
++    throw new NoteError(`cannot read ${source}: ${err.code || err.message}`);
++  }
++  let data;
++  try {
++    data = JSON.parse(text);
++  } catch {
++    throw new NoteError(`invalid JSON in ${source}`);
++  }
++  if (!Array.isArray(data)) throw new NoteError(`${source} must contain an array of notes`);
++  return data;
++}
+ 
+ // Pure entry point: returns what the process should print and exit with, so it
+ // can be tested without spawning anything.
+@@ -19,6 +37,13 @@ function run(argv, { file }) {
+       const lines = store.readAll().map((note) => `${note.id}: ${note.title}`);
+       return { code: 0, stdout: lines.length ? `${lines.join('\n')}\n` : '', stderr: '' };
+     }
++    if (command === 'import') {
++      const [source] = rest;
++      if (!source) return { code: 1, stdout: '', stderr: USAGE };
++      const batch = readImportFile(source);
++      store.addMany(batch);
++      return { code: 0, stdout: `imported ${batch.length} notes\n`, stderr: '' };
++    }
+     return { code: 1, stdout: '', stderr: USAGE };
+   } catch (err) {
+     if (err instanceof NoteError) return { code: 1, stdout: '', stderr: `${err.message}\n` };
+diff --git a/src/store.js b/src/store.js
+index a41a9d1..43d13a7 100644
+--- a/src/store.js
++++ b/src/store.js
+@@ -40,6 +40,21 @@ function createStore(file) {
+       notes.push({ id: note.id, title: note.title });
+       writeAll(notes);
+     },
++
++    // Adds many notes atomically: every note is validated and checked for
++    // duplicates (against the store and within the batch) before anything is
++    // written, so a bad entry leaves the store untouched.
++    addMany(batch) {
++      const notes = readAll();
++      const seen = new Set(notes.map((existing) => existing.id));
++      for (const note of batch) {
++        validateNote(note);
++        if (seen.has(note.id)) throw new NoteError(`duplicate id: ${note.id}`);
++        seen.add(note.id);
++      }
++      for (const note of batch) notes.push({ id: note.id, title: note.title });
++      writeAll(notes);
++    },
+   };
+ }
+ 
+diff --git a/test/cli.test.js b/test/cli.test.js
+index 622292a..c79d688 100644
+--- a/test/cli.test.js
++++ b/test/cli.test.js
+@@ -30,3 +30,60 @@ test('a note without a title is rejected', () => {
+   assert.equal(result.code, 1);
+   assert.match(result.stderr, /invalid note 'n1'/);
+ });
++
++function writeJson(data) {
++  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'notes-in-')), 'in.json');
++  fs.writeFileSync(file, typeof data === 'string' ? data : JSON.stringify(data));
++  return file;
++}
++
++test('import adds every note in the file', () => {
++  const file = tmpStore();
++  run(['add', 'n0', 'Existing'], { file });
++  const input = writeJson([{ id: 'a', title: 'One' }, { id: 'b', title: 'Two' }, { id: 'c', title: 'Three' }]);
++  const result = run(['import', input], { file });
++  assert.equal(result.code, 0);
++  assert.equal(result.stdout, 'imported 3 notes\n');
++  assert.equal(run(['list'], { file }).stdout, 'n0: Existing\na: One\nb: Two\nc: Three\n');
++});
++
++test('import of an empty array succeeds and changes nothing', () => {
++  const file = tmpStore();
++  assert.equal(run(['import', writeJson([])], { file }).code, 0);
++  assert.equal(run(['list'], { file }).stdout, '');
++});
++
++test('import rejects a duplicate of an existing id and adds nothing', () => {
++  const file = tmpStore();
++  run(['add', 'a', 'Existing'], { file });
++  const result = run(['import', writeJson([{ id: 'x', title: 'X' }, { id: 'a', title: 'Dup' }])], { file });
++  assert.equal(result.code, 1);
++  assert.match(result.stderr, /duplicate id: a/);
++  assert.equal(run(['list'], { file }).stdout, 'a: Existing\n');
++});
++
++test('import rejects duplicate ids within the file and adds nothing', () => {
++  const file = tmpStore();
++  const result = run(['import', writeJson([{ id: 'x', title: 'X' }, { id: 'x', title: 'Y' }])], { file });
++  assert.equal(result.code, 1);
++  assert.match(result.stderr, /duplicate id: x/);
++  assert.equal(run(['list'], { file }).stdout, '');
++});
++
++test('import rejects an invalid note and adds nothing', () => {
++  const file = tmpStore();
++  const result = run(['import', writeJson([{ id: 'x', title: 'X' }, { id: 'y' }])], { file });
++  assert.equal(result.code, 1);
++  assert.match(result.stderr, /invalid note 'y'/);
++  assert.equal(run(['list'], { file }).stdout, '');
++});
++
++test('import rejects non-array, malformed, missing and absent-argument input', () => {
++  const file = tmpStore();
++  assert.match(run(['import', writeJson({ id: 'x' })], { file }).stderr, /must contain an array/);
++  assert.match(run(['import', writeJson('{nope')], { file }).stderr, /invalid JSON/);
++  assert.match(run(['import', writeJson([null])], { file }).stderr, /invalid note/);
++  assert.match(run(['import', '/nonexistent/in.json'], { file }).stderr, /cannot read/);
++  assert.equal(run(['import'], { file }).code, 1);
++  assert.equal(run(['list'], { file }).stdout, '');
++});

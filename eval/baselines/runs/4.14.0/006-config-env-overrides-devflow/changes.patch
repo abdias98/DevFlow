@@ -1,0 +1,192 @@
+diff --git a/src/config.js b/src/config.js
+index 35d157b..0c23676 100644
+--- a/src/config.js
++++ b/src/config.js
+@@ -5,16 +5,46 @@ const path = require('node:path');
+ 
+ const DEFAULT_FILE = path.resolve(process.cwd(), 'config.json');
+ 
+-// Loads the application configuration from a JSON file.
++// Reads an override from env. A variable that is not set means "no override"
++// and the file value is kept. The empty string counts as not set: `PORT=` in a
++// shell is conventionally "unset", and Number('') would silently become port 0.
++function fromEnv(env, name, parse, fileValue) {
++  const value = env[name];
++  return value === undefined || value === '' ? fileValue : parse(value);
++}
++
++const parseHost = (value) => value;
++
++function parsePort(value) {
++  if (!/^\d+$/.test(value) || Number(value) > 65535) {
++    throw new TypeError(`PORT must be an integer from 0 to 65535, got '${value}'`);
++  }
++  return Number(value);
++}
++
++function parseDebug(value) {
++  const normalized = value.toLowerCase();
++  if (normalized === 'true' || normalized === '1') return true;
++  if (normalized === 'false' || normalized === '0') return false;
++  throw new TypeError(`DEBUG must be one of true, false, 1, 0, got '${value}'`);
++}
++
++// Loads the application configuration from a JSON file. The environment
++// variables HOST, PORT and DEBUG override the matching values from the file;
++// `env` exists so tests do not depend on the process environment.
+ //
+ // The result has exactly three keys, with these types — src/server.js relies on
+ // them:
+ //   host  string   the interface to bind
+ //   port  number   an integer from 0 to 65535
+ //   debug boolean  whether verbose logging is on
+-function loadConfig(file = DEFAULT_FILE) {
++function loadConfig(file = DEFAULT_FILE, env = process.env) {
+   const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+-  return { host: raw.host, port: raw.port, debug: raw.debug };
++  return {
++    host: fromEnv(env, 'HOST', parseHost, raw.host),
++    port: fromEnv(env, 'PORT', parsePort, raw.port),
++    debug: fromEnv(env, 'DEBUG', parseDebug, raw.debug),
++  };
+ }
+ 
+ module.exports = { loadConfig };
+diff --git a/test/config.test.js b/test/config.test.js
+index f995d06..c8d26b1 100644
+--- a/test/config.test.js
++++ b/test/config.test.js
+@@ -2,20 +2,131 @@
+ 
+ const test = require('node:test');
+ const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const os = require('node:os');
+ const path = require('node:path');
+ const { loadConfig } = require('../src/config');
+ const { createServer } = require('../src/server');
+ 
+ const FILE = path.resolve(__dirname, '..', 'config.json');
+ 
++function writeConfigFile(t, values) {
++  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'app-config-'));
++  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
++  const file = path.join(dir, 'config.json');
++  fs.writeFileSync(file, JSON.stringify(values));
++  return file;
++}
++
++// -- existing tests, isolated from the ambient environment (env = {}) --
+ test('loadConfig reads the values in the file', () => {
+-  assert.deepEqual(loadConfig(FILE), { host: 'localhost', port: 3000, debug: true });
++  assert.deepEqual(loadConfig(FILE, {}), { host: 'localhost', port: 3000, debug: true });
+ });
+ 
+ test('createServer describes where it listens and how verbose it is', () => {
+-  assert.deepEqual(createServer(loadConfig(FILE)), { address: 'localhost:3000', logLevel: 'debug' });
++  assert.deepEqual(createServer(loadConfig(FILE, {})), { address: 'localhost:3000', logLevel: 'debug' });
+ });
+ 
+ test('createServer rejects a configuration of the wrong shape', () => {
+   assert.throws(() => createServer({ host: 'localhost', port: '3000', debug: true }), TypeError);
+ });
++
++// -- new: overrides --
++// Happy path
++test('loadConfig — HOST set — overrides only the host (S1)', () => {
++  assert.deepEqual(loadConfig(FILE, { HOST: '0.0.0.0' }), { host: '0.0.0.0', port: 3000, debug: true });
++});
++
++test('loadConfig — PORT set — returns the port as a number (S2)', () => {
++  const config = loadConfig(FILE, { PORT: '8080' });
++  assert.deepEqual(config, { host: 'localhost', port: 8080, debug: true });
++  assert.equal(typeof config.port, 'number');
++});
++
++test('createServer — config with PORT override — listens on the overridden port (S2)', () => {
++  assert.deepEqual(createServer(loadConfig(FILE, { PORT: '8080' })), {
++    address: 'localhost:8080',
++    logLevel: 'debug',
++  });
++});
++
++test('loadConfig — DEBUG=false — turns debug off although the file says true (S3)', () => {
++  const config = loadConfig(FILE, { DEBUG: 'false' });
++  assert.equal(config.debug, false);
++  assert.equal(createServer(config).logLevel, 'info');
++});
++
++test('loadConfig — DEBUG=true — turns debug on although the file says false (S3)', (t) => {
++  const file = writeConfigFile(t, { host: 'localhost', port: 3000, debug: false });
++  assert.equal(loadConfig(file, { DEBUG: 'true' }).debug, true);
++});
++
++test('loadConfig — all three set — every value comes from the environment', () => {
++  assert.deepEqual(loadConfig(FILE, { HOST: 'example.test', PORT: '443', DEBUG: '0' }), {
++    host: 'example.test',
++    port: 443,
++    debug: false,
++  });
++});
++
++test('loadConfig — no variables set — returns the file values (S4)', () => {
++  assert.deepEqual(loadConfig(FILE, {}), { host: 'localhost', port: 3000, debug: true });
++});
++
++// Edge cases
++for (const [raw, expected] of [['true', true], ['TRUE', true], ['1', true], ['false', false], ['False', false], ['0', false]]) {
++  test(`loadConfig — DEBUG='${raw}' — is the boolean ${expected}`, (t) => {
++    const file = writeConfigFile(t, { host: 'localhost', port: 3000, debug: !expected });
++    assert.equal(loadConfig(file, { DEBUG: raw }).debug, expected);
++  });
++}
++
++for (const [raw, expected] of [['0', 0], ['65535', 65535], ['0080', 80]]) {
++  test(`loadConfig — PORT='${raw}' — is the integer ${expected}`, () => {
++    assert.equal(loadConfig(FILE, { PORT: raw }).port, expected);
++  });
++}
++
++// Sequence / interaction scenarios
++test('loadConfig — called with different env each time — every call reflects its own env (S5)', () => {
++  assert.equal(loadConfig(FILE, { PORT: '8080' }).port, 8080);
++  assert.equal(loadConfig(FILE, { PORT: '9090' }).port, 9090);
++  assert.equal(loadConfig(FILE, {}).port, 3000);
++});
++
++test('loadConfig — default env — is process.env (S9)', () => {
++  const previous = process.env.PORT;
++  process.env.PORT = '4242';
++  try {
++    assert.equal(loadConfig(FILE).port, 4242);
++  } finally {
++    if (previous === undefined) delete process.env.PORT;
++    else process.env.PORT = previous;
++  }
++});
++
++// Failure scenarios (S6, S7)
++for (const raw of ['abc', '80.5', '1e3', ' 80', '80 ', '-1', '+80', '0x50', '65536', '99999999999999999999']) {
++  test(`loadConfig — PORT='${raw}' — throws a TypeError naming PORT (S6)`, () => {
++    assert.throws(() => loadConfig(FILE, { PORT: raw }), { name: 'TypeError', message: /PORT/ });
++  });
++}
++
++for (const raw of ['maybe', 'yes', 'on', 'app:*', 'truee']) {
++  test(`loadConfig — DEBUG='${raw}' — throws a TypeError naming DEBUG (S7)`, () => {
++    assert.throws(() => loadConfig(FILE, { DEBUG: raw }), { name: 'TypeError', message: /DEBUG/ });
++  });
++}
++
++test('loadConfig — valid HOST with invalid PORT — throws instead of returning a partial override (S6)', () => {
++  assert.throws(() => loadConfig(FILE, { HOST: '0.0.0.0', PORT: 'abc' }), TypeError);
++});
++
++// Edge case: empty variable
++test('loadConfig — HOST, PORT and DEBUG set to empty strings — are treated as unset (S8)', () => {
++  assert.deepEqual(loadConfig(FILE, { HOST: '', PORT: '', DEBUG: '' }), {
++    host: 'localhost',
++    port: 3000,
++    debug: true,
++  });
++});

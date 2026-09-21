@@ -1,0 +1,132 @@
+diff --git a/src/config.js b/src/config.js
+index 35d157b..37eba12 100644
+--- a/src/config.js
++++ b/src/config.js
+@@ -5,16 +5,51 @@ const path = require('node:path');
+ 
+ const DEFAULT_FILE = path.resolve(process.cwd(), 'config.json');
+ 
+-// Loads the application configuration from a JSON file.
++const TRUE_VALUES = new Set(['true', '1', 'yes', 'on']);
++const FALSE_VALUES = new Set(['false', '0', 'no', 'off']);
++
++// Environment variables are strings, so they are converted to the types the
++// result promises. An unset or empty variable leaves the file's value alone; a
++// set but malformed one is an error rather than a silent fallback.
++function parsePort(value) {
++  const text = value.trim();
++  const port = /^\d+$/.test(text) ? Number(text) : NaN;
++  if (!Number.isInteger(port) || port > 65535) {
++    throw new TypeError(`PORT must be an integer from 0 to 65535, got "${value}"`);
++  }
++  return port;
++}
++
++function parseDebug(value) {
++  const text = value.trim().toLowerCase();
++  if (TRUE_VALUES.has(text)) return true;
++  if (FALSE_VALUES.has(text)) return false;
++  throw new TypeError(`DEBUG must be one of true/false/1/0/yes/no/on/off, got "${value}"`);
++}
++
++function fromEnv(env, name) {
++  const value = env[name];
++  return value === undefined || value.trim() === '' ? undefined : value;
++}
++
++// Loads the application configuration from a JSON file. The environment
++// variables HOST, PORT and DEBUG, when set, override the file's values.
+ //
+ // The result has exactly three keys, with these types — src/server.js relies on
+ // them:
+ //   host  string   the interface to bind
+ //   port  number   an integer from 0 to 65535
+ //   debug boolean  whether verbose logging is on
+-function loadConfig(file = DEFAULT_FILE) {
++function loadConfig(file = DEFAULT_FILE, env = process.env) {
+   const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+-  return { host: raw.host, port: raw.port, debug: raw.debug };
++  const host = fromEnv(env, 'HOST');
++  const port = fromEnv(env, 'PORT');
++  const debug = fromEnv(env, 'DEBUG');
++  return {
++    host: host !== undefined ? host : raw.host,
++    port: port !== undefined ? parsePort(port) : raw.port,
++    debug: debug !== undefined ? parseDebug(debug) : raw.debug,
++  };
+ }
+ 
+ module.exports = { loadConfig };
+diff --git a/test/config.test.js b/test/config.test.js
+index f995d06..e8b5463 100644
+--- a/test/config.test.js
++++ b/test/config.test.js
+@@ -9,13 +9,66 @@ const { createServer } = require('../src/server');
+ const FILE = path.resolve(__dirname, '..', 'config.json');
+ 
+ test('loadConfig reads the values in the file', () => {
+-  assert.deepEqual(loadConfig(FILE), { host: 'localhost', port: 3000, debug: true });
++  assert.deepEqual(loadConfig(FILE, {}), { host: 'localhost', port: 3000, debug: true });
+ });
+ 
+ test('createServer describes where it listens and how verbose it is', () => {
+-  assert.deepEqual(createServer(loadConfig(FILE)), { address: 'localhost:3000', logLevel: 'debug' });
++  assert.deepEqual(createServer(loadConfig(FILE, {})), { address: 'localhost:3000', logLevel: 'debug' });
+ });
+ 
+ test('createServer rejects a configuration of the wrong shape', () => {
+   assert.throws(() => createServer({ host: 'localhost', port: '3000', debug: true }), TypeError);
+ });
++
++test('HOST, PORT and DEBUG override the values in the file', () => {
++  const config = loadConfig(FILE, { HOST: '0.0.0.0', PORT: '8080', DEBUG: 'false' });
++  assert.deepEqual(config, { host: '0.0.0.0', port: 8080, debug: false });
++  assert.deepEqual(createServer(config), { address: '0.0.0.0:8080', logLevel: 'info' });
++});
++
++test('each variable overrides independently', () => {
++  assert.deepEqual(loadConfig(FILE, { PORT: '9000' }), { host: 'localhost', port: 9000, debug: true });
++  assert.deepEqual(loadConfig(FILE, { HOST: 'example.test' }), { host: 'example.test', port: 3000, debug: true });
++  assert.deepEqual(loadConfig(FILE, { DEBUG: '0' }), { host: 'localhost', port: 3000, debug: false });
++});
++
++test('unset or empty variables leave the file values alone', () => {
++  assert.deepEqual(loadConfig(FILE, { HOST: '', PORT: '', DEBUG: '' }), { host: 'localhost', port: 3000, debug: true });
++});
++
++test('PORT is converted to a number, including 0', () => {
++  assert.equal(loadConfig(FILE, { PORT: '0' }).port, 0);
++  assert.equal(typeof loadConfig(FILE, { PORT: '8080' }).port, 'number');
++});
++
++test('DEBUG accepts common boolean spellings, case-insensitively', () => {
++  for (const v of ['true', 'TRUE', '1', 'yes', 'on']) {
++    assert.equal(loadConfig(FILE, { DEBUG: v }).debug, true, v);
++  }
++  for (const v of ['false', 'False', '0', 'no', 'off']) {
++    assert.equal(loadConfig(FILE, { DEBUG: v }).debug, false, v);
++  }
++});
++
++test('a malformed PORT is rejected', () => {
++  for (const v of ['abc', '-1', '65536', '80.5', '80abc', '1e3']) {
++    assert.throws(() => loadConfig(FILE, { PORT: v }), TypeError, v);
++  }
++});
++
++test('a malformed DEBUG is rejected', () => {
++  assert.throws(() => loadConfig(FILE, { DEBUG: 'maybe' }), TypeError);
++});
++
++test('loadConfig reads process.env by default', () => {
++  const saved = { HOST: process.env.HOST, PORT: process.env.PORT, DEBUG: process.env.DEBUG };
++  Object.assign(process.env, { HOST: '127.0.0.1', PORT: '4000', DEBUG: 'false' });
++  try {
++    assert.deepEqual(loadConfig(FILE), { host: '127.0.0.1', port: 4000, debug: false });
++  } finally {
++    for (const [k, v] of Object.entries(saved)) {
++      if (v === undefined) delete process.env[k];
++      else process.env[k] = v;
++    }
++  }
++});
