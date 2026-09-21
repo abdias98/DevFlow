@@ -79,6 +79,17 @@ check 1 "review missing" devflow_artifact review'
   [[ "$output" == *"1/2 = **50%**"* ]]
 }
 
+@test "helper: devflow_artifact detects a feature plan written by the feature agent" {
+  # devflow-feature writes docs/devflow/features/*-feature-plan.md, not specs/ or plans/.
+  mkdir -p "$RESULT/docs/devflow/features"
+  echo "# plan" > "$RESULT/docs/devflow/features/2026-09-20-x-feature-plan.md"
+  make_task 50 'check_process 1 "spec or plan only" devflow_artifact_any spec plan
+check_process 1 "feature plan" devflow_artifact_any spec plan feature'
+  run "$EVAL" score "$TASK" "$RESULT"
+  [[ "$output" == *"Process:** 1/2 = **50%**"* ]]
+  [[ "$output" == *"| ✅ | process | 1 | feature plan"* ]]
+}
+
 @test "helper: file_matches checks content with a regex" {
   printf 'name: tool\nflags: --json --verbose\n' > "$RESULT/help.txt"
   make_task 50 'check 1 "has --json" file_matches help.txt --json

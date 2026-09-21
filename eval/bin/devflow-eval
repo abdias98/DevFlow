@@ -73,11 +73,12 @@ check_process() { _eval_check process "$@"; }
 # A DevFlow artifact of <type> exists under docs/devflow/<dir>/.
 # Call this DIRECTLY as a check command — never wrap it in `bash -c`, which
 # spawns a subshell where this function is undefined and the check silently fails.
-devflow_artifact() { # devflow_artifact spec|plan|review|validation|summary
+devflow_artifact() { # devflow_artifact spec|plan|feature|review|validation|summary
   local dir
   case "$1" in
     spec)       dir="docs/devflow/specs" ;;
     plan)       dir="docs/devflow/plans" ;;
+    feature)    dir="docs/devflow/features" ;; # the feature agent's plan and report
     review)     dir="docs/devflow/reviews" ;;
     validation) dir="docs/devflow/validations" ;;
     summary)    dir="docs/devflow/summaries" ;;

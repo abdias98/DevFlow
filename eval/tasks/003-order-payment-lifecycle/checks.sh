@@ -9,7 +9,7 @@
 # whether the run DISCOVERED those cases, which is the point of the task.
 
 # Process — reported, never gates.
-check_process 1 "Spec or feature plan produced"  devflow_artifact_any spec plan
+check_process 1 "Spec or feature plan produced"  devflow_artifact_any spec plan feature
 check_process 1 "Review artifact produced"       devflow_artifact review
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
