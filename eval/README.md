@@ -95,7 +95,7 @@ A task is a directory under `tasks/` with two files:
   The command runs with the working directory set to the result workspace; exit
   `0` earns the weight. Two helpers are available inside `checks.sh`:
 
-  - `devflow_artifact spec|plan|review|validation|summary` — passes if that
+  - `devflow_artifact spec|plan|feature|review|validation|summary` — passes if that
     DevFlow artifact was produced.
   - `file_matches <path> <ere>` — passes if the file exists and matches the regex.
 

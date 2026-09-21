@@ -9,7 +9,7 @@
 # the bad one in the store. They measure whether the run DISCOVERED that.
 
 # Process — reported, never gates.
-check_process 1 "Spec or feature plan produced"  devflow_artifact_any spec plan
+check_process 1 "Spec or feature plan produced"  devflow_artifact_any spec plan feature
 check_process 1 "Review artifact produced"       devflow_artifact review
 
 # probe.js lives next to this file, outside the result workspace, so a run can

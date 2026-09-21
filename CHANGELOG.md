@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🐛 Fixed
 
 - **`[4.14.0]` was filed below `[4.13.0]`** in this file. Reordered, newest first.
+- **The eval `Process` check missed the feature agent's plan.** `devflow_artifact_any spec plan` looks in `docs/devflow/specs/` and `plans/`, but `devflow-feature` writes `docs/devflow/features/*-feature-plan.md`, so every `/devflow-feature` run scored `Process 1/2` despite producing a plan. Adds a `feature` artifact type to `devflow-eval` and uses it in tasks 003–008; the four recorded 4.14.0 runs re-score to `Process 2/2`, the bare ones stay at 0/2. `Outcome` was never affected.
 
 ## [4.14.0] — 2026-09-17
 
