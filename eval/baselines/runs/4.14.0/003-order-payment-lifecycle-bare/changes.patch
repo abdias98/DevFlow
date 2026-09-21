@@ -1,0 +1,201 @@
+diff --git a/src/orders.js b/src/orders.js
+index 6cc1fd9..8f3a15b 100644
+--- a/src/orders.js
++++ b/src/orders.js
+@@ -2,7 +2,13 @@
+ 
+ // In-memory order repository and order operations.
+ 
++const payments = require('./payments');
++
+ const orders = new Map();
++// Orders with a charge currently in flight. The charge is asynchronous, so the
++// order is still `pending` while it runs; this keeps a concurrent pay/cancel
++// from acting on the same order (double charge, or cancel-after-charge).
++const inFlight = new Set();
+ let nextId = 1;
+ 
+ class ValidationError extends Error {
+@@ -12,6 +18,20 @@ class ValidationError extends Error {
+   }
+ }
+ 
++class NotFoundError extends Error {
++  constructor(message) {
++    super(message);
++    this.name = 'NotFoundError';
++  }
++}
++
++class ConflictError extends Error {
++  constructor(message) {
++    super(message);
++    this.name = 'ConflictError';
++  }
++}
++
+ function createOrder({ amount }) {
+   if (!Number.isInteger(amount) || amount <= 0) {
+     throw new ValidationError('amount must be a positive integer');
+@@ -26,4 +46,36 @@ function getOrder(id) {
+   return order ? { ...order } : null;
+ }
+ 
+-module.exports = { createOrder, getOrder, ValidationError };
++// Returns the stored order if it can still be transitioned out of `pending`.
++function requirePending(id) {
++  const order = orders.get(id);
++  if (!order) throw new NotFoundError('order not found');
++  if (order.status !== 'pending' || inFlight.has(id)) {
++    throw new ConflictError(`order is ${inFlight.has(id) ? 'being paid' : order.status}, not pending`);
++  }
++  return order;
++}
++
++async function payOrder(id) {
++  const order = requirePending(id);
++  inFlight.add(id);
++  try {
++    // If the charge is declined or fails, this throws and the order stays pending.
++    await payments.charge(order.id, order.amount);
++    order.status = 'paid';
++  } finally {
++    inFlight.delete(id);
++  }
++  return { ...order };
++}
++
++function cancelOrder(id) {
++  const order = requirePending(id);
++  order.status = 'cancelled';
++  return { ...order };
++}
++
++module.exports = {
++  createOrder, getOrder, payOrder, cancelOrder,
++  ValidationError, NotFoundError, ConflictError,
++};
+diff --git a/src/server.js b/src/server.js
+index 316ead5..eb1b69b 100644
+--- a/src/server.js
++++ b/src/server.js
+@@ -36,6 +36,12 @@ const routes = [
+     if (!order) return send(res, 404, { error: 'order not found' });
+     send(res, 200, order);
+   }],
++  ['POST', /^\/orders\/([^/]+)\/pay$/, async (req, res, [id]) => {
++    send(res, 200, await orders.payOrder(id));
++  }],
++  ['POST', /^\/orders\/([^/]+)\/cancel$/, async (req, res, [id]) => {
++    send(res, 200, orders.cancelOrder(id));
++  }],
+   // Finance reconciliation view of every successful charge.
+   ['GET', /^\/ledger$/, async (req, res) => {
+     send(res, 200, payments.listCharges());
+@@ -51,6 +57,9 @@ async function handle(req, res) {
+         await handler(req, res, match.slice(1));
+       } catch (err) {
+         if (err instanceof orders.ValidationError) return send(res, 400, { error: err.message });
++        if (err instanceof orders.NotFoundError) return send(res, 404, { error: err.message });
++        if (err instanceof orders.ConflictError) return send(res, 409, { error: err.message });
++        if (err instanceof payments.PaymentDeclinedError) return send(res, 402, { error: err.message });
+         console.error(err);
+         send(res, 500, { error: 'internal error' });
+       }
+diff --git a/test/orders.test.js b/test/orders.test.js
+index 26212c5..654b6ea 100644
+--- a/test/orders.test.js
++++ b/test/orders.test.js
+@@ -48,3 +48,92 @@ test('GET /orders/:id returns 404 for an unknown order', async () => {
+   const res = await request('GET', '/orders/does-not-exist');
+   assert.equal(res.status, 404);
+ });
++
++async function createOrder(amount) {
++  return (await request('POST', '/orders', { amount })).body;
++}
++
++test('POST /orders/:id/pay charges the amount and marks the order paid', async () => {
++  const order = await createOrder(300);
++  const res = await request('POST', `/orders/${order.id}/pay`);
++  assert.equal(res.status, 200);
++  assert.deepEqual(res.body, { ...order, status: 'paid' });
++  assert.equal((await request('GET', `/orders/${order.id}`)).body.status, 'paid');
++  const charges = (await request('GET', '/ledger')).body.filter((c) => c.orderId === order.id);
++  assert.equal(charges.length, 1);
++  assert.equal(charges[0].amount, 300);
++});
++
++test('POST /orders/:id/pay returns 404 for an unknown order', async () => {
++  assert.equal((await request('POST', '/orders/nope/pay')).status, 404);
++});
++
++test('paying an already paid order is rejected and not charged twice', async () => {
++  const order = await createOrder(120);
++  await request('POST', `/orders/${order.id}/pay`);
++  const res = await request('POST', `/orders/${order.id}/pay`);
++  assert.equal(res.status, 409);
++  const charges = (await request('GET', '/ledger')).body.filter((c) => c.orderId === order.id);
++  assert.equal(charges.length, 1);
++});
++
++test('concurrent pay requests charge the order only once', async () => {
++  const order = await createOrder(75);
++  const results = await Promise.all([
++    request('POST', `/orders/${order.id}/pay`),
++    request('POST', `/orders/${order.id}/pay`),
++    request('POST', `/orders/${order.id}/pay`),
++  ]);
++  assert.deepEqual(results.map((r) => r.status).sort(), [200, 409, 409]);
++  const charges = (await request('GET', '/ledger')).body.filter((c) => c.orderId === order.id);
++  assert.equal(charges.length, 1);
++  assert.equal((await request('GET', `/orders/${order.id}`)).body.status, 'paid');
++});
++
++test('a declined charge returns 402 and leaves the order pending', async () => {
++  const order = await createOrder(10001);
++  const res = await request('POST', `/orders/${order.id}/pay`);
++  assert.equal(res.status, 402);
++  assert.equal((await request('GET', `/orders/${order.id}`)).body.status, 'pending');
++  const charges = (await request('GET', '/ledger')).body.filter((c) => c.orderId === order.id);
++  assert.equal(charges.length, 0);
++});
++
++test('POST /orders/:id/cancel marks a pending order cancelled', async () => {
++  const order = await createOrder(60);
++  const res = await request('POST', `/orders/${order.id}/cancel`);
++  assert.equal(res.status, 200);
++  assert.deepEqual(res.body, { ...order, status: 'cancelled' });
++  assert.equal((await request('GET', `/orders/${order.id}`)).body.status, 'cancelled');
++});
++
++test('POST /orders/:id/cancel returns 404 for an unknown order', async () => {
++  assert.equal((await request('POST', '/orders/nope/cancel')).status, 404);
++});
++
++test('a cancelled order cannot be paid or cancelled again', async () => {
++  const order = await createOrder(40);
++  await request('POST', `/orders/${order.id}/cancel`);
++  assert.equal((await request('POST', `/orders/${order.id}/pay`)).status, 409);
++  assert.equal((await request('POST', `/orders/${order.id}/cancel`)).status, 409);
++  const charges = (await request('GET', '/ledger')).body.filter((c) => c.orderId === order.id);
++  assert.equal(charges.length, 0);
++});
++
++test('a paid order cannot be cancelled', async () => {
++  const order = await createOrder(55);
++  await request('POST', `/orders/${order.id}/pay`);
++  const res = await request('POST', `/orders/${order.id}/cancel`);
++  assert.equal(res.status, 409);
++  assert.equal((await request('GET', `/orders/${order.id}`)).body.status, 'paid');
++});
++
++test('cancelling while a payment is in flight is rejected', async () => {
++  const order = await createOrder(85);
++  const paying = request('POST', `/orders/${order.id}/pay`);
++  await new Promise((r) => setTimeout(r, 10));
++  const cancel = await request('POST', `/orders/${order.id}/cancel`);
++  assert.equal(cancel.status, 409);
++  assert.equal((await paying).status, 200);
++  assert.equal((await request('GET', `/orders/${order.id}`)).body.status, 'paid');
++});
