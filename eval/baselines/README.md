@@ -1,4 +1,4 @@
-# Eval baselines — history 4.10.0 → 4.14.0
+# Eval baselines — history 4.10.0 → 4.14.1
 
 One file per DevFlow version records what the eval harness measured for it.
 This page is the index: which tasks exist, how each one calibrates, and — the
@@ -44,6 +44,7 @@ reference failed several checks would not say *which* class a run missed.
 | [4.12.0](./4.12.0.md) | 19 | Upstream: Behavior Scenarios in spec/plan, Implementer handles missing cases, standards loaded by domain | 003, 004 | 003, 004 (self-run — did not reproduce blind, see below) |
 | [4.13.0](./4.13.0.md) | 20 | Coverage: four new standards (state lifecycle, integration consumption, data persistence, design patterns) | 003, 004 | none — see note |
 | [4.14.0](./4.14.0.md) | 21 | Escape analysis; `runtime` verification primitive | 003–008 (005–008 added after the release) | **003–008** (blind, 12 runs) |
+| [4.14.1](./4.14.1.md) | — | No framework change; eval suite completed to six tasks and the first blind runs recorded | 003–008 | 003–008 (as 4.14.0 — same framework) |
 
 Calibration for a task is the same on every version — it scores the task's own
 references, not the framework — so the fixture/naive/correct columns in §1 hold

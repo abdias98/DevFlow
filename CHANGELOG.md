@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.14.1] — 2026-09-20
+
+> The measurement release. Nothing in the framework changed since 4.14.0 — no skill, standard, `devflow-ctl` command or editor profile; `git diff` between the two touches only `eval/`, one test file and this one. What changed is what is known about whether the framework works.
+>
+> **The eval suite now covers what it claimed to.** The behavioural suite had two tasks and probed four of the six defect classes on a backend and a UI state layer. It has six, covering all six classes across a backend, a UI state layer, two CLIs and a library, and a test asserts that coverage.
+>
+> **The first blind runs were made, and they are not flattering.** Twelve fresh subagents with no context — one `/devflow-feature` run and one bare run per task, given only the task's exact prompt — **all scored 100% outcome**. Every bare run avoided the trap its task was built around, so on these tasks DevFlow changed no outcome, at about 4.4× the tokens and ~17× the wall time. That is a property of small, well-specified tasks and one strong model, not a verdict on the framework in general — the runs did surface real extra findings the checks do not score — but it also retracts a reading this project had made: 4.12.0 recorded bare runs at 83% and 82% on tasks 003 and 004, and attributed the gap to Wave 19. Those were self-run by the session that wrote the tasks, and do not reproduce blind.
+>
+> **What this does not establish:** one run per cell, one model, tasks a capable model already passes. The next useful step is tasks with headroom or a weaker model; the escape analysis shipped in 4.14.0 is the instrument for measuring real work.
 
 ### ✨ Added
 
