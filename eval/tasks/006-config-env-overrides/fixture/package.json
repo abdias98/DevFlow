@@ -1,0 +1,13 @@
+{
+  "name": "app-config",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A configuration loader and the server setup that consumes it, used as the starting workspace for an eval task.",
+  "main": "src/server.js",
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -3,6 +3,8 @@ id: 004-project-panel-tab
 title: Add a Tasks tab to a project panel's state layer
 complexity: routine
 category: behavior
+project: ui
+classes: state-transitions, side-effects, partial-failure
 threshold: 90
 ---
 

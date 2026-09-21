@@ -83,8 +83,9 @@ usage error — so it drops straight into CI.
 
 A task is a directory under `tasks/` with two files:
 
-- `task.md` — header (`id`, `title`, `complexity`, `category`, `threshold`) plus
-  the prompt and human-readable Definition of Done.
+- `task.md` — header (`id`, `title`, `complexity`, `category`, `threshold`; for
+  behavioural tasks also `project` and `classes`) plus the prompt and
+  human-readable Definition of Done.
 - `checks.sh` — the executable rubric. Each line is:
 
   ```bash
@@ -118,12 +119,22 @@ A task is a directory under `tasks/` with two files:
 Tasks `001` and `002` are first-shot-correct routine work: a capable model
 passes them bare, so they measure cost more than benefit. Behavioural tasks
 (`category: behavior`) measure what a verification process exists to catch —
-defects the prompt **implies** but does not spell out:
+defects the prompt **implies** but does not spell out. The suite covers the six
+defect classes of the Correctness & Behavior dimension
+(`devflow-review/correctness-guide.md`) across four kinds of project:
 
-| Task | Defect classes probed |
-|------|-----------------------|
-| `003-order-payment-lifecycle` | repetition, invalid transitions, partial failure, concurrency, data limits |
-| `004-project-panel-tab` | side effects, transitions on selection change, out-of-order responses, partial failure; propagating a flaw from the convention it was told to follow |
+| Task | Project | Defect classes probed |
+|------|---------|-----------------------|
+| `003-order-payment-lifecycle` | backend | repetition, invalid transitions, partial failure, concurrency, data limits |
+| `004-project-panel-tab` | ui | side effects, transitions on selection change, out-of-order responses, partial failure; propagating a flaw from the convention it was told to follow |
+| `005-stats-median-cli` | cli | logic (even count, ordering numbers as numbers), data limits |
+| `006-config-env-overrides` | library | caller contract (a value's type and meaning for its consumer), data limits |
+| `007-notes-import-cli` | cli | partial failure (a bulk operation that stops halfway), data limits |
+| `008-customer-lookup-cache` | backend | state transitions (invalidation, cache key), side effects, partial failure |
+
+Each behavioural `task.md` declares `project:` and `classes:` in its header, and
+`tests/devflow-eval.bats` asserts that together they cover all six classes with
+at least six tasks across at least three project types.
 
 Rules for writing one:
 
@@ -140,6 +151,35 @@ Rules for writing one:
    must fail on the check it was written to miss. `tests/devflow-eval.bats`
    asserts all three for every behavioural task.
 5. **Threshold 90:** missing any behavioural class weighted ≥ 2 fails the task.
+
+## Comparing versions
+
+A wave that changes verification is worth its cost only if the **outcome** moves.
+To find out, hold everything but the framework constant:
+
+1. **Same tasks, same prompts.** Use the exact prompt in `task.md`; add nothing.
+2. **Same model and editor** for every version. A different model measures the
+   model, not the framework.
+3. **Install the version under test** (`install.sh` from that commit) before the
+   `/devflow-feature` run; the bare run needs no framework.
+4. Seed, run and score each workspace as in *The measurement loop*. Record the
+   outcome percentage **and the failed checks** — the failed check says which
+   defect class the run missed, which the percentage alone does not.
+5. Store the artifacts under `baselines/runs/<version>/` and add the row to
+   `baselines/README.md`.
+
+Three things make a comparison mean less than it looks:
+
+- **Calibration is not a run.** The fixture/naive/correct scores are the same on
+  every version because they score the task's own references. Only a scorecard of
+  a real run can show a framework effect.
+- **A self-run is not a blind evaluation.** If the session that wrote the task also
+  executes it, say so next to the number (`baselines/4.12.0.md` §2 does).
+- **A task only measures what it probes.** A task that never exercises a standard
+  cannot show that standard's effect; do not report it as if it could.
+
+`baselines/README.md` holds the running table, including which versions have run
+scorecards and which have only calibration.
 
 ## Baselines
 
