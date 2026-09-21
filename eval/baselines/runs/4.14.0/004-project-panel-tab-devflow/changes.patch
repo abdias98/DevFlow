@@ -1,0 +1,288 @@
+diff --git a/src/panel.js b/src/panel.js
+index d23bb3f..b4b0a23 100644
+--- a/src/panel.js
++++ b/src/panel.js
+@@ -10,7 +10,7 @@
+ //   is 'idle' | 'loading' | 'ready' | 'error'.
+ // - A tab loads its data when it is the active tab and a project is selected.
+ 
+-const TABS = ['overview'];
++const TABS = ['overview', 'tasks'];
+ 
+ function emptySlice() {
+   return { status: 'idle', data: null, error: null };
+@@ -21,11 +21,14 @@ function createProjectPanel({ api }) {
+     projectId: null,
+     activeTab: 'overview',
+     overview: emptySlice(),
++    tasks: emptySlice(),
+   };
+   const listeners = new Set();
++  // Identifies the latest tasks request; a result from any older one is discarded.
++  let tasksRequest = 0;
+ 
+   function getState() {
+-    return { ...state, overview: { ...state.overview } };
++    return { ...state, overview: { ...state.overview }, tasks: { ...state.tasks } };
+   }
+ 
+   function emit() {
+@@ -45,9 +48,25 @@ function createProjectPanel({ api }) {
+     emit();
+   }
+ 
++  async function loadTasks() {
++    const request = ++tasksRequest;
++    state.tasks = { status: 'loading', data: null, error: null };
++    emit();
++    try {
++      const data = await api.getTasks(state.projectId);
++      if (request !== tasksRequest) return;
++      state.tasks = { status: 'ready', data, error: null };
++    } catch (error) {
++      if (request !== tasksRequest) return;
++      state.tasks = { status: 'error', data: null, error };
++    }
++    emit();
++  }
++
+   function loadActiveTab() {
+     if (state.projectId === null) return;
+     if (state.activeTab === 'overview') loadOverview();
++    if (state.activeTab === 'tasks') loadTasks();
+   }
+ 
+   return {
+@@ -61,6 +80,8 @@ function createProjectPanel({ api }) {
+     selectProject(projectId) {
+       state.projectId = projectId;
+       state.overview = emptySlice();
++      state.tasks = emptySlice();
++      tasksRequest += 1;
+       loadActiveTab();
+     },
+ 
+diff --git a/test/panel.test.js b/test/panel.test.js
+index 14ea90e..d9dcace 100644
+--- a/test/panel.test.js
++++ b/test/panel.test.js
+@@ -6,9 +6,10 @@ const { createProjectPanel } = require('../src/panel');
+ 
+ const tick = () => new Promise((resolve) => setImmediate(resolve));
+ 
+-function fakeApi(overviews) {
++function fakeApi(overviews, tasks = {}) {
+   return {
+     getOverview: async (projectId) => overviews[projectId],
++    getTasks: async (projectId) => tasks[projectId],
+   };
+ }
+ 
+@@ -40,3 +41,207 @@ test('rejects an unknown tab', () => {
+   const panel = createProjectPanel({ api: fakeApi({}) });
+   assert.throws(() => panel.selectTab('nope'), /unknown tab/);
+ });
++
++test('starts with an idle tasks slice', () => {
++  const panel = createProjectPanel({ api: fakeApi({}) });
++  assert.deepEqual(panel.getState().tasks, { status: 'idle', data: null, error: null });
++});
++
++test('selecting the tasks tab loads the selected project\'s tasks', async () => {
++  const calls = [];
++  const api = {
++    getOverview: async () => ({}),
++    getTasks: async (projectId) => { calls.push(projectId); return [{ id: 't1' }]; },
++  };
++  const panel = createProjectPanel({ api });
++  panel.selectProject('p1');
++  panel.selectTab('tasks');
++  assert.equal(panel.getState().activeTab, 'tasks');
++  assert.deepEqual(panel.getState().tasks, { status: 'loading', data: null, error: null });
++  await tick();
++  assert.deepEqual(calls, ['p1']);
++  assert.deepEqual(panel.getState().tasks, { status: 'ready', data: [{ id: 't1' }], error: null });
++});
++
++test('a failed tasks request surfaces an error state', async () => {
++  const boom = new Error('boom');
++  const api = { getOverview: async () => ({}), getTasks: async () => { throw boom; } };
++  const panel = createProjectPanel({ api });
++  panel.selectProject('p1');
++  panel.selectTab('tasks');
++  await tick();
++  assert.deepEqual(panel.getState().tasks, { status: 'error', data: null, error: boom });
++});
++
++test('selecting the tasks tab without a project does not load until one is selected', async () => {
++  let calls = 0;
++  const api = { getOverview: async () => ({}), getTasks: async () => { calls += 1; return []; } };
++  const panel = createProjectPanel({ api });
++  panel.selectTab('tasks');
++  await tick();
++  assert.equal(calls, 0);
++  assert.equal(panel.getState().tasks.status, 'idle');
++  panel.selectProject('p1');
++  await tick();
++  assert.equal(calls, 1);
++  assert.equal(panel.getState().tasks.status, 'ready');
++});
++
++test('tasks are not requested while the overview tab is active', async () => {
++  let taskCalls = 0;
++  const api = {
++    getOverview: async () => ({ name: 'Apollo' }),
++    getTasks: async () => { taskCalls += 1; return []; },
++  };
++  const panel = createProjectPanel({ api });
++  panel.selectProject('p1');
++  await tick();
++  assert.equal(taskCalls, 0);
++  assert.equal(panel.getState().tasks.status, 'idle');
++  panel.selectTab('tasks');
++  await tick();
++  assert.equal(taskCalls, 1);
++});
++
++test('the overview is not requested while the tasks tab is active', async () => {
++  let overviewCalls = 0;
++  const api = {
++    getOverview: async () => { overviewCalls += 1; return {}; },
++    getTasks: async () => [],
++  };
++  const panel = createProjectPanel({ api });
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  await tick();
++  assert.equal(overviewCalls, 0);
++  assert.equal(panel.getState().overview.status, 'idle');
++  assert.equal(panel.getState().tasks.status, 'ready');
++});
++
++test('a failed tasks request leaves the overview slice untouched', async () => {
++  const api = {
++    getOverview: async () => ({ name: 'Apollo' }),
++    getTasks: async () => { throw new Error('boom'); },
++  };
++  const panel = createProjectPanel({ api });
++  panel.selectProject('p1');
++  await tick();
++  panel.selectTab('tasks');
++  await tick();
++  assert.equal(panel.getState().tasks.status, 'error');
++  assert.deepEqual(panel.getState().overview, { status: 'ready', data: { name: 'Apollo' }, error: null });
++});
++
++test('getState returns a copy of the tasks slice', async () => {
++  const panel = createProjectPanel({ api: fakeApi({}, { p1: [] }) });
++  panel.selectProject('p1');
++  panel.selectTab('tasks');
++  await tick();
++  const snapshot = panel.getState();
++  snapshot.tasks.status = 'tampered';
++  assert.equal(panel.getState().tasks.status, 'ready');
++});
++
++// Controllable api: each getTasks call returns a promise the test settles by hand.
++function deferredTasksApi() {
++  const pending = [];
++  return {
++    pending,
++    api: {
++      getOverview: async () => ({}),
++      getTasks: (projectId) => new Promise((resolve, reject) => {
++        pending.push({ projectId, resolve, reject });
++      }),
++    },
++  };
++}
++
++test('tasks of a previous project never appear once another project is selected', async () => {
++  const { api, pending } = deferredTasksApi();
++  const panel = createProjectPanel({ api });
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  panel.selectProject('p2');
++  assert.deepEqual(pending.map((call) => call.projectId), ['p1', 'p2']);
++  pending[1].resolve([{ id: 'p2-task' }]);
++  await tick();
++  pending[0].resolve([{ id: 'p1-task' }]);
++  await tick();
++  assert.equal(panel.getState().projectId, 'p2');
++  assert.deepEqual(panel.getState().tasks, { status: 'ready', data: [{ id: 'p2-task' }], error: null });
++});
++
++test('a late tasks response for a previous project does not replace the loading state', async () => {
++  const { api, pending } = deferredTasksApi();
++  const panel = createProjectPanel({ api });
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  panel.selectProject('p2');
++  pending[0].resolve([{ id: 'p1-task' }]);
++  await tick();
++  assert.deepEqual(panel.getState().tasks, { status: 'loading', data: null, error: null });
++});
++
++test('a late tasks failure for a previous project does not surface as an error', async () => {
++  const { api, pending } = deferredTasksApi();
++  const panel = createProjectPanel({ api });
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  panel.selectProject('p2');
++  pending[1].resolve([{ id: 'p2-task' }]);
++  await tick();
++  pending[0].reject(new Error('p1 failed'));
++  await tick();
++  assert.deepEqual(panel.getState().tasks, { status: 'ready', data: [{ id: 'p2-task' }], error: null });
++});
++
++test('when the tasks tab is selected again, the older response cannot overwrite the newer one', async () => {
++  const { api, pending } = deferredTasksApi();
++  const panel = createProjectPanel({ api });
++  panel.selectProject('p1');
++  panel.selectTab('tasks');
++  panel.selectTab('tasks');
++  assert.equal(pending.length, 2);
++  pending[1].resolve([{ id: 'new' }]);
++  await tick();
++  pending[0].resolve([{ id: 'old' }]);
++  await tick();
++  assert.deepEqual(panel.getState().tasks.data, [{ id: 'new' }]);
++});
++
++test('selecting another project clears the previous project\'s tasks immediately', async () => {
++  const { api, pending } = deferredTasksApi();
++  const panel = createProjectPanel({ api });
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  pending[0].resolve([{ id: 'p1-task' }]);
++  await tick();
++  assert.equal(panel.getState().tasks.status, 'ready');
++  panel.selectProject('p2');
++  assert.deepEqual(panel.getState().tasks, { status: 'loading', data: null, error: null });
++});
++
++test('a pending tasks response for a project that was replaced while another tab was active is dropped', async () => {
++  const { api, pending } = deferredTasksApi();
++  const panel = createProjectPanel({ api });
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  panel.selectTab('overview');
++  panel.selectProject('p2');
++  pending[0].resolve([{ id: 'p1-task' }]);
++  await tick();
++  assert.deepEqual(panel.getState().tasks, { status: 'idle', data: null, error: null });
++});
++
++test('subscribers are not notified for a superseded tasks response', async () => {
++  const { api, pending } = deferredTasksApi();
++  const panel = createProjectPanel({ api });
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  panel.selectProject('p2');
++  let notified = 0;
++  panel.subscribe(() => { notified += 1; });
++  pending[0].resolve([{ id: 'p1-task' }]);
++  await tick();
++  assert.equal(notified, 0);
++});

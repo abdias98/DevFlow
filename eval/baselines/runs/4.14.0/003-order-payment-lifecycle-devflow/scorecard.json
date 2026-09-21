@@ -1,16 +1,16 @@
 {
-  "task": "005-stats-median-cli",
-  "score_earned": 18,
-  "score_total": 18,
+  "task": "003-order-payment-lifecycle",
+  "score_earned": 20,
+  "score_total": 20,
   "percent": 100,
-  "outcome_earned": 16,
-  "outcome_total": 16,
+  "outcome_earned": 18,
+  "outcome_total": 18,
   "outcome_percent": 100,
   "process_earned": 2,
   "process_total": 2,
   "process_percent": 100,
   "threshold": 90,
   "passed": true,
-  "checks_passed": 12,
+  "checks_passed": 13,
   "checks_failed": 0
 }

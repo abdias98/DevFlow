@@ -1,0 +1,192 @@
+diff --git a/src/panel.js b/src/panel.js
+index d23bb3f..588dff1 100644
+--- a/src/panel.js
++++ b/src/panel.js
+@@ -10,7 +10,7 @@
+ //   is 'idle' | 'loading' | 'ready' | 'error'.
+ // - A tab loads its data when it is the active tab and a project is selected.
+ 
+-const TABS = ['overview'];
++const TABS = ['overview', 'tasks'];
+ 
+ function emptySlice() {
+   return { status: 'idle', data: null, error: null };
+@@ -21,11 +21,12 @@ function createProjectPanel({ api }) {
+     projectId: null,
+     activeTab: 'overview',
+     overview: emptySlice(),
++    tasks: emptySlice(),
+   };
+   const listeners = new Set();
+ 
+   function getState() {
+-    return { ...state, overview: { ...state.overview } };
++    return { ...state, overview: { ...state.overview }, tasks: { ...state.tasks } };
+   }
+ 
+   function emit() {
+@@ -33,21 +34,28 @@ function createProjectPanel({ api }) {
+     for (const listener of listeners) listener(snapshot);
+   }
+ 
+-  async function loadOverview() {
+-    state.overview = { status: 'loading', data: null, error: null };
++  // Loads one tab's slice. The response is discarded if the project changed
++  // while the request was in flight, so a slow reply for a previous project
++  // never overwrites the current project's state.
++  async function loadSlice(key, fetchData) {
++    const projectId = state.projectId;
++    state[key] = { status: 'loading', data: null, error: null };
+     emit();
+     try {
+-      const data = await api.getOverview(state.projectId);
+-      state.overview = { status: 'ready', data, error: null };
++      const data = await fetchData(projectId);
++      if (state.projectId !== projectId) return;
++      state[key] = { status: 'ready', data, error: null };
+     } catch (error) {
+-      state.overview = { status: 'error', data: null, error };
++      if (state.projectId !== projectId) return;
++      state[key] = { status: 'error', data: null, error };
+     }
+     emit();
+   }
+ 
+   function loadActiveTab() {
+     if (state.projectId === null) return;
+-    if (state.activeTab === 'overview') loadOverview();
++    if (state.activeTab === 'overview') loadSlice('overview', (id) => api.getOverview(id));
++    if (state.activeTab === 'tasks') loadSlice('tasks', (id) => api.getTasks(id));
+   }
+ 
+   return {
+@@ -61,6 +69,7 @@ function createProjectPanel({ api }) {
+     selectProject(projectId) {
+       state.projectId = projectId;
+       state.overview = emptySlice();
++      state.tasks = emptySlice();
+       loadActiveTab();
+     },
+ 
+diff --git a/test/panel.test.js b/test/panel.test.js
+index 14ea90e..166380c 100644
+--- a/test/panel.test.js
++++ b/test/panel.test.js
+@@ -6,9 +6,10 @@ const { createProjectPanel } = require('../src/panel');
+ 
+ const tick = () => new Promise((resolve) => setImmediate(resolve));
+ 
+-function fakeApi(overviews) {
++function fakeApi(overviews, tasks = {}) {
+   return {
+     getOverview: async (projectId) => overviews[projectId],
++    getTasks: async (projectId) => tasks[projectId],
+   };
+ }
+ 
+@@ -18,6 +19,7 @@ test('starts idle with no project selected', () => {
+   assert.equal(state.projectId, null);
+   assert.equal(state.activeTab, 'overview');
+   assert.equal(state.overview.status, 'idle');
++  assert.deepEqual(state.tasks, { status: 'idle', data: null, error: null });
+ });
+ 
+ test('selecting a project loads its overview', async () => {
+@@ -40,3 +42,97 @@ test('rejects an unknown tab', () => {
+   const panel = createProjectPanel({ api: fakeApi({}) });
+   assert.throws(() => panel.selectTab('nope'), /unknown tab/);
+ });
++
++test('selecting the tasks tab loads the tasks of the selected project', async () => {
++  const list = [{ id: 't1', title: 'Ship it' }];
++  const panel = createProjectPanel({ api: fakeApi({ p1: { name: 'Apollo' } }, { p1: list }) });
++  panel.selectProject('p1');
++  await tick();
++  assert.equal(panel.getState().tasks.status, 'idle');
++  panel.selectTab('tasks');
++  assert.equal(panel.getState().activeTab, 'tasks');
++  assert.equal(panel.getState().tasks.status, 'loading');
++  await tick();
++  assert.deepEqual(panel.getState().tasks, { status: 'ready', data: list, error: null });
++});
++
++test('selecting the tasks tab without a project does not load', async () => {
++  let calls = 0;
++  const api = { getTasks: async () => { calls += 1; return []; } };
++  const panel = createProjectPanel({ api });
++  panel.selectTab('tasks');
++  await tick();
++  assert.equal(calls, 0);
++  assert.equal(panel.getState().tasks.status, 'idle');
++});
++
++test('selecting a project while on the tasks tab loads its tasks', async () => {
++  const panel = createProjectPanel({ api: fakeApi({}, { p1: ['a'] }) });
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  await tick();
++  assert.deepEqual(panel.getState().tasks, { status: 'ready', data: ['a'], error: null });
++});
++
++test('a failed tasks request surfaces an error state', async () => {
++  const boom = new Error('boom');
++  const api = { getTasks: async () => { throw boom; } };
++  const panel = createProjectPanel({ api });
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  await tick();
++  assert.deepEqual(panel.getState().tasks, { status: 'error', data: null, error: boom });
++});
++
++test('selecting another project resets tasks and requests the new project', async () => {
++  const panel = createProjectPanel({ api: fakeApi({}, { p1: ['a'], p2: ['b'] }) });
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  await tick();
++  panel.selectProject('p2');
++  assert.deepEqual(panel.getState().tasks, { status: 'loading', data: null, error: null });
++  await tick();
++  assert.deepEqual(panel.getState().tasks.data, ['b']);
++});
++
++test('a slow tasks response for a previous project is ignored', async () => {
++  const pending = {};
++  const api = {
++    getTasks: (id) => new Promise((resolve) => { pending[id] = resolve; }),
++  };
++  const panel = createProjectPanel({ api });
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  panel.selectProject('p2');
++  pending.p2(['b']);
++  await tick();
++  pending.p1(['a']);
++  await tick();
++  assert.deepEqual(panel.getState().tasks, { status: 'ready', data: ['b'], error: null });
++});
++
++test('a slow tasks failure for a previous project is ignored', async () => {
++  const pending = {};
++  const api = {
++    getTasks: (id) => new Promise((resolve, reject) => { pending[id] = { resolve, reject }; }),
++  };
++  const panel = createProjectPanel({ api });
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  panel.selectProject('p2');
++  pending.p2.resolve(['b']);
++  await tick();
++  pending.p1.reject(new Error('late'));
++  await tick();
++  assert.equal(panel.getState().tasks.status, 'ready');
++});
++
++test('tasks state changes are emitted to subscribers', async () => {
++  const panel = createProjectPanel({ api: fakeApi({}, { p1: ['a'] }) });
++  const seen = [];
++  panel.subscribe((s) => seen.push(s.tasks.status));
++  panel.selectTab('tasks');
++  panel.selectProject('p1');
++  await tick();
++  assert.deepEqual(seen, ['loading', 'ready']);
++});
