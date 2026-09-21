@@ -152,9 +152,12 @@ Wave 1 → release → Wave 2 → release → Wave 3 → release → Wave 4 (maj
 |----|--------|---------|--------|
 | PR24 | `feat/ctl-escape-analysis` | F92, F93: `escape-analysis.md`, `devflow-ctl escape add\|list\|report`, escape rate in `metrics aggregate` | ✅ #165 |
 | PR25 | `feat/runtime-behavior-verification` | F76: `runtime-verification.md`, fifth environment primitive (`runtime`), Reviewer runtime step at deep/maximum rigor | ✅ #166 |
-| PR26 | `feat/eval-behavioral-suite` | F94(b): expand to ≥6 behavioral eval tasks across ≥3 project types, `eval/README.md`, `eval/baselines/README.md` comparison table | ⏸ deferred — shipping PR27 first per explicit user instruction; revisit after 4.14.0 |
-| PR27 | `chore/release-4.14.0` | release | 🟢 in progress → **4.14.0** |
+| PR26 | `feat/eval-behavioral-suite` | F94(b): expand to 6 behavioral eval tasks (all six defect classes; backend, ui, cli, library), `eval/README.md`, `eval/baselines/README.md` | ✅ #168 (after release 4.14.0, per explicit user instruction) |
+| PR27 | `chore/release-4.14.0` | release | ✅ #167 → **4.14.0** |
+| — | `docs/eval-baseline-4.14.0-runs`, `fix/eval-feature-artifact-check`, `docs/eval-blind-rerun-003-004` | first blind runs (12, all 100% outcome); Process-check fix; the 4.12.0 bare-run contrast does not reproduce | ✅ #169, #170, #171 |
+| — | `chore/release-4.14.1` | release (no framework change) | 🟢 → **4.14.1** |
 
-> **32/32 findings (F65–F96) have at least one PR.** PR26 is the one item shipped after its
-> release instead of before — `eval/baselines/4.14.0.md` §2 records why explicitly rather than
-> fabricating a comparison the current 2-task suite can't support.
+> **32/32 findings (F65–F96) have a PR.** PR26 shipped after its release instead of before.
+> The blind runs that followed showed no outcome difference on the six tasks; see
+> `eval/baselines/4.14.0.md` §2 and `eval/baselines/README.md` §4 for what that does and
+> does not establish.
