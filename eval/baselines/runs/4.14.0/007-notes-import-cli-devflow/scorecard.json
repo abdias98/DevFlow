@@ -1,0 +1,16 @@
+{
+  "task": "007-notes-import-cli",
+  "score_earned": 14,
+  "score_total": 15,
+  "percent": 93,
+  "outcome_earned": 13,
+  "outcome_total": 13,
+  "outcome_percent": 100,
+  "process_earned": 1,
+  "process_total": 2,
+  "process_percent": 50,
+  "threshold": 90,
+  "passed": true,
+  "checks_passed": 9,
+  "checks_failed": 1
+}

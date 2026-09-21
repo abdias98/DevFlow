@@ -1,0 +1,191 @@
+diff --git a/src/customers.js b/src/customers.js
+index 4b1ff9c..555af65 100644
+--- a/src/customers.js
++++ b/src/customers.js
+@@ -9,23 +9,60 @@
+ //
+ // A customer is { id, name, archived }. Archived customers are hidden from
+ // lookups unless the caller asks for them.
++//
++// Lookups are cached per customer id, so asking again does not go to the store.
++// The cache holds the stored record itself, regardless of includeArchived (the
++// archived filter is applied on every read), and the in-flight promise, so
++// concurrent lookups of one id share a single store call. Misses and failures
++// are not cached. Writes made through this service invalidate the entry; writes
++// made to the store by anyone else are not seen until the service is recreated.
+ function createCustomerService({ store }) {
++  const cache = new Map(); // id -> Promise<customer>
++
++  function load(id) {
++    let entry = cache.get(id);
++    if (!entry) {
++      entry = store.find(id).then(
++        (customer) => {
++          if (!customer && cache.get(id) === entry) cache.delete(id);
++          return customer;
++        },
++        (err) => {
++          if (cache.get(id) === entry) cache.delete(id);
++          throw err;
++        },
++      );
++      cache.set(id, entry);
++    }
++    return entry;
++  }
++
++  // Drops the entry once the write settles, so a lookup that started while the
++  // write was in flight cannot leave a stale record behind.
++  async function write(id, changes) {
++    try {
++      return await store.update(id, changes);
++    } finally {
++      cache.delete(id);
++    }
++  }
++
+   return {
+     // Resolves the customer, or null when there is none (or it is archived and
+     // includeArchived is not set).
+     async getCustomer(id, { includeArchived = false } = {}) {
+-      const customer = await store.find(id);
++      const customer = await load(id);
+       if (!customer) return null;
+       if (customer.archived && !includeArchived) return null;
+-      return customer;
++      return { ...customer }; // a copy, so callers cannot corrupt the cache
+     },
+ 
+     async updateCustomer(id, changes) {
+-      return store.update(id, changes);
++      return write(id, changes);
+     },
+ 
+     async archiveCustomer(id) {
+-      return store.update(id, { archived: true });
++      return write(id, { archived: true });
+     },
+   };
+ }
+diff --git a/test/customers.test.js b/test/customers.test.js
+index b0f5ee2..da87570 100644
+--- a/test/customers.test.js
++++ b/test/customers.test.js
+@@ -7,11 +7,14 @@ const { createCustomerService } = require('../src/customers');
+ function fakeStore(initial) {
+   const rows = new Map(initial.map((c) => [c.id, { ...c }]));
+   return {
++    calls: { find: 0, update: 0 },
+     async find(id) {
++      this.calls.find++;
+       const row = rows.get(id);
+       return row ? { ...row } : undefined;
+     },
+     async update(id, changes) {
++      this.calls.update++;
+       const row = { ...rows.get(id), ...changes };
+       rows.set(id, row);
+       return { ...row };
+@@ -44,3 +47,102 @@ test('updateCustomer changes what getCustomer returns', async () => {
+   await service.updateCustomer('c1', { name: 'Grace' });
+   assert.equal((await service.getCustomer('c1')).name, 'Grace');
+ });
++
++test('asking for the same customer again does not go to the store', async () => {
++  const store = fakeStore([{ id: 'c1', name: 'Ada', archived: false }]);
++  const service = createCustomerService({ store });
++  await service.getCustomer('c1');
++  assert.equal((await service.getCustomer('c1')).name, 'Ada');
++  assert.equal(store.calls.find, 1);
++});
++
++test('different customers are cached separately', async () => {
++  const store = fakeStore([
++    { id: 'c1', name: 'Ada', archived: false },
++    { id: 'c2', name: 'Grace', archived: false },
++  ]);
++  const service = createCustomerService({ store });
++  assert.equal((await service.getCustomer('c1')).name, 'Ada');
++  assert.equal((await service.getCustomer('c2')).name, 'Grace');
++  assert.equal((await service.getCustomer('c1')).name, 'Ada');
++  assert.equal(store.calls.find, 2);
++});
++
++test('concurrent lookups of one customer share a single store call', async () => {
++  const store = fakeStore([{ id: 'c1', name: 'Ada', archived: false }]);
++  const service = createCustomerService({ store });
++  const [a, b] = await Promise.all([service.getCustomer('c1'), service.getCustomer('c1')]);
++  assert.equal(a.name, 'Ada');
++  assert.equal(b.name, 'Ada');
++  assert.equal(store.calls.find, 1);
++});
++
++test('the archived filter still applies to a cached customer', async () => {
++  const store = fakeStore([{ id: 'c1', name: 'Ada', archived: true }]);
++  const service = createCustomerService({ store });
++  assert.equal(await service.getCustomer('c1'), null);
++  assert.equal((await service.getCustomer('c1', { includeArchived: true })).name, 'Ada');
++  assert.equal(await service.getCustomer('c1'), null);
++  assert.equal(store.calls.find, 1);
++});
++
++test('archiving a cached customer hides it from the next default lookup', async () => {
++  const store = fakeStore([{ id: 'c1', name: 'Ada', archived: false }]);
++  const service = createCustomerService({ store });
++  assert.equal((await service.getCustomer('c1')).name, 'Ada');
++  await service.archiveCustomer('c1');
++  assert.equal(await service.getCustomer('c1'), null);
++  assert.equal((await service.getCustomer('c1', { includeArchived: true })).archived, true);
++});
++
++test('updating one customer does not evict another', async () => {
++  const store = fakeStore([
++    { id: 'c1', name: 'Ada', archived: false },
++    { id: 'c2', name: 'Grace', archived: false },
++  ]);
++  const service = createCustomerService({ store });
++  await service.getCustomer('c1');
++  await service.getCustomer('c2');
++  await service.updateCustomer('c1', { name: 'Ada L.' });
++  await service.getCustomer('c2');
++  assert.equal(store.calls.find, 2);
++});
++
++test('an unknown customer is not cached, so it is found once it exists', async () => {
++  const store = fakeStore([]);
++  const service = createCustomerService({ store });
++  assert.equal(await service.getCustomer('c1'), null);
++  await store.update('c1', { id: 'c1', name: 'Ada', archived: false });
++  assert.equal((await service.getCustomer('c1')).name, 'Ada');
++});
++
++test('a failed lookup is not cached', async () => {
++  const store = fakeStore([{ id: 'c1', name: 'Ada', archived: false }]);
++  const find = store.find.bind(store);
++  let fail = true;
++  store.find = async (id) => {
++    if (fail) {
++      fail = false;
++      throw new Error('store down');
++    }
++    return find(id);
++  };
++  const service = createCustomerService({ store });
++  await assert.rejects(service.getCustomer('c1'), /store down/);
++  assert.equal((await service.getCustomer('c1')).name, 'Ada');
++});
++
++test('a lookup that started during an update does not leave a stale customer cached', async () => {
++  const store = fakeStore([{ id: 'c1', name: 'Ada', archived: false }]);
++  const service = createCustomerService({ store });
++  const pending = service.updateCustomer('c1', { name: 'Grace' });
++  await service.getCustomer('c1'); // reads the old row while the update is in flight
++  await pending;
++  assert.equal((await service.getCustomer('c1')).name, 'Grace');
++});
++
++test('mutating a returned customer does not corrupt the cache', async () => {
++  const service = createCustomerService({ store: fakeStore([{ id: 'c1', name: 'Ada', archived: false }]) });
++  (await service.getCustomer('c1')).name = 'Mallory';
++  assert.equal((await service.getCustomer('c1')).name, 'Ada');
++});

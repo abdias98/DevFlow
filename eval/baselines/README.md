@@ -43,7 +43,7 @@ reference failed several checks would not say *which* class a run missed.
 | [4.11.0](./4.11.0.md) | 18 | Review: Correctness & Behavior dimension, scenario evidence, Behavioral Impact Severity | 003, 004 | none — pending |
 | [4.12.0](./4.12.0.md) | 19 | Upstream: Behavior Scenarios in spec/plan, Implementer handles missing cases, standards loaded by domain | 003, 004 | **003, 004** (self-run, see below) |
 | [4.13.0](./4.13.0.md) | 20 | Coverage: four new standards (state lifecycle, integration consumption, data persistence, design patterns) | 003, 004 | none — see note |
-| [4.14.0](./4.14.0.md) | 21 | Escape analysis; `runtime` verification primitive | 003–008 (005–008 added after the release) | none — see note |
+| [4.14.0](./4.14.0.md) | 21 | Escape analysis; `runtime` verification primitive | 003–008 (005–008 added after the release) | **005–008** (blind, 8 runs) |
 
 Calibration for a task is the same on every version — it scores the task's own
 references, not the framework — so the fixture/naive/correct columns in §1 hold
@@ -52,31 +52,49 @@ scorecard.
 
 ## 3. Recorded run scorecards
 
-Only 4.12.0 has any. Model/editor: Claude (Sonnet 5) driving the installed
-`devflow-feature` skill. **Limitation:** a self-run, not a blind evaluation —
-the same session that designed the tasks executed and scored them
-(`4.12.0.md` §2).
+Two sets exist.
+
+**4.12.0 — tasks 003, 004.** Claude (Sonnet 5) driving the installed
+`devflow-feature` skill. A self-run, not a blind evaluation: the same session that
+designed the tasks executed and scored them (`4.12.0.md` §2).
 
 | Task | `/devflow-feature` outcome | Bare outcome | Check the bare run missed |
 |------|:--------------------------:|:------------:|---------------------------|
 | `003-order-payment-lifecycle` | 18/18 = 100% | 15/18 = 83% | `[concurrency]` two simultaneous payments charge once |
 | `004-project-panel-tab` | 17/17 = 100% | 14/17 = 82% | `[ordering]` a late response for an old selection is ignored |
 
-Both `/devflow-feature` runs matched `reference/correct/`; both bare runs matched
-`reference/naive/`. Tasks 005–008 have **no runs yet**.
+**4.14.0 — tasks 005–008.** Eight fresh subagents with no context, each given only
+the task's exact prompt; same model; blindness verified from the transcripts
+(`4.14.0.md` §2).
+
+| Task | `/devflow-feature` outcome | Bare outcome |
+|------|:--------------------------:|:------------:|
+| `005-stats-median-cli` | 16/16 = 100% | 16/16 = 100% |
+| `006-config-env-overrides` | 14/14 = 100% | 14/14 = 100% |
+| `007-notes-import-cli` | 13/13 = 100% | 13/13 = 100% |
+| `008-customer-lookup-cache` | 15/15 = 100% | 15/15 = 100% |
+
+Every bare run avoided the trap its task was built around. The `/devflow-feature`
+runs cost about 4.4× the tokens and ~20× the wall time for the same outcome.
 
 ## 4. What this table cannot say
 
 - **It does not show an improvement over 4.10.0.** 4.10.0 and 4.11.0 have no run
-  scorecards, so there is nothing to compare 4.12.0 against. It shows that the
-  current mechanism, exercised faithfully, surfaces and fixes both probed classes.
+  scorecards, so there is nothing to compare later versions against.
+- **On 005–008 it shows no benefit either — and cannot.** A model that passes
+  every task bare leaves no room for the framework to add outcome. That is a
+  property of these tasks for this model, not evidence about DevFlow in general.
+  It also means the 003/004 contrast (bare at 82–83%) should not be trusted until
+  those two are re-run blind.
 - **It says nothing about Waves 20 and 21.** Neither the four Wave 20 standards
   nor escape analysis and runtime verification were run against a task designed
-  to need them. Tasks 005–008 probe the same six behavioural classes, not
-  persistence, integration consumption or pattern selection.
+  to need them.
 - **Escape rate needs real cycles.** `devflow-ctl metrics aggregate` computes it
   from escapes recorded after real approvals; no baseline snapshot can simulate
   that.
+- **Process is under-reported.** `devflow_artifact_any spec plan` does not look in
+  `docs/devflow/features/`, so every `/devflow-feature` run scores `Process 1/2`
+  even though it wrote a plan.
 
 ## 5. Adding a version row
 
