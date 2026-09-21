@@ -3,6 +3,8 @@ id: 003-order-payment-lifecycle
 title: Add pay and cancel operations to an order service
 complexity: routine
 category: behavior
+project: backend
+classes: state-transitions, side-effects, partial-failure, data-limits
 threshold: 90
 ---
 

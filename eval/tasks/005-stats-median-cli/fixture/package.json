@@ -1,0 +1,13 @@
+{
+  "name": "stats-cli",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A tiny command-line calculator over lists of numbers, used as the starting workspace for an eval task.",
+  "bin": { "stats": "bin/stats.js" },
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

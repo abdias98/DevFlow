@@ -94,6 +94,10 @@ check 1 "has --xml" file_matches help.txt --xml'
   [[ "$output" == *"002-rest-health-endpoint"* ]]
   [[ "$output" == *"003-order-payment-lifecycle"* ]]
   [[ "$output" == *"004-project-panel-tab"* ]]
+  [[ "$output" == *"005-stats-median-cli"* ]]
+  [[ "$output" == *"006-config-env-overrides"* ]]
+  [[ "$output" == *"007-notes-import-cli"* ]]
+  [[ "$output" == *"008-customer-lookup-cache"* ]]
 }
 
 @test "score: usage error when arguments are missing" {
@@ -305,4 +309,126 @@ requires_node() {
   calibrate 004-project-panel-tab correct
   [ "$status" -eq 0 ]
   [[ "$output" == *"Outcome:** 17/17 = **100%**"* ]]
+}
+
+@test "calibration 005: untouched fixture fails" {
+  requires_node
+  calibrate 005-stats-median-cli fixture
+  [ "$status" -eq 1 ]
+}
+
+@test "calibration 005: naive reference fails on the numeric ordering only" {
+  requires_node
+  calibrate 005-stats-median-cli naive
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"| ❌ | outcome | 3 | [logic] numbers are ordered"* ]]
+  [ "$(grep -c '| ❌ | outcome' <<<"$output")" -eq 1 ]
+}
+
+@test "calibration 005: correct reference passes every outcome check" {
+  requires_node
+  calibrate 005-stats-median-cli correct
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Outcome:** 16/16 = **100%**"* ]]
+}
+
+@test "calibration 006: untouched fixture fails" {
+  requires_node
+  calibrate 006-config-env-overrides fixture
+  [ "$status" -eq 1 ]
+}
+
+@test "calibration 006: naive reference fails on the caller-contract check only" {
+  requires_node
+  calibrate 006-config-env-overrides naive
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"| ❌ | outcome | 3 | [caller contract] DEBUG=false"* ]]
+  [ "$(grep -c '| ❌ | outcome' <<<"$output")" -eq 1 ]
+}
+
+@test "calibration 006: correct reference passes every outcome check" {
+  requires_node
+  calibrate 006-config-env-overrides correct
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Outcome:** 14/14 = **100%**"* ]]
+}
+
+@test "calibration 007: untouched fixture fails" {
+  requires_node
+  calibrate 007-notes-import-cli fixture
+  [ "$status" -eq 1 ]
+}
+
+@test "calibration 007: naive reference fails on the atomic-import check only" {
+  requires_node
+  calibrate 007-notes-import-cli naive
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"| ❌ | outcome | 3 | [partial failure] an invalid note"* ]]
+  [ "$(grep -c '| ❌ | outcome' <<<"$output")" -eq 1 ]
+}
+
+@test "calibration 007: correct reference passes every outcome check" {
+  requires_node
+  calibrate 007-notes-import-cli correct
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Outcome:** 13/13 = **100%**"* ]]
+}
+
+@test "calibration 008: untouched fixture fails" {
+  requires_node
+  calibrate 008-customer-lookup-cache fixture
+  [ "$status" -eq 1 ]
+}
+
+@test "calibration 008: naive reference fails on the cache-key check only" {
+  requires_node
+  calibrate 008-customer-lookup-cache naive
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"| ❌ | outcome | 3 | [state transitions] Lookups with different options"* ]]
+  [ "$(grep -c '| ❌ | outcome' <<<"$output")" -eq 1 ]
+}
+
+@test "calibration 008: correct reference passes every outcome check" {
+  requires_node
+  calibrate 008-customer-lookup-cache correct
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Outcome:** 15/15 = **100%**"* ]]
+}
+
+# ── Coverage of the behavioural suite ─────────────────────────────────────────
+# The suite exists to probe the six behavioural defect classes the Correctness &
+# Behavior dimension is built around (devflow-review/correctness-guide.md) across
+# more than one kind of project. Each behavioural task declares what it probes in
+# its header; this asserts the declarations add up, so a task cannot be removed
+# or retyped without the gap showing.
+
+behavioural_headers() { # behavioural_headers <key> -> one value per behavioural task
+  local dir
+  for dir in "$BATS_TEST_DIRNAME"/../eval/tasks/*/; do
+    [ "$(awk '/^category:/{print $2; exit}' "$dir/task.md")" = behavior ] || continue
+    awk -v k="$1" '$0 ~ "^"k":" { sub("^"k":[[:space:]]*", ""); print; exit }' "$dir/task.md"
+  done
+}
+
+@test "suite: the behavioural tasks cover all six defect classes" {
+  local classes
+  classes="$(behavioural_headers classes | tr ',' '\n' | tr -d ' ' | sort -u)"
+  local c
+  for c in logic state-transitions side-effects caller-contract data-limits partial-failure; do
+    grep -qx "$c" <<<"$classes" || { echo "no behavioural task probes: $c"; return 1; }
+  done
+}
+
+@test "suite: there are at least six behavioural tasks across three project types" {
+  [ "$(behavioural_headers project | wc -l)" -ge 6 ]
+  [ "$(behavioural_headers project | sort -u | wc -l)" -ge 3 ]
+}
+
+@test "suite: every behavioural task ships a naive and a correct reference" {
+  local dir
+  for dir in "$BATS_TEST_DIRNAME"/../eval/tasks/*/; do
+    [ "$(awk '/^category:/{print $2; exit}' "$dir/task.md")" = behavior ] || continue
+    [ -d "$dir/reference/naive" ]   || { echo "$dir: no naive reference"; return 1; }
+    [ -d "$dir/reference/correct" ] || { echo "$dir: no correct reference"; return 1; }
+  done
 }

@@ -1,0 +1,13 @@
+{
+  "name": "customer-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A customer service over a slow store, used as the starting workspace for an eval task.",
+  "main": "src/customers.js",
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

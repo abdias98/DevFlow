@@ -1,0 +1,13 @@
+{
+  "name": "notes-cli",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A tiny notes command-line tool backed by a JSON file, used as the starting workspace for an eval task.",
+  "bin": { "notes": "bin/notes.js" },
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
