@@ -8,6 +8,10 @@
 
 .EXAMPLE
   irm https://raw.githubusercontent.com/abdias98/DevFlow/main/uninstall.ps1 | iex
+
+.EXAMPLE
+  $env:DEVFLOW_PURGE_MEMORY = "1"; irm https://raw.githubusercontent.com/abdias98/DevFlow/main/uninstall.ps1 | iex
+  Also deletes the framework memory (kept by default — it holds cross-project lessons).
 #>
 
 $ErrorActionPreference = "Stop"
@@ -89,7 +93,7 @@ Write-Host ""
 # Git Bash translates C:/Users/... to /c/Users/... internally.
 $tempFilePosix = $tempFile -replace '\\', '/'
 try {
-    & $bashPath --noprofile --norc "$tempFilePosix"
+    & $bashPath --noprofile --norc "$tempFilePosix" @args
 } finally {
     Remove-Item $tempFile -ErrorAction SilentlyContinue
 }

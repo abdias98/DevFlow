@@ -39,6 +39,8 @@
 #   escape list [--layer <layer>]                     List escapes, optionally by layer
 #   escape report                                      Escape counts by layer and class
 #   metrics aggregate <metrics-file>                  Append a cycle's metrics to _aggregate.md, recompute averages
+#   memory add --type <t> --key <k> --title <t> --rule <r> [...]  Record a cross-project framework lesson
+#   memory list | show <id> | index | path            Browse the framework memory store (DEVFLOW_HOME)
 #   traceability check <file>                         Count Source/TOTAL coverage in a traceability matrix; exit 1 if <100%
 #   sessions                                         List all active DevFlow sessions with phase and state
 #   clean [--force]                                  Remove sessions unlocked/stale ≥30 min (never `status: cancelled`); --force removes all
@@ -1869,6 +1871,333 @@ cmd_doctor() {
   return 0
 }
 
+# ── Framework memory (F97) ────────────────────────────────────────────────────
+# Cross-project memory owned by the framework, not by the project it runs in
+# (shared/framework-memory.md). Lives OUTSIDE every editor's install directory
+# so reinstalling, uninstalling or switching editors never loses it, and is
+# written only through these commands -- agents never edit it by hand.
+#
+#   $DEVFLOW_HOME/memory/entries/M0001-<slug>.md   one entry per file
+#   $DEVFLOW_HOME/memory/INDEX.md                  generated, one line per entry
+#
+# DEVFLOW_HOME defaults to the XDG data dir, never ~/.devflow: install.sh
+# deletes that path as a v1.2.x leftover.
+
+MEMORY_TYPES="escape correction false-positive friction stack-pattern"
+MEMORY_STATUSES="candidate confirmed promoted retired"
+
+_mem_home() {
+  if [[ -n "${DEVFLOW_HOME:-}" ]]; then
+    echo "$DEVFLOW_HOME"
+  elif [[ -n "${XDG_DATA_HOME:-}" ]]; then
+    echo "$XDG_DATA_HOME/devflow"
+  elif [[ "${OSTYPE:-}" == msys* || "${OSTYPE:-}" == cygwin* ]] && [[ -n "${LOCALAPPDATA:-}" ]]; then
+    echo "$LOCALAPPDATA/devflow"
+  else
+    echo "${HOME:-.}/.local/share/devflow"
+  fi
+}
+
+MEM_HOME="$(_mem_home)"
+MEM_DIR="$MEM_HOME/memory"
+MEM_ENTRIES="$MEM_DIR/entries"
+MEM_INDEX="$MEM_DIR/INDEX.md"
+
+_mem_today() { echo "${DEVFLOW_TODAY:-$(date -u +%Y-%m-%d)}"; }
+
+_mem_warn() { echo "[devflow-ctl] WARN: $*" >&2; }
+
+# The store must never block a cycle: an unwritable home is a warning, not an
+# error. Returns 1 (caller skips the write) when the store cannot be created.
+_mem_ensure() {
+  mkdir -p "$MEM_ENTRIES" 2>/dev/null && [[ -w "$MEM_ENTRIES" ]] && return 0
+  _mem_warn "framework memory store '$MEM_DIR' is not writable — nothing recorded (set DEVFLOW_HOME to a writable directory)"
+  return 1
+}
+
+_mem_hash() {
+  if command -v sha1sum >/dev/null 2>&1; then
+    printf '%s' "$1" | sha1sum | cut -c1-8
+  elif command -v shasum >/dev/null 2>&1; then
+    printf '%s' "$1" | shasum | cut -c1-8
+  else
+    printf '%s' "$1" | cksum | awk '{printf "%08x", $1}'
+  fi
+}
+
+# A project is identified by a hash of its origin remote (or its root path), so
+# "seen in N distinct projects" can be counted without storing a name or path.
+_mem_project_id() {
+  if [[ -n "${DEVFLOW_PROJECT_ID:-}" ]]; then echo "$DEVFLOW_PROJECT_ID"; return; fi
+  local src
+  src="$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel 2>/dev/null || pwd)"
+  echo "p-$(_mem_hash "$src")"
+}
+
+# Serialize id allocation and rewrites across concurrent sessions (two
+# projects can close a cycle at the same moment). mkdir is atomic everywhere.
+_mem_lock() {
+  local i
+  for i in $(seq 1 50); do
+    mkdir "$MEM_DIR/.lock" 2>/dev/null && return 0
+    sleep 0.1
+  done
+  # A lock older than the retry window belongs to a crashed writer.
+  rmdir "$MEM_DIR/.lock" 2>/dev/null || true
+  mkdir "$MEM_DIR/.lock" 2>/dev/null
+}
+_mem_unlock() { rmdir "$MEM_DIR/.lock" 2>/dev/null || true; }
+
+# Scalar frontmatter value of an entry file.
+_mem_get() { # _mem_get <file> <key>
+  awk -v k="$2" '
+    NR==1 && /^---$/ { infm=1; next }
+    infm && /^---$/ { exit }
+    infm && index($0, k ":") == 1 { v=substr($0, length(k)+2); sub(/^ +/, "", v); print v; exit }
+  ' "$1"
+}
+
+# Items of an inline list "[a, b]" as one item per line.
+_mem_get_list() { # _mem_get_list <file> <key>
+  _mem_get "$1" "$2" | tr -d '[]' | tr ',' '\n' | sed 's/^ *//; s/ *$//' | sed '/^$/d'
+}
+
+# "project date" pairs from the block list under seen:.
+_mem_seen() {
+  awk '
+    NR==1 && /^---$/ { infm=1; next }
+    infm && /^---$/ { exit }
+    infm && /^seen:/ { inseen=1; next }
+    inseen && /^  - / { sub(/^  - /, ""); print; next }
+    inseen { inseen=0 }
+  ' "$1"
+}
+
+_mem_projects_count() { _mem_seen "$1" | awk '{print $1}' | LC_ALL=C sort -u | sed '/^$/d' | wc -l | tr -d ' '; }
+
+# Replace a scalar frontmatter key in place (atomic via temp + mv).
+_mem_set() { # _mem_set <file> <key> <value>
+  local tmp="$1.tmp.$$"
+  awk -v k="$2" -v v="$3" '
+    NR==1 && /^---$/ { infm=1; print; next }
+    infm && /^---$/ { infm=0 }
+    infm && index($0, k ":") == 1 { print k ": " v; next }
+    { print }
+  ' "$1" > "$tmp" && mv "$tmp" "$1"
+}
+
+_mem_file_for() { # _mem_file_for <id> — path of an entry, or empty
+  [[ "$1" =~ ^M[0-9]{4,}$ ]] || return 0
+  local f
+  for f in "$MEM_ENTRIES/$1"-*.md; do [[ -f "$f" ]] && { echo "$f"; return 0; }; done
+  return 0
+}
+
+_mem_files() { # every entry file, in id order
+  [[ -d "$MEM_ENTRIES" ]] || return 0
+  find "$MEM_ENTRIES" -maxdepth 1 -name 'M[0-9]*.md' 2>/dev/null | LC_ALL=C sort
+}
+
+_mem_next_id() {
+  local last
+  last="$(_mem_files | sed 's|.*/M\([0-9]*\)-.*|\1|' | LC_ALL=C sort -n | tail -1)"
+  printf 'M%04d' $(( 10#${last:-0} + 1 ))
+}
+
+_mem_slugify() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | LC_ALL=C sed 's/[^a-z0-9]\{1,\}/-/g; s/^-//; s/-$//' | cut -c1-48 | sed 's/-$//'
+}
+
+_mem_index_line() { # one INDEX.md line for an entry file
+  local f="$1" id status type agents stack title n
+  id="$(_mem_get "$f" id)"; status="$(_mem_get "$f" status)"; type="$(_mem_get "$f" type)"
+  agents="$(_mem_get_list "$f" agents | paste -sd, -)"; stack="$(_mem_get_list "$f" stack | paste -sd, -)"
+  title="$(_mem_get "$f" title)"; n="$(_mem_projects_count "$f")"
+  echo "- $id [$status ×$n] $type · ${agents:-any} · ${stack:-any} — $title"
+}
+
+# INDEX.md is derived state: rebuilt from the entry files on every write, so it
+# can never drift from them.
+_mem_reindex() {
+  [[ -d "$MEM_ENTRIES" ]] || return 0
+  local tmp="$MEM_INDEX.tmp.$$" f st
+  {
+    echo "# DevFlow Framework Memory — Index"
+    echo ""
+    echo "> Generated by \`devflow-ctl memory index\` — never edit by hand. Query it with \`devflow-ctl memory query\` (shared/framework-memory.md)."
+    echo ""
+    for st in $MEMORY_STATUSES; do
+      echo "## $st"
+      echo ""
+      local any=0
+      while IFS= read -r f; do
+        [[ -n "$f" ]] || continue
+        [[ "$(_mem_get "$f" status)" == "$st" ]] || continue
+        _mem_index_line "$f"; any=1
+      done < <(_mem_files)
+      (( any )) || echo "(none)"
+      echo ""
+    done
+  } > "$tmp" && mv "$tmp" "$MEM_INDEX"
+}
+
+# ── Privacy guard (framework-memory.md → Privacy) ─────────────────────────────
+# The store is shared by every project on this machine; an entry describes the
+# pattern, never the case. Prints the first reason the text is refused.
+_mem_privacy_violation() { # _mem_privacy_violation <text>
+  local text="$1" root repo remote_name tok
+  local lines; lines="$(printf '%s\n' "$text" | wc -l | tr -d ' ')"
+  if (( lines > 5 )); then echo "more than 5 lines (code or a transcript, not a lesson)"; return 0; fi
+  if grep -qE '(^|[[:space:]`"'"'"'(=])(/[A-Za-z0-9._-]+){2,}' <<< "$text" || grep -qE '(^|[[:space:]`"'"'"'(])~/|[A-Za-z]:\\' <<< "$text"; then
+    echo "an absolute path"; return 0
+  fi
+  if grep -qE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' <<< "$text"; then echo "an email address"; return 0; fi
+  if grep -oE 'https?://[^[:space:])>`"'"'"']+' <<< "$text" | grep -qvE '^https?://github\.com/abdias98/DevFlow'; then
+    echo "a URL outside the DevFlow repository"; return 0
+  fi
+  if grep -qE 'AKIA[0-9A-Z]{16}|-----BEGIN ([A-Z]+ )?PRIVATE KEY|gh[pousr]_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35}|[A-Za-z0-9+/=_-]{40,}' <<< "$text" \
+     || grep -qiE '(api[_-]?key|secret|token|passwd|password)[[:space:]]*[:=][[:space:]]*[^[:space:]]{8,}' <<< "$text"; then
+    echo "something that looks like a secret"; return 0
+  fi
+  # Project identity checks only apply outside the framework's own repository:
+  # inside it, naming DevFlow's files is the whole point of an entry.
+  root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  [[ -n "$root" && -f "$root/.agents/skills/shared/bin/devflow-ctl" ]] && return 1
+  if [[ -n "$root" ]]; then
+    repo="$(basename "$root")"
+    remote_name="$(git remote get-url origin 2>/dev/null | sed 's|.*/||; s|\.git$||' || true)"
+    for tok in "$repo" "$remote_name"; do
+      [[ ${#tok} -ge 4 ]] || continue
+      if grep -qiF -- "$tok" <<< "$text"; then echo "the project's name ('$tok')"; return 0; fi
+    done
+    while IFS= read -r tok; do
+      tok="${tok#./}"; tok="${tok%[.,;:]}"
+      [[ -n "$tok" ]] || continue
+      if [[ -e "$root/$tok" ]]; then echo "a path from this project ('$tok')"; return 0; fi
+    done < <(grep -oE '[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)+' <<< "$text" | LC_ALL=C sort -u)
+  fi
+  return 1
+}
+
+_mem_valid_type() { [[ " $MEMORY_TYPES " == *" $1 "* ]]; }
+
+_mem_inline_list() { # "a,b , c" -> "[a, b, c]"
+  local s; s="$(tr ',' '\n' <<< "$1" | sed 's/^ *//; s/ *$//' | sed '/^$/d' | paste -sd, - | sed 's/,/, /g')"
+  echo "[${s:-any}]"
+}
+
+_mem_add() {
+  local type="" title="" rule="" why="" apply="" agents="any" stack="any" class="" layer="" target="" key=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --type)   type="${2:-}";   shift 2 ;;
+      --title)  title="${2:-}";  shift 2 ;;
+      --rule)   rule="${2:-}";   shift 2 ;;
+      --why)    why="${2:-}";    shift 2 ;;
+      --apply)  apply="${2:-}";  shift 2 ;;
+      --agent)  agents="${2:-}"; shift 2 ;;
+      --stack)  stack="${2:-}";  shift 2 ;;
+      --class)  class="${2:-}";  shift 2 ;;
+      --layer)  layer="${2:-}";  shift 2 ;;
+      --target) target="${2:-}"; shift 2 ;;
+      --key)    key="${2:-}";    shift 2 ;;
+      *) die "memory add: unknown option '$1'" ;;
+    esac
+  done
+  [[ -n "$type" && -n "$title" && -n "$rule" && -n "$key" ]] || \
+    die 'usage: devflow-ctl memory add --type <type> --key <key> --title "<title>" --rule "<rule>" [--why "<why>"] [--apply "<how>"] [--agent a,b] [--stack s,t] [--class c] [--layer l] [--target <skills-relative path>]'
+  _mem_valid_type "$type" || die "memory add: --type must be one of ${MEMORY_TYPES// /|} (got '$type')"
+  [[ "$key" =~ ^[a-z0-9][a-z0-9:._-]*$ ]] || die "memory add: --key must be lowercase [a-z0-9:._-] (got '$key')"
+  [[ -z "$class" ]] || _escape_valid_class "$class" || die "memory add: --class must be an escape class (shared/escape-analysis.md), got '$class'"
+  [[ -z "$layer" ]] || _escape_valid_layer "$layer" || die "memory add: --layer must be an escape layer (shared/escape-analysis.md), got '$layer'"
+  [[ -z "$target" || "$target" =~ ^[A-Za-z0-9._/-]+$ && "$target" != *..* ]] || die "memory add: --target must be a path relative to .agents/skills/ (got '$target')"
+  local field reason
+  for field in "$title" "$rule" "$why" "$apply"; do
+    [[ -n "$field" ]] || continue
+    if reason="$(_mem_privacy_violation "$field")"; then
+      fail "memory add: refused — the entry contains $reason. Framework memory is shared across projects: describe the pattern, not the case (shared/framework-memory.md → Privacy)"
+    fi
+  done
+  _mem_ensure || return 0
+  _mem_lock
+  local f
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    if [[ "$(_mem_get "$f" key)" == "$key" ]]; then
+      _mem_unlock
+      fail "memory add: key '$key' already recorded as $(_mem_get "$f" id) — run 'devflow-ctl memory seen $(_mem_get "$f" id)' instead of adding a duplicate"
+    fi
+  done < <(_mem_files)
+  local id today project file
+  id="$(_mem_next_id)"; today="$(_mem_today)"; project="$(_mem_project_id)"
+  file="$MEM_ENTRIES/$id-$(_mem_slugify "$title").md"
+  {
+    echo "---"
+    echo "id: $id"
+    echo "type: $type"
+    echo "status: candidate"
+    echo "title: $title"
+    echo "agents: $(_mem_inline_list "$agents")"
+    echo "stack: $(_mem_inline_list "$stack")"
+    echo "class: ${class:-—}"
+    echo "layer: ${layer:-—}"
+    echo "target: ${target:-—}"
+    echo "key: $key"
+    echo "seen:"
+    echo "  - $project $today"
+    echo "promoted_ref: —"
+    echo "created: $today"
+    echo "updated: $today"
+    echo "---"
+    echo ""
+    echo "**Rule:** $rule"
+    if [[ -n "$why" ]]; then echo "**Why:** $why"; fi
+    if [[ -n "$apply" ]]; then echo "**How to apply:** $apply"; fi
+  } > "$file.tmp.$$" && mv "$file.tmp.$$" "$file"
+  _mem_reindex
+  _mem_unlock
+  ok "memory entry $id recorded (candidate, $type) at $file"
+}
+
+_mem_list() {
+  local status_f="" type_f=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --status) status_f="${2:-}"; shift 2 ;;
+      --type)   type_f="${2:-}";   shift 2 ;;
+      *) die "memory list: unknown option '$1'" ;;
+    esac
+  done
+  local f any=0
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    [[ -z "$status_f" || "$(_mem_get "$f" status)" == "$status_f" ]] || continue
+    [[ -z "$type_f" || "$(_mem_get "$f" type)" == "$type_f" ]] || continue
+    _mem_index_line "$f"; any=1
+  done < <(_mem_files)
+  (( any )) || echo "No framework memory entries in $MEM_DIR"
+}
+
+cmd_memory() {
+  local action="${1:-}"; shift || true
+  case "$action" in
+    path)  echo "$MEM_DIR" ;;
+    add)   _mem_add "$@" ;;
+    list)  _mem_list "$@" ;;
+    show)
+      local file; file="$(_mem_file_for "${1:-}")"
+      [[ -n "$file" ]] || die "memory show: no entry '${1:-}' in $MEM_DIR"
+      cat "$file"
+      ;;
+    index)
+      _mem_ensure || return 0
+      _mem_lock; _mem_reindex; _mem_unlock
+      ok "framework memory index rebuilt at $MEM_INDEX"
+      ;;
+    *) die "usage: devflow-ctl memory path | add ... | list [--status s] [--type t] | show <id> | index" ;;
+  esac
+}
+
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 CMD="${1:-help}"; shift || true
@@ -1888,12 +2217,13 @@ case "$CMD" in
   backlog)    cmd_backlog "$@" ;;
   escape)     cmd_escape "$@" ;;
   metrics)    cmd_metrics "$@" ;;
+  memory)     cmd_memory "$@" ;;
   traceability) cmd_traceability "$@" ;;
   sessions)   cmd_sessions "$@" ;;
   clean)      cmd_clean "$@" ;;
   scan)       cmd_scan "$@" ;;
   doctor)     cmd_doctor "$@" ;;
   version)    echo "devflow-ctl schema v$SCHEMA_VERSION" ;;
-  help|--help|-h) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//' ;;
+  help|--help|-h) awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$0" ;;
   *) die "unknown command '$CMD' — run 'devflow-ctl help'" ;;
 esac

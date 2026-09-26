@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **Framework memory store — lessons that outlive the project (`devflow-ctl memory`, `shared/framework-memory.md`).** Everything DevFlow learned was written into the project it ran in (`docs/devflow/knowledge-base/`), so a lesson from project A never reached project B, and mistakes of the framework itself had nowhere to accumulate. A second, cross-project level now lives at `$DEVFLOW_HOME/memory/` (default `~/.local/share/devflow`, never `~/.devflow`, which `install.sh` deletes as a v1.2.x leftover), shared by every editor profile. `memory add` writes one file per entry (type, status, agents, stack, escape class/layer, promotion target, dedup key, the distinct projects that saw it as hashed ids) and regenerates `INDEX.md`; `list`, `show`, `index`, `path` browse it. A deterministic **privacy guard** refuses absolute paths, the project's name or paths, emails, foreign URLs, secret-shaped strings and anything over 5 lines — an entry describes the pattern, never the case. Ids are allocated under a lock so concurrent sessions never collide; an unwritable store warns and exits 0, because memory never blocks a cycle. Refs: F97, Wave 22.
+
+### 🐛 Fixed
+
+- **Reinstalling or uninstalling could destroy learned state.** `install.sh` now writes `$DEVFLOW_HOME/config` (source clone, version) and refuses to delete a legacy `~/.devflow` that holds memory; `uninstall.sh` keeps the memory unless `--purge-memory` (or `DEVFLOW_PURGE_MEMORY=1` through `uninstall.ps1`) is passed. `devflow-ctl help` now prints the whole command list instead of a fixed, already-truncated line range. Refs: F105.
+
 ## [4.14.1] — 2026-09-20
 
 > The measurement release. Nothing in the framework changed since 4.14.0 — no skill, standard, `devflow-ctl` command or editor profile; `git diff` between the two touches only `eval/`, one test file and this one. What changed is what is known about whether the framework works.
