@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.15.0] — 2026-09-26
+
+> **The framework memory release (Wave 22).** Until now everything DevFlow learned was written into the project it happened to be working on. A lesson from one project never reached the next, and a mistake of the framework itself — a standard that doesn't exist, a Reviewer dimension that keeps missing the same class, a gate that keeps failing the same way — had nowhere to accumulate: `escape-analysis.md` literally sent a `standard-missing` escape to "a note to the user".
+>
+> **A second level of memory now belongs to the framework.** It lives outside every project and every editor install (`$DEVFLOW_HOME`, default `~/.local/share/devflow`), survives reinstalling and uninstalling, and is written only through `devflow-ctl memory`, behind a privacy guard that keeps client code, names and paths out of it. Five kinds of lesson feed it: process friction and escape counts are recorded by `devflow-ctl` itself; gate corrections, Reviewer false positives and stack patterns by the agent that owns the moment. Every agent that reads the knowledge base now also runs one bounded `memory query`. A lesson seen in two projects is confirmed, and a confirmed lesson has one way out: a normal PR into this repository's standards and skills (`memory promote-list`).
+>
+> **What this does not establish:** that the memory changes an outcome. It acts on a lesson's second encounter, and the eval suite only has single first-shot runs in an empty store, which cannot exercise it. `eval/README.md` → *Measuring the framework memory* describes the paired protocol that can, and `eval/baselines/4.15.0.md` records that no run exists yet.
 
 ### ✨ Added
 

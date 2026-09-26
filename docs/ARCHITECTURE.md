@@ -45,7 +45,7 @@ DevFlow/
 │       ├── traceability-matrix.md
 │       ├── i18n-es.md
 │       ├── bin/
-│       │   └── devflow-ctl      # Deterministic enforcement CLI (gates, scope, iterations, locks, capabilities, knowledge)
+│       │   └── devflow-ctl      # Deterministic enforcement CLI (gates, scope, iterations, locks, capabilities, knowledge, framework memory)
 │       ├── standards/           # Engineering standards (Private Library)
 │       │   ├── solid.md
 │       │   ├── clean-architecture.md
@@ -239,7 +239,10 @@ Agents do not self-verify session state. A CLI at `shared/bin/devflow-ctl` perfo
 | `checkpoint set \| get <name>` | Record / read rollback SHAs |
 | `artifacts check <type> <path>` | Validate required sections in artifacts |
 | `capabilities [get <key>]` | Print environment capabilities (from `.devflow-environment` marker) |
-| `knowledge list` | List entries in the knowledge base |
+| `knowledge list \| query --topic <t>` | List the project knowledge base, or print one By Topic section |
+| `memory add \| query \| seen \| confirm \| retire` | Write, query and manage the cross-project framework memory (privacy-guarded) |
+| `memory friction report \| escapes` | Aggregate the process friction and escapes the CLI records itself |
+| `memory promote-list \| promote <id>` | Turn confirmed lessons into framework PRs; mark them merged |
 
 Because the CLI only reads and writes session-state files (never code, tests, or git history), agents auto-execute it in **all modes including Pair mode**. It is editor-agnostic: every editor profile maps a terminal tool, so the same enforcement works in VS Code, Claude Code, opencode, Antigravity, and headless environments. See `rules.md` → "Deterministic Enforcement" for the command table.
 
@@ -264,6 +267,17 @@ See [Memory Conventions](.agents/skills/shared/memory-conventions.md) for canoni
 
 Versioned with git, survives across conversations. Accumulated learnings from all cycles:
 - `learnings.md` — Patterns discovered, anti-patterns to avoid, key architectural decisions. Read by all mid-cycle agents (Brainstormer, Architect, Planner, Implementer, Reviewer, Debugger). Updated by the Finalizer at cycle end. Can be bootstrapped from historical artifacts via `/devflow-templates bootstrap-knowledge`.
+
+### Framework Memory (`$DEVFLOW_HOME/memory/`)
+
+The knowledge base above belongs to one project. Lessons about **how DevFlow works** — escapes a framework layer let through, user corrections at gates, Reviewer false positives, recurring process friction, stack patterns true in any project — live in a second level outside every project and every editor install (default `~/.local/share/devflow/memory/`), written only by `devflow-ctl memory`:
+
+- **One file per entry** (type, status, agents, stack, escape class/layer, promotion target, dedup key, the distinct projects that saw it as hashed ids) and a generated `INDEX.md`. A privacy guard refuses paths, project names, emails, foreign URLs and secrets: an entry describes the pattern, never the case.
+- **Captured** deterministically where possible (`devflow-ctl` logs every failed gate/scope/iterate/artifact check to `friction.log`, and counts every escape's class × layer) and by the owning agent otherwise (gate owners for corrections, the Reviewer for false positives, the closing write-back for stack patterns).
+- **Loaded** by every knowledge-base reader through one Load Memory step: `devflow-ctl memory query --agent <a> --stack <s>`, bounded and ranked, confirmed entries as rules and candidates as hints.
+- **Lifecycle:** `candidate` → `confirmed` (seen in two distinct projects, or confirmed by the user) → `promoted` (merged into a standard, skill or checklist of this repository through a normal PR) or `retired`. Promotion is how the memory empties into the framework instead of growing forever.
+
+Precedence: standards > project standards profile > project learnings > framework memory. See [framework-memory.md](../.agents/skills/shared/framework-memory.md).
 
 ### Persistent Artifacts (`docs/devflow/`)
 Versioned with git, survive across conversations:

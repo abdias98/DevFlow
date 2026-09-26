@@ -161,3 +161,21 @@ Wave 1 → release → Wave 2 → release → Wave 3 → release → Wave 4 (maj
 > The blind runs that followed showed no outcome difference on the six tasks; see
 > `eval/baselines/4.14.0.md` §2 and `eval/baselines/README.md` §4 for what that does and
 > does not establish.
+
+
+### Wave 22 — Framework memory
+
+Plan: `docs/implementation-plan-wave-22-framework-memory.md`.
+
+| PR | Branch | Finding | Status |
+|----|--------|---------|--------|
+| PR1 | `feat/framework-memory-store` | F97, F105: store outside projects and editors, `memory add\|list\|show\|index\|path`, privacy guard; install/uninstall keep it | 🟡 local |
+| PR2 | `feat/framework-memory-query` | F97, F103: `memory query\|seen\|confirm\|retire`, status/capabilities line | 🟡 local |
+| PR3 | `feat/friction-log` | F101: `devflow-ctl` logs friction itself; `memory friction report` | 🟡 local |
+| PR4 | `feat/framework-escapes` | F98: escape counts in the framework memory; framework layers recorded in the abstract | 🟡 local |
+| PR5 | `feat/gate-corrections-and-false-positives` | F99, F100: correction test at every gate; Reviewer Disputed Findings | 🟡 local |
+| PR6 | `feat/stack-patterns-write-back` | F102: stack lessons and friction proposals at every close | 🟡 local |
+| PR7 | `refactor/load-memory-canonical` | F103: one Load Memory step for the 13 readers; `knowledge query --topic` | 🟡 local |
+| PR8 | `feat/memory-promotion` | F104: `memory promote-list\|promote` | 🟡 local |
+| PR9 | `test/validator-framework-memory` | F97–F104: validator §20 | 🟡 local |
+| PR10 | `chore/release-4.15.0` | release | 🟡 local → **4.15.0** |
