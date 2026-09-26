@@ -190,3 +190,108 @@ add_entry() {
   [ "$status" -eq 0 ]
   grep -q '^- M0001 ' "$INDEX"
 }
+
+# ── query ─────────────────────────────────────────────────────────────────────
+
+seed_three() {
+  "$CTL" memory add --type escape --key k:review --title "Review lesson" --rule "Rule R" \
+    --agent devflow-review --stack node --apply "Correctness, S2" >/dev/null
+  "$CTL" memory add --type friction --key k:any --title "Any lesson" --rule "Rule A" >/dev/null
+  "$CTL" memory add --type stack-pattern --key k:py --title "Python lesson" --rule "Rule P" \
+    --agent devflow-implement --stack python >/dev/null
+}
+
+@test "memory query: filters by agent and stack; [any] always matches" {
+  seed_three
+  run "$CTL" memory query --agent devflow-review --stack Node,react
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"M0001"* ]]
+  [[ "$output" == *"M0002"* ]]
+  [[ "$output" != *"M0003"* ]]
+  [[ "$output" == *"Apply: Correctness, S2"* ]]
+}
+
+@test "memory query: confirmed ranks above candidate, and candidates are marked unconfirmed" {
+  seed_three
+  DEVFLOW_PROJECT_ID=p-bbbb0002 "$CTL" memory seen M0003 >/dev/null
+  run "$CTL" memory query
+  first="$(sed -n 3p <<< "$output")"
+  [[ "$first" == "M0003 [confirmed ×2]"* ]]
+  [[ "$output" == *"M0001 [candidate ×1 — unconfirmed, treat as a hint]"* ]]
+}
+
+@test "memory query: --limit bounds the output and the header reports the total" {
+  seed_three
+  run "$CTL" memory query --limit 1
+  [[ "$output" == *"3 active entries match; showing up to 1"* ]]
+  [ "$(grep -c '^M000' <<< "$output")" -eq 1 ]
+}
+
+@test "memory query: retired and promoted entries never reach an agent" {
+  seed_three
+  "$CTL" memory retire M0002 --reason "no longer applies" >/dev/null
+  run "$CTL" memory query
+  [[ "$output" != *"M0002"* ]]
+}
+
+@test "memory query: an empty store is not an error" {
+  run "$CTL" memory query --agent devflow-review
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"no active entries match"* ]]
+}
+
+@test "memory query: proposes stale candidates for retirement, never retires them" {
+  seed_three
+  DEVFLOW_TODAY=2027-06-01 run "$CTL" memory query
+  [[ "$output" == *"Stale candidates (unseen ≥ 180 days): M0001 M0002 M0003"* ]]
+  grep -qx 'status: candidate' "$ENTRIES"/M0001-*.md
+}
+
+# ── seen / confirm / retire ───────────────────────────────────────────────────
+
+@test "memory seen: a second distinct project confirms a candidate" {
+  seed_three
+  run "$CTL" memory seen M0001
+  [[ "$output" == *"1 distinct project(s) — status: candidate"* ]]
+  DEVFLOW_PROJECT_ID=p-bbbb0002 DEVFLOW_TODAY=2026-09-10 run "$CTL" memory seen M0001
+  [[ "$output" == *"2 distinct project(s) — status: confirmed"* ]]
+  f="$(ls "$ENTRIES"/M0001-*.md)"
+  [ "$(grep -c '^  - p-' "$f")" -eq 2 ]
+  grep -qx 'updated: 2026-09-10' "$f"
+  grep -q '^- M0001 \[confirmed ×2\]' "$INDEX"
+}
+
+@test "memory seen: the same project twice refreshes its date, not its count" {
+  seed_three
+  DEVFLOW_TODAY=2026-09-20 "$CTL" memory seen M0001 >/dev/null
+  f="$(ls "$ENTRIES"/M0001-*.md)"
+  [ "$(grep -c '^  - p-' "$f")" -eq 1 ]
+  grep -qx '  - p-aaaa0001 2026-09-20' "$f"
+}
+
+@test "memory confirm/retire: only legal transitions are accepted" {
+  seed_three
+  run "$CTL" memory confirm M0001
+  [ "$status" -eq 0 ]
+  run "$CTL" memory confirm M0001
+  [ "$status" -eq 1 ]
+  run "$CTL" memory retire M0002
+  [ "$status" -eq 2 ]
+  run "$CTL" memory retire M0002 --reason "superseded"
+  [ "$status" -eq 0 ]
+  grep -q '^\*\*Retired (2026-09-01):\*\* superseded' "$ENTRIES"/M0002-*.md
+  run "$CTL" memory confirm M0002
+  [ "$status" -eq 1 ]
+}
+
+# ── discoverability ───────────────────────────────────────────────────────────
+
+@test "capabilities and status announce the framework memory" {
+  seed_three
+  "$CTL" memory confirm M0001 >/dev/null
+  run "$CTL" capabilities
+  [[ "$output" == *"memory: 1 confirmed · 2 candidate"* ]]
+  "$CTL" init --mode feature --slug mem-demo >/dev/null
+  run "$CTL" status
+  [[ "$output" == *"Framework memory: 1 confirmed · 2 candidate"* ]]
+}
