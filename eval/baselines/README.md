@@ -1,4 +1,4 @@
-# Eval baselines — history 4.10.0 → 4.14.1
+# Eval baselines — history 4.10.0 → 4.15.0
 
 One file per DevFlow version records what the eval harness measured for it.
 This page is the index: which tasks exist, how each one calibrates, and — the
@@ -45,6 +45,7 @@ reference failed several checks would not say *which* class a run missed.
 | [4.13.0](./4.13.0.md) | 20 | Coverage: four new standards (state lifecycle, integration consumption, data persistence, design patterns) | 003, 004 | none — see note |
 | [4.14.0](./4.14.0.md) | 21 | Escape analysis; `runtime` verification primitive | 003–008 (005–008 added after the release) | **003–008** (blind, 12 runs) |
 | [4.14.1](./4.14.1.md) | — | No framework change; eval suite completed to six tasks and the first blind runs recorded | 003–008 | 003–008 (as 4.14.0 — same framework) |
+| [4.15.0](./4.15.0.md) | 22 | Framework memory: cross-project lessons captured from escapes, corrections, false positives, friction and stack patterns; loaded through `memory query` | 003–008 | none — single-run tasks cannot exercise it (see `4.15.0.md` §3) |
 
 Calibration for a task is the same on every version — it scores the task's own
 references, not the framework — so the fixture/naive/correct columns in §1 hold
@@ -96,6 +97,7 @@ runs cost about 4.4× the tokens and ~17× the wall time for the same outcome.
 - **It says nothing about Waves 20 and 21.** Neither the four Wave 20 standards
   nor escape analysis and runtime verification were run against a task designed
   to need them.
+- **It says nothing about Wave 22.** The framework memory acts on a lesson's second encounter; every task here is a single run in an empty store. `eval/README.md` → *Measuring the framework memory* describes the paired protocol it needs.
 - **Escape rate needs real cycles.** `devflow-ctl metrics aggregate` computes it
   from escapes recorded after real approvals; no baseline snapshot can simulate
   that.
