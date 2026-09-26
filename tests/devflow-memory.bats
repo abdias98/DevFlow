@@ -295,3 +295,86 @@ seed_three() {
   run "$CTL" status
   [[ "$output" == *"Framework memory: 1 confirmed · 2 candidate"* ]]
 }
+
+# ── Friction log (logged by devflow-ctl itself) ───────────────────────────────
+
+FRICTION() { cat "$DEVFLOW_HOME/memory/friction.log"; }
+
+# logged <mode> <rigor> <event> <detail> | logged <event> <detail> — exact TSV fields.
+logged() {
+  if [ $# -eq 4 ]; then FRICTION | cut -f4-7 | grep -qxF "$1"$'\t'"$2"$'\t'"$3"$'\t'"$4"
+  else FRICTION | cut -f6-7 | grep -qxF "$1"$'\t'"$2"; fi
+}
+
+@test "friction: a scope violation logs one line with the extension, never the path" {
+  "$CTL" init --mode feature --slug client-secret-feature --scope 'src/*' >/dev/null
+  run "$CTL" scope check billing/acme/invoice.ts
+  [ "$status" -eq 1 ]
+  [ "$(FRICTION | wc -l)" -eq 1 ]
+  logged feature standard scope-outside .ts
+  ! FRICTION | grep -q 'billing\|acme\|invoice\|client-secret'
+}
+
+@test "friction: gate closed, iteration limit and incomplete artifact are each logged" {
+  "$CTL" init --mode feature --slug f1 >/dev/null
+  run "$CTL" gate check plan_approval
+  [ "$status" -eq 1 ]
+  "$CTL" iterate implement_review --max 1 >/dev/null
+  run "$CTL" iterate implement_review --max 1
+  [ "$status" -eq 1 ]
+  printf '# Spec\n' > "$BATS_TEST_TMPDIR/spec.md"
+  run "$CTL" artifacts check spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 1 ]
+  logged gate-closed plan_approval:pending
+  logged iterate-limit implement_review
+  logged artifact-incomplete spec
+  [ "$(FRICTION | wc -l)" -eq 3 ]
+}
+
+@test "friction: passing checks and usage errors log nothing" {
+  "$CTL" init --mode feature --slug ok1 --scope 'src/*' >/dev/null
+  "$CTL" scope check src/a.ts >/dev/null
+  "$CTL" iterate implement_review >/dev/null
+  run "$CTL" gate check nope
+  [ "$status" -eq 2 ]
+  [ ! -s "$DEVFLOW_HOME/memory/friction.log" ]
+}
+
+@test "friction: breaking a stale lock is logged" {
+  "$CTL" init --mode feature --slug stale >/dev/null
+  sed -i 's/^locked_since: .*/locked_since: 2020-01-01T00:00:00Z/' "$DEVFLOW_SESSION_ROOT/stale/phase-state.md"
+  "$CTL" lock acquire Implementer >/dev/null
+  logged lock-stale-broken Orchestrator
+}
+
+@test "friction report: proposes a pattern only across enough sessions and projects" {
+  for p in p-aaaa0001 p-bbbb0002; do
+    for s in one two; do
+      DEVFLOW_PROJECT_ID=$p "$CTL" init --mode feature --slug "$p-$s" --scope 'src/*' >/dev/null
+      DEVFLOW_PROJECT_ID=$p "$CTL" scope check lib/x.py --slug "$p-$s" >/dev/null 2>&1 || true
+    done
+  done
+  run "$CTL" memory friction report
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"scope-outside"*".py"*"4"*"4"*"2"* ]]
+  [[ "$output" == *"--key friction:scope-outside:feature-py"* ]]
+  run "$CTL" memory friction report --projects 3
+  [[ "$output" == *"No pattern reaches the threshold yet."* ]]
+}
+
+@test "friction report: an existing entry is pointed to with 'memory seen', under a hostile locale" {
+  for p in p-aaaa0001 p-bbbb0002 p-cccc0003; do
+    DEVFLOW_PROJECT_ID=$p "$CTL" init --mode feature --slug "s-$p" >/dev/null
+    DEVFLOW_PROJECT_ID=$p "$CTL" gate check plan_approval --slug "s-$p" >/dev/null 2>&1 || true
+  done
+  "$CTL" memory add --type friction --key friction:gate-closed:feature-plan-approval-pending \
+    --title "Agents check the plan gate before asking" --rule "Ask for approval before checking the gate." >/dev/null
+  LC_ALL=es_ES.UTF-8 run "$CTL" memory friction report
+  [[ "$output" == *"M0001 already records feature/gate-closed/plan_approval:pending"* ]]
+}
+
+@test "friction report: says so when nothing was logged" {
+  run "$CTL" memory friction report
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"No friction recorded yet"* ]]
+}

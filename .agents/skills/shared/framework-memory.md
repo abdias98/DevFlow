@@ -125,3 +125,19 @@ candidate ──(seen in ≥2 distinct projects | the user confirms)──▶ co
 | `memory retire <id> --reason "..."` | `candidate\|confirmed → retired`, reason appended to the entry | The user |
 
 `memory query` lists candidates unseen for 180 days as *stale* and proposes retiring them. Nothing is ever retired automatically. Illegal transitions (e.g. confirming a retired entry) exit 1.
+
+---
+
+## Capture
+
+Five entry types, each with one trigger and one owner. The first is deterministic and needs no agent cooperation; the others are written by the agent that owns the moment, under the rules in this section.
+
+| Type | Trigger | Recorded by |
+|---|---|---|
+| `friction` | A gate check fails, a file is outside scope, an iteration limit is exceeded, an artifact check fails, a stale lock is broken or forced | `devflow-ctl` itself, in `friction.log` (below) |
+
+### Friction (deterministic)
+
+`devflow-ctl` appends one line to `friction.log` whenever `gate check`, `scope check`, `iterate`, or `artifacts check` exits 1, and whenever `lock acquire` breaks a stale lock or is forced over a live one. A line holds the date, the project id, a hashed session id, the session's mode and rigor, the event, and a detail (gate and state, loop name, artifact type, or — for scope — **only the file's extension**). The log never holds a slug, a name or a path. Usage errors (exit 2) and passing checks log nothing.
+
+The raw log is never shown to an agent. `devflow-ctl memory friction report` groups it by mode, event and detail, and proposes each pattern that recurs in **≥3 sessions across ≥2 projects** (`--sessions` / `--projects` override) as a `friction` entry, with the exact `--key` to use — or names the entry that already records it, for `memory seen`. The Finalizer and every standalone agent's closing step run the report and propose new patterns to the user; the entry's rule is written by the agent, in the abstract, only after the user agrees.

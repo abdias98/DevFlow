@@ -43,6 +43,7 @@
 #   memory query [--agent a] [--stack s] [--limit N]  Relevant confirmed/candidate lessons, ranked and bounded
 #   memory seen <id> | confirm <id> | retire <id> --reason <r>  Recurrence and lifecycle of an entry
 #   memory list | show <id> | index | path | summary          Browse the framework memory store (DEVFLOW_HOME)
+#   memory friction report [--sessions N] [--projects N]  Recurring process friction (logged automatically)
 #   traceability check <file>                         Count Source/TOTAL coverage in a traceability matrix; exit 1 if <100%
 #   sessions                                         List all active DevFlow sessions with phase and state
 #   clean [--force]                                  Remove sessions unlocked/stale ≥30 min (never `status: cancelled`); --force removes all
@@ -63,7 +64,19 @@ STALE_LOCK_MINUTES=30
 # ── Output helpers ────────────────────────────────────────────────────────────
 
 ok()   { echo "[devflow-ctl] OK: $*"; }
-fail() { echo "[devflow-ctl] FAIL: $*" >&2; exit 1; }
+fail() { _friction_log_pending; echo "[devflow-ctl] FAIL: $*" >&2; exit 1; }
+
+# Process friction (shared/framework-memory.md → Capture): a command that is
+# about to fail a gate, a scope check, an iteration limit or an artifact check
+# names the event first; fail() then records it in the framework memory before
+# exiting. Nothing an agent does or skips can lose it.
+FRICTION_EVENT=""
+FRICTION_DETAIL=""
+_friction_log_pending() {
+  [[ -n "$FRICTION_EVENT" ]] || return 0
+  _friction_log "$FRICTION_EVENT" "$FRICTION_DETAIL" || true
+  FRICTION_EVENT=""
+}
 die()  { echo "[devflow-ctl] ERROR: $*" >&2; exit 2; }
 
 # A slug names a directory under SESSION_ROOT and is interpolated into paths.
@@ -379,7 +392,8 @@ cmd_gate() {
       case "$gate:$current" in
         validation:passed|validation:accepted-risks) ok "gate '$gate' is open ($current)" ;;
         confirmation:approved|plan_approval:approved) ok "gate '$gate' is open ($current)" ;;
-        *) fail "gate '$gate' is CLOSED (state: $current) — do not proceed past this gate" ;;
+        *) FRICTION_EVENT="gate-closed"; FRICTION_DETAIL="$gate:$current"
+           fail "gate '$gate' is CLOSED (state: $current) — do not proceed past this gate" ;;
       esac
       ;;
     set)
@@ -510,7 +524,9 @@ cmd_scope() {
         ok "'$file' is in the Impact Zone — coherence changes only; run 'scope justify' before editing"
         return
       fi
-      [[ -n "$globs" ]] || fail "no scope declared for session '$SLUG' — declare it with 'scope add' before editing files"
+      FRICTION_DETAIL="$(_friction_ext "$file")"
+      [[ -n "$globs" ]] || { FRICTION_EVENT="scope-undeclared"; fail "no scope declared for session '$SLUG' — declare it with 'scope add' before editing files"; }
+      FRICTION_EVENT="scope-outside"
       fail "'$file' is OUTSIDE the declared scope — ask the user for explicit approval, then 'scope add' it"
       ;;
     add)
@@ -629,6 +645,7 @@ cmd_iterate() {
   count=$(( ${count:-0} + 1 ))
   fm_set "iterations.$loop" "$count"
   if (( count > max )); then
+    FRICTION_EVENT="iterate-limit"; FRICTION_DETAIL="$loop"
     fail "loop '$loop' exceeded its limit ($count > $max) — STOP iterating and escalate to the user with the structured triage"
   fi
   ok "loop '$loop' iteration $count of $max"
@@ -674,6 +691,9 @@ cmd_lock() {
         local age_min=$(( ($(date +%s) - epoch) / 60 ))
         (( age_min >= STALE_LOCK_MINUTES )) \
           || fail "lock held by $holder (${age_min} min ago) — wait, or pass --force to break a stale lock"
+        _friction_log lock-stale-broken "$holder" || true
+      elif [[ -n "$holder" && "$holder" != "none" && "$holder" != "$agent" ]]; then
+        _friction_log lock-forced "$holder" || true
       fi
       fm_set locked_by "$agent"
       fm_set locked_since "$(now_iso)"
@@ -899,6 +919,7 @@ cmd_artifacts() {
       *) shift ;;
     esac
   done
+  FRICTION_EVENT="artifact-incomplete"; FRICTION_DETAIL="$type"
   [[ -f "$path" ]] || fail "artifact not found at $path — it was never saved with create_file"
   local required missing=()
   required="$(artifacts_required "$type")" || die "unknown artifact type '$type' (spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse)"
@@ -923,6 +944,7 @@ cmd_artifacts() {
   if [[ "$type" == "review" && ${#missing[@]} -eq 0 ]]; then
     _artifacts_check_review_coverage "$path"
   fi
+  FRICTION_EVENT=""
   ok "artifact '$path' has all required $type sections"
 }
 
@@ -2329,6 +2351,87 @@ _mem_stale_hint() {
   return 0
 }
 
+# ── Friction log ──────────────────────────────────────────────────────────────
+# One TSV line per event: date, project id, session id, mode, rigor, event,
+# detail. The session id is a hash (a slug can name a client's feature) and a
+# file is reduced to its extension — the log never holds a name or a path.
+MEM_FRICTION="$MEM_DIR/friction.log"
+FRICTION_SESSIONS_MIN=3
+FRICTION_PROJECTS_MIN=2
+
+_friction_ext() {
+  local base="${1##*/}"
+  if [[ "$base" == *.* ]]; then echo ".${base##*.}"; else echo "(no extension)"; fi
+}
+
+_friction_log() { # _friction_log <event> <detail>
+  mkdir -p "$MEM_DIR" 2>/dev/null || return 0
+  local project session mode="-" rigor="-"
+  project="$(_mem_project_id)"
+  session="s-$(_mem_hash "$project:${SLUG:-none}")"
+  if [[ -n "$STATE_FILE" && -f "$STATE_FILE" ]]; then
+    mode="$(fm_get mode 2>/dev/null || echo -)"; rigor="$(fm_get rigor 2>/dev/null || echo -)"
+  fi
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(_mem_today)" "$project" "$session" "${mode:--}" "${rigor:--}" "$1" "${2//$'\t'/ }" \
+    >> "$MEM_FRICTION" 2>/dev/null || return 0
+}
+
+# Aggregates the raw log by (mode, event, detail). A pattern that recurs across
+# enough sessions AND projects is a framework problem, not a project one: the
+# report proposes it as a friction entry, with the key to record it under.
+_friction_report() {
+  local s_min="$FRICTION_SESSIONS_MIN" p_min="$FRICTION_PROJECTS_MIN"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --sessions) s_min="${2:-}"; shift 2 ;;
+      --projects) p_min="${2:-}"; shift 2 ;;
+      *) die "memory friction report: unknown option '$1'" ;;
+    esac
+  done
+  [[ "$s_min" =~ ^[0-9]+$ && "$p_min" =~ ^[0-9]+$ ]] || die "memory friction report: thresholds must be numbers"
+  if [[ ! -s "$MEM_FRICTION" ]]; then
+    echo "No friction recorded yet ($MEM_FRICTION)"
+    return 0
+  fi
+  echo "Friction Report — $MEM_FRICTION"
+  echo "Proposal threshold: ≥$s_min sessions across ≥$p_min projects"
+  echo ""
+  printf '%-10s %-20s %-28s %6s %8s %8s\n' "MODE" "EVENT" "DETAIL" "EVENTS" "SESSIONS" "PROJECTS"
+  local keys="" line mode event detail events sessions projects key existing
+  while IFS=$'\t' read -r mode event detail events sessions projects; do
+    printf '%-10s %-20s %-28s %6s %8s %8s\n' "$mode" "$event" "$detail" "$events" "$sessions" "$projects"
+    if (( sessions >= s_min && projects >= p_min )); then
+      key="friction:$event:$(_mem_slugify "$mode-$detail")"
+      existing=""
+      local f
+      while IFS= read -r f; do
+        [[ -n "$f" ]] || continue
+        if [[ "$(_mem_get "$f" key)" == "$key" ]]; then existing="$(_mem_get "$f" id)"; fi
+      done < <(_mem_files)
+      if [[ -n "$existing" ]]; then
+        keys+="  - $existing already records $mode/$event/$detail — run 'devflow-ctl memory seen $existing'"$'\n'
+      else
+        keys+="  - $mode/$event/$detail → devflow-ctl memory add --type friction --key $key --title \"...\" --rule \"...\""$'\n'
+      fi
+    fi
+  done < <(LC_ALL=C awk -F'\t' '
+      NF >= 7 {
+        k = $4 "\t" $6 "\t" $7
+        ev[k]++
+        if (!((k, $3) in ss)) { ss[k, $3] = 1; ns[k]++ }
+        if (!((k, $2) in pp)) { pp[k, $2] = 1; np[k]++ }
+      }
+      END { for (k in ev) printf "%s\t%d\t%d\t%d\n", k, ev[k], ns[k], np[k] }
+    ' "$MEM_FRICTION" | LC_ALL=C sort -t $'\t' -k5,5nr -k4,4nr -k1,1)
+  echo ""
+  if [[ -n "$keys" ]]; then
+    echo "Recurring across projects — propose to the user as friction entries (shared/framework-memory.md → Capture):"
+    printf '%s' "$keys"
+  else
+    echo "No pattern reaches the threshold yet."
+  fi
+}
+
 # One line for `status` / `capabilities`, so an agent knows the store exists.
 _mem_summary() {
   local f c=0 k=0
@@ -2351,6 +2454,10 @@ cmd_memory() {
       cat "$file"
       ;;
     query)   _mem_query "$@" ;;
+    friction)
+      [[ "${1:-}" == "report" ]] || die "usage: devflow-ctl memory friction report [--sessions N] [--projects N]"
+      shift; _friction_report "$@"
+      ;;
     seen)    _mem_seen_cmd "$@" ;;
     summary) _mem_summary ;;
     confirm) _mem_transition "${1:-}" confirmed ;;
@@ -2365,7 +2472,7 @@ cmd_memory() {
       _mem_lock; _mem_reindex; _mem_unlock
       ok "framework memory index rebuilt at $MEM_INDEX"
       ;;
-    *) die "usage: devflow-ctl memory path | add ... | query [--agent a] [--stack s] [--type t] [--limit N] | seen <id> | confirm <id> | retire <id> --reason <r> | list [--status s] [--type t] | show <id> | summary | index" ;;
+    *) die "usage: devflow-ctl memory path | add ... | query [--agent a] [--stack s] [--type t] [--limit N] | seen <id> | confirm <id> | retire <id> --reason <r> | friction report | list [--status s] [--type t] | show <id> | summary | index" ;;
   esac
 }
 
