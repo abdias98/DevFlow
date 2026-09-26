@@ -181,6 +181,8 @@ Every standalone agent that reads the knowledge base at Step 0 (§1.4) MUST also
   - **By Topic** — under the relevant topic (Testing, Security, Architecture, Performance, Stack-Specific). Create the topic section if missing.
   - **Cycle History** — a chronological entry `### {slug} — {date}` with the patterns and anti-patterns found.
   - **Deduplication rule:** if a pattern already exists in By Topic, do NOT duplicate it — append this cycle's slug to the existing entry's source list instead.
+- **Classify each lesson before writing it** ([framework-memory.md](./framework-memory.md) → Stack patterns): a lesson about the **stack** — true in any project using it — also goes to the framework memory (`devflow-ctl memory add --type stack-pattern`, or `memory seen` when it is already there); a lesson about this codebase stays in `learnings.md` only.
+- **Run `devflow-ctl memory friction report`** and propose each recurring pattern it lists to the user as a `friction` entry (framework-memory.md → At every close).
 - If there is genuinely nothing new worth recording, skip the write-back and note that explicitly in the metrics file — do not fabricate a pattern to fill the section.
 
 ---
