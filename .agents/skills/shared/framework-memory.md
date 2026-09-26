@@ -137,6 +137,7 @@ Five entry types, each with one trigger and one owner. The first is deterministi
 | `friction` | A gate check fails, a file is outside scope, an iteration limit is exceeded, an artifact check fails, a stale lock is broken or forced | `devflow-ctl` itself, in `friction.log` (below) |
 | `correction` | The user sends an artifact back at an approval gate (✏️ Modify / Request changes / Revise, or ❌ Cancel with a reason) and the reason would apply to the same agent in **another** project | The agent that owns the gate — [Corrections](#corrections) below |
 | `false-positive` | The user dismisses a Reviewer finding as **incorrect** — not "correct but we won't fix it", which is a decision | The Reviewer — `devflow-review/SKILL.md` → Disputed Findings |
+| `stack-pattern` | A lesson written to `learnings.md` at a cycle's close holds for **any** project on that stack, not only this one | Finalizer / standalone closing write-back — [Stack patterns](#stack-patterns) below |
 | `escape` | `escape add` records a defect whose layer is a framework layer (`standard-missing`, `verifier`, `spec`, `plan-tests`, `reviewer:{dimension}`) | Finalizer / the agent recording the escape — [escape-analysis.md](./escape-analysis.md) → What Recording One Does. `escape add` itself counts every escape's class × layer, with no text (`memory escapes`) |
 
 ### Friction (deterministic)
@@ -159,3 +160,19 @@ In CI and Autonomous mode there is no user at the gate, so there are no correcti
 ### False positives
 
 Owned by the Reviewer (`devflow-review/SKILL.md` → Disputed Findings). A finding the user dismisses as *incorrect* is evidence that a review dimension, a checklist item or a standard section is miscalibrated, so it is recorded against it: `--layer reviewer:<dimension>`, `--target` the checklist or standard file that produced the finding, key `false-positive:<dimension>:<standard-or-checklist-section>:<short-kebab>`. A finding the user accepts as correct but chooses not to fix is a **decision**, never a false positive — the same line [escape-analysis.md](./escape-analysis.md) draws for escapes.
+
+### Stack patterns
+
+At the closing write-back (Finalizer Step 3; [standalone-execution.md](./standalone-execution.md) §10), every lesson about to go into `learnings.md` → By Topic is classified once:
+
+| The lesson is about… | Goes to |
+|---|---|
+| This codebase: its modules, conventions, domain rules, decisions | `learnings.md` only |
+| The **stack**: how a language, framework, library or tool behaves, true in any project that uses it ("the test runner caches module mocks across files unless reset", "the ORM's bulk update skips model hooks") | `learnings.md` **and** the framework memory |
+| **DevFlow itself**: a step, gate or template that got in the way or let something through | the framework memory as `correction`/`friction`/`escape` — see the rows above |
+
+For a stack lesson: `devflow-ctl memory query --stack <stack> --type stack-pattern` → `memory seen <id>` if it is already there, else `memory add --type stack-pattern --stack <stack[,version]> --agent <the agents that should apply it> --key stack:<stack>:<short-kebab> --title "..." --rule "..."`. Name the stack the way the Stack Profile does, lowercase (`node`, `react`, `python`, `django`) so `memory query --stack` matches it.
+
+### At every close
+
+The Finalizer and every standalone agent's closing write-back also run `devflow-ctl memory friction report` and, for each pattern it proposes, ask the user whether to record it (Friction, above). Nothing in this section may delay the lock release: if the store is unavailable, `devflow-ctl` warns and the close proceeds.
