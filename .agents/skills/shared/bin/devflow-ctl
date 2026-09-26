@@ -46,6 +46,7 @@
 #   memory list | show <id> | index | path | summary          Browse the framework memory store (DEVFLOW_HOME)
 #   memory friction report [--sessions N] [--projects N]  Recurring process friction (logged automatically)
 #   memory escapes                                    Escape counts by layer × class, across every project
+#   memory promote-list | promote <id> --ref <r>       Confirmed lessons to turn into framework PRs; mark one merged
 #   traceability check <file>                         Count Source/TOTAL coverage in a traceability matrix; exit 1 if <100%
 #   sessions                                         List all active DevFlow sessions with phase and state
 #   clean [--force]                                  Remove sessions unlocked/stale ≥30 min (never `status: cancelled`); --force removes all
@@ -2510,6 +2511,46 @@ _mem_escape_report() {
   ' "$MEM_ESCAPE_COUNTS" | LC_ALL=C sort -k3,3nr -k4,4nr -k1,1
 }
 
+# ── Promotion ─────────────────────────────────────────────────────────────────
+# A confirmed entry becomes a change to DevFlow itself (a standard, a skill, a
+# checklist) through an ordinary PR to the framework's repository. This lists
+# the work, grouped by the file each entry would change.
+_mem_config_get() { # _mem_config_get <key>
+  [[ -f "$MEM_HOME/config" ]] || return 0
+  sed -n "s/^$1=//p" "$MEM_HOME/config" | head -1
+}
+
+_mem_promote_list() {
+  local f any=0 target rows=""
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    [[ "$(_mem_get "$f" status)" == "confirmed" ]] || continue
+    target="$(_mem_get "$f" target)"; [[ -n "$target" && "$target" != "—" ]] || target="(no target — decide where it belongs)"
+    rows+="$target"$'\t'"$f"$'\n'; any=1
+  done < <(_mem_files)
+  if (( ! any )); then
+    echo "No confirmed entries waiting for promotion ($MEM_DIR)"
+    return 0
+  fi
+  local src; src="$(_mem_config_get source_dir)"
+  echo "Promotion work — confirmed entries, grouped by the framework file they would change"
+  if [[ -n "$src" ]]; then
+    echo "DevFlow clone: $src (work there, on a branch, one PR per target; cite 'Refs: <id>')"
+  else
+    echo "DevFlow clone: unknown — installed from $(_mem_config_get source_repo || true); clone it to promote"
+  fi
+  local last="" id n
+  while IFS=$'\t' read -r target f; do
+    [[ -n "$f" ]] || continue
+    if [[ "$target" != "$last" ]]; then echo ""; echo "$target"; last="$target"; fi
+    id="$(_mem_get "$f" id)"; n="$(_mem_projects_count "$f")"
+    echo "  - $id [×$n] $(_mem_get "$f" type) — $(_mem_get "$f" title)"
+    echo "      Rule: $(sed -n 's/^\*\*Rule:\*\* //p' "$f" | head -1)"
+  done < <(printf '%s' "$rows" | LC_ALL=C sort -t $'\t' -k1,1 -k2,2)
+  echo ""
+  echo "After the PR is merged: devflow-ctl memory promote <id> --ref <PR#|commit>"
+}
+
 # One line for `status` / `capabilities`, so an agent knows the store exists.
 _mem_summary() {
   local f c=0 k=0
@@ -2540,6 +2581,14 @@ cmd_memory() {
     seen)    _mem_seen_cmd "$@" ;;
     summary) _mem_summary ;;
     confirm) _mem_transition "${1:-}" confirmed ;;
+    promote-list) _mem_promote_list ;;
+    promote)
+      local pid="${1:-}" ref=""
+      [[ "${2:-}" == "--ref" && -n "${3:-}" ]] && ref="$3"
+      [[ -n "$pid" && -n "$ref" ]] || die "usage: devflow-ctl memory promote <id> --ref <PR#|commit>"
+      [[ "$ref" =~ ^[A-Za-z0-9#._/-]+$ ]] || die "memory promote: --ref must be a PR number or commit (got '$ref')"
+      _mem_transition "$pid" promoted "$ref"
+      ;;
     retire)
       local id="${1:-}" reason=""
       [[ "${2:-}" == "--reason" && -n "${3:-}" ]] && reason="$3"
@@ -2551,7 +2600,7 @@ cmd_memory() {
       _mem_lock; _mem_reindex; _mem_unlock
       ok "framework memory index rebuilt at $MEM_INDEX"
       ;;
-    *) die "usage: devflow-ctl memory path | add ... | query [--agent a] [--stack s] [--type t] [--limit N] | seen <id> | confirm <id> | retire <id> --reason <r> | friction report | escapes | list [--status s] [--type t] | show <id> | summary | index" ;;
+    *) die "usage: devflow-ctl memory path | add ... | query [--agent a] [--stack s] [--type t] [--limit N] | seen <id> | confirm <id> | retire <id> --reason <r> | friction report | escapes | promote-list | promote <id> --ref <r> | list [--status s] [--type t] | show <id> | summary | index" ;;
   esac
 }
 

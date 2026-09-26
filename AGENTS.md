@@ -9,8 +9,8 @@
 | **Language** | Markdown (skills, templates), Bash (install scripts), YAML (editor profiles) |
 | **Runtime** | Any Unix shell (bash) or PowerShell (Windows) |
 | **Package Manager** | npm (package.json for metadata only) |
-| **Test Runner** | None — manual verification + framework self-validation |
-| **Test Command** | N/A |
+| **Test Runner** | bats (`tests/*.bats`) — `devflow-ctl`, framework memory, validator, eval engine |
+| **Test Command** | `npm test` (one suite: `npx bats tests/devflow-memory.bats`) |
 | **Validate Command** | `npm run validate` (`scripts/validate-framework.sh`) — checks cross-references, required sections, version headers, version sync, `devflow-ctl` integrity, etc. |
 | **Lint Command** | N/A |
 | **Source Root** | `.agents/skills/` |
@@ -103,6 +103,7 @@ DevFlow/
 - All agents read `shared/rules.md` for common rules
 - Standards in `shared/standards/` are conditionally loaded based on feature type
 - `shared/memory-conventions.md` is the canonical source for paths and formats
+- `shared/framework-memory.md` is the canonical source for the cross-project framework memory (store, entry format, privacy, Load Memory, capture, promotion)
 - `shared/output-format.md` defines response structure for all agents
 - `shared/stack-detection.md` provides quick stack detection for standalone agents
 - `shared/traceability-matrix.md` defines the traceability template
@@ -113,7 +114,8 @@ DevFlow/
 
 When using DevFlow to modify DevFlow itself:
 1. Skills are Markdown files — no compilation needed. Edit and test by invoking the agent.
-2. There are no unit tests, but run `npm run validate` (`scripts/validate-framework.sh`) after any change — it catches broken cross-references, missing sections, version-sync drift, and `devflow-ctl` issues. Then verify behavior by invoking the modified agent.
+2. Run `npm run validate` (`scripts/validate-framework.sh`) after any change — it catches broken cross-references, missing sections, version-sync drift, and `devflow-ctl` issues. Then verify behavior by invoking the modified agent.
 3. Adding a new agent requires: SKILL.md + templates + prompt file + updates to orchestrator, memory-conventions, output-format, lifecycle, ARCHITECTURE.md, and reviewer.
 4. Tool names vary by platform. Use `{{SKILLS_DIR}}` for cross-platform path references.
 5. The `install.sh` script handles tool name substitution at install time via editor profiles.
+6. **Framework memory promotion happens here.** Lessons DevFlow learned in other projects accumulate in the framework memory store (`$DEVFLOW_HOME/memory/`, see `shared/framework-memory.md`). `devflow-ctl memory promote-list` lists the confirmed ones by the file they would change; each becomes a normal PR (`Refs: M00NN`), and `devflow-ctl memory promote <id> --ref <PR#>` closes it after the merge.

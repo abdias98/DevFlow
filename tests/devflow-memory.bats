@@ -409,3 +409,41 @@ logged() {
   line="$(grep '^standard-missing' <<< "$output")"
   [[ "$line" =~ logic[[:space:]]+2[[:space:]]+2$ ]]
 }
+
+# ── Promotion (F104) ──────────────────────────────────────────────────────────
+
+@test "memory promote-list: groups confirmed entries by target and names the clone" {
+  mkdir -p "$DEVFLOW_HOME"
+  printf 'source_dir=/opt/devflow\nsource_repo=https://github.com/abdias98/DevFlow.git\n' > "$DEVFLOW_HOME/config"
+  add_entry k:a --target devflow-review/correctness-guide.md >/dev/null
+  add_entry k:b --target devflow-review/correctness-guide.md >/dev/null
+  add_entry k:c >/dev/null
+  "$CTL" memory confirm M0001 >/dev/null
+  "$CTL" memory confirm M0002 >/dev/null
+  run "$CTL" memory promote-list
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"DevFlow clone: /opt/devflow"* ]]
+  [ "$(grep -c '^devflow-review/correctness-guide.md$' <<< "$output")" -eq 1 ]
+  [[ "$output" == *"M0001"* && "$output" == *"M0002"* ]]
+  [[ "$output" != *"M0003"* ]]
+}
+
+@test "memory promote-list: says so when nothing is confirmed" {
+  add_entry k:a >/dev/null
+  run "$CTL" memory promote-list
+  [[ "$output" == *"No confirmed entries waiting for promotion"* ]]
+}
+
+@test "memory promote: only a confirmed entry is promoted; it then leaves every query" {
+  add_entry k:a >/dev/null
+  run "$CTL" memory promote M0001 --ref "#190"
+  [ "$status" -eq 1 ]
+  "$CTL" memory confirm M0001 >/dev/null
+  run "$CTL" memory promote M0001 --ref "#190"
+  [ "$status" -eq 0 ]
+  grep -qx 'promoted_ref: #190' "$ENTRIES"/M0001-*.md
+  run "$CTL" memory query
+  [[ "$output" != *"M0001"* ]]
+  run "$CTL" memory promote M0001 --ref 'x; rm -rf /'
+  [ "$status" -eq 2 ]
+}
