@@ -61,7 +61,7 @@ See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) �
 ### Step 2 — Explore Project Structure
 
 1. **Read the environment capability probe:** run `devflow-ctl capabilities` and record results in `context.md` under `## Environment Capabilities` (see [environment-probe.md](<{{SKILLS_DIR}}/shared/environment-probe.md>)). If `subagents: yes`, parallel exploration subagents may be dispatched (architecture + dependencies + API endpoints simultaneously).
-2. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — if this project has been analyzed before, check the **By Topic** section for documented patterns and architecture decisions. Skip re-discovering patterns already documented. See [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Knowledge Base.
+2. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — if this project has been analyzed before, check the **By Topic** section for documented patterns and architecture decisions. Skip re-discovering patterns already documented. See [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Knowledge Base. Then **Load Memory** ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Load Memory): `devflow-ctl memory query --agent devflow-reverse --stack {stack}` — apply `confirmed` entries as rules, treat `candidate` entries as hints to check.
 3. Scan the project root: detect the top-level file structure, build files, configuration files, and package manifests.
 4. Build a directory tree summary.
 5. Identify the project type (monolith, monorepo, microservices, library, CLI, etc.).

@@ -95,7 +95,12 @@ The project checks are skipped inside DevFlow's own repository, where naming the
 
 ## Load Memory
 
-Agents never read `INDEX.md` or entry files. They ask for the few entries that concern them:
+Every agent that reads the project knowledge base at its context-loading step (the 13 lifecycle and standalone agents that do, and [standalone-execution.md](./standalone-execution.md) §1) loads memory in two steps, in this order — the project first, because it wins:
+
+1. **Project** — the relevant **By Topic** section(s) of `docs/devflow/knowledge-base/learnings.md`. `devflow-ctl knowledge query --topic <topic>` prints one section instead of the whole file; read the file itself only when you need its Cycle History. The standards profile is read as each agent already specifies.
+2. **Framework** — the query below. Omit `--stack` only when no Stack Profile exists yet (the Brainstormer, before detection); every other agent passes the detected stack.
+
+Agents never read the store's `INDEX.md` or entry files. They ask for the few entries that concern them:
 
 ```bash
 devflow-ctl memory query --agent <this agent's skill name> --stack <detected stack, comma-separated> [--type <type>] [--limit 8]

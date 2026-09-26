@@ -881,6 +881,49 @@ setup_knowledge() {
   [[ "$output" != *$'Entries: 0\n0'* ]]
 }
 
+write_topics_kb() {
+  cat > "$DEVFLOW_KNOWLEDGE_FILE" << 'EOF'
+# DevFlow Knowledge Base
+
+## By Topic
+
+### Testing
+- Use a fake clock.
+#### Fixtures
+- Seed per test.
+
+### Security
+- Validate at the boundary.
+
+## Cycle History
+
+### testing-slug — 2026-01-01
+- cycle noise
+EOF
+}
+
+@test "knowledge query: prints one By Topic section (with its subsections), case-insensitive" {
+  setup_knowledge
+  write_topics_kb
+  run "$CTL" knowledge query --topic testing
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Use a fake clock."* ]]
+  [[ "$output" == *"Seed per test."* ]]
+  [[ "$output" != *"Validate at the boundary"* ]]
+  [[ "$output" != *"cycle noise"* ]]
+}
+
+@test "knowledge query: an unknown topic lists the topics that exist; bad usage exits 2" {
+  setup_knowledge
+  write_topics_kb
+  run "$CTL" knowledge query --topic performance
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"No 'performance' topic"* ]]
+  [[ "$output" == *"  - Security"* ]]
+  run "$CTL" knowledge query
+  [ "$status" -eq 2 ]
+}
+
 @test "knowledge list: says how to create a missing standards profile" {
   setup_knowledge
   echo "# KB" > "$DEVFLOW_KNOWLEDGE_FILE"

@@ -236,7 +236,7 @@ checkpoints:                    # rollback SHAs, recorded via `devflow-ctl check
 | `tutorial/` | Tutorial + cheat sheet for new users | `YYYY-MM-DD-{slug}-tutorial.md` |
 | `reverse/` | Reverse engineering analysis reports | `YYYY-MM-DD-{slug}-reverse-design.md` |
 | `metrics/` | Cycle quality metrics + aggregate trends | `YYYY-MM-DD-{slug}-metrics.md` |
-| `knowledge-base/` | Cross-cycle learnings, patterns, and anti-patterns | `learnings.md` (appended per cycle) |
+| `knowledge-base/` | Cross-cycle learnings, patterns, and anti-patterns of **this project** (read one topic with `devflow-ctl knowledge query --topic <t>`; cross-project lessons go to the framework memory — see below) | `learnings.md` (appended per cycle) |
 | `backlog/` | Deferred findings from the Outside zone (rules.md → Scope-Locking — Three Zones) — never cleaned at session end, read by the Brainstormer/Architect of the next cycle touching the same area | `deferred.md` (appended per finding, via `devflow-ctl backlog add`) |
 
 ## Framework Memory (Cross-Project)

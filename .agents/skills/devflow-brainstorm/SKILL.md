@@ -30,7 +30,7 @@ You are the **Brainstormer** sub-agent. Deeply understand the problem BEFORE any
 ### Step 2 — Dynamic Clarification
 
 Do NOT ask a rigid questionnaire. Act intelligently:
-1. Read the knowledge base (`docs/devflow/knowledge-base/learnings.md`) from previous cycles. Check if a similar feature exists — reuse patterns and avoid known anti-patterns. Mention relevant learnings in your Understanding Summary.
+1. Read the knowledge base (`docs/devflow/knowledge-base/learnings.md`) from previous cycles. Check if a similar feature exists — reuse patterns and avoid known anti-patterns. Mention relevant learnings in your Understanding Summary. Then **Load Memory** ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Load Memory): `devflow-ctl memory query --agent devflow-brainstorm --stack {stack}` — apply `confirmed` entries as rules, treat `candidate` entries as hints to check.
 2. **Check the deferred backlog** (rules.md → Scope-Locking — Three Zones): if the request names specific files or directories, run `devflow-ctl backlog list --area {glob}` for that area and surface any matching entries — something was deferred here before and may now be back in scope. If the request is too abstract to derive an area yet, skip this and let the Architect run the precise check once it explores the codebase.
 3. Analyze the user's request against the [questions template](./questions-template.md).
 4. Infer as many answers as possible from the provided context.
