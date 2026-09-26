@@ -6,7 +6,7 @@
 # that verifies behaviour rather than structure, so it is the first that can be
 # wrong in a way inspection won't reveal — plus §16 (finding evidence contract)
 # §17 (review dimension load), §18 (standards loading & skip signals) and §19
-# (review checklist single source).
+# (review checklist single source) and §20 (framework memory contract).
 #
 # Run: npm test   (or: ./node_modules/.bin/bats tests/validate-framework.bats)
 #
@@ -583,4 +583,85 @@ mk_profile() { # mk_profile <name> [key:value...]
   run_section 9 10
   [[ "$output" != *"capabilities.runtime"* ]]
   [[ "$output" != *"ERROR"* ]]
+}
+
+# ── §20: framework memory contract (F97–F104) ─────────────────────────────────
+
+run_section_20() {
+  cd "$FIXTURE" || return 1
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -nE '/20\\. Framework memory contract/,/════/p'"
+}
+
+# A framework-memory.md and a devflow-ctl whose types and statuses agree.
+mk_memory_contract() {
+  mkdir -p "$SHARED/bin"
+  # A real (if tiny) CLI: §8 parses its dispatcher, so it must have one.
+  cat > "$SHARED/bin/devflow-ctl" <<'CTL'
+#!/usr/bin/env bash
+MEMORY_TYPES="escape friction"
+MEMORY_STATUSES="candidate retired"
+CMD="${1:-}"
+case "$CMD" in
+  memory) : ;;
+esac
+CTL
+  chmod +x "$SHARED/bin/devflow-ctl"
+  cat > "$SHARED/framework-memory.md" <<'DOC'
+# Framework Memory
+
+type: escape | friction
+status: candidate | retired   # comment
+
+## Capture
+
+| Type | Trigger | Recorded by |
+|---|---|---|
+| `friction` | x | y |
+| `escape` | x | y |
+DOC
+}
+
+LOAD='Then **Load Memory** ([framework-memory.md](x) → Load Memory): `devflow-ctl memory query --agent a`.'
+
+@test "§20: readers that load the framework memory and a consistent doc pass" {
+  mk_memory_contract
+  mk_skill devflow-plan "3. **Read the knowledge base** (\`docs/devflow/knowledge-base/learnings.md\`) — patterns. $LOAD"
+
+  run_section_20
+  [[ "$output" == *"[OK]"* ]]
+  [[ "$output" != *"ERROR"* ]]
+}
+
+@test "§20: a knowledge-base reader without the Load Memory step is an ERROR naming file and line" {
+  mk_memory_contract
+  mk_skill devflow-plan "Intro" "3. **Read the knowledge base** (\`docs/devflow/knowledge-base/learnings.md\`) — patterns."
+
+  run_section_20
+  [[ "$output" == *"devflow-plan/SKILL.md:3 — reads the knowledge base without the Load Memory step"* ]]
+}
+
+@test "§20: a skill naming the store's internals is an ERROR; framework-memory.md itself may" {
+  mk_memory_contract
+  echo 'Stored at ~/.local/share/devflow/memory/entries.' >> "$SHARED/framework-memory.md"
+  mk_skill devflow-review "Append to friction.log directly."
+
+  run_section_20
+  [[ "$output" == *"devflow-review/SKILL.md:2 — names the framework memory store's internals"* ]]
+  [[ "$output" != *"framework-memory.md:"*"internals"* ]]
+}
+
+@test "§20: documented types that drift from devflow-ctl are an ERROR" {
+  mk_memory_contract
+  sed -i 's/^type: escape | friction$/type: escape | friction | correction/' "$SHARED/framework-memory.md"
+
+  run_section_20
+  [[ "$output" == *"entry types 'correction escape friction' differ from devflow-ctl's MEMORY_TYPES 'escape friction'"* ]]
+}
+
+@test "§20: a type with no Capture row is an ERROR" {
+  mk_memory_contract
+  sed -i '/^| `escape` |/d' "$SHARED/framework-memory.md"
+
+  run_section_20
+  [[ "$output" == *"entry type 'escape' has no row in the Capture table"* ]]
 }
