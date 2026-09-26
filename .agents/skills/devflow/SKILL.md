@@ -164,7 +164,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
      | `validation_block` | The Validation Gate found BLOCK issues. How to proceed? | options: ✅ Accept risks & continue, ✏️ Revise requirements, ❌ Cancel cycle |
      
      - **✅ Accept risks** → run `devflow-ctl gate set validation accepted-risks --slug {slug}` (only valid from `blocked` — the CLI enforces this). Record user's acceptance in `context.md` under `## Accepted Risks` (with timestamp and rationale). Also append the accepted risk to the archived report at `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md`. Proceed to Step 3.
-     - **✏️ Revise** → run `devflow-ctl iterate validation_brainstorm --slug {slug}` (exit 1 = limit reached, escalate instead), then route back to Step 1 (Brainstormer).
+     - **✏️ Revise** → apply the correction test to the user's reason ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Corrections; owner: the Brainstormer). Run `devflow-ctl iterate validation_brainstorm --slug {slug}` (exit 1 = limit reached, escalate instead), then route back to Step 1 (Brainstormer).
      - **❌ Cancel** → stop cycle, release lock.
      - **CI mode:** BLOCK findings are NOT auto-accepted. Fail the pipeline immediately with exit code 1 and print the BLOCK findings to stdout.
 8. After Phase 2 is complete:
@@ -234,7 +234,7 @@ You are the Orchestrator. You do NOT write code, specs, plans, or reviews. You m
     - Standard mode auto-execution rules: see `rules.md` → Standard Mode.
     - Proceed to Step 6.
 6. **If 🤝 Pair** → run `devflow-ctl gate set confirmation approved --slug {slug}` and `devflow-ctl config set pair_mode true --slug {slug}`. Branch is created manually by the user. Pair mode: the user runs tests, creates branches, and confirms each task. Proceed to Step 6.
-7. **If ✏️ Request changes** → collect user feedback. Run `devflow-ctl iterate plan_revision --slug {slug}` (exit 1 = revision limit reached, escalate to the user instead). Route back to Step 4 (Planner) with the feedback.
+7. **If ✏️ Request changes** → collect user feedback and apply the correction test to it ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Corrections — the owner is the agent whose artifact is being sent back). Run `devflow-ctl iterate plan_revision --slug {slug}` (exit 1 = revision limit reached, escalate to the user instead). Route back to Step 4 (Planner) with the feedback.
 8. **If ❌ Cancel** → stop the cycle. Run `devflow-ctl config set status cancelled --slug {slug}` **before** releasing the lock — this is what keeps `devflow-ctl clean` from removing the session once it naturally ages past the stale-lock window. Then release the memory lock with `devflow-ctl lock release --slug {slug}`. Present the rollback option:
    > "Cycle cancelled. To revert all DevFlow artifacts created so far, run: `git reset --hard {pre-phase-1-sha}`"
    Update `phase-state.md` noting cancellation. Do NOT clean session memory (preserve artifacts for reference — `devflow-ctl clean` respects `status: cancelled` and will never remove it; only `--force` would).

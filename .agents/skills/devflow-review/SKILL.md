@@ -171,6 +171,20 @@ When the condition is met, add a **runtime verification** sub-step after Visual 
 
 **Deterministic-scan BLOCKs have a verification oracle.** A finding from `devflow-ctl scan` is not cleared by the LLM judging the fix "looks right" — it is cleared **only when a re-run of `devflow-ctl scan` exits 0** for that finding. On re-review, the scan runs again (it always runs first); a scan that still reports the issue keeps the verdict at CHANGES REQUESTED no matter what else changed. The Implementer follows the [Security-TDD remediation loop](<{{SKILLS_DIR}}/devflow-implement/SKILL.md>) (Red→fix→re-scan→record) to resolve these.
 
+#### Disputed Findings
+
+When the user (directly, or through the invoking agent) disputes a finding, ask which it is — never assume:
+
+| header | question | type |
+|--------|----------|------|
+| `finding_dispute` | Finding {id} — is it incorrect, or correct but not worth fixing now? | options: ❎ Incorrect (false positive), ⏸️ Correct — accept / defer, ↩️ Keep it |
+
+- **❎ Incorrect** → ask for the reason in one line. Mark the finding in the review document `Dismissed — false positive: {reason}`, remove it from the verdict count and re-derive the route decision. Then record it against what produced it ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → False positives): `devflow-ctl memory query --agent devflow-review --type false-positive` → `memory seen <id>` if the same miscalibration is already recorded, else `memory add --type false-positive --agent devflow-review --layer reviewer:{dimension} --target {checklist or standard file} --key false-positive:{dimension}:{section}:{short-kebab} --title "..." --rule "..."`, in the abstract. **A BLOCK is only dismissed on the user's explicit ❎** — never on the invoking agent's own judgement.
+- **⏸️ Correct — accept / defer** → a decision, not a false positive: keep the finding, record the user's decision next to it (and in `## Accepted Risks` for a BLOCK in a cycle), and — for an Outside-zone fix — `devflow-ctl backlog add`. Nothing goes to the framework memory.
+- **↩️ Keep it** → no change.
+
+In CI mode no finding is disputed: the verdict stands.
+
 ### Step 6 — Update Memory
 
 Update `phase-state.md`:
@@ -231,6 +245,8 @@ See Cycle Mode Step 3 for the subagent briefs, standards mapping, and synthesis 
 | No BLOCK | ✅ APPROVED → Inform user. Work is complete. |
 | BLOCK exists (including a *plan gap* at BLOCK severity — the agent amends its plan first) | 🔄 CHANGES REQUESTED → Return to invoking agent with specific fixes. The agent applies fixes and re-invokes the Reviewer, counted via `devflow-ctl iterate implement_review` (limit 3, not the "2" this used to say in prose — see `devflow-ctl`'s `iterate_default_max`). |
 | Architectural flaw requiring full redesign | 🔄 Recommend `/devflow` full cycle instead. |
+
+A disputed finding follows Cycle Mode → Disputed Findings unchanged.
 
 ### Step 6 — Update Memory
 

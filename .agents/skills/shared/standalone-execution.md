@@ -85,8 +85,8 @@ Any standalone agent that will write production files (code, migrations, generat
 
 - **✅ Approve — Standard** → `devflow-ctl gate set plan_approval approved` + `devflow-ctl config set pair_mode false` → proceed to implementation.
 - **🤝 Approve — Pair** → `devflow-ctl gate set plan_approval approved` + `devflow-ctl config set pair_mode true` → proceed to implementation.
-- **✏️ Modify plan** → collect the user's feedback. Run `devflow-ctl iterate plan_revision` — exit 1 (limit reached) means STOP and escalate to the user instead of looping. On exit 0, regenerate the plan incorporating the feedback, re-persist it (overwriting the plan file, never the final report), and re-present this same gate. This mirrors the Orchestrator's Confirmation Gate handling of `✏️ Request changes` (`devflow/SKILL.md` → Confirmation Gate).
-- **❌ Cancel** → `devflow-ctl lock release` and stop. Session memory is preserved (not cleaned) so the plan remains available for reference.
+- **✏️ Modify plan** → collect the user's feedback and apply the correction test ([framework-memory.md](./framework-memory.md) → Corrections): feedback about how this agent works, not about this project, is recorded with `devflow-ctl memory add --type correction` (or `memory seen`). Run `devflow-ctl iterate plan_revision` — exit 1 (limit reached) means STOP and escalate to the user instead of looping. On exit 0, regenerate the plan incorporating the feedback, re-persist it (overwriting the plan file, never the final report), and re-present this same gate. This mirrors the Orchestrator's Confirmation Gate handling of `✏️ Request changes` (`devflow/SKILL.md` → Confirmation Gate).
+- **❌ Cancel** → if the user gave a reason, apply the same correction test. Then `devflow-ctl lock release` and stop. Session memory is preserved (not cleaned) so the plan remains available for reference.
 
 **CI exception:** if `CI=true` was detected at Step 0, skip this question entirely. Log "CI mode: plan auto-approved.", run `devflow-ctl gate set plan_approval approved` and `devflow-ctl config set pair_mode false`, then proceed directly to implementation.
 

@@ -135,6 +135,8 @@ Five entry types, each with one trigger and one owner. The first is deterministi
 | Type | Trigger | Recorded by |
 |---|---|---|
 | `friction` | A gate check fails, a file is outside scope, an iteration limit is exceeded, an artifact check fails, a stale lock is broken or forced | `devflow-ctl` itself, in `friction.log` (below) |
+| `correction` | The user sends an artifact back at an approval gate (✏️ Modify / Request changes / Revise, or ❌ Cancel with a reason) and the reason would apply to the same agent in **another** project | The agent that owns the gate — [Corrections](#corrections) below |
+| `false-positive` | The user dismisses a Reviewer finding as **incorrect** — not "correct but we won't fix it", which is a decision | The Reviewer — `devflow-review/SKILL.md` → Disputed Findings |
 | `escape` | `escape add` records a defect whose layer is a framework layer (`standard-missing`, `verifier`, `spec`, `plan-tests`, `reviewer:{dimension}`) | Finalizer / the agent recording the escape — [escape-analysis.md](./escape-analysis.md) → What Recording One Does. `escape add` itself counts every escape's class × layer, with no text (`memory escapes`) |
 
 ### Friction (deterministic)
@@ -142,3 +144,18 @@ Five entry types, each with one trigger and one owner. The first is deterministi
 `devflow-ctl` appends one line to `friction.log` whenever `gate check`, `scope check`, `iterate`, or `artifacts check` exits 1, and whenever `lock acquire` breaks a stale lock or is forced over a live one. A line holds the date, the project id, a hashed session id, the session's mode and rigor, the event, and a detail (gate and state, loop name, artifact type, or — for scope — **only the file's extension**). The log never holds a slug, a name or a path. Usage errors (exit 2) and passing checks log nothing.
 
 The raw log is never shown to an agent. `devflow-ctl memory friction report` groups it by mode, event and detail, and proposes each pattern that recurs in **≥3 sessions across ≥2 projects** (`--sessions` / `--projects` override) as a `friction` entry, with the exact `--key` to use — or names the entry that already records it, for `memory seen`. The Finalizer and every standalone agent's closing step run the report and propose new patterns to the user; the entry's rule is written by the agent, in the abstract, only after the user agrees.
+
+### Corrections
+
+At every approval gate — the Orchestrator's Validation Gate (✏️ Revise requirements) and Confirmation Gate (✏️ Request changes), and every standalone agent's Approval Gate (✏️ Modify plan, or ❌ Cancel with a reason; [standalone-execution.md](./standalone-execution.md) §3) — the agent that owns the gate applies one test to the user's feedback **before** revising:
+
+> *Would this feedback apply to the same agent, working on a different project?*
+
+- **No** — it is about this domain, these requirements, this codebase ("the discount applies before tax", "use the existing `OrderRepository`"). It is project knowledge: act on it, and let the closing write-back put it in `learnings.md` if it recurs. Nothing goes to the framework memory.
+- **Yes** — it corrects how the agent works ("you widened the scope without asking", "the plan has no test for the failure path", "don't add a dependency for this", "you assumed an API that doesn't exist"). Run `devflow-ctl memory query --agent <agent that produced the artifact> --type correction`: if an entry already says it, `memory seen <id>`; otherwise `memory add --type correction --agent <that agent> --key correction:<agent>:<short-kebab> --title "..." --rule "<what to do instead>" --why "<what the agent did>"`, in the abstract, then revise.
+
+In CI and Autonomous mode there is no user at the gate, so there are no corrections to record. Never record the user's words verbatim — they almost always name the project.
+
+### False positives
+
+Owned by the Reviewer (`devflow-review/SKILL.md` → Disputed Findings). A finding the user dismisses as *incorrect* is evidence that a review dimension, a checklist item or a standard section is miscalibrated, so it is recorded against it: `--layer reviewer:<dimension>`, `--target` the checklist or standard file that produced the finding, key `false-positive:<dimension>:<standard-or-checklist-section>:<short-kebab>`. A finding the user accepts as correct but chooses not to fix is a **decision**, never a false positive — the same line [escape-analysis.md](./escape-analysis.md) draws for escapes.
