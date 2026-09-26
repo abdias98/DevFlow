@@ -90,3 +90,38 @@ The store is shared by every project on the machine — including client project
 - anything that looks like a secret (the same families `devflow-ctl scan secrets` detects).
 
 The project checks are skipped inside DevFlow's own repository, where naming the framework's files is the point of an entry. When a refusal fires, rewrite the entry in the abstract — do not work around the guard.
+
+---
+
+## Load Memory
+
+Agents never read `INDEX.md` or entry files. They ask for the few entries that concern them:
+
+```bash
+devflow-ctl memory query --agent <this agent's skill name> --stack <detected stack, comma-separated> [--type <type>] [--limit 8]
+```
+
+- **Filters:** entries whose `agents` include this agent (or `any`) and whose `stack` includes one of the detected stacks (or `any`). `promoted` and `retired` entries are never returned — a promoted lesson already lives in a standard or skill, and repeating it would only duplicate context.
+- **Ranking:** `confirmed` before `candidate`, then by number of distinct projects, then by most recent sighting. The default limit is 8, so the context cost stays bounded however large the store grows.
+- **Reading the result:** a `confirmed` entry is a rule — apply it as you would a project learning. A `candidate` entry is printed as *unconfirmed, treat as a hint*: check whether it applies here, and if it does, record the recurrence with `devflow-ctl memory seen <id>`.
+- **An empty result is normal**, not an error.
+
+`devflow-ctl capabilities` and `devflow-ctl status` both print a `memory:` / `Framework memory:` line with the confirmed and candidate counts, so the store is visible at every agent's Step 0 even before a query.
+
+---
+
+## Lifecycle
+
+```
+candidate ──(seen in ≥2 distinct projects | the user confirms)──▶ confirmed ──(PR merged into DevFlow)──▶ promoted
+    │                                                                 │
+    └──────────────(unseen ≥180 days | the user retires it)───────────┴──────────────▶ retired
+```
+
+| Command | Transition | Who decides |
+|---|---|---|
+| `memory seen <id>` | Adds this project to `seen` (one line per project); a candidate with 2 distinct projects becomes `confirmed` | Automatic |
+| `memory confirm <id>` | `candidate → confirmed` | The user |
+| `memory retire <id> --reason "..."` | `candidate\|confirmed → retired`, reason appended to the entry | The user |
+
+`memory query` lists candidates unseen for 180 days as *stale* and proposes retiring them. Nothing is ever retired automatically. Illegal transitions (e.g. confirming a retired entry) exit 1.

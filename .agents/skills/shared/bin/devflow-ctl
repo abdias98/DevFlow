@@ -40,7 +40,9 @@
 #   escape report                                      Escape counts by layer and class
 #   metrics aggregate <metrics-file>                  Append a cycle's metrics to _aggregate.md, recompute averages
 #   memory add --type <t> --key <k> --title <t> --rule <r> [...]  Record a cross-project framework lesson
-#   memory list | show <id> | index | path            Browse the framework memory store (DEVFLOW_HOME)
+#   memory query [--agent a] [--stack s] [--limit N]  Relevant confirmed/candidate lessons, ranked and bounded
+#   memory seen <id> | confirm <id> | retire <id> --reason <r>  Recurrence and lifecycle of an entry
+#   memory list | show <id> | index | path | summary          Browse the framework memory store (DEVFLOW_HOME)
 #   traceability check <file>                         Count Source/TOTAL coverage in a traceability matrix; exit 1 if <100%
 #   sessions                                         List all active DevFlow sessions with phase and state
 #   clean [--force]                                  Remove sessions unlocked/stale ≥30 min (never `status: cancelled`); --force removes all
@@ -340,6 +342,7 @@ cmd_status() {
   else
     echo "Scope:     (not declared)"
   fi
+  _mem_summary
 }
 
 cmd_phase() {
@@ -962,6 +965,9 @@ cmd_capabilities() {
         echo "filesystem: unknown"
         echo "runtime: unknown"
       fi
+      # Not an environment primitive, but the one place every agent reads at
+      # Step 0 — so the framework memory store is never invisible.
+      echo "memory: $(_mem_summary | sed 's/^Framework memory: //')"
       ;;
     *)
       die "usage: devflow-ctl capabilities [get <key>]"
@@ -2178,6 +2184,161 @@ _mem_list() {
   (( any )) || echo "No framework memory entries in $MEM_DIR"
 }
 
+# Record that the lesson recurred. A second distinct project promotes a
+# candidate to confirmed — the threshold at which it is trusted as a rule.
+_mem_seen_cmd() {
+  local id="${1:-}" file
+  [[ -n "$id" ]] || die "usage: devflow-ctl memory seen <id>"
+  file="$(_mem_file_for "$id")"
+  [[ -n "$file" ]] || die "memory seen: no entry '$id' in $MEM_DIR"
+  _mem_ensure || return 0
+  _mem_lock
+  local project today tmp status n
+  project="$(_mem_project_id)"; today="$(_mem_today)"; tmp="$file.tmp.$$"
+  # Keep one line per project: a repeat sighting refreshes its date.
+  awk -v p="$project" -v d="$today" '
+    NR==1 && /^---$/ { infm=1; print; next }
+    infm && /^---$/ { if (inseen && !done) print "  - " p " " d; infm=0; inseen=0; print; next }
+    infm && /^seen:/ { inseen=1; print; next }
+    inseen && /^  - / { split(substr($0, 5), a, " "); if (a[1] == p) { print "  - " p " " d; done=1 } else print; next }
+    inseen { if (!done) print "  - " p " " d; done=1; inseen=0 }
+    { print }
+  ' "$file" > "$tmp" && mv "$tmp" "$file"
+  _mem_set "$file" updated "$today"
+  status="$(_mem_get "$file" status)"; n="$(_mem_projects_count "$file")"
+  if [[ "$status" == "candidate" && "$n" -ge 2 ]]; then
+    _mem_set "$file" status confirmed
+    status=confirmed
+  fi
+  _mem_reindex
+  _mem_unlock
+  ok "memory entry $id seen in $n distinct project(s) — status: $status"
+}
+
+_mem_transition() { # _mem_transition <id> <to> [reason|ref]
+  local id="$1" to="$2" extra="${3:-}" file from
+  file="$(_mem_file_for "$id")"
+  [[ -n "$file" ]] || die "memory $to: no entry '$id' in $MEM_DIR"
+  from="$(_mem_get "$file" status)"
+  case "$from:$to" in
+    candidate:confirmed) ;;
+    candidate:retired|confirmed:retired) ;;
+    confirmed:promoted) ;;
+    *) fail "memory: '$id' cannot move from '$from' to '$to' (candidate → confirmed → promoted; candidate|confirmed → retired)" ;;
+  esac
+  _mem_ensure || return 0
+  _mem_lock
+  _mem_set "$file" status "$to"
+  _mem_set "$file" updated "$(_mem_today)"
+  if [[ "$to" == "retired" ]]; then
+    printf '\n**Retired (%s):** %s\n' "$(_mem_today)" "$extra" >> "$file"
+  fi
+  if [[ "$to" == "promoted" ]]; then
+    _mem_set "$file" promoted_ref "$extra"
+  fi
+  _mem_reindex
+  _mem_unlock
+  ok "memory entry $id: $from → $to"
+}
+
+# Sort key per entry: confirmed before candidate, then more distinct
+# projects, then most recently seen. Promoted/retired never reach an agent:
+# a promoted lesson already lives in a standard or skill.
+_mem_query() {
+  local agent="" stacks="" type_f="" limit=8
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --agent) agent="${2:-}"; shift 2 ;;
+      --stack) stacks="${2:-}"; shift 2 ;;
+      --type)  type_f="${2:-}"; shift 2 ;;
+      --limit) limit="${2:-}"; shift 2 ;;
+      *) die "memory query: unknown option '$1'" ;;
+    esac
+  done
+  [[ "$limit" =~ ^[0-9]+$ ]] || die "memory query: --limit must be a number"
+  local f rows="" status rank n updated entry_agents entry_stack s want_stack match
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    status="$(_mem_get "$f" status)"
+    case "$status" in confirmed) rank=0 ;; candidate) rank=1 ;; *) continue ;; esac
+    [[ -z "$type_f" || "$(_mem_get "$f" type)" == "$type_f" ]] || continue
+    if [[ -n "$agent" ]]; then
+      entry_agents="$(_mem_get_list "$f" agents)"
+      grep -qxF -e "$agent" -e any <<< "$entry_agents" || continue
+    fi
+    if [[ -n "$stacks" ]]; then
+      entry_stack="$(_mem_get_list "$f" stack | tr '[:upper:]' '[:lower:]')"
+      match=0
+      if grep -qx any <<< "$entry_stack"; then match=1; fi
+      while IFS= read -r want_stack; do
+        want_stack="$(sed 's/^ *//; s/ *$//' <<< "$want_stack" | tr '[:upper:]' '[:lower:]')"
+        [[ -n "$want_stack" ]] || continue
+        if grep -qxF -- "$want_stack" <<< "$entry_stack"; then match=1; fi
+      done < <(tr ',' '\n' <<< "$stacks")
+      (( match )) || continue
+    fi
+    n="$(_mem_projects_count "$f")"; updated="$(_mem_get "$f" updated)"
+    rows+="$rank"$'\t'"$(printf '%04d' "$n")"$'\t'"$updated"$'\t'"$f"$'\n'
+  done < <(_mem_files)
+  if [[ -z "$rows" ]]; then
+    echo "Framework memory: no active entries match (store: $MEM_DIR)"
+    _mem_stale_hint
+    return 0
+  fi
+  local total shown=0 line rule apply label
+  total="$(printf '%s' "$rows" | grep -c . || true)"
+  echo "Framework memory — $total active entr$( [[ "$total" -eq 1 ]] && echo y || echo ies ) match; showing up to $limit (shared/framework-memory.md → Load Memory)"
+  echo ""
+  while IFS=$'\t' read -r rank n updated f; do
+    [[ -n "$f" ]] || continue
+    (( shown < limit )) || break
+    shown=$((shown + 1))
+    status="$(_mem_get "$f" status)"; n=$((10#$n))
+    if [[ "$status" == "candidate" ]]; then
+      label="candidate ×$n — unconfirmed, treat as a hint"
+    else
+      label="confirmed ×$n"
+    fi
+    echo "$(_mem_get "$f" id) [$label] $(_mem_get "$f" type) — $(_mem_get "$f" title)"
+    rule="$(sed -n 's/^\*\*Rule:\*\* //p' "$f" | head -1)"
+    apply="$(sed -n 's/^\*\*How to apply:\*\* //p' "$f" | head -1)"
+    echo "  Rule: $rule"
+    if [[ -n "$apply" ]]; then echo "  Apply: $apply"; fi
+  done < <(printf '%s' "$rows" | LC_ALL=C sort -t $'\t' -k1,1n -k2,2r -k3,3r)
+  _mem_stale_hint
+}
+
+MEM_STALE_DAYS=180
+
+# Candidates nobody has seen for MEM_STALE_DAYS are proposed for retirement —
+# never retired automatically: the user decides.
+_mem_stale_hint() {
+  local f today_e upd_e stale=()
+  today_e="$(to_epoch "$(_mem_today)T00:00:00Z")"
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    [[ "$(_mem_get "$f" status)" == "candidate" ]] || continue
+    upd_e="$(to_epoch "$(_mem_get "$f" updated)T00:00:00Z")"
+    [[ "$upd_e" != 0 ]] || continue
+    if (( (today_e - upd_e) / 86400 >= MEM_STALE_DAYS )); then stale+=("$(_mem_get "$f" id)"); fi
+  done < <(_mem_files)
+  if (( ${#stale[@]} > 0 )); then
+    echo ""
+    echo "Stale candidates (unseen ≥ $MEM_STALE_DAYS days): ${stale[*]} — propose 'devflow-ctl memory retire <id> --reason \"...\"' to the user"
+  fi
+  return 0
+}
+
+# One line for `status` / `capabilities`, so an agent knows the store exists.
+_mem_summary() {
+  local f c=0 k=0
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    case "$(_mem_get "$f" status)" in confirmed) c=$((c + 1)) ;; candidate) k=$((k + 1)) ;; esac
+  done < <(_mem_files)
+  echo "Framework memory: $c confirmed · $k candidate (devflow-ctl memory query --agent <agent> --stack <stack>)"
+}
+
 cmd_memory() {
   local action="${1:-}"; shift || true
   case "$action" in
@@ -2189,12 +2350,22 @@ cmd_memory() {
       [[ -n "$file" ]] || die "memory show: no entry '${1:-}' in $MEM_DIR"
       cat "$file"
       ;;
+    query)   _mem_query "$@" ;;
+    seen)    _mem_seen_cmd "$@" ;;
+    summary) _mem_summary ;;
+    confirm) _mem_transition "${1:-}" confirmed ;;
+    retire)
+      local id="${1:-}" reason=""
+      [[ "${2:-}" == "--reason" && -n "${3:-}" ]] && reason="$3"
+      [[ -n "$id" && -n "$reason" ]] || die 'usage: devflow-ctl memory retire <id> --reason "<why it no longer applies>"'
+      _mem_transition "$id" retired "$reason"
+      ;;
     index)
       _mem_ensure || return 0
       _mem_lock; _mem_reindex; _mem_unlock
       ok "framework memory index rebuilt at $MEM_INDEX"
       ;;
-    *) die "usage: devflow-ctl memory path | add ... | list [--status s] [--type t] | show <id> | index" ;;
+    *) die "usage: devflow-ctl memory path | add ... | query [--agent a] [--stack s] [--type t] [--limit N] | seen <id> | confirm <id> | retire <id> --reason <r> | list [--status s] [--type t] | show <id> | summary | index" ;;
   esac
 }
 
