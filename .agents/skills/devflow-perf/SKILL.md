@@ -67,7 +67,7 @@ Present findings with evidence — a standard citation (`{standard}.md §{N} →
 ### Step 2 — Load Stack Profile
 
 1. **Read the environment capability probe:** run `devflow-ctl capabilities` and record results in `context.md` under `## Environment Capabilities` (see [environment-probe.md](<{{SKILLS_DIR}}/shared/environment-probe.md>)). If `subagents: yes`, parallel bottleneck analysis subagents may be dispatched in Step 3.
-2. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — read the **By Topic** → **Performance** section. Check for documented performance anti-patterns and optimization patterns from previous cycles. A documented anti-pattern may explain the bottleneck. See [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Knowledge Base.
+2. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — read the **By Topic** → **Performance** section. Check for documented performance anti-patterns and optimization patterns from previous cycles. A documented anti-pattern may explain the bottleneck. See [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Knowledge Base. Then **Load Memory** ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Load Memory): `devflow-ctl memory query --agent devflow-perf --stack {stack}` — apply `confirmed` entries as rules, treat `candidate` entries as hints to check.
 3. Read `## Stack Profile` from `context.md` in session memory.
 4. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>).
 5. Obtain: Language, Framework, Test Command, profiling tools available in the stack.

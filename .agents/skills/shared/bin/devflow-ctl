@@ -32,6 +32,7 @@
 #   artifacts check <type> <path>                    Validate required sections
 #   capabilities [get <key>]                         Print environment capabilities (from .devflow-environment)
 #   knowledge list                                   List knowledge base entries and the standards profile status
+#   knowledge query --topic <topic>                  Print one By Topic section of the project knowledge base
 #   knowledge add <file>                             Add a knowledge base entry from a file
 #   backlog add <file> <reason> [--severity b|i|f]    Record a deferred (Outside-zone) finding
 #   backlog list [--area <glob>]                      List deferred findings, optionally by area
@@ -1059,8 +1060,36 @@ cmd_knowledge() {
       cat "$entry_file" >> "$KNOWLEDGE_FILE"
       ok "knowledge entry from $entry_file appended to $KNOWLEDGE_FILE"
       ;;
+    query)
+      # One By Topic section instead of the whole file: the knowledge base grows
+      # every cycle, the context an agent can afford does not.
+      [[ "${2:-}" == "--topic" && -n "${3:-}" ]] || die "usage: devflow-ctl knowledge query --topic <topic>"
+      local topic="$3"
+      if [[ ! -f "$KNOWLEDGE_FILE" ]]; then
+        echo "Knowledge base not found at $KNOWLEDGE_FILE"
+        exit 0
+      fi
+      local out
+      out="$(LC_ALL=C awk -v want="$topic" '
+        function lc(x) { return tolower(x) }
+        /^## / { inbt = ($0 ~ /^## By Topic/); if (on) exit; next }
+        !inbt { next }
+        /^#{3,6} / {
+          lvl = index($0, " ") - 1; title = substr($0, lvl + 2)
+          if (on && lvl <= onlvl) exit
+          if (!on && index(lc(title), lc(want)) > 0) { on = 1; onlvl = lvl }
+        }
+        on { print }
+      ' "$KNOWLEDGE_FILE")"
+      if [[ -z "$out" ]]; then
+        echo "No '$topic' topic under By Topic in $KNOWLEDGE_FILE. Topics:"
+        awk '/^## /{inbt=($0 ~ /^## By Topic/); next} inbt && /^### /{sub(/^### /,"  - "); print}' "$KNOWLEDGE_FILE"
+      else
+        printf '%s\n' "$out"
+      fi
+      ;;
     *)
-      die "usage: devflow-ctl knowledge list | add <file>"
+      die "usage: devflow-ctl knowledge list | query --topic <topic> | add <file>"
       ;;
   esac
 }

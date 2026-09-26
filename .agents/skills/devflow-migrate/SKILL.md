@@ -55,7 +55,7 @@ Present findings with evidence — a standard citation (`{standard}.md §{N} →
 ### Step 2 — Load Stack Profile
 
 1. **Read the environment capability probe:** run `devflow-ctl capabilities` and record results in `context.md` under `## Environment Capabilities` (see [environment-probe.md](<{{SKILLS_DIR}}/shared/environment-probe.md>)).
-2. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — read the **By Topic** → **Stack-Specific** section for the detected database/ORM. Check for documented migration patterns and anti-patterns from previous cycles. See [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Knowledge Base.
+2. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — read the **By Topic** → **Stack-Specific** section for the detected database/ORM. Check for documented migration patterns and anti-patterns from previous cycles. See [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Knowledge Base. Then **Load Memory** ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Load Memory): `devflow-ctl memory query --agent devflow-migrate --stack {stack}` — apply `confirmed` entries as rules, treat `candidate` entries as hints to check.
 3. Read `## Stack Profile` from `context.md`.
 4. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>).
 5. Obtain: Database type (PostgreSQL, MySQL, SQLite, MongoDB...), ORM/Framework, migration tool.
