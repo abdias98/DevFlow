@@ -128,8 +128,21 @@ candidate ──(seen in ≥2 distinct projects | the user confirms)──▶ co
 | `memory seen <id>` | Adds this project to `seen` (one line per project); a candidate with 2 distinct projects becomes `confirmed` | Automatic |
 | `memory confirm <id>` | `candidate → confirmed` | The user |
 | `memory retire <id> --reason "..."` | `candidate\|confirmed → retired`, reason appended to the entry | The user |
+| `memory promote <id> --ref <PR#\|commit>` | `confirmed → promoted`, once the change is merged into DevFlow | The maintainer, after the merge (Promotion, below) |
 
 `memory query` lists candidates unseen for 180 days as *stale* and proposes retiring them. Nothing is ever retired automatically. Illegal transitions (e.g. confirming a retired entry) exit 1.
+
+---
+
+## Promotion
+
+A confirmed entry has earned a place in the framework itself. Promotion is how the memory empties into DevFlow instead of growing forever:
+
+1. **In DevFlow's own repository** (the clone recorded as `source_dir` in `$DEVFLOW_HOME/config` by `install.sh`), run `devflow-ctl memory promote-list`. It lists every `confirmed` entry grouped by its `target` — the standard, skill, checklist or template it would change.
+2. **One branch and one PR per target**, following the repository's normal rules (`CONTRIBUTING.md`, `git-conventions.md`): the entry's rule becomes a real change — a new check in `review-checklist.md`, a sentence in a standard (appended, never renumbered), a step in a skill — protected by the validator and the tests like any other change. Cite the entries in the commit (`Refs: M0007`). Nothing is generated automatically: an entry is evidence for a change, not the change's text.
+3. **After the merge**, `devflow-ctl memory promote <id> --ref <PR#|commit>`. From then on `memory query` no longer returns it — the lesson lives where every future cycle loads it.
+
+An entry that turns out not to deserve a framework change is retired with its reason, not left confirmed. Entries without a `target` are listed under *(no target)*: deciding where they belong is the first step of their promotion.
 
 ---
 
