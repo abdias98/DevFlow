@@ -227,6 +227,7 @@ Everything else. No edits, ever, without the user explicitly approving a scope a
 - **Any change in the Outside zone requires explicit user confirmation.** This includes renaming public APIs, modifying configuration files, updating dependencies, or altering folder structure. An Impact Zone coherence change (see Scope-Locking above) does NOT require this full confirmation — `scope justify` is its approval mechanism, because the reason is one of six closed, mechanical categories rather than a judgment call.
 - **Do not proceed with a plan that includes Outside-zone changes until the user explicitly approves those specific changes.**
 - Present options clearly and wait for the user's selection. Do not time out or assume a default.
+- **When the user sends an artifact back at a gate** (✏️ Modify / Request changes / Revise, or ❌ Cancel with a reason), the gate's owner first asks whether the feedback would apply to the same agent in another project — if so it is a **correction** of the framework, recorded in the framework memory before revising ([framework-memory.md](./framework-memory.md) → Corrections). Project-specific feedback stays in the project.
 
 ## CI/CD Mode
 
