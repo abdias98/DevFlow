@@ -50,7 +50,7 @@ The point in the DevFlow chain that had the information to catch this, had it lo
 | `reviewer:{dimension}` | A specific Reviewer dimension (e.g. `reviewer:correctness-behavior`, `reviewer:security-safety`) should have found it in its own blind pass |
 | `standard-missing` | No standard's domain covers this defect at all — the framework itself has a coverage gap, not a process failure on this cycle |
 
-`standard-missing` is the layer that feeds back into the framework's own standards (see *Framework Backlog* below) rather than into a single cycle's learnings.
+`standard-missing`, `verifier`, `spec`, `plan-tests` and `reviewer:{dimension}` are **framework layers**: they feed the framework memory ([framework-memory.md](./framework-memory.md)), and through it DevFlow's own standards and skills, rather than only a single cycle's learnings.
 
 ---
 
@@ -70,7 +70,8 @@ Stored at `docs/devflow/knowledge-base/escapes.md`, one row per escape, in a sta
 
 1. **`docs/devflow/knowledge-base/escapes.md`** gets the row — the permanent record, queryable by `escape list [--layer <layer>]` and summarized by `escape report` (counts by layer and by class).
 2. **`learnings.md`** gets an anti-pattern entry (By Topic + Cycle History, same convention as every other knowledge-base write-back) describing what was missed and why, so the *next* cycle in that area doesn't repeat it.
-3. **If `layer=standard-missing`**, an entry also goes to the user's own framework backlog (`devflow-ctl backlog add` against the relevant `.agents/skills/` path, or a note to the user if this session isn't working inside the framework's own repo) — this is the seed for a future standard or standard revision, exactly like the audit in `docs/devflow-audit-review-quality.md` did by hand for Wave 20.
+3. **The framework memory counts it** — `escape add` appends the class and layer (no ref, no note) to the cross-project counts in the framework memory store, readable with `devflow-ctl memory escapes` ([framework-memory.md](./framework-memory.md)).
+4. **If the layer is a framework layer** — `standard-missing`, `verifier`, `spec`, `plan-tests` or `reviewer:{dimension}` — the lesson belongs to DevFlow, not only to this project, and `escape add` says so. Run `devflow-ctl memory query --type escape`: if an entry already describes the same miss, record the recurrence with `devflow-ctl memory seen <id>`; otherwise record it **in the abstract** with `devflow-ctl memory add --type escape --class <class> --layer <layer> --target <the skill or standard that should have caught it> --key escape:<class>:<layer>:<short-kebab> --title "..." --rule "..."`. The privacy guard refuses the project's paths and names — describe what the layer failed to look for, not the code it missed. Once confirmed in two projects, the entry is promoted into that standard or skill (framework-memory.md → Promotion) — the path Wave 20's audit (`docs/devflow-audit-review-quality.md`) took by hand.
 
 ---
 

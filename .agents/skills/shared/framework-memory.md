@@ -135,6 +135,7 @@ Five entry types, each with one trigger and one owner. The first is deterministi
 | Type | Trigger | Recorded by |
 |---|---|---|
 | `friction` | A gate check fails, a file is outside scope, an iteration limit is exceeded, an artifact check fails, a stale lock is broken or forced | `devflow-ctl` itself, in `friction.log` (below) |
+| `escape` | `escape add` records a defect whose layer is a framework layer (`standard-missing`, `verifier`, `spec`, `plan-tests`, `reviewer:{dimension}`) | Finalizer / the agent recording the escape — [escape-analysis.md](./escape-analysis.md) → What Recording One Does. `escape add` itself counts every escape's class × layer, with no text (`memory escapes`) |
 
 ### Friction (deterministic)
 
