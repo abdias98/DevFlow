@@ -239,6 +239,10 @@ checkpoints:                    # rollback SHAs, recorded via `devflow-ctl check
 | `knowledge-base/` | Cross-cycle learnings, patterns, and anti-patterns | `learnings.md` (appended per cycle) |
 | `backlog/` | Deferred findings from the Outside zone (rules.md → Scope-Locking — Three Zones) — never cleaned at session end, read by the Brainstormer/Architect of the next cycle touching the same area | `deferred.md` (appended per finding, via `devflow-ctl backlog add`) |
 
+## Framework Memory (Cross-Project)
+
+`docs/devflow/knowledge-base/` is **project** memory. Lessons about how DevFlow itself works — escapes the framework's layers let through, user corrections at gates, Reviewer false positives, process friction, stack patterns that hold across projects — go to the **framework memory store** outside the project (`$DEVFLOW_HOME/memory/`, default `~/.local/share/devflow/memory/`), always through `devflow-ctl memory`. Store layout, entry format, privacy rules and precedence: [framework-memory.md](./framework-memory.md).
+
 ## Memory Rules
 
 1. **Before starting any phase**, read all relevant session memory files (`context.md`, `phase-state.md`, `test-registry.md`).

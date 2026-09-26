@@ -41,6 +41,7 @@ Session state lives in the **YAML frontmatter** of `docs/devflow/session/{slug}/
 | `devflow-ctl config set {branch\|pair_mode\|mode\|phase} {v}` | Editing those fields in markdown | — |
 | `devflow-ctl checkpoint set {name} {sha}` | Recording rollback SHAs in a table | — |
 | `devflow-ctl artifacts check {type} {path}` | LLM-reading the [artifact checklist](./artifact-checklist.md) | Required sections missing |
+| `devflow-ctl memory add\|seen\|query …` | Cross-project lessons kept in prose, or lost with the project ([framework-memory.md](./framework-memory.md)) | `add`: privacy guard refused the text, or the key already exists — use `memory seen` |
 
 **Execution policy:** `devflow-ctl` only reads and writes session state files — it never touches production code, tests, or git history. It is therefore exempt from the Test Execution Policy and may be auto-executed by agents in **all modes, including Pair mode**. It replaces the markdown edits to `phase-state.md` that agents already performed.
 

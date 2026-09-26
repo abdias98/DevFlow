@@ -407,6 +407,19 @@ echo ""
 # DevFlow store: where skills and instructions are kept for workspace init
 DEVFLOW_STORE="$HOME/.devflow"
 
+# Framework memory home (shared/framework-memory.md): cross-project learnings,
+# outside every editor's install dir so reinstalling never touches them. Same
+# resolution as devflow-ctl's _mem_home — keep the two in sync.
+if [[ -n "${DEVFLOW_HOME:-}" ]]; then
+  MEMORY_HOME="$DEVFLOW_HOME"
+elif [[ -n "${XDG_DATA_HOME:-}" ]]; then
+  MEMORY_HOME="$XDG_DATA_HOME/devflow"
+elif [[ "$OS_NAME" == "Windows" && -n "${LOCALAPPDATA:-}" ]]; then
+  MEMORY_HOME="$LOCALAPPDATA/devflow"
+else
+  MEMORY_HOME="$HOME/.local/share/devflow"
+fi
+
 # ── Detect and cleanup previous installation (v1.2.x) ──────────────────────
 # Check all profiles' user_dir for legacy paths so that a prior VS Code
 # installation is detected even when a different profile is selected now.
@@ -430,7 +443,11 @@ if [ "$_legacy_found" -eq 1 ]; then
   echo "📦 Previous DevFlow installation detected (v1.2.x or earlier)"
   echo "🧹 Cleaning up old files..."
   
-  if [ -d "$DEVFLOW_STORE" ]; then
+  # Never delete a store that holds framework memory (DEVFLOW_HOME may have
+  # been pointed at ~/.devflow by hand).
+  if [ -d "$DEVFLOW_STORE/memory" ] || [ "$DEVFLOW_STORE" = "$MEMORY_HOME" ]; then
+    echo "  ⚠️  Kept $DEVFLOW_STORE — it holds DevFlow framework memory"
+  elif [ -d "$DEVFLOW_STORE" ]; then
     rm -rf "$DEVFLOW_STORE"
     echo "  ✓ Removed DevFlow store: $DEVFLOW_STORE"
   fi
@@ -508,6 +525,25 @@ filesystem: ${CAP_FILESYSTEM:-unknown}
 runtime: ${CAP_RUNTIME:-unknown}
 EOF
   echo "  ✓ Wrote environment marker: shared/.devflow-environment (profile: $EDITOR_ID)"
+fi
+
+# ── Framework memory home (shared/framework-memory.md) ───────────────────────
+# Created once, never overwritten: only config is refreshed. source_dir lets a
+# session find the DevFlow clone to promote confirmed lessons into (PR).
+if mkdir -p "$MEMORY_HOME/memory/entries" 2>/dev/null; then
+  {
+    if [ "$SOURCE_DIR" = "$SCRIPT_DIR" ]; then
+      echo "source_dir=$SOURCE_DIR"
+    else
+      echo "source_dir="
+    fi
+    echo "source_repo=$DEVFLOW_REPO"
+    echo "version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$SOURCE_DIR/package.json" 2>/dev/null | head -1)"
+    echo "installed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  } > "$MEMORY_HOME/config"
+  echo "  ✓ Framework memory home: $MEMORY_HOME (kept across reinstalls)"
+else
+  echo "  ⚠️  Could not create framework memory home at $MEMORY_HOME — set DEVFLOW_HOME to a writable directory"
 fi
 
 # ── Global: instructions → editor instructions dir (with tool/path substitutions) ──

@@ -8,6 +8,17 @@ set -e
 echo "🗑️  Uninstalling DevFlow Framework..."
 echo ""
 
+# --purge-memory (or DEVFLOW_PURGE_MEMORY=1, for the piped PowerShell launcher)
+# also deletes the framework memory (shared/framework-memory.md). Without it the
+# memory is kept: it holds lessons from every project, not code.
+PURGE_MEMORY=false
+[[ "${DEVFLOW_PURGE_MEMORY:-}" == "1" ]] && PURGE_MEMORY=true
+for _arg in "$@"; do
+  case "$_arg" in
+    --purge-memory) PURGE_MEMORY=true ;;
+  esac
+done
+
 # Allow overriding the source repository
 DEVFLOW_REPO="${DEVFLOW_REPO:-https://github.com/abdias98/DevFlow.git}"
 
@@ -187,6 +198,30 @@ for instr_file in "$INSTR_DIR"/devflow-*.instructions.md; do
     echo "  ✓ Removed instructions: $(basename "$instr_file")"
   fi
 done
+
+# ── Framework memory (kept unless --purge-memory) ────────────────────────────
+# Same resolution as devflow-ctl's _mem_home and install.sh — keep in sync.
+if [[ -n "${DEVFLOW_HOME:-}" ]]; then
+  MEMORY_HOME="$DEVFLOW_HOME"
+elif [[ -n "${XDG_DATA_HOME:-}" ]]; then
+  MEMORY_HOME="$XDG_DATA_HOME/devflow"
+elif [[ "$OS_NAME" == "Windows" && -n "${LOCALAPPDATA:-}" ]]; then
+  MEMORY_HOME="$LOCALAPPDATA/devflow"
+else
+  MEMORY_HOME="$HOME/.local/share/devflow"
+fi
+if [ -d "$MEMORY_HOME" ]; then
+  if $PURGE_MEMORY; then
+    if [[ -z "$MEMORY_HOME" || "$MEMORY_HOME" == "/" || "$MEMORY_HOME" == "$HOME" ]]; then
+      echo "  ❌ Refusing to purge unsafe memory path '$MEMORY_HOME'"
+    else
+      rm -rf "${MEMORY_HOME:?}"
+      echo "  ✓ Purged framework memory: $MEMORY_HOME"
+    fi
+  else
+    echo "  • Kept framework memory: $MEMORY_HOME (shared by every editor; pass --purge-memory to delete it)"
+  fi
+fi
 
 echo ""
 echo "✅ DevFlow Framework uninstalled successfully from $EDITOR_NAME!"

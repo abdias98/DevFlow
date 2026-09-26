@@ -12,6 +12,8 @@ setup() {
   REPO="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
   CTL="$REPO/.agents/skills/shared/bin/devflow-ctl"
   export DEVFLOW_SESSION_ROOT="$BATS_TEST_TMPDIR/session"
+  # Framework memory (friction log, escape counts) must never reach the real home.
+  export DEVFLOW_HOME="$BATS_TEST_TMPDIR/devflow-home"
 }
 
 # ── Slug validation (input boundary / path-traversal defense) ─────────────────
