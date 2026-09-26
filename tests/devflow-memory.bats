@@ -378,3 +378,34 @@ logged() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"No friction recorded yet"* ]]
 }
+
+# ── Escapes reach the framework (F98) ─────────────────────────────────────────
+
+@test "escape add: counts class × layer in the framework memory, without ref or note" {
+  cd "$BATS_TEST_TMPDIR"
+  "$CTL" escape add --class logic --layer implementer --ref "PR#12 acme" --note "total rounding in invoices" >/dev/null
+  f="$DEVFLOW_HOME/memory/escape-counts.tsv"
+  [ "$(wc -l < "$f")" -eq 1 ]
+  [ "$(cut -f2- "$f")" = "p-aaaa0001"$'\t'"logic"$'\t'"implementer" ]
+  ! grep -q 'acme\|rounding\|PR#12' "$f"
+}
+
+@test "escape add: a framework layer prints the memory add to run; a cycle layer does not" {
+  cd "$BATS_TEST_TMPDIR"
+  run "$CTL" escape add --class state-transitions --layer reviewer:correctness-behavior --ref r --note n
+  [[ "$output" == *"is a framework layer"* ]]
+  [[ "$output" == *"--key escape:state-transitions:reviewer-correctness-behavior:"* ]]
+  run "$CTL" escape add --class logic --layer implementer --ref r --note n
+  [[ "$output" != *"framework layer"* ]]
+}
+
+@test "memory escapes: aggregates by layer × class across projects" {
+  cd "$BATS_TEST_TMPDIR"
+  "$CTL" escape add --class logic --layer standard-missing --ref r --note n >/dev/null
+  DEVFLOW_PROJECT_ID=p-bbbb0002 "$CTL" escape add --class logic --layer standard-missing --ref r --note n >/dev/null
+  "$CTL" escape add --class data-limits --layer verifier --ref r --note n >/dev/null
+  run "$CTL" memory escapes
+  [[ "$output" == *"Total: 3 escape(s) across 2 project(s)"* ]]
+  line="$(grep '^standard-missing' <<< "$output")"
+  [[ "$line" =~ logic[[:space:]]+2[[:space:]]+2$ ]]
+}
