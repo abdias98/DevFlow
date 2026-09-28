@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.16.0] — 2026-09-28
+
+> **The traceable memory release.** 4.15.0 gave DevFlow a memory of its own, kept outside every project, but kept it so anonymous that a lesson could not be traced back to the work it came from, and a project never showed what the framework had learned in it.
+>
+> **The link now exists and stays on your machine.** A local registry maps each project hash to its checkout and each sighting to the cycle it happened in. It is never copied into an entry, the index or a PR, so what is shareable stays shareable. Every project gets a generated `docs/devflow/knowledge-base/framework-memory.md`: what was learned there, in which cycles, and which lessons from other projects apply to its stack. It is refreshed at the start of every cycle and on every memory write. **Whether to commit it is your call** — no agent commits it.
+>
+> **What this does not establish:** that the memory changes an outcome. As with 4.15.0, that still needs the paired eval runs in `eval/README.md` → *Measuring the framework memory*.
 
 ### ✨ Added
 
