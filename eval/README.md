@@ -181,6 +181,31 @@ Three things make a comparison mean less than it looks:
 `baselines/README.md` holds the running table, including which versions have run
 scorecards and which have only calibration.
 
+## Measuring the framework memory
+
+The framework memory (`shared/framework-memory.md`) changes nothing on a single
+run: in an empty store, `memory query` returns nothing. Its effect can only show
+on the **second** encounter with a lesson, so it is measured with paired runs
+that share a store:
+
+1. **Pick two tasks with the same trap** and headroom — a bare run of the model
+   under test must fail the trap's check. (Tasks 003–008 do not qualify for the
+   model recorded in `baselines/4.14.0.md`: every bare run passed.)
+2. **Run A** through `/devflow-feature` with `DEVFLOW_HOME=<store>` (a fresh
+   directory). Surface the trap the way it happens in real work — a correction
+   at the approval gate, or an escape after approval — and let the agent record
+   it (`framework-memory.md` → Capture). Check that `devflow-ctl memory list`
+   shows the entry, written in the abstract.
+3. **Run B** — the second task, in a different workspace (a different project
+   id), with the **same** `DEVFLOW_HOME`. **Run B′** — the same task, same prompt,
+   with an empty `DEVFLOW_HOME` as the control.
+4. Score B and B′. The memory's effect is the difference on the trap's check.
+   Read B's transcript for the `memory query` output: an entry that never reached
+   the agent means the effect, if any, came from somewhere else.
+
+Record pairs under `baselines/runs/<version>/memory/`, with the store's entry
+file next to the scorecards.
+
 ## Baselines
 
 `baselines/<version>.md` records calibration and scorecards for a DevFlow
