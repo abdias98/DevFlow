@@ -46,6 +46,7 @@
 #   memory list | show <id> | index | path | summary          Browse the framework memory store (DEVFLOW_HOME)
 #   memory friction report [--sessions N] [--projects N]  Recurring process friction (logged automatically)
 #   memory escapes                                    Escape counts by layer × class, across every project
+#   memory sync | projects                            Write this project's memory view; list registered projects (local)
 #   memory promote-list | promote <id> --ref <r>       Confirmed lessons to turn into framework PRs; mark one merged
 #   traceability check <file>                         Count Source/TOTAL coverage in a traceability matrix; exit 1 if <100%
 #   sessions                                         List all active DevFlow sessions with phase and state
@@ -335,6 +336,9 @@ cmd_init() {
     echo "|---|--------|---------|:--------:|------------|---------------|"
   } > "$STATE_FILE"
   ok "session '$SLUG' initialized (mode: $mode, lock acquired) at $STATE_FILE"
+  # Every cycle starts with the framework memory visible in the project.
+  _mem_register_project
+  _mem_sync_view --quiet || true
 }
 
 cmd_status() {
@@ -2231,8 +2235,11 @@ _mem_add() {
     if [[ -n "$apply" ]]; then echo "**How to apply:** $apply"; fi
   } > "$file.tmp.$$" && mv "$file.tmp.$$" "$file"
   _mem_reindex
+  _mem_register_project
+  _mem_record_sighting "$id"
   _mem_unlock
   ok "memory entry $id recorded (candidate, $type) at $file"
+  _mem_sync_view --quiet
 }
 
 _mem_list() {
@@ -2281,8 +2288,11 @@ _mem_seen_cmd() {
     status=confirmed
   fi
   _mem_reindex
+  _mem_register_project
+  _mem_record_sighting "$id"
   _mem_unlock
   ok "memory entry $id seen in $n distinct project(s) — status: $status"
+  _mem_sync_view --quiet
 }
 
 _mem_transition() { # _mem_transition <id> <to> [reason|ref]
@@ -2326,6 +2336,9 @@ _mem_query() {
     esac
   done
   [[ "$limit" =~ ^[0-9]+$ ]] || die "memory query: --limit must be a number"
+  # The stack an agent queries with is this project's stack: remember it, so
+  # the project view can show lessons from other projects on the same stack.
+  if [[ -n "$stacks" ]]; then _mem_register_project "$stacks"; fi
   local f rows="" status rank n updated entry_agents entry_stack s want_stack match
   while IFS= read -r f; do
     [[ -n "$f" ]] || continue
@@ -2551,6 +2564,174 @@ _mem_promote_list() {
   echo "After the PR is merged: devflow-ctl memory promote <id> --ref <PR#|commit>"
 }
 
+# ── Local registry (this machine only) ────────────────────────────────────────
+# Entries identify projects only by hash, so they can be shared and promoted.
+# The registry is the other half, and never leaves this machine: which hash is
+# which checkout, and in which cycle each entry was seen. Nothing here is ever
+# copied into an entry, INDEX.md or a PR.
+#   registry/projects.tsv   id, root, remote, stacks, first seen, last seen
+#   registry/sightings.tsv  entry id, project id, cycle slug, date
+MEM_REGISTRY="$MEM_DIR/registry"
+MEM_PROJECTS="$MEM_REGISTRY/projects.tsv"
+MEM_SIGHTINGS="$MEM_REGISTRY/sightings.tsv"
+
+_mem_project_root() { git rev-parse --show-toplevel 2>/dev/null || pwd; }
+
+# _mem_register_project [stacks] — upsert this checkout; stacks are unioned.
+_mem_register_project() {
+  mkdir -p "$MEM_REGISTRY" 2>/dev/null || return 0
+  local id root remote today add_stacks="${1:-}" tmp="$MEM_PROJECTS.tmp.$$"
+  id="$(_mem_project_id)"; root="$(_mem_project_root)"; today="$(_mem_today)"
+  remote="$(git remote get-url origin 2>/dev/null || echo -)"
+  add_stacks="$(tr '[:upper:]' '[:lower:]' <<< "$add_stacks" | tr -d ' ')"
+  touch "$MEM_PROJECTS" 2>/dev/null || return 0
+  LC_ALL=C awk -F'\t' -v OFS='\t' -v id="$id" -v root="$root" -v remote="$remote" -v st="$add_stacks" -v d="$today" '
+    function merge(a, b,   n, i, x, seen, out) {
+      out = ""; n = split(a "," b, x, ",")
+      for (i = 1; i <= n; i++) if (x[i] != "" && x[i] != "-" && !(x[i] in seen)) { seen[x[i]] = 1; out = out (out == "" ? "" : ",") x[i] }
+      return out == "" ? "-" : out
+    }
+    $1 == id { print id, root, remote, merge($4, st), $5, d; found = 1; next }
+    { print }
+    END { if (!found) print id, root, remote, merge("", st), d, d }
+  ' "$MEM_PROJECTS" > "$tmp" && mv "$tmp" "$MEM_PROJECTS"
+}
+
+_mem_project_stacks() { # stacks recorded for this checkout, comma-separated
+  [[ -f "$MEM_PROJECTS" ]] || return 0
+  awk -F'\t' -v id="$(_mem_project_id)" '$1 == id && $4 != "-" { print $4; exit }' "$MEM_PROJECTS"
+}
+
+# The cycle an entry was seen in: --slug, or the one active session.
+_mem_current_slug() {
+  if [[ -n "$SLUG" ]]; then echo "$SLUG"; return; fi
+  _discover_sessions
+  if [[ ${#_SESSIONS[@]} -eq 1 ]]; then echo "${_SESSIONS[0]}"; else echo "-"; fi
+}
+
+_mem_record_sighting() { # _mem_record_sighting <entry-id>
+  mkdir -p "$MEM_REGISTRY" 2>/dev/null || return 0
+  local line
+  line="$1"$'\t'"$(_mem_project_id)"$'\t'"$(_mem_current_slug)"$'\t'"$(_mem_today)"
+  grep -qxF -- "$line" "$MEM_SIGHTINGS" 2>/dev/null || printf '%s\n' "$line" >> "$MEM_SIGHTINGS" 2>/dev/null || true
+}
+
+_mem_projects_cmd() {
+  if [[ ! -s "$MEM_PROJECTS" ]]; then
+    echo "No projects registered yet ($MEM_PROJECTS)"
+    return 0
+  fi
+  echo "Projects on this machine (local registry — never shared)"
+  echo ""
+  local id root remote stacks first last n mark
+  while IFS=$'\t' read -r id root remote stacks first last; do
+    n="$(awk -F'\t' -v p="$id" '$2 == p { print $1 }' "$MEM_SIGHTINGS" 2>/dev/null | LC_ALL=C sort -u | grep -c . || true)"
+    mark=""; [[ -d "$root" ]] || mark="  (missing)"
+    echo "$id  $root$mark"
+    echo "    remote: $remote · stack: $stacks · entries seen here: ${n:-0} · $first → $last"
+  done < "$MEM_PROJECTS"
+}
+
+# ── Project view ──────────────────────────────────────────────────────────────
+# The framework memory, as it concerns ONE project, written into that project
+# so the user sees it and decides whether to commit it. Regenerated, never
+# edited; deterministic (no timestamps) and rewritten only when it changes, so
+# it never produces a noisy diff.
+_mem_view_path() { echo "${DEVFLOW_MEMORY_VIEW:-$(_mem_project_root)/docs/devflow/knowledge-base/framework-memory.md}"; }
+
+_mem_view_entry() { # _mem_view_entry <file> <label>
+  local f="$1" rule apply
+  rule="$(sed -n 's/^\*\*Rule:\*\* //p' "$f" | head -1)"
+  apply="$(sed -n 's/^\*\*How to apply:\*\* //p' "$f" | head -1)"
+  echo "### $(_mem_get "$f" id) — $(_mem_get "$f" title)"
+  echo ""
+  echo "*$2*"
+  echo ""
+  echo "- **Rule:** $rule"
+  if [[ -n "$apply" ]]; then echo "- **How to apply:** $apply"; fi
+}
+
+_mem_render_view() {
+  local project stacks f status seen_here learned="" applies="" promoted="" n_l=0 n_a=0 n_p=0
+  project="$(_mem_project_id)"; stacks="$(_mem_project_stacks)"
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    status="$(_mem_get "$f" status)"
+    [[ "$status" == "retired" ]] && continue
+    seen_here=0; _mem_seen "$f" | awk '{print $1}' | grep -qxF -- "$project" && seen_here=1
+    local id n type agents cycles
+    id="$(_mem_get "$f" id)"; n="$(_mem_projects_count "$f")"; type="$(_mem_get "$f" type)"
+    agents="$(_mem_get_list "$f" agents | paste -sd, - | sed 's/,/, /g')"
+    if [[ "$status" == "promoted" ]]; then
+      if (( seen_here )); then
+        promoted+="- **$id** — $(_mem_get "$f" title) → now part of DevFlow ($(_mem_get "$f" promoted_ref))"$'\n'; n_p=$((n_p + 1))
+      fi
+      continue
+    fi
+    if (( seen_here )); then
+      cycles="$(awk -F'\t' -v e="$id" -v p="$project" '$1 == e && $2 == p && $3 != "-" { print "`" $3 "` (" $4 ")" }' "$MEM_SIGHTINGS" 2>/dev/null | LC_ALL=C sort -u | paste -sd, - | sed 's/,/, /g')"
+      learned+="$(_mem_view_entry "$f" "$status ×$n · $type · $agents · cycles here: ${cycles:-not linked to a cycle}")"$'\n\n'
+      n_l=$((n_l + 1))
+    else
+      local st match=0
+      st="$(_mem_get_list "$f" stack)"
+      grep -qx any <<< "$st" && match=1
+      if [[ -n "$stacks" ]]; then
+        while IFS= read -r want; do grep -qxF -- "$want" <<< "$st" && match=1; done < <(tr ',' '\n' <<< "$stacks")
+      fi
+      (( match )) || continue
+      local label="$status ×$n · $type · $agents · learned in $n other project(s)"
+      [[ "$status" == "candidate" ]] && label+=" — unconfirmed, a hint"
+      applies+="$(_mem_view_entry "$f" "$label")"$'\n\n'
+      n_a=$((n_a + 1))
+    fi
+  done < <(_mem_files)
+  (( n_l + n_a + n_p > 0 )) || return 1
+  echo "# DevFlow Framework Memory — this project"
+  echo ""
+  echo "> Generated by \`devflow-ctl memory sync\` from the framework memory on this machine — edits are overwritten."
+  echo "> **Committing it is your decision.** It holds the lessons in the abstract and this project's own cycle slugs; nothing in it identifies another project."
+  echo ""
+  echo "## Learned here ($n_l)"
+  echo ""
+  if (( n_l )); then printf '%s' "$learned"; else echo "(none yet)"; echo ""; fi
+  echo "## Applies here — learned in other projects ($n_a)"
+  echo ""
+  echo "Matched on this project's stack (${stacks:-not recorded yet — every \`any\` lesson}) and on lessons for any stack."
+  echo ""
+  if (( n_a )); then printf '%s' "$applies"; else echo "(none)"; echo ""; fi
+  if (( n_p )); then
+    echo "## Promoted into DevFlow ($n_p)"
+    echo ""
+    echo "Lessons first seen here that now live in DevFlow's own standards and skills."
+    echo ""
+    printf '%s' "$promoted"
+  fi
+}
+
+# _mem_sync_view [--quiet] — write the view when there is something to show,
+# or refresh one that already exists; never create an empty file.
+_mem_sync_view() {
+  local quiet="${1:-}" path tmp content
+  path="$(_mem_view_path)"
+  if ! content="$(_mem_render_view)"; then
+    [[ -f "$path" ]] || { [[ -n "$quiet" ]] || echo "Framework memory: nothing concerns this project yet — no view written"; return 0; }
+    content="$(printf '# DevFlow Framework Memory — this project\n\n> Generated by `devflow-ctl memory sync`. No lesson concerns this project any more.\n')"
+  fi
+  mkdir -p "$(dirname "$path")" 2>/dev/null || return 0
+  if [[ -f "$path" ]] && [[ "$(cat "$path")" == "$content" ]]; then
+    [[ -n "$quiet" ]] || echo "Framework memory view up to date: $path"
+    return 0
+  fi
+  tmp="$path.tmp.$$"
+  printf '%s\n' "$content" > "$tmp" 2>/dev/null && mv "$tmp" "$path" || { rm -f "$tmp"; return 0; }
+  if [[ -n "$quiet" ]]; then
+    echo "[devflow-ctl] NOTE: framework memory view updated at $path — commit it or not, your choice"
+  else
+    ok "framework memory view written to $path — commit it or not, your choice"
+  fi
+}
+
 # One line for `status` / `capabilities`, so an agent knows the store exists.
 _mem_summary() {
   local f c=0 k=0
@@ -2571,7 +2752,19 @@ cmd_memory() {
       local file; file="$(_mem_file_for "${1:-}")"
       [[ -n "$file" ]] || die "memory show: no entry '${1:-}' in $MEM_DIR"
       cat "$file"
+      if [[ -s "$MEM_SIGHTINGS" ]]; then
+        echo ""
+        echo "Local sightings (this machine only — never part of the entry):"
+        local e p sl d root
+        while IFS=$'\t' read -r e p sl d; do
+          [[ "$e" == "${1:-}" ]] || continue
+          root="$(awk -F'\t' -v id="$p" '$1 == id { print $2; exit }' "$MEM_PROJECTS" 2>/dev/null)"
+          echo "  - $d  ${root:-$p}  cycle: $sl"
+        done < "$MEM_SIGHTINGS"
+      fi
       ;;
+    sync)     _mem_sync_view ;;
+    projects) _mem_projects_cmd ;;
     query)   _mem_query "$@" ;;
     escapes) _mem_escape_report ;;
     friction)
@@ -2600,7 +2793,7 @@ cmd_memory() {
       _mem_lock; _mem_reindex; _mem_unlock
       ok "framework memory index rebuilt at $MEM_INDEX"
       ;;
-    *) die "usage: devflow-ctl memory path | add ... | query [--agent a] [--stack s] [--type t] [--limit N] | seen <id> | confirm <id> | retire <id> --reason <r> | friction report | escapes | promote-list | promote <id> --ref <r> | list [--status s] [--type t] | show <id> | summary | index" ;;
+    *) die "usage: devflow-ctl memory path | add ... | query [--agent a] [--stack s] [--type t] [--limit N] | seen <id> | confirm <id> | retire <id> --reason <r> | friction report | escapes | promote-list | promote <id> --ref <r> | sync | projects | list [--status s] [--type t] | show <id> | summary | index" ;;
   esac
 }
 

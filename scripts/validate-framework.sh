@@ -1029,7 +1029,7 @@ if [[ -f "$FM_DOC" ]]; then
   while IFS= read -r hit; do
     [[ -n "$hit" ]] || continue
     fail "${hit%%:*}:$(cut -d: -f2 <<< "$hit") — names the framework memory store's internals; reach it only through 'devflow-ctl memory' (framework-memory.md)"
-  done < <(grep -rnE '\.local/share/devflow|DEVFLOW_HOME|memory/entries|friction\.log|escape-counts\.tsv' \
+  done < <(grep -rnE '\.local/share/devflow|DEVFLOW_HOME|memory/entries|friction\.log|escape-counts\.tsv|projects\.tsv|sightings\.tsv' \
              --include='*.md' "$SKILLS_DIR" .github/prompts 2>/dev/null \
            | grep -vE '^[^:]*(shared/framework-memory\.md|shared/memory-conventions\.md):' || true)
 

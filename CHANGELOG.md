@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **The framework memory knows which project and which cycle — locally — and every project shows its part of it (`memory sync`, `memory projects`; `framework-memory.md` → Local registry, Project view).** Entries identify projects only by hash, so they can be shared and promoted; that left no way back from a lesson to the work it came from, and a project never showed what the framework had learned in it.
+  - A **local registry** (`$DEVFLOW_HOME/memory/registry/`, never copied into an entry, `INDEX.md` or a PR) now maps each project hash to its checkout, remote and stack, and each sighting to the **cycle** it happened in (`--slug`, or the one active session). `memory show <id>` ends with its local sightings; `memory projects` lists the checkouts.
+  - Each project gets a **generated view**, `docs/devflow/knowledge-base/framework-memory.md`: *Learned here* (lessons seen in this project, with their cycles), *Applies here* (lessons from other projects on the same stack, anonymous), and *Promoted into DevFlow*. `init` refreshes it at the start of every cycle, `memory add`/`seen` refresh it on every write, and closing steps run `memory sync` and tell the user when it changed. **Committing it is the user's decision**: no agent commits it. It is deterministic, rewritten only when its content changes, and never created empty.
+  - `memory query --stack` records the project's stack, so the view can match other projects' lessons without an extra step. Validator §20 also forbids naming the registry files outside `framework-memory.md`. 8 new bats tests. Refs: F97, F103.
+
 ## [4.15.1] — 2026-09-28
 
 > **The permissions release.** Nothing in the framework changed since 4.15.0: no skill, standard, `devflow-ctl` command or template (`git diff v4.15.0 -- .agents` is empty). What changed is what `install.sh` writes into each editor's settings — which, checked against each editor's own documented rules, did not always do what the tier model said. Claude Code warned at every startup about a rule it never consults. On opencode, a `deny` for `git commit --no-verify` was silently cancelled by a broader `allow` after it. And reinstalling re-added a rule the user had removed by hand.
