@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.15.1] — 2026-09-28
+
+> **The permissions release.** Nothing in the framework changed since 4.15.0: no skill, standard, `devflow-ctl` command or template (`git diff v4.15.0 -- .agents` is empty). What changed is what `install.sh` writes into each editor's settings — which, checked against each editor's own documented rules, did not always do what the tier model said. Claude Code warned at every startup about a rule it never consults. On opencode, a `deny` for `git commit --no-verify` was silently cancelled by a broader `allow` after it. And reinstalling re-added a rule the user had removed by hand.
+>
+> **Upgrading fixes existing settings.** Re-run `install.sh` for each editor: rules earlier versions installed and have since retired are removed, and opencode's rules are put back in effective order. Nothing the user wrote is touched, and each file keeps its `.devflow-backup`.
 
 ### 🐛 Fixed
 
