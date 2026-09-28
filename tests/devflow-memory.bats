@@ -16,6 +16,7 @@ setup() {
   export DEVFLOW_SESSION_ROOT="$BATS_TEST_TMPDIR/session"
   export DEVFLOW_PROJECT_ID="p-aaaa0001"
   export DEVFLOW_TODAY="2026-09-01"
+  export DEVFLOW_MEMORY_VIEW="$BATS_TEST_TMPDIR/view.md"
   ENTRIES="$DEVFLOW_HOME/memory/entries"
   INDEX="$DEVFLOW_HOME/memory/INDEX.md"
 }
@@ -157,7 +158,9 @@ add_entry() {
   id2="$(awk '/^  - p-/{print $2; exit}' "$ENTRIES"/M0002-*.md)"
   [[ "$id1" =~ ^p-[0-9a-f]{8}$ ]]
   [ "$id1" = "$id2" ]
-  ! grep -rq 'secret-name' "$DEVFLOW_HOME"
+  # The shareable store never names the project; only the local registry does.
+  ! grep -rq 'secret-name' "$ENTRIES" "$INDEX"
+  grep -q 'secret-name' "$DEVFLOW_HOME/memory/registry/projects.tsv"
 }
 
 # ── list / show / index ───────────────────────────────────────────────────────
@@ -446,4 +449,93 @@ logged() {
   [[ "$output" != *"M0001"* ]]
   run "$CTL" memory promote M0001 --ref 'x; rm -rf /'
   [ "$status" -eq 2 ]
+}
+
+# ── Local registry and project view ───────────────────────────────────────────
+
+VIEW() { cat "$DEVFLOW_MEMORY_VIEW"; }
+
+@test "registry: add links the entry to this project's checkout and cycle, locally only" {
+  "$CTL" init --mode feature --slug checkout-refactor >/dev/null
+  add_entry k:a >/dev/null
+  grep -qx "M0001"$'\t'"p-aaaa0001"$'\t'"checkout-refactor"$'\t'"2026-09-01" "$DEVFLOW_HOME/memory/registry/sightings.tsv"
+  cut -f1,2 "$DEVFLOW_HOME/memory/registry/projects.tsv" | grep -qx "p-aaaa0001"$'\t'"$PWD"
+  ! grep -rq 'checkout-refactor' "$ENTRIES" "$INDEX"
+  run "$CTL" memory show M0001
+  [[ "$output" == *"Local sightings (this machine only"*"$PWD  cycle: checkout-refactor"* ]]
+}
+
+@test "registry: --slug names the cycle when several sessions are active" {
+  "$CTL" init --mode feature --slug one >/dev/null
+  "$CTL" init --mode feature --slug two >/dev/null
+  add_entry k:a --slug two >/dev/null
+  grep -q $'\ttwo\t' "$DEVFLOW_HOME/memory/registry/sightings.tsv"
+  add_entry k:b >/dev/null
+  grep -q "^M0002"$'\t'"p-aaaa0001"$'\t-\t' "$DEVFLOW_HOME/memory/registry/sightings.tsv"
+}
+
+@test "registry: memory query records the project's stack; memory projects lists checkouts" {
+  "$CTL" memory query --stack Node,React >/dev/null
+  run "$CTL" memory projects
+  [[ "$output" == *"p-aaaa0001  $PWD"* ]]
+  [[ "$output" == *"stack: node,react"* ]]
+  "$CTL" memory query --stack python >/dev/null
+  run "$CTL" memory projects
+  [[ "$output" == *"stack: node,react,python"* ]]
+}
+
+@test "view: 'learned here' lists this project's cycles; 'applies here' is anonymous and stack-matched" {
+  "$CTL" memory query --stack react >/dev/null
+  "$CTL" init --mode feature --slug cart >/dev/null
+  add_entry k:here >/dev/null
+  DEVFLOW_PROJECT_ID=p-bbbb0002 "$CTL" memory add --type stack-pattern --key k:react --title "React lesson" --rule "Rule R" --stack react >/dev/null
+  DEVFLOW_PROJECT_ID=p-bbbb0002 "$CTL" memory add --type stack-pattern --key k:py --title "Python lesson" --rule "Rule P" --stack python >/dev/null
+  run "$CTL" memory sync
+  [[ "$output" == *"commit it or not, your choice"* ]]
+  run VIEW
+  [[ "$output" == *"## Learned here (1)"*"M0001"*'cycles here: `cart` (2026-09-01)'* ]]
+  [[ "$output" == *"## Applies here — learned in other projects (1)"*"React lesson"*"learned in 1 other project(s)"* ]]
+  [[ "$output" != *"Python lesson"* ]]
+  [[ "$output" != *"p-bbbb0002"* ]]
+}
+
+@test "view: init writes it once there is something to show, never an empty file" {
+  "$CTL" init --mode feature --slug s1 >/dev/null
+  [ ! -f "$DEVFLOW_MEMORY_VIEW" ]
+  DEVFLOW_PROJECT_ID=p-bbbb0002 "$CTL" memory add --type friction --key k:any --title "Any-stack lesson" --rule "r" >/dev/null
+  run "$CTL" init --mode feature --slug s2
+  [[ "$output" == *"framework memory view updated"* ]]
+  grep -q "Any-stack lesson" "$DEVFLOW_MEMORY_VIEW"
+}
+
+@test "view: rewritten only when its content changes (no noisy diffs)" {
+  add_entry k:a >/dev/null
+  cp "$DEVFLOW_MEMORY_VIEW" "$BATS_TEST_TMPDIR/before"
+  touch -d '2020-01-01' "$DEVFLOW_MEMORY_VIEW"
+  run "$CTL" memory sync
+  [[ "$output" == *"up to date"* ]]
+  [ "$(stat -c %Y "$DEVFLOW_MEMORY_VIEW")" -lt 1600000000 ]
+  "$CTL" memory confirm M0001 >/dev/null
+  "$CTL" memory sync >/dev/null
+  ! cmp -s "$DEVFLOW_MEMORY_VIEW" "$BATS_TEST_TMPDIR/before"
+}
+
+@test "view: promoted lessons first seen here are listed as part of DevFlow; retired ones disappear" {
+  add_entry k:a >/dev/null
+  add_entry k:b >/dev/null
+  "$CTL" memory confirm M0001 >/dev/null
+  "$CTL" memory promote M0001 --ref "#200" >/dev/null
+  "$CTL" memory retire M0002 --reason "wrong" >/dev/null
+  "$CTL" memory sync >/dev/null
+  run VIEW
+  [[ "$output" == *"## Promoted into DevFlow (1)"*"M0001"*"(#200)"* ]]
+  [[ "$output" != *"M0002"* ]]
+}
+
+@test "view: defaults to docs/devflow/knowledge-base/ at the project root" {
+  unset DEVFLOW_MEMORY_VIEW
+  proj="$BATS_TEST_TMPDIR/proj"; mkdir -p "$proj/sub"; git -C "$proj" init -q
+  cd "$proj/sub"
+  add_entry k:a >/dev/null
+  [ -f "$proj/docs/devflow/knowledge-base/framework-memory.md" ]
 }

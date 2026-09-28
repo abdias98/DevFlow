@@ -277,6 +277,8 @@ The knowledge base above belongs to one project. Lessons about **how DevFlow wor
 - **Loaded** by every knowledge-base reader through one Load Memory step: `devflow-ctl memory query --agent <a> --stack <s>`, bounded and ranked, confirmed entries as rules and candidates as hints.
 - **Lifecycle:** `candidate` → `confirmed` (seen in two distinct projects, or confirmed by the user) → `promoted` (merged into a standard, skill or checklist of this repository through a normal PR) or `retired`. Promotion is how the memory empties into the framework instead of growing forever.
 
+- **Local registry and project view:** a machine-local registry maps each project hash to its checkout and each sighting to its cycle (`memory show`, `memory projects`), and every project gets a generated `docs/devflow/knowledge-base/framework-memory.md` — lessons learned there with their cycles, and anonymous lessons from other projects on the same stack — refreshed by `init` and every memory write. Committing it is the user's decision.
+
 Precedence: standards > project standards profile > project learnings > framework memory. See [framework-memory.md](../.agents/skills/shared/framework-memory.md).
 
 ### Persistent Artifacts (`docs/devflow/`)

@@ -73,6 +73,7 @@ Gather:
 - **Feed the framework memory** ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Stack patterns, At every close):
   - A lesson above that holds for the **stack** in any project, not only this codebase, also goes to `devflow-ctl memory add --type stack-pattern --stack {stack}` (or `memory seen {id}` when `memory query --type stack-pattern` already has it) — in the abstract; the privacy guard refuses this project's names and paths.
   - Run `devflow-ctl memory friction report` and propose each recurring pattern it lists to the user as a `friction` entry.
+  - Run `devflow-ctl memory sync`. If it reports the project view (`docs/devflow/knowledge-base/framework-memory.md`) changed, say so in the final summary and leave committing it to the user — never commit it yourself.
 - **Update the standards profile** (`docs/devflow/knowledge-base/standards-profile.md`) when this cycle introduced or changed a convention — a new place a responsibility lives, a new primitive, a new idiom for a standard, or a deviation that was fixed. Update the affected rows in place with a canonical example from this cycle and set *Last updated*. If the profile does not exist, recommend `/devflow-templates standards-profile` in the final summary instead of creating it here.
 - **Update project template** (`docs/devflow/templates/project-architecture.md`):
   - Merge patterns discovered in this cycle into the project template.

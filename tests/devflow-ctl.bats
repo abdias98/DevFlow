@@ -14,6 +14,7 @@ setup() {
   export DEVFLOW_SESSION_ROOT="$BATS_TEST_TMPDIR/session"
   # Framework memory (friction log, escape counts) must never reach the real home.
   export DEVFLOW_HOME="$BATS_TEST_TMPDIR/devflow-home"
+  export DEVFLOW_MEMORY_VIEW="$BATS_TEST_TMPDIR/framework-memory-view.md"
 }
 
 # ── Slug validation (input boundary / path-traversal defense) ─────────────────
