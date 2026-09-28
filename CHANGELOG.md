@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 🐛 Fixed
+
+- **Installed editor permissions did not do what they said.** Checked against each editor's documented rules:
+  - **Claude Code** warned at every startup — *"Write(docs/devflow/**) is not matched by file permission checks — only Edit(path) rules are"* — because the snippet shipped a `Write(path)` rule, which Claude Code accepts but never consults (Edit covers every file-editing tool). It also shipped `Read($SKILLS_DIR/**)`, which installs as `Read(/home/…)`: in user settings a single leading slash anchors at `~/.claude/`, so the rule never matched anything (`Read(~/.claude/commands/**)` already covers it). Both removed.
+  - **opencode** applies the *last* matching `permission.bash` rule, but the snippet listed deny → ask → allow, on the belief that the first match wins. So `git commit *: allow` cancelled `git commit --no-verify*: deny`, and `--amend` and `git push --force` were weakened the same way. The map is now ordered allow → ask → deny, and the skills directory is allowed as an `external_directory` so reading DevFlow's own files no longer prompts.
+  - **Reinstalling re-added a rule the user had removed.** The merge only ever added, so a user's fix was undone by the next install. The merge now lives in `scripts/merge-settings.py`: a snippet's `"_devflow_retired"` lists the exact values earlier versions installed, and they are removed before merging. Ordered rule maps keep the snippet's precedence (the user's own keys first, then DevFlow's in snippet order), and the user's verdict for a shared key still wins.
+  - **The validator could not see any of this.** §9 now fails a `Write`/`NotebookEdit`/`MultiEdit`/`Glob` path rule, a `Read`/`Edit` path with a single leading `/` or an absolute `$VAR`, and an opencode map that is not ordered allow → ask → deny. Its VS Code check also never ran, because it looked for a nested key the snippet writes flat (`chat.tools.terminal.autoApprove`). The new checks fail on 4.15.0's snippets. `tests/permissions.bats` (9 tests) installs each snippet and asserts the verdicts the editor would actually apply; 4 new §9a validator tests.
+
 ## [4.15.0] — 2026-09-26
 
 > **The framework memory release (Wave 22).** Until now everything DevFlow learned was written into the project it happened to be working on. A lesson from one project never reached the next, and a mistake of the framework itself — a standard that doesn't exist, a Reviewer dimension that keeps missing the same class, a gate that keeps failing the same way — had nowhere to accumulate: `escape-analysis.md` literally sent a `standard-missing` escape to "a note to the user".

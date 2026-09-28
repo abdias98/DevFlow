@@ -56,8 +56,8 @@ Deletion, destructive git, privilege escalation, or supply-chain risk.
 
 | Editor | Tier A | Tier B | Tier C | Mechanism |
 |--------|--------|--------|--------|-----------|
-| **Claude Code** | `permissions.allow[]` | `permissions.ask[]` | `permissions.deny[]` | Glob patterns: `Bash(cmd *)`, `Read(path)`, `Edit(path)`, `Write(path)` |
-| **opencode** | `permission.bash` → `"allow"` | `permission.bash` → `"ask"` | `permission.bash` → `"deny"` | Map of command pattern → verdict. Deny patterns listed first for first-match precedence |
+| **Claude Code** | `permissions.allow[]` | `permissions.ask[]` | `permissions.deny[]` | Glob patterns: `Bash(cmd *)`, `Read(path)`, `Edit(path)` — never `Write(path)`, which Claude Code ignores (Edit covers every file-editing tool) |
+| **opencode** | `permission.bash` → `"allow"` | `permission.bash` → `"ask"` | `permission.bash` → `"deny"` | Map of command pattern → verdict, **last match wins**: ordered allow → ask → deny. `permission.external_directory` allows the skills dir |
 | **VS Code (Copilot)** | `chat.tools.terminal.autoApprove` → `true` | *(omitted — default prompts)* | *(omitted — no deny mechanism in this key)* | Regex patterns `/^cmd\\b/` |
 
 ### Precedence rules
@@ -65,9 +65,11 @@ Deletion, destructive git, privilege escalation, or supply-chain risk.
 - **Claude Code:** `deny` > `ask` > `allow`. First matching pattern in each
   tier wins. More specific patterns (e.g. `git commit --amend*` in ask)
   correctly override broader ones (e.g. `git commit *` in allow).
-- **opencode:** Patterns evaluated in insertion order (JSON object key order).
-  Deny patterns are listed first, then ask, then allow — ensuring
-  first-match correctness.
+- **opencode:** the **last** matching rule wins (opencode docs → Permissions).
+  The map is therefore ordered allow → ask → deny, so `git commit --no-verify*`
+  (deny) comes after the broader `git commit *` (allow) it narrows. On install,
+  the user's own keys stay first and DevFlow's keys follow in the snippet's
+  order; a user's verdict for a key DevFlow also defines is kept.
 - **VS Code:** No tiered precedence. Anything in `autoApprove` is auto-run;
   anything omitted falls through to the editor default (prompt).
 
@@ -82,6 +84,23 @@ Deletion, destructive git, privilege escalation, or supply-chain risk.
 | Hooks must not be skipped | Tier C: `git commit --no-verify*` → deny |
 | `devflow-ctl` exempt from Test Execution Policy | Tier A: `devflow-ctl *` |
 
+## Path syntax (Claude Code)
+
+`Read`/`Edit` path rules are anchored by their prefix: `//path` is absolute,
+`~/path` is home-relative, `path` is relative to the working directory — and a
+single leading `/path` is relative to the **settings file** (`~/.claude/` for
+user settings), not the filesystem root. Never write `Read($SKILLS_DIR/**)`:
+`$SKILLS_DIR` expands to an absolute path with one leading slash. Use `~/`.
+
+## Retiring a rule
+
+A snippet may carry `"_devflow_retired"`, mirroring the settings structure,
+listing list items / map keys that an earlier DevFlow version installed and
+that must now be removed (e.g. `Write(docs/devflow/**)`). `install.sh`
+(`scripts/merge-settings.py`) removes exactly those values before merging;
+nothing the user wrote is touched. The key itself is never written to the
+settings file.
+
 ## Validation
 
 `scripts/validate-framework.sh` (section 9) checks:
@@ -89,3 +108,9 @@ Deletion, destructive git, privilege escalation, or supply-chain risk.
 2. Every `json-merge` snippet is valid JSON and referenced by a profile.
 3. **Guardrail:** no snippet places Tier C patterns (`rm `, `git push`,
    `--force`, `--no-verify`) in a Tier A (allow) section.
+4. Claude Code: no `Write`/`NotebookEdit`/`MultiEdit`/`Glob` path rules, and no
+   `Read`/`Edit` path with a single leading `/` or an absolute `$VAR`.
+5. opencode: the `permission.bash` map is ordered allow → ask → deny.
+
+`tests/permissions.bats` installs each snippet with `scripts/merge-settings.py`
+and checks the verdicts the editor would actually apply.
