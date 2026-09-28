@@ -30,6 +30,9 @@
 #   19. Review checklist single source — review-checklist.md declares no
 #       severities, every check item names its source, and every
 #       {standard}.md §N it cites exists (F82)
+#   20. Framework memory contract — every knowledge-base reader loads the
+#       framework memory; only devflow-ctl touches the store; documented
+#       entry types/statuses match devflow-ctl (F97-F104)
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -957,6 +960,65 @@ if [[ -f "$REVIEW_CHECKLIST" ]]; then
   [[ $ERRORS -eq $CHECKLIST_ERRORS_BEFORE ]] && green "review-checklist.md declares no severities, every check item names its source, and every cited section exists"
 else
   warn "devflow-review/review-checklist.md not found — skipping checklist single-source check (run from the repo root)"
+fi
+
+# ── 20. Framework memory contract ────────────────────────────────────────────
+header "20. Framework memory contract"
+# F97-F104. The framework memory only works if every reader loads it the same
+# way and nothing bypasses devflow-ctl:
+#   20.1 every line that tells an agent to read the project knowledge base
+#        also carries the Load Memory step (framework-memory.md + memory query)
+#        — a reader that skips it is a reader that re-learns from zero;
+#   20.2 no skill, shared doc or prompt outside framework-memory.md and
+#        memory-conventions.md names the store's internals (its path, env var
+#        or files) — agents reach the store only through devflow-ctl;
+#   20.3 the entry types and statuses framework-memory.md documents are exactly
+#        the ones devflow-ctl accepts, and every type has a Capture row.
+
+MEMORY_ERRORS_BEFORE=$ERRORS
+FM_DOC="$SKILLS_DIR/shared/framework-memory.md"
+CTL_BIN="$SKILLS_DIR/shared/bin/devflow-ctl"
+
+if [[ -f "$FM_DOC" ]]; then
+  # 20.1
+  while IFS= read -r hit; do
+    [[ -n "$hit" ]] || continue
+    file="${hit%%:*}"; rest="${hit#*:}"; line="${rest%%:*}"; text="${rest#*:}"
+    if ! grep -q 'framework-memory\.md' <<< "$text" || ! grep -q 'memory query' <<< "$text"; then
+      fail "${file#"$SKILLS_DIR"/}:$line — reads the knowledge base without the Load Memory step (framework-memory.md → Load Memory, 'devflow-ctl memory query')"
+      $FIX_MODE && echo "       FIX: append 'Then **Load Memory** ([framework-memory.md](...) → Load Memory): \`devflow-ctl memory query --agent {agent} --stack {stack}\`' to the line"
+    fi
+  done < <(grep -rnE 'Read the knowledge base' --include='*.md' "$SKILLS_DIR" 2>/dev/null | grep 'learnings\.md' || true)
+
+  # 20.2
+  while IFS= read -r hit; do
+    [[ -n "$hit" ]] || continue
+    fail "${hit%%:*}:$(cut -d: -f2 <<< "$hit") — names the framework memory store's internals; reach it only through 'devflow-ctl memory' (framework-memory.md)"
+  done < <(grep -rnE '\.local/share/devflow|DEVFLOW_HOME|memory/entries|friction\.log|escape-counts\.tsv' \
+             --include='*.md' "$SKILLS_DIR" .github/prompts 2>/dev/null \
+           | grep -vE '^[^:]*(shared/framework-memory\.md|shared/memory-conventions\.md):' || true)
+
+  # 20.3
+  if [[ -f "$CTL_BIN" ]]; then
+    for kind in type status; do
+      if [[ "$kind" == status ]]; then var="MEMORY_STATUSES"; else var="MEMORY_TYPES"; fi
+      ctl_list="$(sed -n "s/^${var}=\"\\(.*\\)\"/\\1/p" "$CTL_BIN" | tr ' ' '\n' | sed '/^$/d' | LC_ALL=C sort | paste -sd' ' -)"
+      doc_list="$(sed -n "s/^${kind}: \\(.*\\)$/\\1/p" "$FM_DOC" | head -1 | tr '|' '\n' | sed 's/^ *//; s/ *$//; s/ *#.*//' | sed '/^$/d' | LC_ALL=C sort | paste -sd' ' -)"
+      if [[ -z "$ctl_list" ]]; then
+        fail "shared/bin/devflow-ctl — $var not found (framework memory ${kind}s)"
+      elif [[ "$ctl_list" != "$doc_list" ]]; then
+        fail "shared/framework-memory.md — entry ${kind}s '$doc_list' differ from devflow-ctl's $var '$ctl_list'"
+      fi
+    done
+    for t in $(sed -n 's/^MEMORY_TYPES="\(.*\)"/\1/p' "$CTL_BIN"); do
+      grep -qE "^\| \`$t\` \|" "$FM_DOC" \
+        || fail "shared/framework-memory.md — entry type '$t' has no row in the Capture table (who records it, and when)"
+    done
+  fi
+
+  [[ $ERRORS -eq $MEMORY_ERRORS_BEFORE ]] && green "Every knowledge-base reader loads the framework memory, only devflow-ctl touches the store, and its types and statuses match devflow-ctl"
+else
+  warn "shared/framework-memory.md not found — skipping framework memory contract check"
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
