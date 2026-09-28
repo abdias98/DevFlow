@@ -215,8 +215,10 @@ copy_devflow_file() {
 #   manual     → print permissions.manual_note (editor has no settings file)
 #   json-merge → deep-merge snippet into permissions.config_file
 #
-# Merge semantics (non-destructive): objects merge recursively, arrays are
-# unioned, and on scalar conflicts the user's existing value always wins.
+# Merge semantics (non-destructive, scripts/merge-settings.py): objects merge
+# recursively, arrays are unioned, on scalar conflicts the user's existing
+# value always wins, ordered rule maps keep the snippet's precedence, and rules
+# an earlier DevFlow version installed but retired are removed.
 # A .devflow-backup copy of the settings file is kept before writing.
 configure_permissions() {
   local strategy snippet_name config_raw config_file snippet_src
@@ -259,34 +261,9 @@ configure_permissions() {
                               -e "s|\$USER_DIR|$USER_DIR|g" \
                               -e "s|\$HOME|$HOME|g" "$snippet_src")"
 
-  if python3 - "$config_file" 2>/dev/null <<'PYEOF'
-import json, os, sys
-
-snippet = json.loads(os.environ["DEVFLOW_SNIPPET_JSON"])
-target = sys.argv[1]
-
-def merge(base, add):
-    if isinstance(base, dict) and isinstance(add, dict):
-        for key, value in add.items():
-            base[key] = merge(base[key], value) if key in base else value
-        return base
-    if isinstance(base, list) and isinstance(add, list):
-        return base + [item for item in add if item not in base]
-    return base  # scalar conflict: the user's existing value wins
-
-data = {}
-if os.path.exists(target):
-    with open(target, encoding="utf-8") as fh:
-        content = fh.read().strip()
-    if content:
-        # Raises on JSONC (comments/trailing commas); handled by the caller —
-        # the file is left untouched and manual instructions are printed.
-        data = json.loads(content)
-
-with open(target, "w", encoding="utf-8") as fh:
-    json.dump(merge(data, snippet), fh, indent=2, ensure_ascii=False)
-    fh.write("\n")
-PYEOF
+  # Merge rules (and retirement of rules older versions installed) live in
+  # scripts/merge-settings.py, which is covered by tests/permissions.bats.
+  if printf '%s' "$DEVFLOW_SNIPPET_JSON" | python3 "$SOURCE_DIR/scripts/merge-settings.py" "$config_file" 2>/dev/null
   then
     echo "🔐 Permissions configured: $config_file"
   else

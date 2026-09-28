@@ -1,11 +1,17 @@
 {
+  "_devflow_retired": {
+    "permissions": {
+      "allow": [
+        "Write(docs/devflow/**)",
+        "Read($SKILLS_DIR/**)"
+      ]
+    }
+  },
   "permissions": {
     "allow": [
       "Read(~/.claude/commands/**)",
-      "Read($SKILLS_DIR/**)",
       "Read(docs/devflow/**)",
       "Edit(docs/devflow/**)",
-      "Write(docs/devflow/**)",
       "Bash(devflow-ctl *)",
       "Bash($SKILLS_DIR/shared/bin/devflow-ctl *)",
       "Bash(bash $SKILLS_DIR/shared/bin/devflow-ctl *)",

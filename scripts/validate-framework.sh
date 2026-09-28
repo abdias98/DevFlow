@@ -262,10 +262,11 @@ if [[ -d "$PROFILES_DIR" ]]; then
         elif command -v python3 >/dev/null 2>&1 && ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$PROFILES_DIR/permissions/$snippet" 2>/dev/null; then
           fail "$PROFILES_DIR/permissions/$snippet — invalid JSON"
         elif command -v python3 >/dev/null 2>&1; then
-          # Guardrail: no destructive/sensitive patterns in the allow tier.
+          # Guardrail: no destructive/sensitive patterns in the allow tier, and
+          # every rule written the way its editor actually evaluates it.
           # See editor-profiles/permissions/README.md for the tier model.
           guardrail_out=$(python3 - "$PROFILES_DIR/permissions/$snippet" <<'GUARDEOF'
-import json, sys
+import json, re, sys
 
 FORBIDDEN = ["rm ", "rmdir", "git push", "--force", "--no-verify",
              "--amend", "sudo ", "chmod ", "chown ", "kill ", "pkill ",
@@ -273,36 +274,70 @@ FORBIDDEN = ["rm ", "rmdir", "git push", "--force", "--no-verify",
 
 with open(sys.argv[1]) as fh:
     data = json.load(fh)
+data.pop("_devflow_retired", None)  # rules being removed, not installed
 
-violations = []
+out = []
+def destructive(pattern):
+    low = pattern.lower()
+    if any(bad in low for bad in FORBIDDEN):
+        out.append(f"destructive pattern in the allow tier (move it to ask/deny): {pattern}")
 
-# Claude Code: permissions.allow is a list of "Bash(...)" / "Read(...)" patterns
-for entry in data.get("permissions", {}).get("allow", []):
-    low = entry.lower()
-    violations.extend(entry for bad in FORBIDDEN if bad in low)
+# Claude Code: permissions.{allow,ask,deny} are lists of Tool(pattern) rules.
+perms = data.get("permissions", {})
+for entry in perms.get("allow", []):
+    destructive(entry)
+for tier in ("allow", "ask", "deny"):
+    for entry in perms.get(tier, []):
+        m = re.match(r"^(\w+)\((.*)\)$", entry)
+        if not m:
+            continue
+        tool, arg = m.groups()
+        # Only Edit(path) and Read(path) are consulted by file permission
+        # checks; Claude Code ignores the others and warns at startup.
+        if tool in ("Write", "NotebookEdit", "MultiEdit", "Glob"):
+            out.append(f"{tier}: {entry} — Claude Code never consults {tool}(path) rules; use Edit(...) (or Read(...) for Glob)")
+        # A single leading slash anchors at the settings file's directory, not
+        # the filesystem root; $SKILLS_DIR expands to an absolute path.
+        if tool in ("Read", "Edit") and (arg.startswith("$") or (arg.startswith("/") and not arg.startswith("//"))):
+            out.append(f"{tier}: {entry} — a path starting with one '/' (or an absolute $VAR) is relative to the settings file; use '//abs/path' or '~/path'")
 
-# opencode: permission.bash is a map of pattern -> "allow"|"ask"|"deny"
-for pattern, verdict in data.get("permission", {}).get("bash", {}).items():
+# opencode: permission.bash is a map pattern -> verdict where the LAST matching
+# rule wins, so a broader allow after a narrower deny silently cancels it.
+# Tiers must appear allow -> ask -> deny.
+bash = data.get("permission", {}).get("bash", {})
+rank = {"allow": 0, "ask": 1, "deny": 2}
+seen_max = ("", -1)
+misordered = []
+for pattern, verdict in bash.items():
     if verdict == "allow":
-        low = pattern.lower()
-        violations.extend(pattern for bad in FORBIDDEN if bad in low)
+        destructive(pattern)
+    r = rank.get(verdict, -1)
+    if r < seen_max[1]:
+        misordered.append(pattern)
+    elif r > seen_max[1]:
+        seen_max = (pattern, r)
+if misordered:
+    first = misordered[0]
+    out.append(f"permission.bash: {len(misordered)} rule(s) follow a stricter one (first: '{first}: {bash[first]}' after '{seen_max[0]}: {bash[seen_max[0]]}') — opencode applies the LAST matching rule, so a later allow cancels an earlier deny; order the map allow → ask → deny")
 
-# VS Code: chat.tools.terminal.autoApprove is a map of regex -> true
-node = data
-for key in ("chat", "tools", "terminal", "autoApprove"):
-    node = node.get(key, {}) if isinstance(node, dict) else {}
+# VS Code: "chat.tools.terminal.autoApprove" (a flat, dotted settings key) is a
+# map of regex -> true.
+node = data.get("chat.tools.terminal.autoApprove")
+if node is None:
+    node = data
+    for key in ("chat", "tools", "terminal", "autoApprove"):
+        node = node.get(key, {}) if isinstance(node, dict) else {}
 if isinstance(node, dict):
-    for regex in node:
-        low = regex.lower()
-        violations.extend(regex for bad in FORBIDDEN if bad in low)
+    for regex, verdict in node.items():
+        if verdict is True:
+            destructive(regex)
 
-print("\n".join(violations))
+print("\n".join(out))
 GUARDEOF
           )
           if [[ -n "$guardrail_out" ]]; then
-            fail "$PROFILES_DIR/permissions/$snippet — destructive patterns in allow tier (move to ask/deny):"
             while IFS= read -r line; do
-              [[ -n "$line" ]] && echo "         • $line"
+              [[ -n "$line" ]] && fail "$PROFILES_DIR/permissions/$snippet — $line"
             done <<< "$guardrail_out"
           fi
         fi

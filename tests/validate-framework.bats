@@ -665,3 +665,41 @@ LOAD='Then **Load Memory** ([framework-memory.md](x) → Load Memory): `devflow-
   run_section_20
   [[ "$output" == *"entry type 'escape' has no row in the Capture table"* ]]
 }
+
+# ── §9a: permission rules written the way each editor evaluates them ──────────
+
+# mk_json_profile <name> <snippet-json> — a json-merge profile and its snippet.
+mk_json_profile() {
+  mkdir -p "$FIXTURE/editor-profiles/permissions"
+  printf 'id: %s\npermissions:\n  strategy: json-merge\n  config_file: "$HOME/x.json"\n  snippet: %s.json\ncapabilities:\n  subagents: true\n  vision: true\n  terminal: true\n  filesystem: true\n  runtime: true\n' "$1" "$1" \
+    > "$FIXTURE/editor-profiles/$1.yaml"
+  printf '%s\n' "$2" > "$FIXTURE/editor-profiles/permissions/$1.json"
+}
+
+@test "§9a: a Write(path) rule for Claude Code is an ERROR (Claude Code never consults it)" {
+  mk_json_profile claude '{"permissions": {"allow": ["Edit(docs/**)", "Write(docs/**)"]}}'
+  run_section 9 10
+  [[ "$output" == *"claude.json — allow: Write(docs/**) — Claude Code never consults Write(path) rules"* ]]
+  [[ "$output" != *"Edit(docs/**) —"* ]]
+}
+
+@test "§9a: a single-slash or \$VAR path in a Read/Edit rule is an ERROR; // and ~/ pass" {
+  mk_json_profile claude '{"permissions": {"allow": ["Read($SKILLS_DIR/**)", "Read(/abs/**)", "Read(//abs/**)", "Read(~/x/**)"]}}'
+  run_section 9 10
+  [[ "$output" == *'Read($SKILLS_DIR/**) — a path starting with one'* ]]
+  [[ "$output" == *'Read(/abs/**) — a path starting with one'* ]]
+  [[ "$output" != *'Read(//abs/**) —'* ]]
+  [[ "$output" != *'Read(~/x/**) —'* ]]
+}
+
+@test "§9a: an opencode allow after a deny is an ERROR (the last matching rule wins)" {
+  mk_json_profile oc '{"permission": {"bash": {"git commit --no-verify*": "deny", "git commit *": "allow"}}}'
+  run_section 9 10
+  [[ "$output" == *"oc.json — permission.bash: 1 rule(s) follow a stricter one"* ]]
+}
+
+@test "§9a: rules being retired are not checked as installed rules" {
+  mk_json_profile claude '{"_devflow_retired": {"permissions": {"allow": ["Write(docs/**)"]}}, "permissions": {"allow": ["Edit(docs/**)"]}}'
+  run_section 9 10
+  [[ "$output" != *"ERROR"* ]]
+}

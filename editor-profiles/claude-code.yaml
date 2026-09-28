@@ -104,7 +104,10 @@ install:
 #           build/test/lint, devflow-ctl
 #   ask   → confirm user: rm, git push, git reset --hard, sudo, npm install
 #   deny  → prohibit:     git push --force, git commit --no-verify
-# Merge is non-destructive: existing user values win, arrays are unioned.
+# File rules use Read(path)/Edit(path) only — Claude Code ignores Write(path)
+# and warns at startup — and home paths as ~/..., never a single leading '/'.
+# Merge (scripts/merge-settings.py) is non-destructive: existing user values
+# win, arrays are unioned, rules retired by DevFlow are removed.
 # strategy: json-merge | manual | none
 permissions:
   strategy: json-merge
