@@ -1,4 +1,4 @@
-# Eval baselines — history 4.10.0 → 4.16.0
+# Eval baselines — history 4.10.0 → 4.16.1
 
 One file per DevFlow version records what the eval harness measured for it.
 This page is the index: which tasks exist, how each one calibrates, and — the
@@ -48,6 +48,7 @@ reference failed several checks would not say *which* class a run missed.
 | [4.15.0](./4.15.0.md) | 22 | Framework memory: cross-project lessons captured from escapes, corrections, false positives, friction and stack patterns; loaded through `memory query` | 003–008 | none — single-run tasks cannot exercise it (see `4.15.0.md` §3) |
 | [4.15.1](./4.15.1.md) | — | No framework change; `install.sh` permission rules fixed for Claude Code and opencode | 003–008 | none (as 4.15.0 — same framework) |
 | [4.16.0](./4.16.0.md) | 22 | Framework memory traceable locally (project registry, cycle links) and shown in every project as a generated view | 003–008 | none — single-run tasks cannot exercise it |
+| [4.16.1](./4.16.1.md) | — | Installed skills finally use each editor's tool names (Claude Code: `AskUserQuestion`) | 003–008 | none — but see `4.16.1.md` on what this means for earlier runs |
 
 Calibration for a task is the same on every version — it scores the task's own
 references, not the framework — so the fixture/naive/correct columns in §1 hold
