@@ -175,7 +175,12 @@ copy_devflow_file() {
   # Tool mappings: from_tool -> to_tool (or REMOVE)
   # Match the exact markdown token format (`tool`) instead of using \b,
   # which is not a portable word-boundary operator in sed.
-  while IFS=": " read -r from to; do
+  # parse_yaml_section emits "key=value" (with a space after '='): split on '='
+  # and trim. Splitting on ": " instead left "key=" as the key, so from v2.2.0
+  # until 4.16.0 no mapping ever matched and every editor received VS Code's
+  # tool names verbatim.
+  while IFS="=" read -r from to; do
+    from="${from//[[:space:]]/}"; to="${to//[[:space:]]/}"
     [[ -z "$from" || -z "$to" ]] && continue
     from_esc=$(sed 's/[&|/\]/\\&/g' <<<"$from")
     to_esc=$(sed 's/[&|/\]/\\&/g' <<<"$to")
@@ -186,8 +191,9 @@ copy_devflow_file() {
     fi
   done < <(parse_yaml_section "$PROFILE_FILE" "tool_mappings")
 
-  # Path mappings: memory_root, docs_root, etc. (or REMOVE)
-  while IFS=": " read -r from to; do
+  # Path mappings: memory_root, docs_root, etc. (or REMOVE) — same format.
+  while IFS="=" read -r from to; do
+    from="${from//[[:space:]]/}"; to="${to//[[:space:]]/}"
     [[ -z "$from" || -z "$to" ]] && continue
     # Escape forward slashes in paths for sed
     from_esc=$(sed 's/[&/\]/\\&/g' <<<"$from")

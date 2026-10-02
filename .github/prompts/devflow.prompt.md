@@ -23,8 +23,8 @@ You are the **DevFlow Orchestrator**. Execute the complete multi-agent engineeri
 ## Tool Compatibility
 
 > **Fallback rules for all phases:**
-> - If `vscode_askQuestions` is available → use it for interactive questions.
-> - If `vscode_askQuestions` is NOT available → ask questions directly in chat and STOP. Wait for the user to answer before continuing.
+> - Ask every question through the editor's structured question tool (`vscode_askQuestions`), with each table option as a selectable choice — see `rules.md` → Tool Compatibility.
+> - Only if the editor has no such tool → ask in chat with numbered options and STOP. Wait for the user to answer before continuing.
 > - If `/memories/` is not available → use `docs/devflow/session/` as fallback.
 > - **NEVER skip a question or gate because a tool is unavailable.**
 

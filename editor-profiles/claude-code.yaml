@@ -21,8 +21,8 @@
 #   - `Edit`          = exact string replacement in files (replaces `replace_string_in_file` and `multi_replace_file_content`)
 #   - `Bash`          = terminal command execution (replaces `run_in_terminal`, `grep_search`, `semantic_search`, `file_search`, `list_dir`)
 #   - `Agent`         = sub-agent invocation (replaces agent-dispatch patterns)
-#   - vscode_askQuestions = REMOVE — Claude Code asks questions directly in the chat response
-#                           per the fallback defined in rules.md → "Tool Compatibility"
+#   - `AskUserQuestion` = structured multiple-choice questions (replaces `vscode_askQuestions`):
+#                         1-4 questions per call, 2-4 options each, "Other" added automatically
 #   - memory          = REMOVE — Claude Code uses auto-memory at ~/.claude/projects/...;
 #                       DevFlow skills fall back to docs/devflow/session/ for session state
 #
@@ -74,7 +74,7 @@ paths:
 # REMOVE = lines containing that backtick-wrapped tool name are deleted at install time.
 # install.sh reads these pairs and applies sed substitutions when tool_substitution is true.
 tool_mappings:
-  vscode_askQuestions: REMOVE
+  vscode_askQuestions: AskUserQuestion
   semantic_search: Bash
   grep_search: Bash
   file_search: Bash

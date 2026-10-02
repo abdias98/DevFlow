@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 🐛 Fixed
+
+- **`install.sh` never applied an editor's tool names, and Claude Code asked every question as free text.** `parse_yaml_section` emits `key= value`, but the loop that reads it split on `: `, so every key kept its trailing `=` and no `tool_mappings` entry ever matched. This had been the case since v2.2.0. Every editor received VS Code's tool names verbatim: Claude Code and opencode were told to *"Use `create_file` to save"* (19 files) and to ask through `vscode_askQuestions`, a tool neither has. The skills then fell back to *"ask the questions directly in your chat response"*, so every gate (approval, modes, clarifying questions) became a question the user had to answer by typing.
+  - The reader now splits on `=` and trims.
+  - Claude Code maps `vscode_askQuestions` to `AskUserQuestion`. Before, the profile said `REMOVE`, a rule that had never run.
+  - `rules.md` → Tool Compatibility now says how to turn a skill's question table into the tool call: one row is one question, `header` is the label, and each `options:` value is a selectable choice. In an editor without a question tool, options are listed as a numbered list.
+  - The fallback lines no longer contain the tool's name. In `generic`, where it is `REMOVE`, they would otherwise have been deleted together with it.
+  - `tests/install.bats` installs each substituting profile into a throwaway `HOME` and asserts no source tool name survives. All four tests fail before the fix.
+  - **Upgrading:** re-run `install.sh` for each editor.
+
 ## [4.16.0] — 2026-09-28
 
 > **The traceable memory release.** 4.15.0 gave DevFlow a memory of its own, kept outside every project, but kept it so anonymous that a lesson could not be traced back to the work it came from, and a project never showed what the framework had learned in it.

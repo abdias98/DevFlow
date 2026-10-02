@@ -11,8 +11,8 @@ These rules apply to ALL DevFlow sub-agents. Every SKILL.md references this file
 
 ## Tool Compatibility
 
-- If `vscode_askQuestions` is available → use it for interactive questions.
-- If `vscode_askQuestions` is NOT available → **ask the questions directly in your chat response and STOP. Wait for the user to answer before continuing.**
+- **Ask through the editor's structured question tool:** `vscode_askQuestions`. Every question table in a skill (`| header | question | type |`) is written for it: one row is one question, `header` is its short label (shorten it if the tool limits its length), and `type: options: A, B, C` are the choices — pass each as a selectable option, never as text the user must retype. A row without `options:` is a free-text question. The tool adds its own free-text "other" choice; do not add one. Ask up to 4 related rows in one call.
+- **Only if the editor has no such tool** → ask the questions directly in your chat response, list the options as a numbered list so the user can answer with a number, and STOP. Wait for the user to answer before continuing.
 - **NEVER skip a question, gate, or confirmation because a tool is unavailable.** Always find an alternative way to ask.
 
 ## Memory Fallback
