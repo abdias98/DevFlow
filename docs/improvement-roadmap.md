@@ -181,5 +181,7 @@ Plan: `docs/implementation-plan-wave-22-framework-memory.md`.
 | PR10 | `chore/release-4.15.0` | release | ✅ #182 → **4.15.0** |
 | — | `fix/editor-permission-rules` | install: permission rules each editor actually applies (Claude Code `Write`/single-slash paths, opencode last-match order, retired rules removed on reinstall), validator §9 | ✅ #184 |
 | — | `chore/release-4.15.1` | release (no framework change) | ✅ #185 → **4.15.1** |
-| — | `feat/memory-project-registry` | local registry (project hash → checkout, sighting → cycle) and a generated memory view in every project, committed at the user's discretion | 🟢 #186 |
-| — | `chore/release-4.16.0` | release | 🟢 → **4.16.0** |
+| — | `feat/memory-project-registry` | local registry (project hash → checkout, sighting → cycle) and a generated memory view in every project, committed at the user's discretion | ✅ #186 |
+| — | `chore/release-4.16.0` | release | ✅ #187 → **4.16.0** |
+| — | `fix/install-tool-substitution` | install: tool mappings applied at last (broken since v2.2.0); Claude Code asks via `AskUserQuestion`; `tests/install.bats` | 🟢 #188 |
+| — | `chore/release-4.16.1` | release | 🟢 → **4.16.1** |

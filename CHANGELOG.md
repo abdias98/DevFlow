@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.16.1] — 2026-10-02
+
+> **The tool-names release.** Since v2.2.0, `install.sh` built every editor's tool substitutions and then never applied one: a parsing slip left each key with a trailing `=`, so nothing matched. Every editor got VS Code's tool names. Claude Code was told to ask through a tool it does not have, so it asked every DevFlow question as plain text the user had to type — approval gates, mode selection, clarifying questions. The same slip told Claude Code and opencode to save files with `create_file`.
+>
+> **The fix is in what gets installed, so re-run `install.sh` for each editor.** Claude Code then asks through `AskUserQuestion`, with each option selectable, and opencode through `question`. A new test installs every profile into a throwaway home and fails if a source tool name survives, which is the check that would have caught this four major versions ago.
 
 ### 🐛 Fixed
 
