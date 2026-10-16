@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: SOLID Principles (Technology-Agnostic)
 
-> **Version:** 2.4.0 | **Last Updated:** 2026-09-16
+> **Version:** 2.4.1 | **Last Updated:** 2026-10-12
 
 > **Note on examples:** All code-like fragments use generic pseudo-code or abstract concepts (e.g., “HTTP client”, “ORM entity”, “service locator”) to avoid dependence on any specific language or framework. Adapt the concrete syntax to the detected stack.
 
@@ -23,10 +23,12 @@ Apply these principles to all code you design, generate, or review.
   - Add new functionality by implementing a new class or strategy, not by adding `if/else` or `switch` branches to existing code.  
   - Use polymorphism (interfaces, abstract classes) to allow new behaviors to be plugged in.  
   - Apply the Strategy, Template Method, or Decorator pattern when you anticipate variant behaviors.  
-- **DON'T:**  
-  - Modify a working, tested class every time a new business rule is added.  
-  - Add a new `case` to a `switch` statement inside a core business method to support a new variant.  
+- **DON'T:**
+  - Modify a working, tested class every time a new business rule is added.
+  - Add a new `case` to a `switch` statement inside a core business method to support a new variant.
   - Use conditional logic that checks a type code or enum to determine behavior—replace with polymorphic dispatch.
+  - Treat an exhaustive `match` over discriminated unions as a violation: where the language checks every variant behavior at compile time, updating one closed dispatch function is the idiomatic form, not an OCP breach.
+  - Raise the §8 WARN for a new conditional branch only with real variation. Real variation means behavior with ≥2 variant cases today, or a switch where adding a case breaks existing tested logic — see `design-patterns.md` §3. With a single case and no proven second variant, keep the plain conditional: speculative behavior generality is governed by YAGNI — see `design-principles.md` §2.
 
 ## 3. Liskov Substitution Principle (LSP)
 - **What:** Subtypes must be fully substitutable for their base types without breaking behavior.
@@ -34,21 +36,25 @@ Apply these principles to all code you design, generate, or review.
   - Ensure every subclass honors the full contract defined by its base class (preconditions cannot be stronger, postconditions cannot be weaker).  
   - Design by contract: if the base class guarantees a return value is never null, subclasses must not return null.  
   - Use language features that prevent unintended overrides (e.g., `final` methods or sealed classes, where available) and document expected behavior explicitly.  
-- **DON'T:**  
+  - Seal the public contract while keeping an explicit extension point open: seal the stable interface behavior and expose variation through a composed strategy or port, so LSP strictness does not close the OCP extension path.
+- **DON'T:**
   - Throw an unsupported-operation exception (like `NotImplementedException`) or use no‑op overrides that silently break the contract.  
   - Override a method in a way that changes its semantics (e.g., a `Square` that mutates width when height is set, breaking the contract of a `Rectangle`).  
   - Accept a narrower range of inputs than the base class allows (e.g., base accepts any string, subclass throws on empty strings).
+  - Seal every class or method by default with ubiquitous `final`/`sealed`: closing all subclass behavior removes the polymorphic extension point OCP relies on — see §6.
 
 ## 4. Interface Segregation Principle (ISP)
 - **What:** Clients must not be forced to depend on methods they do not use.
 - **DO:**  
   - Create small, role-specific interfaces with only the methods that belong together (e.g., `Readable<T>`, `Writable<T>` rather than a monolithic `Repository<T>`).  
   - Split interfaces when a client only needs a subset of the methods. Prefer multiple small interfaces over one large one.  
-  - Group methods by the clients that call them. If two different consumers use different subsets, the interface should probably be split.  
-- **DON'T:**  
+  - Group methods by the clients that call them. If two different consumers use different subsets, the interface should probably be split.
+  - Allow header interfaces when the client is a port or a test double: an interface that mirrors a single repository contract to enable mocking at the boundary is legitimate — see `testing.md` §3.
+- **DON'T:**
   - Create large monolithic interfaces that force classes to implement irrelevant methods.  
   - Add a new method to an existing interface if only some of its implementers can support it—create a new interface instead and have the capable classes implement it.  
   - Use “header interfaces” (interfaces that mirror every public method of a single class). Interface design should be driven by client needs, not implementation convenience.
+  - Split a cohesive `Repository` into per-method fragments when the fragments must change together: fragmenting transactions across `Readable`/`Writable` pieces breaks the unit-of-work boundary — keep the cohesive interface and segregate only where clients truly use disjoint subsets.
 
 ## 5. Dependency Inversion Principle (DIP)
 - **What:** High-level modules must not depend on low-level modules. Both depend on abstractions.
@@ -60,6 +66,7 @@ Apply these principles to all code you design, generate, or review.
   - Instantiate concrete implementations (e.g., `new DatabaseConnection()`, `new ExternalApiClient()`) inside business logic classes.  
   - Depend directly on static methods or global service locators that bind you to a specific implementation (e.g., a call like `GlobalLocator.getDatabase()`).  
   - Import or reference framework-specific base classes (e.g., an HTTP request/response object provided by the web framework, an ORM entity collection type) inside high-level policy modules.
+  - Exempt stable value objects, domain exceptions, and stdlib types from the §8 BLOCK on `new` in domain code. Direct construction of `Money`/`Email` values, domain exceptions, and stable stdlib types (`UUID`, `Instant`) is not the infrastructure instantiation §5 prohibits — the BLOCK targets concrete infrastructure clients, connections, and framework types.
 
 > At the architectural level, DIP is expressed as Clean Architecture's Dependency Rule. See `clean-architecture.md` § 1.
 
@@ -130,3 +137,8 @@ Before marking a task done:
 - [ ] Every implementation honors the full contract of its base type — no no-op or throwing overrides (§3).
 - [ ] No implementer stubs an interface method it does not need (§4).
 - [ ] No infrastructure or external client is instantiated with `new` inside domain or application code; it arrives through the constructor (§5).
+
+## 12. OCP vs YAGNI — Resolution of Contradiction C1
+
+- Ante un solo caso sin variación probada (single behavior case, no proven variant), YAGNI (`design-principles.md` §2) prevalece sobre la extracción Strategy; el WARN de §8 no aplica sin segundo caso real.
+- In English: with a single behavior case and no proven second variant, YAGNI governs — see `design-principles.md` §2 — and the §8 OCP WARN does not apply; extract the Strategy extension point when the second real variant appears — see `design-patterns.md` §3.

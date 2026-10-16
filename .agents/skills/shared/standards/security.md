@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Security (Technology-Agnostic)
 
-> **Version:** 2.6.0 | **Last Updated:** 2026-09-17
+> **Version:** 2.7.0 | **Last Updated:** 2026-10-12
 
 > **Note on examples:** All tool names and code fragments are illustrative. Replace them with the actual libraries, services, and conventions of the detected stack.
 
@@ -22,6 +22,9 @@ Apply these principles to all code you design, generate, or review.
 - **What:** Verify identity (authentication) and enforce permissions (authorization) on every protected operation.
 - **DO:**
   - Use proven, industry-standard authentication protocols (e.g., OAuth2, OpenID Connect). Prefer short-lived access tokens with secure, HTTP‑only, same‑site session cookies for browser clients.
+  - For browser clients holding tokens in JavaScript-reachable storage, prefer the Backend-for-Frontend (BFF) pattern instead: the browser holds only an HttpOnly session cookie, the BFF holds the tokens server-side. Never mix the two models (bearer token readable by JS *and* cookie transport) without documenting why.
+  - For high-value APIs, prefer sender-constrained tokens (DPoP proof-of-possession or mutual TLS) over plain bearer tokens, so a stolen token alone is not sufficient.
+  - Set cookies with the `__Host-` prefix (locks Path=/, Secure, no Domain) where the deployment allows it. Validate JWT `aud`/`iss` strictly against expected values, pin the expected `alg`, and reject tokens with `kid`/`jku`/`x5u` confusion (untrusted key URLs, algorithm switching).
   - Enforce authorization checks at the service/application layer, never only at the UI or API gateway. Every endpoint and use case must verify the caller's permissions.
   - Apply the principle of least privilege: grant only the permissions required for the specific operation.
   - Implement Role-Based Access Control (RBAC) or Attribute-Based Access Control (ABAC) as appropriate, and audit permission changes.
@@ -49,7 +52,11 @@ Apply these principles to all code you design, generate, or review.
 - **DO:**
   - Use parameterized queries (prepared statements) for all database operations. Never concatenate user input into a query string.
   - Escape or sanitize output appropriately for the target context (HTML entity encoding for web pages, escaping for shell commands, etc.). Use context-aware templating engines with auto-escaping.
-  - Validate and sanitize URLs and file paths to prevent path traversal and Server-Side Request Forgery (SSRF).
+  - Validate and sanitize URLs and file paths to prevent path traversal and Server-Side Request Forgery (SSRF). For SSRF, defense in depth is mandatory, not optional:
+    - Egress filtering: server-side fetches may only reach explicitly allowed destinations.
+    - Block link-local metadata endpoints (e.g., cloud `169.254.169.254`) and other non-routable ranges by default.
+    - Resolve-and-validate (DNS allowlist / pin the resolved IP, re-check after resolution) to defeat DNS rebinding and TOCTOU between check and fetch.
+    - Never let raw user input become a fetch URL without an allowlist — a "validate the scheme" check alone is insufficient.
   - Apply Content Security Policy (CSP) headers in web applications to mitigate cross-site scripting (XSS) risks.
 - **DON'T:**
   - Concatenate user input into SQL statements, shell commands, LDAP queries, XML/HTML templates, or any structured language that could be interpreted.
@@ -78,21 +85,22 @@ Apply these principles to all code you design, generate, or review.
   - Return different error codes or response times that could allow attackers to enumerate users or resources (side‑channel leaks). Use constant‑time comparisons where relevant.
 
 ## 7. Additional Security Principles
-- **Transport Security:** Encrypt all external communication with TLS (HTTPS). Redirect HTTP to HTTPS. Use HTTP Strict Transport Security (HSTS) for web applications.
-- **Data Protection at Rest:** Encrypt sensitive data stored in databases, file systems, or backups using strong, standard algorithms. Manage encryption keys separately from the encrypted data.
-- **Password Hashing:** Always hash passwords with a memory-hard algorithm (Argon2id is the current recommendation; bcrypt is an acceptable alternative). Never use MD5, SHA-1, or unsalted SHA-256 for passwords. Never store passwords in plain text or with reversible encryption.
+- **Transport Security:** Encrypt all external communication with TLS (HTTPS) — minimum TLS 1.2, prefer 1.3; disable 1.0/1.1. Redirect HTTP to HTTPS. Use HTTP Strict Transport Security (HSTS) with `includeSubDomains` (and `preload` once stable) for web applications. Set cookie attributes explicitly (`Secure`, `HttpOnly` unless JS must read it, `SameSite`).
+- **Data Protection at Rest:** Encrypt sensitive data stored in databases, file systems, or backups with an authenticated cipher (AES-256-GCM or XChaCha20-Poly1305 — never unauthenticated CBC/ECB). Manage encryption keys separately from the encrypted data (KMS/HSM, never alongside the ciphertext); use envelope encryption so data-key rotation does not require re-encrypting everything.
+- **Password Hashing:** Always hash passwords with a memory-hard algorithm (Argon2id is the current recommendation; bcrypt is an acceptable alternative). Never use MD5, SHA-1, or unsalted SHA-256 for passwords. Never store passwords in plain text or with reversible encryption. Add a server-side pepper (stored outside the database, e.g., secrets manager) on top of the salt. Tune memory/cost factors to current guidance, respect bcrypt's 72-byte input limit (pre-hash longer inputs with SHA-256 first), and reject passwords found in known breach corpora (k-anonymity lookup, never the plaintext password).
 - **JWT Pitfalls:** If using JSON Web Tokens, always verify the signature server-side on every request. Never accept tokens with `alg: none`. Set short expiry (`exp`) and validate it. Do not store sensitive data in the payload (it is base64-encoded, not encrypted). Prefer short-lived access tokens + refresh token rotation over long-lived tokens.
-- **Multi-Factor Authentication (MFA):** Offer MFA for any application that handles sensitive data or actions. Prefer TOTP (authenticator apps) over SMS. Never make MFA bypassable by design (e.g., "remember this device forever" with no re-authentication window).
-- **Rate Limiting & Abuse Prevention:** Apply rate limiting on login, password reset, and other sensitive endpoints to prevent brute‑force attacks. Use CAPTCHAs or proof‑of‑work challenges where appropriate.
-- **Logging & Monitoring:** Log security-relevant events (logins, permission changes, access denials, input validation failures). Set up alerts for suspicious patterns.
+- **Multi-Factor Authentication (MFA):** Offer MFA for any application that handles sensitive data or actions. Prefer phishing-resistant methods (passkeys/WebAuthn platform or roaming authenticators) first, TOTP second, SMS only as a last resort. Never make MFA bypassable by design (e.g., "remember this device forever" with no re-authentication window) — bound remembered devices to a risk-based re-authentication window.
+- **Rate Limiting & Abuse Prevention:** Apply rate limiting on login, password reset, and other sensitive endpoints to prevent brute‑force attacks. Distinguish credential stuffing (distributed, low-and-slow — needs IP/account reputation and anomaly detection, not just a counter) from single-source brute force (lockout with bounded backoff + jitter). Use CAPTCHAs or proof‑of‑work challenges where appropriate.
+- **Logging & Monitoring:** Log security-relevant events (logins, permission changes, access denials, input validation failures). Set up alerts for suspicious patterns. Sample high-volume validation-failure logs (rate-limited logging with counters) — an attacker must not be able to flood storage or hide a real signal in log noise, and failure logs must never carry raw secrets (redact first, see logging.md §3).
 - **Secure Defaults:** Every component should default to a secure configuration. Developers must explicitly opt in to less secure settings when absolutely necessary.
 
-## 8. Additional OWASP Top 10 (2021) Coverage
+## 8. Additional OWASP Coverage (Top 10 2021 + API Top 10 2023 + LLM Top 10 2025)
 
-- **What:** targeted coverage for OWASP Top 10 (2021) categories not already addressed by the sections above.
+- **What:** targeted coverage for OWASP categories not already addressed by the sections above. The 2021 Top 10 is the baseline; API and LLM risks are additive — a project exposing an API or calling an LLM must satisfy those rows too.
 - **CSRF** (a Broken Access Control variant, A01):
-  - **DO:** Use anti-CSRF tokens (synchronizer token pattern) for state-changing requests submitted from a browser session, or rely on `SameSite=Lax`/`Strict` cookies as the primary defense for same-site-only flows.
+  - **DO:** Use anti-CSRF tokens (synchronizer token pattern) for every state-changing request submitted from a browser session, AND validate `Origin`/`Referer` (plus `Sec-Fetch-Site` where available) on state-changing endpoints. Tokens are the primary defense; headers are defense in depth.
   - **DO:** Require re-authentication or a fresh CSRF token before a sensitive state change (password change, payment, account deletion).
+  - **DON'T:** Rely on `SameSite=Lax`/`Strict` cookies as the primary CSRF defense — `Lax` still allows top-level GET navigation (with a 2-minute window), older browsers ignore the attribute, and same-site subdomains can still be attacker-controlled. `SameSite` is a hardening layer, not a substitute for tokens.
   - **DON'T:** Rely on `SameSite=None` cookies for a state-changing endpoint with no token-based defense in depth.
 - **Insecure Deserialization** (part of A08: Software and Data Integrity Failures):
   - **DO:** Deserialize only trusted, signed, or schema-validated payloads. Prefer data formats with no executable-code capability (JSON) over ones that do (native object serialization, pickled objects).
@@ -103,6 +111,12 @@ Apply these principles to all code you design, generate, or review.
 - **Insecure Design** (A04):
   - **DO:** Threat-model security-sensitive flows before implementation, not only at code-review time — this is what the Validation Gate's Security Scan step exists to force at the design stage (`devflow/SKILL.md` → Step 2, Phase 2).
   - **DON'T:** Treat security purely as a code-review-time concern; a flawed design (no rate limiting by design, trust boundaries never identified) cannot be fully fixed by patching individual lines afterward.
+- **Broken Object-Level Authorization / BOLA** (API Top 10 2023, A01 — the #1 API risk):
+  - **DO:** Authorize every object access against the caller's ownership/permissions using the object's server-side identifier — never trust a client-supplied ID alone. Enumerate IDs only where unavoidable; prefer unguessable identifiers for private resources.
+  - **DON'T:** Assume that because an endpoint requires authentication, any authenticated caller may access any object ID it names (IDOR). Assume "hidden" endpoints (unlinked, undocumented) still need the same authorization checks.
+- **LLM-mediated risks** (LLM Top 10 2025 — applies to any feature that calls an LLM or acts on LLM output):
+  - **DO:** Treat LLM output as untrusted input — validate/constrain it before it drives actions, queries, or user-visible content (output handling, §1 allowlists apply). Constrain tool/function-calling surface to least privilege; confirm high-impact actions out-of-band.
+  - **DON'T:** Concatenate untrusted content (web pages, documents, user input, vector-store retrieval) into a privileged prompt without isolation — that is prompt injection, the LLM analogue of §4 injection. Never let retrieved content override system instructions, and never expose secrets or tool credentials to the model context beyond what the call strictly needs.
 
 ## 9. Security Interactions & Trade‑offs
 - **Validation + Error Handling:** Good input validation reduces the risk of injection and data corruption. Proper error handling ensures that even when validation fails, no internal details are leaked.
@@ -127,7 +141,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 | Severity | Triggers |
 |----------|---------|
-| 🔴 **BLOCK** | Hardcoded secret/credential in source code (§3); custom authentication/cryptography mechanism (§2); unvalidated external input reaching SQL, shell, or LDAP (§1, §4); sensitive tokens stored in `localStorage`/`sessionStorage` (§2); no authentication on a data-mutating or private-data endpoint (§2); stack traces or internal paths exposed in API responses (§6) |
+| 🔴 **BLOCK** | Hardcoded secret/credential in source code (§3); custom authentication/cryptography mechanism (§2); unvalidated external input reaching SQL, shell, or LDAP (§1, §4); sensitive tokens stored in `localStorage`/`sessionStorage` (§2); no authentication on a data-mutating or private-data endpoint (§2); missing object-level authorization on an ID-addressed endpoint — BOLA/IDOR (§8) |
 | 🟡 **WARN** | Missing rate limiting on sensitive endpoint (§7); HTTP used without redirect to HTTPS (§7); dependency with known moderate vulnerability (§5); `localStorage` used for non-sensitive tokens with no documented rationale (§2); incomplete input validation (allows but does not reject all bad input) (§1); an authorization decision cached or derived from a session/token is not re-evaluated after the underlying permission changes (§2) |
 
 | 🟢 **INFO** | Missing HSTS header — incomplete Transport Security (§7); no structured logging of security events (§7); dependency lock file absent (§5); minor information disclosure in non-production environment (§6) |

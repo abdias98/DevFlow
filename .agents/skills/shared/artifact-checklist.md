@@ -106,7 +106,7 @@ Validated by: **Reviewer** (before Step 4 — save)
 
 ## Standalone Agent Reports
 
-Validated by: **each standalone agent**, via `devflow-ctl artifacts check {type} {path}`, before its Completion Protocol block. These mirror the lifecycle checks above but for the 8 standalone-only artifact types the CLI's `artifacts_required()` recognizes.
+Validated by: **each standalone agent**, via `devflow-ctl artifacts check {type} {path}`, before its Completion Protocol block. These mirror the lifecycle checks above but for the 10 standalone-only artifact types the CLI's `artifacts_required()` recognizes.
 
 ### Feature Report (`docs/devflow/features/*.md`) — type `feature`
 - [ ] **Summary**, **Definition of Done**, **Files Changed**, **Tasks Completed**, **Tests**, **Self-Review**
@@ -131,6 +131,12 @@ Validated by: **each standalone agent**, via `devflow-ctl artifacts check {type}
 
 ### Reverse Engineering Report (`docs/devflow/reverse/*.md`) — type `reverse`
 - [ ] **Project Overview**, **Generated Artifacts**, **Stack Profile**, **Known Unknowns** (unconditional sections only — Quick mode omits API Endpoints/Dependencies/Tech Debt, so those are not required)
+
+### Project Template (`docs/devflow/templates/project-architecture.md`) — type `templates`
+- [ ] **Tech Stack**, **Layer Structure**, **Data Flow**, **Design Decisions**, **Common Patterns**, **Test Conventions**
+
+### Tutorial Document (`docs/devflow/tutorial/*.md`) — type `tutorial`
+- [ ] **What We Built**, **Cycle Summary**, **Files Created**, **Next Steps**
 
 ## Traceability Matrix (`docs/devflow/session/{slug}/traceability.md`)
 

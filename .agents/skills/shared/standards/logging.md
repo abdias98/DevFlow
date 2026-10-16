@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Logging & Observability (Technology-Agnostic)
 
-> **Version:** 1.4.0 | **Last Updated:** 2026-09-16
+> **Version:** 1.4.1 | **Last Updated:** 2026-10-12
 
 > **Note on examples:** All logger names, field names, and code fragments are illustrative. Replace them with the actual logging library, format, and conventions of the detected stack.
 
@@ -36,9 +36,10 @@ Apply these principles to all code you design, generate, or review that emits lo
 - **DO:**
   - Redact or omit secrets, credentials, tokens, API keys, passwords, and session identifiers.
   - Mask or hash personal data (PII): full names, emails, phone numbers, government IDs, payment data — follow the applicable data-protection rules.
+  - A fast unsalted hash of PII is still a pseudonym under GDPR, not anonymization: hash PII only with an HMAC keyed by a secret from the project's secret store, minimize which PII is hashed at all, and prefer dropping the field over hashing it.
   - Log a stable, non-sensitive identifier (e.g., a user ID or correlation ID) instead of the sensitive value.
 - **DON'T:**
-  - Log full request/response bodies, headers (`Authorization`, `Cookie`), or query strings that may carry secrets or PII.
+  - Log full request/response bodies, headers (`Authorization`, `Cookie`), or query strings by default — capture them only through an explicit per-field allowlist with redaction of non-allowlisted fields, and sample high-volume paths instead of logging every occurrence.
   - Log raw exceptions whose message embeds a secret (connection strings, signed URLs).
   - Assume "it's only DEBUG" makes sensitive logging safe — DEBUG output reaches files, aggregators, and crash reports.
 
@@ -48,6 +49,7 @@ Apply these principles to all code you design, generate, or review that emits lo
 - **DO:**
   - Propagate a correlation/request/trace ID through the call chain and attach it to every log line for that operation.
   - Attach stable context (tenant, operation name, entity ID) via the logger's context/MDC mechanism rather than repeating it in each message.
+  - Propagate MDC/context explicitly across asynchronous boundaries (threads, executors, reactive chains) — context stored in thread-local storage does not follow the work by itself; see §14 for the propagation mechanism.
   - Adopt the platform's tracing conventions (e.g., W3C `traceparent`) when distributed tracing is available.
 - **DON'T:**
   - Emit context-free logs that cannot be tied to a request or user action.
@@ -60,6 +62,9 @@ Apply these principles to all code you design, generate, or review that emits lo
   - Emit a distinct, structured event for every business-significant outcome (confirmed, declined, cancelled, changed) — not just its failures. Include the actor, the affected entity, the outcome, and a timestamp.
   - Treat business/audit events as a separate stream or a reserved level from technical/diagnostic logs, so raising the debug threshold in production never silences them.
   - Make audit events append-only in the store they land in when the domain requires non-repudiation (payments, permission changes, regulated data) — an audit trail that can be edited after the fact is not one.
+  - Where tamper-evidence is required, back append-only storage with WORM retention or a hash-chained (tamper-evident) log so silent edits are detectable — not merely discouraged.
+  - Record the retention-vs-erasure decision explicitly: statutory retention keeps audit events even under a deletion request where the law requires it, while the right to be forgotten minimizes or erases them elsewhere — never resolve this tension by silently dropping audit writes.
+  - Run two channels with opposite loss budgets: diagnostic logs may use asynchronous/buffered appenders that accept bounded loss on crash (see §7), while the audit channel is lossless (synchronous write or confirmed delivery) — tuning verbosity must never silence audit events.
 - **DON'T:**
   - Log a business outcome only when it fails (e.g., only "payment declined," never "payment confirmed") — an audit trail with silent successes can't answer "did this happen" for the happy path.
   - Let a business-critical event depend solely on the general log level being `INFO` or above — a verbosity change should never erase what the business needs to prove happened.
@@ -83,6 +88,7 @@ Apply these principles to all code you design, generate, or review that emits lo
 - **DO:**
   - Guard expensive log-message construction behind a level check (or use the logger's lazy/parameterized API).
   - Prefer asynchronous / buffered log appenders for high-throughput paths, accepting bounded loss on crash where appropriate.
+  - Bounded loss applies to diagnostic logs only — the audit channel defined in §5 is lossless and never shares the lossy appender.
   - Sample or rate-limit high-frequency events instead of logging every occurrence.
 - **DON'T:**
   - Log inside tight or unbounded loops without sampling — it can dominate latency and flood storage.
@@ -107,6 +113,8 @@ When reviewing, verify:
 - [ ] Logs are structured (named fields), not string-concatenated messages (§1).
 - [ ] A correlation/request ID is attached to every log line for a traceable operation (§4).
 - [ ] Business-significant outcomes (confirmed, declined, cancelled, changed) are logged as distinct audit events, not only their failures, and don't depend solely on the general log level (§5).
+- [ ] Audit events travel the lossless channel (never the lossy diagnostic appender) with tamper-evident storage where non-repudiation is required (§5).
+- [ ] A caught error that isn't rethrown is logged once, at the boundary, with type/message/stack (§6).
 - [ ] A caught error that isn't rethrown is logged once, at the boundary, with type/message/stack (§6).
 - [ ] No logging inside a tight or unbounded loop without sampling or rate-limiting (§7).
 - [ ] Logs reach a centralized, rotated destination — not only console/stdout (§8).
@@ -117,8 +125,8 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 | Severity | Triggers |
 |----------|---------|
-| 🔴 **BLOCK** | Secret, credential, token, password, or PII written to a log at any level (§3); exception caught and silently swallowed — neither logged nor rethrown (§6); full auth headers / request bodies logged on a path handling sensitive data (§3) |
-| 🟡 **WARN** | Routine/expected flow logged at `ERROR`/`WARN`, or failures logged below `ERROR` (§2); unstructured string-concatenated logs where the project uses structured logging (§1); a business-critical outcome (payment, permission change) logged only on failure with no corresponding success event (§5); same error logged at every layer as it propagates (§6); logging inside an unbounded loop with no sampling (§7); logs with no correlation/request ID in a multi-request service (§4) |
+| 🔴 **BLOCK** | Secret, credential, token, password, or PII written to a log at any level (§3); PII hashed with a fast unsalted hash instead of a keyed HMAC with minimization (§3); exception caught and silently swallowed — neither logged nor rethrown (§6); full auth headers / request bodies logged on a path handling sensitive data with no allowlist or redaction (§3); unescaped user input written to a log line enabling CRLF injection (§14) |
+| 🟡 **WARN** | Routine/expected flow logged at `ERROR`/`WARN`, or failures logged below `ERROR` (§2); unstructured string-concatenated logs where the project uses structured logging (§1); a business-critical outcome (payment, permission change) logged only on failure with no corresponding success event (§5); same error logged at every layer as it propagates (§6); logging inside an unbounded loop with no sampling (§7); logs with no correlation/request ID in a multi-request service (§4); diagnostic loss configured on the audit channel, or audit events sharing the lossy appender (§5); high-cardinality field (user ID, request ID) used as a metric label (§14); MDC context propagated across an async boundary with no explicit mechanism (§14) |
 | 🟢 **INFO** | `print`/`console.log` used instead of the project logger (§1); expensive log construction not guarded by a level check (§7); inconsistent or non-UTC timestamps (§8); missing centralized aggregation (§8) |
 
 ## 11. Applying This Standard with a Limited Scope
@@ -143,6 +151,7 @@ Decide observability alongside the data flow in the spec — a log added after a
 - **Sensitive fields** — which fields must never be logged, or must be masked (§3).
 - **Level policy** — what counts as error, warning, info and debug for this feature (§2).
 - **Volume** — high-frequency paths that need sampling or aggregation instead of a line per event (§7).
+- **Audit channel** — the lossless transport and tamper-evident store for audit events, and the retention-vs-erasure rule for regulated data (§5).
 
 ## 13. Implementation Self-Check
 
@@ -153,3 +162,16 @@ Before marking a task done:
 - [ ] Every log line on a request path carries the correlation identifier (§4).
 - [ ] Each handled error is logged with its context where it is handled, not again at every layer it passes through (§6).
 - [ ] No verbose logging runs inside a hot loop without sampling (§7).
+
+## 14. Injection Safety, Async Context & Telemetry Correlation
+
+- **What:** Unescaped log input forges log lines, thread-local context is lost across async boundaries, and observability signals stay disconnected without a shared correlation model.
+- **DO:**
+  - Neutralize log injection (CRLF injection): escape or strip carriage-return/line-feed characters (and other control characters) from user-controlled values before writing them to a log line, so an attacker cannot forge follow-up entries.
+  - Propagate MDC context across async boundaries with an explicit mechanism (context snapshot/restore around executors, reactive context operators, or async-local storage) — verify the correlation identifier survives the hop in a test rather than assuming thread-local inheritance.
+  - Correlate logs, traces, and metrics through OpenTelemetry conventions (shared trace and span identifiers across all three signals) instead of maintaining three unrelated identifier schemes.
+  - Keep metric label cardinality bounded: never use a high-cardinality field (user ID, request ID, free-text value) as a metric label — keep it as a log/trace field and aggregate metrics over low-cardinality dimensions.
+- **DON'T:**
+  - Interpolate raw user input into a log line with no escaping — a newline in the input becomes a forged log entry.
+  - Assume MDC follows asynchronous work automatically — thread-local storage stays on the submitting thread unless a propagation mechanism carries it.
+  - Attach unbounded label values to metrics — each distinct value creates a new series and exhausts the metrics backend.

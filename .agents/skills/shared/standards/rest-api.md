@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: REST API Design (Technology-Agnostic)
 
-> **Version:** 2.4.0 | **Last Updated:** 2026-09-16
+> **Version:** 2.5.0 | **Last Updated:** 2026-10-12
 
 > **Apply only if:** the project has HTTP endpoints, REST controllers, or API contracts.
 > If this is a CLI, library, background worker, or frontend-only project, skip this standard entirely.
@@ -41,13 +41,17 @@ Apply these principles to all API endpoints you design, generate, or review.
   - Use the most specific status code available:
     - `200 OK` — successful GET, PUT, PATCH.
     - `201 Created` — successful POST with a new resource.
+    - `202 Accepted` — request accepted for async processing (the work is NOT done yet — pair with a status endpoint or event, see event-driven-architecture.md).
     - `204 No Content` — successful DELETE or a PUT/PATCH that returns no body.
     - `301/308` — permanent redirect (resource moved).
+    - `304 Not Modified` — conditional GET satisfied (pair with `ETag`/`If-None-Match` from §2).
     - `400 Bad Request` — malformed syntax, missing required fields.
     - `401 Unauthorized` — missing or invalid authentication.
     - `403 Forbidden` — authenticated but not allowed.
     - `404 Not Found` — resource or collection does not exist.
     - `409 Conflict` — resource state conflict (e.g., version mismatch).
+    - `412 Precondition Failed` — an `If-Match`/`If-Unmodified-Since` condition from §2 failed (optimistic concurrency rejection, not a validation error).
+    - `415 Unsupported Media Type` — request `Content-Type` the endpoint does not support (see §8).
     - `422 Unprocessable Entity` — semantic validation failure.
     - `429 Too Many Requests` — rate limiting.
     - `500 Internal Server Error` — unexpected server failure.
@@ -61,12 +65,12 @@ Apply these principles to all API endpoints you design, generate, or review.
 - **What:** Consistent response shapes reduce client-side complexity.
 - **Precedence note:** the envelope below governs **success** responses. If the API adopts RFC 9457 Problem Details (§7) for errors — the preferred format — error responses use §7's `type`/`title`/`status`/`detail` shape instead of this envelope's `errors` array; §7 prevails for error bodies whenever it is in effect. Only when RFC 9457 is *not* adopted does an error use this envelope's own `errors` field, per §7's custom-envelope fallback.
 - **DO:**
-  - Use a consistent envelope for all **success** responses. A widely adopted pattern: `{ "data": ..., "meta": ..., "errors": [...] }`.
+  - Use a consistent envelope for **success** responses — RECOMMENDED, not mandatory. If the project already standardizes on JSON:API, HAL, or plain bodies, consistency with that project convention outranks this envelope; do NOT flag a deliberate, documented convention as a finding. A widely adopted pattern where no convention exists: `{ "data": ..., "meta": ..., "errors": [...] }`.
     - `data`: the payload (object for single resource, array for collections).
     - `meta`: pagination info, total count, links.
     - `errors`: structured error objects when not successful, **only if RFC 9457 (§7) is not adopted** — see the precedence note above.
   - Use a standard date/time format (e.g., ISO 8601) across the entire API.
-  - Return the full resource representation on `POST` and `PUT/PATCH` (unless the client specifies a preference for a minimal response via headers).
+  - Return the full resource representation on `POST` and `PUT/PATCH` — unless the client asks for less. Honor RFC 7240 `Prefer: return=minimal` (return `204`/`200` with an empty body or a `Preference-Applied` confirmation) instead of always paying the serialization cost.
 - **DON'T:**
   - Return different shapes for the same resource across endpoints (e.g., `GET /users/{id}` returns `{ user: ... }` but `GET /users` returns an array with no wrapper).
   - Mix naming conventions within the same API — agree on camelCase, snake_case, or kebab-case and apply it everywhere.
@@ -75,7 +79,7 @@ Apply these principles to all API endpoints you design, generate, or review.
 ## 5. Versioning
 - **What:** APIs are public contracts — breaking changes require a new version.
 - **DO:**
-  - Version APIs from the first release. Prefer URI path versioning (`/v1/users`) for simplicity and discoverability, or use a header/query parameter if the team has a strong reason.
+  - Version APIs from the first release. Prefer URI path versioning (`/v1/users`) for simplicity and discoverability, or use a header/query parameter if the team has a strong reason. Trade-off to record: path versioning explodes the URI space (every version is a parallel surface to secure, test and deprecate); header/evolution-style versioning (Stripe-style) keeps one URI but needs disciplined change tracking. Either is acceptable — what is NOT acceptable is mixing strategies without a documented reason, or inventing a "minor version" semantic on top of a URI major that has no minor axis (SemVer minors do not map onto `/v1` paths).
   - Maintain backward compatibility within a major version. New fields, optional parameters, and new endpoints are safe; renaming or removing fields, changing types, or altering semantics are breaking.
   - Deprecate old versions gracefully: announce sunset dates, monitor usage, and remove versions only after clients have migrated.
 - **DON'T:**
@@ -85,9 +89,9 @@ Apply these principles to all API endpoints you design, generate, or review.
 ## 6. Pagination, Filtering & Sorting
 - **What:** Unbounded collections are a performance and usability risk.
 - **DO:**
-  - Paginate all collection endpoints. Use a consistent pagination mechanism (cursor‑based for real‑time data, offset‑based for simple use cases). Include `meta.total` or a `Link` header for next/previous pages.
+  - Paginate all collection endpoints. Use a consistent pagination mechanism (cursor‑based for real‑time data, offset‑based for simple use cases). Include `meta.total` or a `Link` header for next/previous pages. Every paginated endpoint MUST declare a default page size and a maximum page size (e.g., default 20, max 100); a request above the maximum is clamped or rejected with `400`, never served unbounded.
   - Support filtering via query parameters: `GET /users?status=active&role=admin`.
-  - Support sorting via query parameters with ascending/descending control: `GET /users?sort=+createdAt,-lastName`.
+  - Support sorting via query parameters with ascending/descending control: `GET /users?sort=createdAt,-lastName` (prefer `-field` for descending over `+field` — a literal `+` in a query string decodes to a space unless percent-encoded as `%2B`, so `?sort=+createdAt` arrives as ` sort= createdAt`).
   - Validate filter and sort fields against the allowed set — reject unknown fields with a `400` error.
 - **DON'T:**
   - Return unbounded lists or implement pagination differently across endpoints.
@@ -120,7 +124,8 @@ Apply these principles to all API endpoints you design, generate, or review.
 - **DO:**
   - Require TLS (HTTPS) for all endpoints. Redirect HTTP to HTTPS.
   - Authenticate every endpoint unless it is explicitly public. Use standard authorization headers (e.g., Bearer token).
-  - Apply rate limiting, especially on auth, password reset, and token‑generation endpoints.
+  - Enforce object-level authorization on every ID-addressed endpoint (BOLA/IDOR — API Top 10 2023 #1, see security.md §8): the caller must be authorized for the specific object named, not merely authenticated. Prefer unguessable identifiers for private resources; sequential IDs are enumerable by construction.
+  - Apply rate limiting, especially on auth, password reset, and token‑generation endpoints. Return standard `RateLimit-*` headers and `Retry-After` on `429` so well-behaved clients back off without guessing.
   - Set appropriate CORS policies — never use wildcard origins for credentialed requests.
   - Validate `Content-Type` headers and reject requests with unsupported media types (`415 Unsupported Media Type`).
 - **DON'T:**
@@ -131,16 +136,17 @@ Apply these principles to all API endpoints you design, generate, or review.
 - **What:** Clients must be able to retry requests without causing duplicate side effects.
 - **DO:**
   - Design `PUT`, `DELETE`, and `GET` to be idempotent by default.
-  - For `POST` and `PATCH` endpoints that are not naturally idempotent, support an `Idempotency-Key` header. Store the key and the response for a configured time window; return the stored response on duplicate keys.
+  - For `POST` and `PATCH` endpoints that are not naturally idempotent, support an `Idempotency-Key` header. Scope the key per endpoint + authenticated caller (a key valid on `/orders` must not match one on `/refunds`), fingerprint the request body (a reused key with a different payload is a client bug — reject with `422`, do NOT return the stored response), and make the check-then-store atomic — two concurrent retries must not both execute (this is the concurrency.md §5 discipline applied to the API layer; a non-atomic key check reintroduces the duplicate it exists to prevent). Store the key and the response for a configured time window; return the stored response on duplicate keys.
 - **DON'T:**
   - Create a new resource on every retry of the same `POST` if the client did not receive the first response — idempotency keys prevent unintended duplicates.
 
 ## 10. Documentation
 - **What:** An undocumented API does not exist.
 - **DO:**
-  - Provide an API specification using a standard format (e.g., OpenAPI). Keep it in sync with the implementation.
+  - Provide an API specification using a standard format (OpenAPI 3.1 — it aligns with JSON Schema 2020-12, so request/response schemas validate with standard tooling; 3.0 is acceptable only for legacy toolchains that cannot parse 3.1). Keep it in sync with the implementation.
   - Include request/response examples for all endpoints.
   - Document authentication requirements, rate limits, and error codes.
+  - If the API emits webhooks, document them with the same rigor as endpoints: event types, payload schemas, signing mechanism, retry policy, and how consumers verify authenticity.
 - **DON'T:**
   - Let the specification drift from the actual implementation. Use tooling to generate the spec from code or validate the implementation against the spec.
 
@@ -170,7 +176,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | Severity | Triggers |
 |----------|---------|
 | 🔴 **BLOCK** | `200 OK` returned with an error body (§3); unsafe state-changing operation exposed via `GET` (§2); no authentication on an endpoint that exposes or mutates private data (§8); unvalidated client input used directly in a query or command (§8 → security.md §1) |
-| 🟡 **WARN** | Verb in URI path (e.g., `/getUser`, `/createOrder`) (§1); wrong HTTP method for a state-changing operation (§2); missing pagination on a collection endpoint (§6); inconsistent response envelope across endpoints (§4); no versioning strategy on a public API (§5); unstructured error response — plain string or HTML (§7) |
+| 🟡 **WARN** | Verb in URI path (e.g., `/getUser`, `/createOrder`) (§1); wrong HTTP method for a state-changing operation (§2); missing pagination on a collection endpoint (§6); inconsistent response envelope across endpoints with no documented project convention (§4 — a deliberate JSON:API/HAL/plain-body convention is NOT a finding); no versioning strategy on a public API (§5); unstructured error response — plain string or HTML (§7) |
 | 🟢 **INFO** | Deeply nested URI (>3 levels) without documented rationale (§1); `Idempotency-Key` not supported on a non-idempotent `POST` (§9); API spec (OpenAPI) missing or outdated (§10); no `documentation_url` in error response (§7) |
 
 ## 14. Applying This Standard with a Limited Scope

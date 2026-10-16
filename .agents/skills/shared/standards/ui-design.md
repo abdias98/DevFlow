@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: UI Design (Technology-Agnostic)
 
-> **Version:** 2.7.0 | **Last Updated:** 2026-09-17
+> **Version:** 2.7.1 | **Last Updated:** 2026-10-12
 
 > **Apply only if:** the project has a user interface (web frontend, mobile app, desktop app, or server-rendered views).
 > If this is a pure API, CLI tool, library, or background worker, skip this standard entirely.
@@ -63,7 +63,7 @@ The user's eye must be guided intentionally through content. Visual hierarchy is
 
 ### Spacing & Rhythm
 
-- **DO:** Define a spacing scale based on a base unit (e.g., 4px or 8px grid). All margins, paddings, and gaps must be multiples of the base unit: 4, 8, 12, 16, 24, 32, 48, 64.
+- **DO:** Define a spacing scale on a single base unit — the 4pt grid (macro steps of 8pt for section-level rhythm). All margins, paddings, and gaps must come from that scale: 4, 8, 16, 24, 32, 48, 64.
 - **DO:** Use consistent vertical rhythm — adjacent sections, cards, and form groups should share the same spacing rules.
 - **DON'T:** Use arbitrary spacing values — every spacing decision must come from the defined scale.
 - **DON'T:** Collapse unrelated elements too close or separate related elements too far. Apply the Gestalt principle of proximity.
@@ -96,7 +96,7 @@ Color communicates state, guides attention, and reinforces brand — not just de
   - **Semantic colors:** Success (green), Warning (amber/orange), Danger (red), Info (blue). Each must have a light variant for backgrounds and a dark variant for text/icons.
 - **DO:** Ensure all text/background color combinations meet **WCAG AA contrast ratio of 4.5:1** for normal text and **3:1** for large text (≥18pt / ~24 CSS px regular, or ≥14pt / ~18.66 CSS px bold).
 - **DO:** Design for dark mode from the start. Invert the neutral scale: light backgrounds become dark surfaces; dark text becomes light text. Semantic colors should be desaturated in dark mode to reduce eye strain.
-- **DON'T:** Use pure black (`#000`) or pure white (`#fff`) as main surface colors — they cause eye strain. Use near-black (`#111`, `#1a1a1a`) and near-white (`#fafafa`, `#f5f5f5`).
+- **DON'T:** Use pure black (`#000`) or pure white (`#fff`) as default surface colors — they cause eye strain in standard viewing; prefer near-black (`#111`, `#1a1a1a`) and near-white (`#fafafa`, `#f5f5f5`). Pure values remain correct where high contrast is the point: high-contrast modes, OLED true-black surfaces, and `forced-colors` contexts.
 - **DON'T:** Convey information through color alone. Always pair color with an icon, label, or pattern for accessibility (color-blind users).
 - **DON'T:** Introduce new colors outside the defined palette. If a new semantic meaning arises, extend the palette explicitly — never inline.
 
@@ -108,7 +108,7 @@ Color communicates state, guides attention, and reinforces brand — not just de
 - **DON'T:** Create components that reach outside their scope to modify global state or arbitrary DOM nodes / view hierarchy elements.
 - **DON'T:** Over-parameterize components. If a component needs more than 3-4 boolean flags to configure its appearance, split it into focused sub-components or use a `variant` prop with a limited set of values.
 - **DON'T:** Use generic containers (`div`, `span`) as interactive elements — use semantic elements (`button`, `a`, `input`) provided by the platform (also see § 10).
-- **DON'T:** Define an overlay (modal, dialog, drawer, popover with its own content) inline inside the component that opens it. Make it a self-contained component that receives its data and callbacks, so it can be reused, tested and reasoned about apart from its trigger.
+- **DON'T:** Define an overlay (modal, dialog, drawer, popover with its own content) inline inside the component that opens it. Make it a self-contained component that receives its data and callbacks, so it can be reused, tested and reasoned about apart from its trigger. Colocation is acceptable when the framework renders the overlay through a placement mechanism (e.g., a portal/teleport to the top layer): the overlay stays defined next to its trigger for readability while the framework handles stacking and positioning — inline DOM nesting without such a mechanism is still prohibited.
 
 ## 6. Interaction States
 
@@ -189,15 +189,15 @@ Forms are the primary conversation between user and application. Poor forms = po
 
 ### Validation & Feedback
 
-- **DO:** Validate on blur (when the user leaves the field), not on every keystroke. Real-time validation on keystrokes creates a hostile experience — the user sees errors before they finish typing.
+- **DO:** Validate blur-first, then live: validate when the user leaves the field (blur), and once an error is shown (or the field is dirty after blur), revalidate on each keystroke so the error clears the moment it is fixed. Never show errors on keystrokes before the first blur — the user sees errors before they finish typing.
 - **DO:** Show errors inline, adjacent to the offending field, in red text with a clear message. The message must say *what* is wrong and *how* to fix it — not just "Invalid input."
-- **DO:** Disable the submit button after the first click and show a loading state to prevent double submissions.
+- **DO:** Disable the submit button after the first click and show a loading state to prevent double submissions — and re-enable it with the error surfaced if the submission fails, so the user can correct and retry.
 - **DON'T:** Clear the entire form on submission error. Preserve user input — only clear fields after a successful submission.
 - **DON'T:** Rely solely on client-side validation. Always validate on the server.
 
 ### Touch & Ergonomics
 
-- **DO:** Make all interactive elements at least **44×44 CSS pixels** — the minimum touch target for reliable finger interaction (WCAG 2.5.5 AAA). For native platforms, adapt to the platform's equivalent (e.g., 44pt on iOS, 48dp on Android).
+- **DO:** Target **44×44 CSS pixels** as the recommended touch size for reliable finger interaction (WCAG 2.5.5 AAA) — not a hard minimum. The hard floor is **24×24 CSS px** (WCAG 2.2 AA); anything between the floor and the recommendation follows the severity mapping in §16, and the normative rule lives in `accessibility.md §7`. For native platforms, adapt to the platform's equivalent (e.g., 44pt on iOS, 48dp on Android).
 - **DO:** Space interactive elements at least 8px apart to prevent accidental taps.
 - **DO:** Place primary actions in easy thumb-reach zones (bottom-center or bottom-right for one-handed mobile use).
 - **DON'T:** Place destructive actions (delete, reset) adjacent to primary actions without a confirmation step.
@@ -218,7 +218,11 @@ UI-relevant essentials (see `accessibility.md` for the full rules and severity):
 - **DO:** Lazy-load non-critical UI: images below the fold, heavy components, secondary routes/screens.
 - **DO:** Use skeleton placeholders (not spinners) for content that takes more than 300ms to load. Reserve space for lazy-loaded content to prevent Cumulative Layout Shift (CLS).
 - **DO:** Optimize font loading: use `font-display: swap` (or platform equivalent) to show fallback text while custom fonts load. Subset fonts to include only the characters needed.
+- **DO:** Budget Core Web Vitals on every user-facing route: Interaction to Next Paint (INP) ≤200ms (INP replaced First Input Delay in 2024 — measure interaction latency, not just first input), Largest Contentful Paint (LCP) ≤2.5s, Cumulative Layout Shift (CLS) ≤0.1. Measure on real devices with the method `performance.md §6` prescribes; this section owns the budgets, not the measurement method.
+- **DO:** Serve responsive, modern images: `srcset`/`sizes` for density- and viewport-appropriate variants, AVIF first with a widely-supported fallback, and explicit dimensions (or aspect-ratio) so late images never shift layout.
+- **DO:** Honor `forced-colors` (do not fight the user's system palette — ensure borders and outlines survive it) and `prefers-contrast` alongside the existing reduced-motion / color-scheme handling (`accessibility.md §7` owns the normative rule).
 - **DON'T:** Block the initial render/paint with large style bundles, synchronous scripts, or heavy computations that are not needed for the first meaningful paint.
+- **DON'T:** Ship full-resolution images where a sized variant would do, or layouts that shift when fonts or images arrive late.
 - **DON'T:** Render large lists (1000+ items) without virtualization (windowing). Only render items visible in the viewport plus a small buffer.
 
 ## 12. Iconography
@@ -300,8 +304,8 @@ When reviewing UI code, verify:
 ### Forms
 - [ ] Single-column layout for forms.
 - [ ] Labels are above inputs (not placeholder-only).
-- [ ] Validation occurs on blur, with inline error messages that explain the fix.
-- [ ] Touch targets are ≥44×44px; interactive elements spaced ≥8px apart.
+- [ ] Validation occurs blur-first (live revalidation only after an error is shown), with inline error messages that explain the fix.
+- [ ] Touch targets meet the 44×44 recommendation (24×24 floor per `accessibility.md §7`); interactive elements spaced ≥8px apart.
 - [ ] Submit button shows loading state after first click.
 
 ### Accessibility
@@ -318,6 +322,8 @@ When reviewing UI code, verify:
 
 ### Performance
 - [ ] Non-critical UI is lazy-loaded; initial render is not blocked by heavy assets.
+- [ ] Core Web Vitals budgets hold on key routes for INP, LCP and CLS (§11).
+- [ ] Images use responsive variants (AVIF/srcset) with reserved space; `forced-colors`/`prefers-contrast` honored (§11).
 - [ ] Fonts use `font-display: swap` (or platform equivalent).
 - [ ] Large lists are virtualized.
 - [ ] Content placeholders reserve space to prevent CLS.

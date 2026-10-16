@@ -55,6 +55,11 @@ EVAL_ROWS=()
 # and the framework "wins" only on paperwork. The split makes that visible.
 _eval_check() { # _eval_check <category> <weight> <desc> <cmd...>
   local cat="$1" weight="$2" desc="$3"; shift 3
+  # Rows are tallied with IFS='|' downstream: a non-numeric weight silently
+  # scores 0 via $(( )), and a '|' in the description shifts every field.
+  # Fail loudly at record time instead of miscounting silently.
+  [[ "$weight" =~ ^[0-9]+$ ]] || die "check weight '$weight' is not a non-negative integer (desc: '$desc')"
+  [[ "$desc" != *"|"* ]] || die "check description contains '|' which breaks row parsing (desc: '$desc') — rephrase without it"
   if "$@" >/dev/null 2>&1; then
     EVAL_ROWS+=("PASS|$cat|$weight|$desc")
   else
@@ -126,10 +131,17 @@ _eval_pick_port() { EVAL_PORT=$(( 20000 + RANDOM % 10000 )); }
 [[ -n "${EVAL_PORT:-}" ]] || _eval_pick_port
 EVAL_SERVE_TIMEOUT="${EVAL_SERVE_TIMEOUT:-30}"
 _EVAL_SERVE_PID=""
+_EVAL_SERVE_LOG=""
 
 _eval_serve_try() { # _eval_serve_try <serve-cmd> <ready-path> -> 0 ready, 1 timeout, 2 process died
   local cmd="$1" ready="$2" attempts
-  PORT="$EVAL_PORT" setsid bash -c "$cmd" >"/tmp/eval-serve-$EVAL_PORT.log" 2>&1 &
+  # Unpredictable log path (mktemp): a fixed /tmp/eval-serve-$PORT.log collides
+  # between concurrent runs and is symlink-squatting bait. Served commands run
+  # with CWD = the result workspace — never point this at an untrusted tree in
+  # shared CI without your own sandboxing; the harness does not provide one.
+  _EVAL_SERVE_LOG="$(mktemp /tmp/eval-serve-XXXXXX.log)"
+  local log="$_EVAL_SERVE_LOG"
+  PORT="$EVAL_PORT" setsid bash -c "$cmd" >"$log" 2>&1 &
   _EVAL_SERVE_PID=$!
   attempts=$(( EVAL_SERVE_TIMEOUT * 4 ))
   for _ in $(seq 1 "$attempts"); do
@@ -148,7 +160,7 @@ eval_serve_start() { # eval_serve_start <serve-cmd> [ready-path]
     [[ $rc -eq 0 ]] && return 0
     eval_serve_stop
     # Only an early death on a port we picked is worth retrying elsewhere.
-    [[ $rc -eq 2 ]] && ! $_EVAL_PORT_FIXED && grep -q EADDRINUSE "/tmp/eval-serve-$EVAL_PORT.log" 2>/dev/null || return 1
+    [[ $rc -eq 2 ]] && ! $_EVAL_PORT_FIXED && grep -q EADDRINUSE "$_EVAL_SERVE_LOG" 2>/dev/null || return 1
     _eval_pick_port
   done
   return 1
@@ -157,6 +169,8 @@ eval_serve_start() { # eval_serve_start <serve-cmd> [ready-path]
 eval_serve_stop() {
   [[ -n "$_EVAL_SERVE_PID" ]] && kill -- "-$_EVAL_SERVE_PID" 2>/dev/null
   _EVAL_SERVE_PID=""
+  [[ -n "$_EVAL_SERVE_LOG" ]] && rm -f "$_EVAL_SERVE_LOG" 2>/dev/null
+  _EVAL_SERVE_LOG=""
 }
 
 eval_http() { # eval_http <METHOD> <path> [json-body] -> echoes HTTP status code
@@ -294,8 +308,27 @@ cmd_score() {
   echo
 
   # ── Machine-readable scorecard (JSON to the result workspace) ──
+  # Built with python3 when available (correct escaping of quotes/backslashes
+  # in task ids and titles); legacy echo path otherwise.
   local json="$result_dir/scorecard.json"
-  {
+  if command -v python3 >/dev/null 2>&1; then
+    DEVFLOW_EVAL_JSON_OUT="$json" python3 - "$id" "$task_dir" "$title" "$result_dir" "$earned" "$total" "$pct" "$o_earned" "$o_total" "$o_pct" "$p_earned" "$p_total" "$p_pct" "$threshold" "$passed" "$npass" "$nfail" <<'PYEOF'
+import json, os, sys
+_, id_, task_dir, title, result_dir, earned, total, pct, o_earned, o_total, o_pct, p_earned, p_total, p_pct, threshold, passed, npass, nfail = sys.argv
+doc = {
+  "task": id_ or os.path.basename(task_dir),
+  "score_earned": int(earned), "score_total": int(total), "percent": int(pct),
+  "outcome_earned": int(o_earned), "outcome_total": int(o_total), "outcome_percent": int(o_pct),
+  "process_earned": int(p_earned), "process_total": int(p_total), "process_percent": int(p_pct),
+  "threshold": int(threshold), "passed": passed == "true",
+  "checks_passed": int(npass), "checks_failed": int(nfail),
+}
+with open(os.environ["DEVFLOW_EVAL_JSON_OUT"], "w") as fh:
+    json.dump(doc, fh, indent=2)
+    fh.write("\n")
+PYEOF
+  else
+    {
     echo "{"
     echo "  \"task\": \"${id:-$(basename "$task_dir")}\","
     echo "  \"score_earned\": $earned,"
@@ -312,7 +345,8 @@ cmd_score() {
     echo "  \"checks_passed\": $npass,"
     echo "  \"checks_failed\": $nfail"
     echo "}"
-  } > "$json"
+    } > "$json"
+  fi
   echo "_Wrote ${json}_"
 
   [[ "$passed" == "true" ]]

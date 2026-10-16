@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Performance (Technology-Agnostic)
 
-> **Version:** 2.4.0 | **Last Updated:** 2026-09-16
+> **Version:** 2.4.1 | **Last Updated:** 2026-10-12
 
 > **Note on examples:** All patterns and code fragments are illustrative. Adapt syntax and tool names to the detected stack.
 
@@ -10,7 +10,9 @@ Apply these principles to all code you design, generate, or review.
 - **What:** The choice of algorithm and data structure determines the scalability ceiling.
 - **DO:**
   - Choose data structures and algorithms appropriate to the expected input size. Consider time and space complexity for every loop and collection operation.
-  - Prefer hash-based lookups (O(1)) over linear scans (O(n)) for frequent searches.
+  - Prefer hash-based lookups (O(1)) over linear scans (O(n)) for frequent searches on large inputs.
+  - For small, cache-resident inputs, a linear scan over contiguous memory can beat a hash lookup through pointer chasing — locality matters more than complexity class below the measured threshold; benchmark both when the collection stays small.
+  - Treat attacker-controlled hash keys as untrusted input: use a randomized or collision-resistant hash (HashDoS defense) rather than a naive hash on external keys.
   - Use lazy evaluation or streaming where full materialization of a collection is unnecessary.
   - Reuse computed results when the input hasn't changed (memoization / caching at the function level).
 - **DON'T:**
@@ -26,10 +28,11 @@ Apply these principles to all code you design, generate, or review.
   - Prefer batch operations (bulk inserts/updates) over row-by-row processing.
   - Fetch only the columns needed (projection) rather than full entities when the consumer requires a subset of fields.
   - Consider read‑only replicas for heavy read loads where eventual consistency is acceptable.
+  - When replicas are used, route explicitly (writes and read-your-write to the primary, tolerant reads to replicas) and design for replication lag: expect stale reads on replicas, set a staleness budget, and never read-then-write critical state from a replica.
 - **DON'T:**
   - Execute database queries inside loops (N+1 problem).
   - Fetch entire tables when only a subset is needed; always apply filters at the database level.
-  - Use eager loading of deep object graphs when the caller rarely needs the related data — offer flexible loading strategies (eager/lazy) through the repository interface.
+  - Expose ORM lazy/eager loading switches through the repository interface — a caller-triggered lazy load causes N+1 and leaks persistence mechanics into the application layer (see `clean-architecture.md` §5 for the layer boundary this would violate). Shape each use case with an explicit fetch-join or a projection that loads what that use case needs in one round-trip instead.
   - Chain multiple sequential queries that could be combined into a single round‑trip using joins or batch endpoints.
 
 ## 3. Caching
@@ -37,6 +40,9 @@ Apply these principles to all code you design, generate, or review.
 - **DO:**
   - Cache expensive computations, external API calls, and frequently‑read, rarely‑changed data at the appropriate layer (application‑level, distributed cache, CDN).
   - Define an explicit Time‑To‑Live (TTL) for every cached item, based on business staleness tolerance.
+  - Defend expiry against the thundering herd: coalesce concurrent recomputations on a miss (`singleflight` / request coalescing) or serve stale-while-revalidate, so a hot key expiring does not fan out into N simultaneous source hits.
+  - Cache negative results explicitly (negative caching) with a short TTL where absence is stable — otherwise every "not found" hammers the source.
+  - Treat cache keys derived from untrusted input as an injection surface: validate and bound key material so an attacker cannot poison shared entries (cache poisoning) or explode cardinality.
   - Implement a fallback strategy for cache failures (e.g., stale‑while‑revalidate, graceful degradation to the source).
   - Measure hit rate, miss rate, and eviction rate before and after introducing a cache.
 - **DON'T:**
@@ -48,12 +54,12 @@ Apply these principles to all code you design, generate, or review.
 ## 4. Asynchronous Operations
 - **What:** Blocking I/O wastes threads and degrades throughput under load. This section covers the **throughput** angle; [concurrency.md](./concurrency.md) §4 **owns** the correctness hazards of async code (fire-and-forget error handling, sync-over-async deadlock/starvation) — cite `concurrency.md §4` for those, not this section.
 - **DO:**
-  - Use async/non‑blocking patterns for all I/O‑bound operations (network, disk, database).
+  - Use async/non‑blocking patterns for I/O‑bound operations on runtimes built around them (event loops, reactive pipelines) — and use the platform's idiomatic concurrency elsewhere: goroutines for blocking I/O in Go, virtual threads on Java 21+, or plain synchronous handlers where the framework (e.g., Django-style sync workers) already maps one request to one thread.
   - Apply back‑pressure when the incoming request rate exceeds the processing capacity (e.g., bounded queues, circuit breakers).
   - Configure appropriate timeouts for every async operation — never let a call hang indefinitely.
   - Parallelize independent I/O operations (e.g., fire multiple API calls concurrently and await them all).
 - **DON'T:**
-  - Block the main thread or event loop with synchronous I/O in environments where async is available.
+  - Block the main thread or event loop with synchronous I/O on runtimes where the event loop is the throughput bottleneck.
   - Mix sync‑over‑async or async‑over‑sync patterns — see [concurrency.md](./concurrency.md) §4 for the correctness hazard (thread‑pool starvation, deadlock); this is a throughput cost on top of that.
   - Fire‑and‑forget async work without error handling — see [concurrency.md](./concurrency.md) §4 (owns this; a data-loss instance is a Blocker there).
   - Use async for CPU‑bound work expecting it to become faster — offload CPU‑bound tasks to a background worker pool instead.
@@ -92,8 +98,11 @@ Apply these principles to all code you design, generate, or review.
 When reviewing, verify:
 - [ ] Algorithms match the expected data scale; no O(n²) on potentially large collections without justification.
 - [ ] Database queries are batched, paginated, and indexed; no N+1 or unbounded result sets.
+- [ ] Each use case shapes its data with an explicit fetch-join or projection — no lazy/eager switches exposed through repositories (§2).
+- [ ] Replica routing is explicit (writes to primary) with a staleness budget for replica reads (§2).
 - [ ] Caching has explicit TTL, invalidation strategy, and fallback behavior.
-- [ ] All I/O operations are async where the runtime supports it; timeouts are set.
+- [ ] Hot-key expiry is defended against stampedes (coalescing or stale-while-revalidate) and negative results are cached explicitly (§3).
+- [ ] All I/O operations use the runtime-idiomatic concurrency model (async/non-blocking, goroutines, virtual threads, or sync workers as appropriate); timeouts are set (§4).
 - [ ] Resources (connections, files) are explicitly released; pooling is used for expensive resources.
 - [ ] Optimizations are backed by profiling data or a clear performance budget.
 - [ ] No async‑over‑sync or sync‑over‑async anti‑patterns.
@@ -104,8 +113,8 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 | Severity | Triggers |
 |----------|---------|
-| 🔴 **BLOCK** | N+1 database queries in a loop on a hot path with unbounded input (§2); unbounded collection returned from a public API or repository without pagination (§2); fire-and-forget async task with no error handling where failure causes data loss (canonical citation: `concurrency.md §4`) |
-| 🟡 **WARN** | Missing explicit TTL on cached data (§3); cache introduced without invalidation strategy (§3); synchronous I/O call where async is available in the runtime (§4); resource (connection, file handle) not explicitly released — no `using`/`try-with-resources` (§5); no connection pooling for expensive resources (§5) |
+| 🔴 **BLOCK** | N+1 database queries in a loop on a hot path with unbounded input (§2); unbounded collection returned from a public API or repository without pagination (§2); lazy loading triggered by a caller through a repository, causing N+1 (§2); fire-and-forget async task with no error handling where failure causes data loss (canonical citation: `concurrency.md §4`) |
+| 🟡 **WARN** | Missing explicit TTL on cached data (§3); cache introduced without invalidation strategy (§3); hot-key expiry with no stampede defense — concurrent misses fan out to the source (§3); critical read served from a replica with no staleness budget or routing rule (§2); synchronous I/O call blocking the event loop on a runtime where the loop is the throughput bottleneck (§4); resource (connection, file handle) not explicitly released — no `using`/`try-with-resources` (§5); no connection pooling for expensive resources (§5) |
 | 🟢 **INFO** | O(n²) algorithm on a collection that is currently small but could grow (§1); optimization applied without profiling evidence or a performance budget (§6); sequential async calls that could be parallelized (§4) |
 
 ## 10. Applying This Standard with a Limited Scope
@@ -133,6 +142,7 @@ State these in the spec — in **Performance Budget** when the feature is perfor
 
 - **Data volumes** — expected size and growth of each collection and query result (§1, §2).
 - **Access pattern** — queries per operation, pagination, and the indexes they need (§2).
+- **Data shape per use case** — the fetch-join or projection each use case loads, never a caller-driven lazy/eager switch (§2).
 - **Caching** — what is cached, its TTL, invalidation and fallback — or an explicit decision not to cache (§3).
 - **Asynchrony** — timeouts for every I/O call, and which independent calls run in parallel (§4).
 - **Budget and measurement** — the performance budget, if any, and how it will be measured (§6).

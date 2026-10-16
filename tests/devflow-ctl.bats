@@ -178,6 +178,19 @@ setup() {
   [[ "$output" == *"exceeded its limit"* ]]
 }
 
+@test "iterate check: reads the counter without consuming an attempt" {
+  "$CTL" init --mode lifecycle --slug itc >/dev/null
+  run "$CTL" iterate check implement_debug --slug itc
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"0 of 3 used"* ]]
+  "$CTL" iterate implement_debug --slug itc >/dev/null
+  "$CTL" iterate implement_debug --slug itc >/dev/null
+  "$CTL" iterate implement_debug --slug itc >/dev/null
+  run "$CTL" iterate check implement_debug --slug itc
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"no attempts remaining"* ]]
+}
+
 # ── Lock check (F02: "no session" is success, not exit 2) ─────────────────────
 
 @test "lock check: empty repo (no sessions) exits 0, not 2" {

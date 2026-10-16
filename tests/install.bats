@@ -64,4 +64,22 @@ assert_no_source_names() { # <profile-id> <skills-dir>
   dir="$(install_profile antigravity)"
   assert_no_source_names antigravity "$dir"
   grep -q 'structured question tool:\*\* `vscode_askQuestions`' "$dir/shared/rules.md"
+  grep -rq 'Use `write_file` to save' "$dir"
+}
+
+@test "install: VS Code (default profile, no substitution) keeps native tool names" {
+  dir="$(install_profile vscode)"
+  assert_no_source_names vscode "$dir"
+  grep -rq 'Use `create_file` to save' "$dir"
+  grep -q 'structured question tool:\*\* `vscode_askQuestions`' "$dir/shared/rules.md"
+}
+
+@test "install: writes profile marker and global gitignore entries into HOME" {
+  home="$BATS_TEST_TMPDIR/home-marker"
+  mkdir -p "$home"
+  idx="$(ls "$REPO"/editor-profiles/*.yaml | grep -n '/generic.yaml$' | cut -d: -f1)"
+  printf '%s\n' "$idx" "Y" | env -u DEVFLOW_HOME -u XDG_DATA_HOME HOME="$home" bash "$REPO/install.sh" >"$BATS_TEST_TMPDIR/install-marker.log" 2>&1
+  [ -f "$home/.gitignore_global" ]
+  grep -qxF ".agents/" "$home/.gitignore_global"
+  [ "$(find "$home" -path '*/shared/rules.md' | head -1 | xargs dirname | xargs dirname | xargs -I{} cat {}/.devflow-profile)" = "generic" ]
 }

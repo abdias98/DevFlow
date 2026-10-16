@@ -42,8 +42,9 @@ See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) �
 ### Step 2 — Determine Project Type
 
 From `context.md` or artifact analysis:
-- API REST, GraphQL, Web Frontend, Fullstack, CLI Tool, Library/SDK, Mobile App, Desktop App
+- API REST, Web Frontend, Fullstack, CLI Tool, Library/SDK, Mobile App (see `shared/templates/` for the available references)
 - If ambiguous, ask the user or analyze the Stack Profile
+- **GraphQL and Desktop App have no reference template yet** — if the project is one of those, say so explicitly, use the closest reference (API REST / Web Frontend) as checklist only, and record the gap in `### Additional Recommendations` instead of forcing a mismatched type.
 
 ### Step 3 — Load Pre-defined Reference
 
@@ -57,7 +58,7 @@ From `context.md` or artifact analysis:
 
 | header | question | type |
 |--------|----------|------|
-| `template_confirmation` | About to {generate | update} `project-architecture.md` with {N} new patterns/decisions discovered. {It already exists and will be merged into, not overwritten.} Proceed? | options: ✅ Approve, ✏️ Adjust, ❌ Cancel |
+| `template_confirmation` | About to {create|update} `project-architecture.md` with {N} new patterns/decisions discovered. {It already exists and will be merged into, not overwritten.} Proceed? | options: ✅ Approve, ✏️ Adjust, ❌ Cancel |
 
 **STOP. Do NOT write the template file until the user approves.**
 
@@ -120,13 +121,17 @@ Generate `docs/devflow/templates/project-architecture.md`:
 
 ### Step 6 — Auto-Invoke Reviewer (Standalone Mode)
 
+Automatically invoke `devflow-review` in Standalone Mode.
+
 Pass to Reviewer:
 - Invoking agent: `Template Agent`
 - Artifact path: `docs/devflow/templates/project-architecture.md`
 
+**If the Reviewer returns BLOCK findings:** fix within the template and re-invoke, counted via `devflow-ctl iterate implement_review --slug {slug}` (limit from `iterate_default_max`). Do NOT proceed to Step 7 with unresolved BLOCKs.
+
 ### Step 7 — Release Session
 
-**Entry condition:** the Reviewer (Step 6) has returned a verdict. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the project template is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
+**Entry condition:** the Reviewer (Step 6) has returned a verdict with no unresolved BLOCKs. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp, then run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the project template is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
 
 ---
 
@@ -160,7 +165,7 @@ Save to `docs/devflow/knowledge-base/standards-profile.md` following the templat
 
 ### Step P5 — Review and Release
 
-Auto-invoke the Reviewer (Standalone Mode) with `Invoking agent: Template Agent` and the profile path, then finalize metrics, run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` — same closing order as Step 6–7 above.
+Auto-invoke the Reviewer (Standalone Mode) with `Invoking agent: Template Agent` and the profile path. **If BLOCK findings return:** fix and re-invoke, counted via `devflow-ctl iterate implement_review --slug {slug}` (limit from `iterate_default_max`) — do NOT finalize with unresolved BLOCKs. Then finalize metrics (`devflow-ctl metrics aggregate …`), run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` — same closing order as Step 6–7 above.
 
 ---
 
@@ -243,11 +248,13 @@ Recommend: "Run `/devflow-templates` (without bootstrap-knowledge) to generate a
 
 ### Step B5 — Release Session
 
-Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and counts from Step B4. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the updated `learnings.md` is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
+Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and counts from Step B4, then run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`. Because this procedure writes directly to the shared `learnings.md`, have the merged entries peer-checked first: invoke `devflow-review` in Standalone Mode on the bootstrap diff (artifact-only review — no code). Fix BLOCKs before persisting. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the updated `learnings.md` is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
 
 ---
 
 ## ⚠️ Completion Protocol (ALL MODELS)
+
+Before ending your response, run `devflow-ctl artifacts check templates {template-path} --slug {slug}` for the produced project template (or `docs` for a generated documentation artifact). On exit 1, fix the missing section and re-check before proceeding. Then confirm:
 
 ```markdown
 ✅ File saved: {path}

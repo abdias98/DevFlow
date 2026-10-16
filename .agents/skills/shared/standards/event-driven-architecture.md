@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Event-Driven Architecture (Technology-Agnostic)
 
-> **Version:** 1.1.0 | **Last Updated:** 2026-09-16
+> **Version:** 1.1.1 | **Last Updated:** 2026-10-12
 
 > **Apply only if:** the project communicates via events, message queues, a message broker, or streams (producers publishing, consumers subscribing) — including in-process domain events dispatched after a transaction commits.
 > If the project has no asynchronous event/message flow, skip this standard entirely.
@@ -93,6 +93,8 @@ When reviewing, verify:
 - [ ] A failed event has a dead-letter path with alerting — not infinite retry or a silent drop (§5).
 - [ ] The lightest pattern (notification event) was chosen unless a concrete requirement justified event-carried state transfer or event sourcing (§6).
 - [ ] If CQRS is used, there's a concrete, stated reason for it, and the read model has a documented rebuild path from the write model (§7).
+- [ ] A state change and its event are published atomically via an outbox (or equivalent), not a bare dual-write (§13).
+- [ ] Every event schema is registered with a compatibility policy enforced before producer changes merge (§14).
 
 ## 9. Severity Classification
 
@@ -100,8 +102,8 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 | Severity | Triggers |
 |----------|---------|
-| 🔴 **BLOCK** | Non-idempotent side effect (charge, ship, notify) triggered directly from an event handler with no dedup guard (§2); a failed event retried forever with no dead-letter path, blocking the queue/partition behind it (§5) |
-| 🟡 **WARN** | Event schema change that repurposes or removes an existing field in place, breaking undeployed consumers (§3); consumer logic that assumes delivery order with no partitioning/ordering key backing that assumption (§4); dead-letter queue with no alerting configured (§5); event sourcing or CQRS adopted with no concrete, stated requirement driving it — see `design-principles.md` §2 (§6, §7) |
+| 🔴 **BLOCK** | Non-idempotent side effect (charge, ship, notify) applied with no dedup guard — raise the BLOCK under `concurrency.md §5` (canonical); §2 states the consumer-side application, it is not a second BLOCK; a failed event retried forever with no dead-letter path, blocking the queue/partition behind it (§5) |
+| 🟡 **WARN** | Event schema change that repurposes or removes an existing field in place, breaking undeployed consumers (§3); consumer logic that assumes delivery order with no partitioning/ordering key backing that assumption (§4); dead-letter queue with no alerting configured (§5); event sourcing or CQRS adopted with no concrete, stated requirement driving it — see `design-principles.md` §2 (§6, §7); state change committed and event published as a bare dual-write with no outbox (§13); event published with no registered schema or enforced compatibility policy (§14) |
 | 🟢 **INFO** | Event name phrased as a command rather than a fact (§1); event payload carries more state than any current consumer needs (event-carried state transfer chosen without a measured round-trip cost) (§6); read model in a CQRS design with no documented staleness window (§7) |
 
 ## 10. Applying This Standard with a Limited Scope
@@ -126,6 +128,8 @@ Record these for every event produced or consumed — in the spec's **Architectu
 - **Schema evolution** — the version of each event and its compatibility policy (§3).
 - **Ordering** — which consumers need order, and the partition or ordering key that provides it (§4).
 - **Failure path** — retry bound, dead-letter destination and alerting for each consumer (§5).
+- **Atomicity** — how each state change and its event publish atomically (outbox table plus relay, or equivalent) (§13).
+- **Schema governance** — the registry, the compatibility policy, and where it is enforced (§14).
 - **Pattern weight** — notification, event-carried state or event sourcing, with the requirement that justifies anything heavier than notification (§6, §7).
 
 ## 12. Implementation Self-Check
@@ -137,3 +141,27 @@ Before marking a task done:
 - [ ] No handler depends on an order its partition key does not guarantee (§4).
 - [ ] A failed event reaches the dead-letter path — no infinite retry, no silent drop (§5).
 - [ ] Producers carry no consumer-specific logic (§1).
+- [ ] No bare dual-write remains on any new producer path; the outbox relay has lag alerting (§13).
+- [ ] New or changed events are registered with a passing compatibility check (§14).
+
+## 13. Transactional Outbox
+
+- **What:** Publishing an event and committing the database change are two writes to two systems — without coordination, one can succeed while the other fails, silently diverging state from events.
+- **DO:**
+  - Write the event to an outbox table in the same database transaction as the state change, then relay it to the broker asynchronously (polling publisher or change-data capture).
+  - Keep the relay at-least-once and consumers idempotent — the outbox guarantees the event is eventually published; `concurrency.md §5` guarantees a duplicate delivery is harmless.
+  - Monitor relay lag and alert when unpublished outbox rows age past the budgeted window.
+- **DON'T:**
+  - Dual-write (commit the database, then publish to the broker) with no outbox or equivalent — a crash between the two loses or duplicates the event with no record.
+  - Treat the outbox relay as a substitute for consumer idempotency — redelivery still happens.
+
+## 14. Schema Registry & Compatibility
+
+- **What:** A registered, versioned schema with an enforced compatibility policy is what makes "additive evolution" (§3) checkable instead of aspirational.
+- **DO:**
+  - Register every event schema in a schema registry (or an equivalent versioned, discoverable store) with an explicit compatibility policy (backward, forward, or full) checked in CI before a producer change merges.
+  - Evolve per the registry's compatibility verdict — additive optional fields by default (§3 states the versioning rules this registry enforces).
+  - Reference the registry schema ID/version in each published event so consumers can resolve the exact contract.
+- **DON'T:**
+  - Publish events whose schema lives only in producer code with no registered, discoverable contract.
+  - Override a compatibility failure to land faster.

@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Project Design Patterns (Technology-Agnostic)
 
-> **Version:** 2.4.0 | **Last Updated:** 2026-09-16
+> **Version:** 2.4.1 | **Last Updated:** 2026-10-12
 
 > **Note on examples:** All file names, patterns, and tool references are illustrative. Adapt terminology and conventions to the detected stack.
 
@@ -33,6 +33,7 @@ Based on the `Feature Type` in session memory, apply the following **reasoning p
 | **Component-Driven** | The project has a UI — each visual unit is a self-contained, reusable component |
 | **Command Pattern** | The project is a CLI — each command is an isolated, independently testable unit |
 | **Event-Driven** | The project communicates via events, queues, or streams — see [event-driven-architecture.md](./event-driven-architecture.md) for the full standard (producers/consumers, delivery guarantees, schema versioning, CQRS) |
+| **Serverless / edge handlers** | The project deploys as functions or edge handlers — each handler is a thin adapter over a shared use-case layer |
 | **Facade + Strategy** | The project is a library or SDK — hide internal complexity behind a clean public API |
 | **MVVM / MVI (or equivalent reactive pattern)** | The project is a mobile or desktop app with reactive UI state |
 
@@ -47,9 +48,23 @@ Based on the `Feature Type` in session memory, apply the following **reasoning p
 | CLI Tool | Command Pattern |
 | Library / SDK | Facade + Strategy |
 | Event-Driven Worker | Event-Driven Architecture |
+| Serverless / Edge Function | Thin handler + shared use cases |
 | Mobile / Desktop App | MVVM or MVI (or framework‑equivalent) |
 
 > If the detected project type is not listed above, apply the **Reasoning Principles** table to determine the best fit using your knowledge of the stack. Document your reasoning in the Architecture Spec.
+
+### Decision Table — Layered vs Hexagonal vs Feature-Based
+
+This table is the decision source; `clean-architecture.md §4` cites it instead of restating it.
+
+| Prefer… | When… (objective criteria) |
+|---------|----------------------------|
+| **Layered** (Controller → Service → Repository) | Single deployable, ≤10 features, small team on one codebase, CRUD-heavy with stable infrastructure |
+| **Hexagonal** (Ports & Adapters) | Multiple deployment boundaries (microservices, replaceable DB/broker), infrastructure likely to change, domain testable per service in isolation |
+| **Feature-Based** (vertical slices) | Full-stack app growing beyond ~10 features, several developers working in parallel per feature, features deployed together |
+
+- **DO:** Score the project against the three rows and record the winner plus the rejected alternatives in the Architecture Spec.
+- **DON'T:** Split layers and features at once (a layer-per-feature matrix) — pick one primary axis; the other stays flat until the criteria above force a change.
 
 - **DO:** Justify the chosen pattern in the Architecture Spec, including alternatives considered and why they were rejected.
 - **DON'T:** Apply a pattern mechanically without considering the project's actual complexity, team size, and growth expectations. Over‑engineering is as harmful as under‑engineering.
@@ -59,7 +74,7 @@ Based on the `Feature Type` in session memory, apply the following **reasoning p
 - **DO:** Keep the entry point (main / index / app) thin — it only wires dependencies together (composition root).
 - **DON'T:** Put business logic in controllers, routes, UI components, or the entry point.
 - **DO:** Group code by domain/feature for projects expected to grow beyond ~10 modules.
-- **DON'T:** Create dumping grounds for miscellaneous code (e.g., `utils`, `helpers`, `common` directories or modules). Name modules by what they do, not by how generic they are.
+- **DON'T:** Create indiscriminate dumping grounds for miscellaneous code (a `utils`/`helpers`/`common` module that grows with every unrelated helper). Name modules by what they do, not by how generic they are. A narrowly-scoped shared kernel is allowed: cross-cutting value types and contracts with explicit ownership (e.g., `Result`, `Money`, `Time`/`DateTime` wrappers) — dumping is prohibited, an owned kernel is not.
 - **DO:** Design for testability from the start — if a unit is hard to test, it is a design smell.
 - **DON'T:** Let any single module or class become a "god object" that knows too much about the system.
 - **DO:** Establish clear module boundaries with explicit public APIs. Avoid circular dependencies between modules; use dependency inversion to break cycles when they appear.
@@ -91,7 +106,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | Severity | Triggers |
 |----------|---------|
 | 🔴 **BLOCK** | Business logic placed in the entry point (main/index) instead of a service or use case (§3); circular dependency between modules that cannot be resolved without architectural change (§3) |
-| 🟡 **WARN** | God object / god module that centralizes all logic for a domain concept (§3); new code fights the existing architectural pattern without explicit approval (§1); `utils`, `helpers`, or `common` dumping ground module created or expanded (§3); Architecture Spec not updated after significant structural change (§4) |
+| 🟡 **WARN** | God object / god module that centralizes all logic for a domain concept (§3); new code fights the existing architectural pattern without explicit approval (§1); indiscriminate `utils`/`helpers`/`common` dumping ground created or expanded outside an approved shared kernel (§3); Architecture Spec not updated after significant structural change (§4) |
 | 🟢 **INFO** | Minor inconsistency in module naming that does not violate the pattern (§3); feature-folder convention not yet applied to a small, stable module (§2); architecture spec exists but is slightly stale (§4) |
 
 ## 7. Applying This Standard with a Limited Scope
@@ -120,6 +135,7 @@ Settle these in the spec before any file is created — placement mistakes compo
 - **Pattern extended** — the architectural pattern the change follows in this codebase, or the reason and approval for departing from it (§1).
 - **Pattern chosen** *(new projects)* — the selected pattern and the alternatives rejected (§2).
 - **Placement** — the module or folder for each new file, and the public surface each module exposes (§3).
+- **Handler shape** *(serverless/edge)* — thin handler delegating to shared use cases, and where shared code lives (§2, §3).
 - **Composition root** — where new dependencies are wired (§3).
 - **Documentation impact** — which parts of the Architecture Spec (and the project's agent guide) this feature changes (§4).
 

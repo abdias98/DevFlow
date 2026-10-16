@@ -80,7 +80,7 @@ Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.m
 - **Challenge assumptions** — is the alleged root cause the only explanation the evidence supports?
 - **Suggest better approaches** — if the user's proposed fix would introduce technical debt or a security issue, say so and propose the more robust alternative.
 
-Present findings with evidence — a standard citation (`{standard}.md §{N} → BLOCK|WARN|INFO`) or a reproducible scenario, per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>) — and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
+Present findings with evidence — a standard citation (`{standard}.md §{N} → BLOCK|WARN|INFO`) or a reproducible scenario, per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>) — and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.** **In CI / Autonomous mode** (no user to resolve it): do NOT deadlock — log the BLOCK as `assumption-risk` in session memory, surface it in the final report, and continue.
 
 ### Step 2 — Load Stack Profile & Initialize Session
 
@@ -95,7 +95,7 @@ Present findings with evidence — a standard citation (`{standard}.md §{N} →
 
 ### Step 3 — Analyze the Target Code
 
-1. Read **only** the files in the causal chain of the bug.
+1. Trace the causal chain of the bug — read as far as the evidence leads (the chain is **discovered** by reading; it cannot limit reading itself — see rules.md → Scope restricts writing, never reading).
 2. Check `docs/devflow/knowledge-base/debug-patterns.md` if it exists — check if the error type matches a known pattern.
 3. Trace: input → processing → output. Where does the chain break?
 4. Check: initialization, null/undefined handling, type mismatches, off-by-one, async/await, dependency injection, missing validation.
@@ -162,9 +162,9 @@ For each file in the approved plan:
 3. Do NOT refactor unrelated code. Do NOT add new features.
 4. Apply changes with `replace_file_content` or `multi_replace_file_content`.
 5. Keep each change minimal and focused.
-6. Verify the reproduction test PASSES:
-   - **Standard/CI:** run `{Test Command (single file)} {path}`. If it fails → run `devflow-ctl iterate implement_debug --slug {slug}`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
-   - **Pair:** ask the user to run the command and paste the output. Do NOT commit until PASS is confirmed.
+6. Verify the reproduction test PASSES — then the full suite (no regressions):
+   - **Standard/CI:** run `{Test Command (single file)} {path}`, then the full `{Test Command}`. Both MUST pass. If either fails → run `devflow-ctl iterate implement_debug --slug {slug}`; on exit 0, fix within scope and re-run. On exit 1 (attempt limit exceeded) → stop and escalate to the user with the failing output.
+   - **Pair:** ask the user to run both commands and paste the output. Do NOT commit until PASS is confirmed for both.
 7. Commit (per `git-conventions.md` §1) — Standard/CI auto-executes; Pair instructs the user with the exact command:
    `fix({scope}): {one-line description of the bug}`
 
@@ -219,8 +219,9 @@ Pass to the Reviewer:
 
 **If the Reviewer returns BLOCK findings:**
 1. Apply the required fixes (within the original approved scope and causal chain).
-2. Run `devflow-ctl iterate implement_review --slug {slug}`. On exit 0 → re-invoke the Reviewer.
-3. On exit 1 (iteration limit exceeded) or if BLOCK findings persist → present findings to the user and ask how to proceed.
+2. For a BLOCK **outside** the approved scope/causal chain: do NOT silently edit it — add an INFO note to the bug-fix report (`## Out-of-Scope Finding`, file:line + reason it was left out) and a backlog entry, same convention as the Feature Agent.
+3. Run `devflow-ctl iterate implement_review --slug {slug}`. On exit 0 → re-invoke the Reviewer.
+4. On exit 1 (iteration limit exceeded) or if BLOCK findings persist → present findings to the user and ask how to proceed.
 
 **If the Reviewer returns APPROVED:**
 > ✅ Fix complete and approved. All standards verified.

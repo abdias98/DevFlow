@@ -4,6 +4,28 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.25.0 — 2026-10-12
+
+### Changed — 2.25.0
+- **Audit remediation (Wave 2–3)** — every standard touched by the 2026-10-12 framework audit; the 7 cross-standard contradictions (C1–C7) resolved with a single canonical owner each; OWASP coverage extended to API Top 10 2023 (BOLA) and LLM Top 10 2025. No section renumbered (append-only), no bullet text duplicated across standards (cite, don't restate):
+  - **`security.md`** (v2.6.0 → v2.7.0): BFF pattern + sender-constrained tokens (DPoP/mTLS), `__Host-` cookies, strict `aud`/`iss` + `kid`/`jku` confusion rejection (§2); SSRF defense in depth — egress filtering, metadata-endpoint block, DNS allowlist/anti-rebinding (§4); passkeys/WebAuthn preferred, pepper + cost tuning + 72B bcrypt limit + breach-corpus check (§7); TLS 1.2+ minimum, HSTS `includeSubDomains`/`preload`, cookie attributes (§7); AES-256-GCM/XChaCha20-Poly1305 + envelope + KMS/HSM (§7); stuffing-vs-brute-force rate limiting with jittered backoff, sampled security logging (§7); CSRF tokens primary + `Origin`/`Referer`/Fetch-Metadata, `SameSite` demoted to hardening (§8); BOLA/IDOR BLOCK trigger (§8, §11); LLM prompt-injection/output-handling rows (§8); §8 retitled beyond 2021-only; stack-trace BLOCK removed from §11 (canonical: `error-handling.md §5`).
+  - **`rest-api.md`** (v2.4.0 → v2.5.0): status codes 202/304/412/415 added (§3); envelope RECOMMENDED-not-mandatory with JSON:API/HAL/plain-body carve-out + RFC 7240 `Prefer: return=minimal` (§4); versioning trade-offs + no-SemVer-minor-on-URI rule (§5); sort `+field` encoding bug fixed (`-field` preferred), default/max page size mandatory (§6); idempotency scoped per endpoint+caller with body fingerprint + atomic check-then-store citing `concurrency.md §5` (§9); BOLA enforcement, `RateLimit-*`/`Retry-After`, OpenAPI 3.1, webhooks (§8, §10); envelope WARN fires only without a documented convention (§13).
+  - **`solid.md`** (v2.4.0 → v2.4.1): OCP WARN gated on real variation, `match` idiomático; `final/sealed` criterion; header interfaces for ports; DIP exceptions (value objects, domain exceptions, stdlib stables); new §12 resolving C1 (YAGNI prevails without a second case).
+  - **`clean-architecture.md`** (v2.4.0 → v2.4.1): Dependency Rule = source-time; pure functions for stateless CRUD; C2 dual validation (edge shape + domain invariant, cites `security.md §1`); C3 cites the `project-design.md §2` decision table; ORM-entity BLOCK with documented prototype/admin/BFF exception.
+  - **`testing.md`** (v1.5.0 → v1.5.1): new §15 (property-based, mutation, Pact, snapshot pitfalls) + §16 (builders, parallel isolation); seams for legacy, trunk-based E2E exception, Green file-count decoupled from scope, boundary/decision-table/mutation coverage, doubles taxonomy, flaky quarantine.
+  - **`performance.md`** (v2.4.0 → v2.4.1): O(1) locality/HashDoS nuance; eager/lazy-via-repository REPLACED by fetch-join/projection (N+1 BLOCK); replica lag/staleness; stampede/singleflight/negative-cache/poisoning; async corrected per-runtime.
+  - **`logging.md`** (v1.4.0 → v1.4.1): HMAC+minimization for PII, field-allowlist + redaction + sampling, WORM/hash-chain audit, C6 dual channel, new §14 (CRLF injection, MDC async, OpenTelemetry, cardinality).
+  - **`error-handling.md`** (v1.4.0 → v1.4.1): `catch (unknown)` + narrowing, explicit ignore APIs, new §14 fail-fast-vs-Result table, retryable/fatal taxonomy; C7 — §8 cites `concurrency.md §5` as canonical, own retry BLOCK removed.
+  - **`concurrency.md`** (v1.4.0 → v1.4.1): concurrency-test sizing guide + new §13 (determinism, quarantine), lock-free/RCU/actor nuance, per-runtime Safe Publication, C7 canonical idempotency §5.
+  - **`dependencies.md`** (v1.3.0 → v1.3.1): apps-lockfile vs libs-ranges (C5), reachability-gated BLOCK (VEX/CVSS env), lockfile hash verification, dependency-confusion defenses, new §13 (SBOM CycloneDX/SPDX, EOL).
+  - **`accessibility.md`** (v1.3.0 → v1.3.1): WCAG 2.2 additions, C4 alignment (24px floor, 44px recommended, cites `ui-design.md §9`), new §13 legal annex (EAA/ADA/§508).
+  - **`git-conventions.md`** (v1.2.0 → v1.2.1): `build`/`ci`/`style` types, `feat!:` + Breaking footer, new §11–§12 (signed commits, DCO, SLSA provenance, merge/squash/rebase + hooks).
+  - **`ui-design.md`** (v2.7.0 → v2.7.1): single 4pt base, `#000`/`#fff` contextual, portal overlays, blur-first + live validation, INP/LCP/CLS budgets, AVIF/srcset, forced-colors/prefers-contrast, C4 44px recommended.
+  - **`project-design.md`** (v2.4.0 → v2.4.1): §2 decision table Layered/Hexagonal/Feature (C3 canonical — `clean-architecture.md §4` cites here), serverless/edge, shared-kernel nuance.
+  - **`event-driven-architecture.md`** (v1.1.0 → v1.1.1): new §13 Outbox + §14 Schema Registry; C7 — cites `concurrency.md §5`, no duplicate BLOCK.
+  - **`integration-consumption.md`** (v1.0.0 → v1.0.1): hedging + retry budgets; C7 — cites `concurrency.md §5`, no duplicate BLOCK.
+- Refs: framework audit report `docs/devflow/reviews/2026-10-12-framework-audit-report.md` §4–§5.
+
 ## 2.24.0 — 2026-09-17
 
 ### Changed — 2.24.0

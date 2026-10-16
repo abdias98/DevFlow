@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Clean Architecture (Technology-Agnostic)
 
-> **Version:** 2.4.0 | **Last Updated:** 2026-09-16
+> **Version:** 2.4.1 | **Last Updated:** 2026-10-12
 
 > **Note on examples:** All code-like fragments and tool references are illustrative. Replace them with the actual libraries, frameworks, and naming conventions of the detected stack.
 
@@ -12,9 +12,10 @@ Apply these patterns to all code you design, generate, or review.
 - **DO:**  
   - Define abstractions (interfaces/abstract classes) in inner layers.  
   - Inject implementations via constructor injection at composition root (startup / DI container).  
-- **DON'T:**  
+- **DON'T:**
   - Import or reference classes from databases, web frameworks, or UI libraries in inner layers.  
   - Use static service locators or direct instantiation (`new`) on infrastructure types inside domain/application code.
+  - Read "deployment units" in the What above as source-code dependencies only, not deployment artifacts: the Dependency Rule constrains import direction at compile time; services from one codebase may still deploy together — see `solid.md` §5.
 
 > This is the architectural expression of SOLID's Dependency Inversion Principle (DIP). See `solid.md` § 5.
 
@@ -36,6 +37,7 @@ Apply these patterns to all code you design, generate, or review.
   - Orchestrate: fetch entities from repository interfaces, invoke business methods, save changes.  
   - Keep the flow explicit; avoid “god” use cases.  
   - Rely on port interfaces (e.g., `OrderRepository`, `EmailService`) declared in this layer.  
+  - Use a pure function instead of a class-per-use-case when there is no state to hold: stateless CRUD orchestration over injected ports in a function-first stack keeps the same input-DTO/output-DTO shape with less machinery — see `design-principles.md` §5 (KISS) and the application-scope YAGNI rule in `design-principles.md` §2.  
 - **DON'T:**  
   - Use framework‑specific types (e.g., HTTP request/response objects provided by the web framework, ORM-specific collection types).  
   - Catch exceptions unless translating to domain/custom application exceptions.  
@@ -65,6 +67,8 @@ Apply these patterns to all code you design, generate, or review.
 - **DO:** Define interfaces (ports) in the inner layers and implement them (adapters) in the outer layers.
 - **DON'T:** Use domain exceptions that inherit from infrastructure‑specific base classes (e.g., exceptions that carry transport-level status codes). Domain exceptions must be framework‑agnostic.
 - **DON'T:** Sprinkle validation logic in controllers that should belong to the domain (e.g., “email is valid” → value object; “order amount > 0” → entity invariant).
+- Enforce BOTH layers of validation: controllers and adapters check request shape at the boundary (required fields, types, ranges — see `security.md` §1), while entities and value objects own business invariants; the boundary shape check never replaces the domain invariant, and the invariant never excuses skipping boundary validation.
+- The §7 BLOCK on returning ORM or persistence entities from an API allows one documented exception: a prototype, internal admin screen, or BFF that projects an identical DTO shape may pass the entity through only when the exception, its expiry, and the identical DTO mapping are recorded in the spec — public or versioned APIs never qualify.
 
 ## 4. Cross‑Cutting Concerns & Conventions
 - **Logging & Monitoring:**  
@@ -78,7 +82,8 @@ Apply these patterns to all code you design, generate, or review.
   - Event dispatchers must be abstracted behind an interface to avoid framework lock‑in.  
 - **Folder/Module Structure:**  
   - Each layer gets its own package/module: `Domain`, `Application`, `Infrastructure`, `Presentation`.  
-  - Inside `Application`, group by feature (e.g., `Orders/CreateOrder`, `Orders/GetOrderHistory`) rather than by type.  
+  - Inside `Application`, group by feature (e.g., `Orders/CreateOrder`, `Orders/GetOrderHistory`) rather than by type.
+  - Choose between Layered, Feature-based, and Hexagonal organization using the canonical selection criteria in `project-design.md` §2: this standard's application-layer feature grouping above is the default outcome of that application decision for large applications, not a competing rule — record the chosen structure in the spec.  
 
 ## 5. Testing Requirements
 - **What:** Layer boundaries exist partly so each layer is testable in isolation. This section covers the *architectural* testability requirement per layer; [testing.md](./testing.md) owns test design in depth (Arrange/Act/Assert, what to mock and what not to, coverage) — see `testing.md` §3 for the "mock at the port/interface boundary" rule this section's mocked-ports guidance depends on.
@@ -155,3 +160,9 @@ Before marking a task done:
 - [ ] No ORM or persistence entity is returned from an endpoint or handed to the UI (§3).
 - [ ] No domain exception extends a framework or transport-specific base type (§3).
 - [ ] Entities are tested with no mocks, and use cases with their ports mocked (§5).
+
+## 11. Boundary Validation and Structure Decisions — Resolutions C2/C3
+
+- C2 — Validación en borde (shape) + invariante en dominio — AMBAS: request shape is checked at the adapter boundary and business invariants live in entities and value objects; neither replaces the other — see `security.md` §1 and §3 above.
+- C3 — Layered vs Feature-based vs Hexagonal for the application boundary: the canonical decision criteria live in `project-design.md` §2; the application feature grouping in §4 is that decision applied, not a rival rule.
+- ORM-entity exception to the §3 and §7 BLOCK: prototype, internal admin, or BFF with an identical recorded DTO mapping for persistence entities, documented with expiry in the spec; public or versioned APIs never qualify.

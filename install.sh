@@ -10,6 +10,27 @@ set -e
 
 # Allow overriding the source repository (security: configurable, not hardcoded)
 DEVFLOW_REPO="${DEVFLOW_REPO:-https://github.com/abdias98/DevFlow.git}"
+# Pin what gets installed: a tag, branch, or commit SHA (default: main).
+# For a verifiable install, set DEVFLOW_REF to a signed tag (e.g. v4.16.1);
+# when gpg is available the tag signature is verified before installing.
+DEVFLOW_REF="${DEVFLOW_REF:-main}"
+
+# ── Non-interactive mode ─────────────────────────────────────────────────────
+# `--editor <id>` selects the profile without asking (vscode|opencode|claude-code|antigravity|generic).
+# `--yes` / `--non-interactive` (or DEVFLOW_YES=1) answers every prompt affirmatively
+# and picks the first detected editor instead of asking. Required for CI/pipes —
+# without a TTY the interactive menu below would hang forever.
+DEVFLOW_EDITOR=""
+DEVFLOW_YES="${DEVFLOW_YES:-0}"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --editor=*) DEVFLOW_EDITOR="${1#--editor=}"; shift ;;
+    --editor) DEVFLOW_EDITOR="${2:-}"; shift 2 ;;
+    --yes|--non-interactive|-y) DEVFLOW_YES=1; shift ;;
+    -h|--help) echo "Usage: bash install.sh [--editor <id>] [--yes]"; echo "  --editor  Profile id: vscode, opencode, claude-code, antigravity, generic"; echo "  --yes     Non-interactive: first detected editor, affirmative answers"; exit 0 ;;
+    *) echo "❌ Unknown argument: $1 (see --help)"; exit 1 ;;
+  esac
+done
 
 echo "🚀 Installing DevFlow Framework..."
 echo ""
@@ -20,7 +41,7 @@ echo ""
 if [[ "$OSTYPE" == "darwin"* ]]; then
   OS_NAME="macOS"
   BIN_DIR="/usr/local/bin"
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+elif [[ "$OSTYPE" == "linux"* ]]; then
   OS_NAME="Linux"
   BIN_DIR="$HOME/.local/bin"
 elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
@@ -149,6 +170,15 @@ load_editor_profile() {
   CAP_RUNTIME="$(parse_yaml_value "$yaml" "capabilities" "runtime")"
 }
 
+# sed_escape <string>
+# Escapes a string for safe use as a sed s||| replacement or /.../ pattern.
+# Single canonical escaper for every substitution in this script — the old code
+# used three different (all incomplete) character classes, so a HOME or path
+# containing &, | or \ silently corrupted installed files or JSON snippets.
+sed_escape() {
+  sed 's/[&|/\\]/\\&/g' <<<"$1"
+}
+
 # copy_devflow_file <src> <dst>
 # Copies a skill or prompt file to the destination, applying substitutions from
 # tool_mappings and path_mappings in the loaded editor profile.
@@ -158,10 +188,10 @@ copy_devflow_file() {
   local dst="$2"
 
   local -a sed_args=(
-    -e "s|{{AGENTS_DIR}}|${AGENTS_DIR}|g"
-    -e "s|{{SKILLS_DIR}}|${SKILLS_DIR}|g"
-    -e "s|{{PROMPTS_DIR}}|${PROMPTS_DIR}|g"
-    -e "s|{{INSTR_DIR}}|${INSTR_DIR}|g"
+    -e "s|{{AGENTS_DIR}}|$(sed_escape "${AGENTS_DIR}")|g"
+    -e "s|{{SKILLS_DIR}}|$(sed_escape "${SKILLS_DIR}")|g"
+    -e "s|{{PROMPTS_DIR}}|$(sed_escape "${PROMPTS_DIR}")|g"
+    -e "s|{{INSTR_DIR}}|$(sed_escape "${INSTR_DIR}")|g"
   )
 
   if [[ "$TOOL_SUBSTITUTION" != "true" ]]; then
@@ -182,8 +212,8 @@ copy_devflow_file() {
   while IFS="=" read -r from to; do
     from="${from//[[:space:]]/}"; to="${to//[[:space:]]/}"
     [[ -z "$from" || -z "$to" ]] && continue
-    from_esc=$(sed 's/[&|/\]/\\&/g' <<<"$from")
-    to_esc=$(sed 's/[&|/\]/\\&/g' <<<"$to")
+    from_esc=$(sed_escape "$from")
+    to_esc=$(sed_escape "$to")
     if [[ "$to" == "REMOVE" ]]; then
       sed_args+=(-e "/\`${from_esc}\`/d")
     elif [[ "$from" != "$to" ]]; then
@@ -195,9 +225,8 @@ copy_devflow_file() {
   while IFS="=" read -r from to; do
     from="${from//[[:space:]]/}"; to="${to//[[:space:]]/}"
     [[ -z "$from" || -z "$to" ]] && continue
-    # Escape forward slashes in paths for sed
-    from_esc=$(sed 's/[&/\]/\\&/g' <<<"$from")
-    to_esc=$(sed 's/[&/\]/\\&/g' <<<"$to")
+    from_esc=$(sed_escape "$from")
+    to_esc=$(sed_escape "$to")
     if [[ "$to" == "REMOVE" ]]; then
       # Remove any line that contains this path
       sed_args+=(-e "/${from_esc}/d")
@@ -240,6 +269,12 @@ configure_permissions() {
 
   snippet_name="$(parse_yaml_value "$PROFILE_FILE" "permissions" "snippet")"
   config_raw="$(parse_yaml_value "$PROFILE_FILE" "permissions" "config_file")"
+  # The snippet must be a plain basename — never a path. A malicious or broken
+  # profile must not escape editor-profiles/permissions/ via `../` or `/`.
+  if [[ -n "$snippet_name" && ! "$snippet_name" =~ ^[A-Za-z0-9_.-]+\.json$ ]]; then
+    echo "❌ Permissions: refusing unsafe snippet name '$snippet_name' (must be a plain *.json basename)."
+    exit 1
+  fi
   snippet_src="$SOURCE_DIR/editor-profiles/permissions/$snippet_name"
   if [[ -z "$snippet_name" || -z "$config_raw" || ! -f "$snippet_src" ]]; then
     echo "⚠️  Permissions: incomplete permissions section in $(basename "$PROFILE_FILE") — skipped"
@@ -262,10 +297,12 @@ configure_permissions() {
   [ -f "$config_file" ] && cp "$config_file" "$config_file.devflow-backup"
 
   # Resolve install-path placeholders inside the snippet before merging.
+  # Values go through sed_escape — an install path containing &, | or \
+  # must not corrupt the JSON (same escaper as copy_devflow_file).
   export DEVFLOW_SNIPPET_JSON
-  DEVFLOW_SNIPPET_JSON="$(sed -e "s|\$SKILLS_DIR|$SKILLS_DIR|g" \
-                              -e "s|\$USER_DIR|$USER_DIR|g" \
-                              -e "s|\$HOME|$HOME|g" "$snippet_src")"
+  DEVFLOW_SNIPPET_JSON="$(sed -e "s|\$SKILLS_DIR|$(sed_escape "$SKILLS_DIR")|g" \
+                              -e "s|\$USER_DIR|$(sed_escape "$USER_DIR")|g" \
+                              -e "s|\$HOME|$(sed_escape "$HOME")|g" "$snippet_src")"
 
   # Merge rules (and retirement of rules older versions installed) live in
   # scripts/merge-settings.py, which is covered by tests/permissions.bats.
@@ -290,13 +327,25 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ -d "$SCRIPT_DIR/.agents/skills" ]; then
   SOURCE_DIR="$SCRIPT_DIR"
 else
-  echo "📥 Downloading from GitHub: $DEVFLOW_REPO"
+  echo "📥 Downloading from GitHub: $DEVFLOW_REPO (ref: $DEVFLOW_REF)"
   TEMP_DIR=$(mktemp -d)
   trap 'rm -rf "${TEMP_DIR:?}"' EXIT
-  if ! git clone --depth 1 "$DEVFLOW_REPO" "$TEMP_DIR" 2>/dev/null; then
-    echo "❌ Failed to clone repository. Check your internet connection or GitHub access."
+  if ! git clone --depth 1 --branch "$DEVFLOW_REF" "$DEVFLOW_REPO" "$TEMP_DIR" 2>/dev/null; then
+    echo "❌ Failed to clone repository. Check your internet connection, GitHub access, or DEVFLOW_REF."
     exit 1
   fi
+  # Best-effort signature check for signed tags (fails open with a warning when
+  # gpg is unavailable — the recorded commit SHA below still makes the install auditable).
+  if git -C "$TEMP_DIR" rev-parse -q --verify "refs/tags/$DEVFLOW_REF" >/dev/null 2>&1; then
+    if command -v gpg >/dev/null 2>&1; then
+      git -C "$TEMP_DIR" tag --verify "$DEVFLOW_REF" >/dev/null 2>&1 \
+        && echo "✅ Verified signed tag: $DEVFLOW_REF" \
+        || { echo "⚠️  Tag $DEVFLOW_REF is not signed or signature invalid — continuing with recorded commit SHA."; }
+    else
+      echo "⚠️  gpg not found — cannot verify tag signature; continuing with recorded commit SHA."
+    fi
+  fi
+  echo "📌 Installed commit: $(git -C "$TEMP_DIR" rev-parse HEAD)"
   SOURCE_DIR="$TEMP_DIR"
 fi
 
@@ -364,9 +413,20 @@ for p in "${ALL_PROFILES[@]}"; do
 done
 echo ""
 
-# Validate user input
+# Validate user input (skipped in non-interactive mode — see below)
+if [[ -z "$DEVFLOW_EDITOR" && "$DEVFLOW_YES" != "1" ]]; then
+_attempts=0
 while true; do
-  read -rp "Enter number [1-${#ALL_PROFILES[@]}]: " choice
+  # Piped input (tests, echo 2 | install.sh) reads fine; a closed stdin
+  # (/dev/null, CI without --yes) would loop on EOF forever — bail out fast.
+  if ! read -rp "Enter number [1-${#ALL_PROFILES[@]}]: " choice; then
+    _attempts=$((_attempts + 1))
+    if [[ $_attempts -ge 3 ]]; then
+      echo "❌ No input after $_attempts attempts — re-run with --editor <id> --yes (see --help)."
+      exit 1
+    fi
+    continue
+  fi
   if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#ALL_PROFILES[@]}" ]; then
     SELECTED_PROFILE="${ALL_PROFILES[$((choice - 1))]}"
     break
@@ -374,6 +434,33 @@ while true; do
     echo "  ❌ Invalid choice. Please enter a number between 1 and ${#ALL_PROFILES[@]}."
   fi
 done
+else
+  # Non-interactive selection: explicit --editor wins; otherwise first detected, else generic, else first.
+  if [[ -n "$DEVFLOW_EDITOR" ]]; then
+    for p in "${ALL_PROFILES[@]}"; do
+      if [[ "$(parse_yaml_value "$p" "" "id")" == "$DEVFLOW_EDITOR" ]]; then SELECTED_PROFILE="$p"; break; fi
+    done
+    if [[ -z "${SELECTED_PROFILE:-}" ]]; then echo "❌ Unknown --editor '$DEVFLOW_EDITOR'."; exit 1; fi
+  else
+    for p in "${ALL_PROFILES[@]}"; do
+      pid="$(parse_yaml_value "$p" "" "id")"
+      if [[ "$pid" == "generic" ]]; then continue; fi
+      _raw_base="$(parse_yaml_value "$p" "paths" "base")"
+      _raw_ud2="$(parse_yaml_value "$p" "user_dir" "$OS_NAME")"
+      _lud="${_raw_ud2//\$HOME/$HOME}"
+      _rb="${_raw_base//\$HOME/$HOME}"
+      _rb="${_rb//\$USER_DIR/$_lud}"
+      if [ -d "$_rb" ]; then SELECTED_PROFILE="$p"; break; fi
+    done
+    if [[ -z "${SELECTED_PROFILE:-}" ]]; then
+      for p in "${ALL_PROFILES[@]}"; do
+        if [[ "$(parse_yaml_value "$p" "" "id")" == "generic" ]]; then SELECTED_PROFILE="$p"; break; fi
+      done
+      [[ -z "${SELECTED_PROFILE:-}" ]] && SELECTED_PROFILE="${ALL_PROFILES[0]}"
+    fi
+    echo "🤖 Non-interactive: selected '$(parse_yaml_value "$SELECTED_PROFILE" "" "id")'."
+  fi
+fi
 
 # Load and validate the selected profile
 load_editor_profile "$SELECTED_PROFILE"
@@ -386,6 +473,27 @@ echo "📍 Selected: $EDITOR_NAME"
 echo "📍 Skills   → $SKILLS_DIR"
 echo "📍 Prompts  → $PROMPTS_DIR"
 echo ""
+
+# Profile collision guard: different profiles MUST NOT share a skills dir
+# (opencode and generic both resolve to $HOME/.agents). A previous install
+# leaves a marker; a different profile id means incompatible substitutions
+# would be mixed. Refuse in --yes mode, ask otherwise.
+_PROFILE_ID="$(parse_yaml_value "$SELECTED_PROFILE" "" "id")"
+_MARKER="$SKILLS_DIR/.devflow-profile"
+if [[ -f "$_MARKER" && "$(cat "$_MARKER" 2>/dev/null)" != "$_PROFILE_ID" ]]; then
+  echo "⚠️  $SKILLS_DIR was installed by profile '$(cat "$_MARKER")', not '$_PROFILE_ID' — their file substitutions are incompatible."
+  if [[ "$DEVFLOW_YES" == "1" ]]; then
+    echo "❌ Refusing to mix profiles in non-interactive mode. Install into a different target or remove $_MARKER deliberately."
+    exit 1
+  fi
+  if [[ ! -t 0 ]]; then
+    echo "❌ No TTY — re-run with --editor <id> targeting a free directory."
+    exit 1
+  fi
+  read -rp "   Overwrite with '$_PROFILE_ID' substitutions? [y/N] " _ov
+  [[ "$_ov" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
+fi
+mkdir -p "$SKILLS_DIR" && printf '%s\n' "$_PROFILE_ID" > "$_MARKER"
 
 # DevFlow store: where skills and instructions are kept for workspace init
 DEVFLOW_STORE="$HOME/.devflow"
@@ -431,13 +539,17 @@ if [ "$_legacy_found" -eq 1 ]; then
   if [ -d "$DEVFLOW_STORE/memory" ] || [ "$DEVFLOW_STORE" = "$MEMORY_HOME" ]; then
     echo "  ⚠️  Kept $DEVFLOW_STORE — it holds DevFlow framework memory"
   elif [ -d "$DEVFLOW_STORE" ]; then
-    rm -rf "$DEVFLOW_STORE"
+    rm -rf "${DEVFLOW_STORE:?}"
     echo "  ✓ Removed DevFlow store: $DEVFLOW_STORE"
   fi
   
 
   # Resolve the current version from package.json — never hardcode it here.
-  DEVFLOW_VERSION=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$SOURCE_DIR/package.json" 2>/dev/null | head -1)
+  if command -v python3 >/dev/null 2>&1; then
+    DEVFLOW_VERSION=$(python3 -c "import json;print(json.load(open('$SOURCE_DIR/package.json')).get('version',''))" 2>/dev/null)
+  else
+    DEVFLOW_VERSION=$(sed -n 's/^[[:space:]]*"version": *"\([^"]*\)".*/\1/p' "$SOURCE_DIR/package.json" 2>/dev/null | head -1)
+  fi
   echo "✅ Cleanup complete. Installing v${DEVFLOW_VERSION:-latest}..."
   echo ""
 fi
@@ -521,7 +633,11 @@ if mkdir -p "$MEMORY_HOME/memory/entries" 2>/dev/null; then
       echo "source_dir="
     fi
     echo "source_repo=$DEVFLOW_REPO"
-    echo "version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$SOURCE_DIR/package.json" 2>/dev/null | head -1)"
+    if command -v python3 >/dev/null 2>&1; then
+      echo "version=$(python3 -c "import json;print(json.load(open('$SOURCE_DIR/package.json')).get('version',''))" 2>/dev/null)"
+    else
+      echo "version=$(sed -n 's/^[[:space:]]*"version": *"\([^"]*\)".*/\1/p' "$SOURCE_DIR/package.json" 2>/dev/null | head -1)"
+    fi
     echo "installed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   } > "$MEMORY_HOME/config"
   echo "  ✓ Framework memory home: $MEMORY_HOME (kept across reinstalls)"
@@ -543,12 +659,37 @@ configure_permissions
 echo ""
 # ── Configure global gitignore (zero impact on projects) ────────────────────
 GLOBAL_GITIGNORE="$HOME/.gitignore_global"
-git config --global core.excludesFile "$GLOBAL_GITIGNORE" 2>/dev/null || true
-for entry in ".agents/" ".github/instructions/devflow-*.instructions.md" ".github/prompts/devflow*.prompt.md"; do
-  if ! grep -qxF "$entry" "$GLOBAL_GITIGNORE" 2>/dev/null; then
-    echo "$entry" >> "$GLOBAL_GITIGNORE"
+# Never silently clobber the user's global excludesFile: back it up, ask, restore on uninstall.
+PREVIOUS_EXCLUDES="$(git config --global core.excludesFile 2>/dev/null || true)"
+if [[ -n "$PREVIOUS_EXCLUDES" && "$PREVIOUS_EXCLUDES" != "$GLOBAL_GITIGNORE" ]]; then
+  echo "⚠️  git core.excludesFile is currently set to: $PREVIOUS_EXCLUDES"
+  echo "   DevFlow wants to point it at $GLOBAL_GITIGNORE (your old value is kept in a backup)."
+  if [[ "${DEVFLOW_YES:-}" == "1" ]]; then
+    _gi_answer="y"
+  else
+    read -rp "   Switch core.excludesFile to DevFlow's global gitignore? [Y/n] " _gi_answer
+    _gi_answer="${_gi_answer:-Y}"
   fi
-done
+  if [[ "$_gi_answer" =~ ^[Yy]$ ]]; then
+    printf '%s\n' "$PREVIOUS_EXCLUDES" > "$HOME/.gitignore_global.devflow-backup-excludes" 2>/dev/null || true
+    git config --global core.excludesFile "$GLOBAL_GITIGNORE" 2>/dev/null || true
+    echo "   ✓ Previous value backed up to ~/.gitignore_global.devflow-backup-excludes"
+  else
+    echo "   → Keeping your core.excludesFile; DevFlow entries were NOT installed globally."
+    _gi_skip=1
+  fi
+else
+  git config --global core.excludesFile "$GLOBAL_GITIGNORE" 2>/dev/null || true
+fi
+if [[ "${_gi_skip:-0}" != "1" ]]; then
+  # Ensure trailing newline so the first append never concatenates onto an unterminated line.
+  [[ -f "$GLOBAL_GITIGNORE" ]] && [[ -n "$(tail -c 1 "$GLOBAL_GITIGNORE" 2>/dev/null)" ]] && printf '\n' >> "$GLOBAL_GITIGNORE"
+  for entry in ".agents/" ".github/instructions/devflow-*.instructions.md" ".github/prompts/devflow*.prompt.md"; do
+    if ! grep -qxF "$entry" "$GLOBAL_GITIGNORE" 2>/dev/null; then
+      echo "$entry" >> "$GLOBAL_GITIGNORE"
+    fi
+  done
+fi
 echo "🔒 Global gitignore configured: $GLOBAL_GITIGNORE"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

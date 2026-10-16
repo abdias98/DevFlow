@@ -25,7 +25,7 @@ You are the **Documentation Agent** standalone agent. Generate and maintain proj
 1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
 2. **Initialize the standalone session:** run `devflow-ctl init --mode docs --slug {slug} --scope docs/devflow/documentation/*`. Add further `--scope` entries for any existing file this cycle will update (e.g. `README.md`, `CHANGELOG.md`) once Step 2 determines which ones.
 3. **Read the environment capability probe:** run `devflow-ctl capabilities` and record results in `context.md` under `## Environment Capabilities` (see [environment-probe.md](<{{SKILLS_DIR}}/shared/environment-probe.md>)).
-4. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Documentation Agent`, slug, and stack. Leave quality values empty until Step 6.
+4. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Documentation Agent`, slug, and stack. Leave quality values empty until Step 7.
 
 See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Step 0 — Session Opening for the canonical pattern.
 
@@ -42,6 +42,15 @@ See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) �
    - `contracts/` → contract validation reports
 2. Read the most recent artifact of each type.
 3. If no artifacts exist → STOP: *"No DevFlow artifacts found. Run at least one `/devflow` cycle first."*
+
+### Step 1.5 — Critical Friend Check
+
+Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.md>) on the documentation request. Focus on:
+- Do the source artifacts contradict each other (spec says X, review says Y)? Propagating a contradiction into docs cements it — resolve or flag first.
+- Is the request asking to document behavior the Reviewer BLOCKed or the tests never verified? Documenting unverified behavior as fact is a finding against yourself.
+- Would generating docs from a stale spec mislead more than having no docs? Check artifact dates.
+
+Present findings with evidence and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
 
 ### Step 2 — Determine Documentation Scope & Approval Gate
 
@@ -68,7 +77,8 @@ For each candidate document, check whether it already exists (`README.md`, `docs
 ### Step 3 — Load Stack Profile
 
 1. Read `## Stack Profile` from `context.md`.
-2. If not found → detect from workspace configs.
+2. If not found → perform [Quick Stack Detection](<{{SKILLS_DIR}}/shared/stack-detection.md>) and write the result to `context.md` under `## Stack Profile` (same canonical path every other agent uses — never a throwaway detection).
+3. **Load Memory** ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Load Memory): `devflow-ctl memory query --agent devflow-docs --stack {stack}` — apply `confirmed` entries as rules, treat `candidate` entries as hints to check.
 
 ### Step 4 — Generate Documentation
 
@@ -117,9 +127,11 @@ Pass to the Reviewer:
 - Artifact path: `docs/devflow/documentation/YYYY-MM-DD-{slug}-docs.md`
 - Feature Type: value from `## Stack Profile`
 
+**If the Reviewer returns BLOCK findings:** fix the report/docs and re-invoke, counted via `devflow-ctl iterate implement_review --slug {slug}` (limit from `iterate_default_max`). Do NOT proceed to Step 7 with unresolved BLOCKs.
+
 ### Step 7 — Release Session
 
-**Entry condition:** the Reviewer (Step 6) has returned a verdict. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and files generated/updated count. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the documentation itself is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
+**Entry condition:** the Reviewer (Step 6) has returned a verdict with no unresolved BLOCKs. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and files generated/updated count, then run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`. Contribute reusable documentation patterns to `docs/devflow/knowledge-base/learnings.md` (By Topic → Architecture + Cycle History, dedup by appending slug). Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the documentation itself is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
 
 ---
 

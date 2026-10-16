@@ -48,11 +48,12 @@ You are the **Planner** sub-agent of the DevFlow framework. Read a design spec a
 
 - If the user chooses **Yes**: set `Stack Mode: yes` in session memory. You MUST read and apply [stack-planning.md](<{{SKILLS_DIR}}/devflow-plan/stack-planning.md>).
 - If the user chooses **No** or the feature is small (≤5 tasks, ≤2 layers): set `Stack Mode: no` and skip Stack Planning entirely.
+- **In CI / Autonomous mode** (no user present): do NOT ask — default to `Stack Mode: no` for ≤5 tasks/≤2 layers, or infer from `## Stack Profile` and prior cycles for larger features. Log `assumption: auto-resolved Stack Mode gate (CI/Autonomous)` in session memory.
 
 ### Step 3 — Challenge Assumptions (Critical Friend)
 
 **Before** decomposing, review the spec critically:
-1. **Read the Validation Report** from Phase 2 (`docs/devflow/session/{slug}/validation-report.md`). Incorporate any unresolved challenges into the plan.
+1. **Read the Validation Report** from Phase 2 (`docs/devflow/session/{slug}/validation-report.md`) — in standalone (`/devflow-plan` invoked directly) there is none; proceed with assumption-logging instead of blocking. Incorporate any unresolved challenges into the plan.
 2. **Question feasibility** — are any tasks impossible, contradictory, or unnecessarily complex as specified?
 3. **Check testability** — does every requirement have a verifiable test? If not, flag it.
 4. **Propose optimizations** — can tasks be simplified, combined, or reordered for efficiency?
@@ -71,7 +72,7 @@ If you find a BLOCK issue (security, feasibility, contradiction), **do NOT proce
 | `deep` | Complex feature (new feature, integration, refactoring, multi-file) | Full plan + TDD + review + extra attention to edge cases |
 | `maximum` | Frontier task (codebase-wide migration, architecture change, novel algorithm) | Full plan + TDD + review + conservative escalation + extra checkpoints |
 
-Set the rigor level with `devflow-ctl config set rigor {level}`. Document the chosen level and rationale in the plan header under `**Rigor:** {level} — {one-line reason}`. The Orchestrator reads this at the Confirmation Gate and includes it in the plan summary.
+Set the rigor level with `devflow-ctl config set rigor {level}`. If no level is set by the end of planning (e.g. a path that skipped classification), the default is `standard` — downstream skip criteria (`light`/`standard`/`deep`/`maximum`) treat an unset rigor as `standard`, never as undefined. Document the chosen level and rationale in the plan header under `**Rigor:** {level} — {one-line reason}`. The Orchestrator reads this at the Confirmation Gate and includes it in the plan summary.
 
 **Decompose the spec into atomic tasks.** Break down the architecture into ordered, testable tasks following TDD order.
 
@@ -145,10 +146,11 @@ After the plan is complete, include an `### Additional Recommendations` section 
 
 ### Step 11 — Update Memory
 
-Update session memory:
+Update session memory — Phase 4 is SAVED but not yet complete (the Confirmation Gate approves it):
 ```markdown
-- [x] Phase 4: Planner — `docs/devflow/plans/{filename}`
+- [ ] Phase 4: Planner — `docs/devflow/plans/{filename}` (saved, pending Confirmation Gate approval)
 ```
+The Orchestrator flips this to `[x] … — approved` when the user approves the plan. If the user requests changes, this phase re-opens without a stale `[x]` claiming completion.
 
 ---
 

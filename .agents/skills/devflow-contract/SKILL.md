@@ -1,6 +1,6 @@
 ---
 name: devflow-contract
-description: "Validates API implementation against the contract defined in the architecture spec. Checks method, path, request/response shapes, status codes, and headers. Generates contract tests, analyzes coverage, and reports discrepancies. USE WHEN: API validation, contract testing, endpoint verification, REST compliance check."
+description: "Validates API implementation against the contract defined in the architecture spec. Checks method, path, request/response shapes, status codes, and headers. Generates contract tests and reports endpoint-by-endpoint discrepancies (Match / Partial / Mismatch). USE WHEN: API validation, contract testing, endpoint verification, REST compliance check."
 argument-hint: "Reference the architecture spec or describe the API contract to validate."
 ---
 
@@ -27,8 +27,8 @@ You are the **API Contract Agent** standalone agent. Validate that implemented A
 ### Step 0 — Session Opening
 
 1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
-2. **Initialize the standalone session:** run `devflow-ctl init --mode contract --slug {slug}`.
-3. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Contract Agent`, slug, and stack. Leave quality values empty until Step 7.
+2. **Initialize the standalone session:** run `devflow-ctl init --mode contract --slug {slug} --scope {test-dir}` — register the contract-test directory as scope; without it, the Step 4 `scope check` always fails. If the project uses a different test layout, run `devflow-ctl scope add {glob} --slug {slug}` to update it.
+3. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Contract Agent`, slug, and stack. Leave quality values empty until Step 8.
 
 See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Step 0 — Session Opening for the canonical pattern. The environment capability probe and knowledge base read happen in Step 2, below.
 
@@ -73,6 +73,8 @@ Before generating any test file, present the planned contract tests (endpoints c
 
 **STOP. Do NOT generate any test file until the user approves.**
 
+- **In CI / Autonomous mode** (no user present): do NOT stop — log the planned test files as approved-by-default with `assumption: auto-approved gate (CI/Autonomous)` in session memory and proceed to Step 4.
+
 - **✅ Approve** → proceed to Step 4.
 - **✏️ Adjust** → collect the user's feedback, revise the analysis from Step 3, and re-present this gate.
 - **❌ Cancel** → run `devflow-ctl lock release` and stop.
@@ -81,7 +83,7 @@ Before generating any test file, present the planned contract tests (endpoints c
 
 For each test file: run `devflow-ctl scope check {file} --slug {slug}` — if it exits 1, STOP and ask the user for explicit approval (then `devflow-ctl scope add {glob} --slug {slug}`, e.g. the project's test directory).
 
-For each endpoint, generate a contract test file if none exists:
+For each endpoint, generate a contract test file **if none exists**. If a contract test file already exists for the endpoint: do NOT overwrite it — present a merge plan (new assertions to add, stale ones to update) and ask the user whether to merge or skip. Overwriting an existing test file without approval is a BLOCK-worthy finding in your own review.
 
 1. Use the detected test framework conventions.
 2. Each test validates one contract requirement:
@@ -117,9 +119,11 @@ Pass to the Reviewer:
 - Artifact path: `docs/devflow/contracts/YYYY-MM-DD-{slug}-contract.md`
 - Feature Type: value from `## Stack Profile`
 
+**If the Reviewer returns BLOCK findings:** fix the contract tests or report and re-invoke the Reviewer, counted via `devflow-ctl iterate implement_review --slug {slug}` (limit from `iterate_default_max`). Do NOT proceed to Step 8 with unresolved BLOCKs.
+
 ### Step 8 — Release Session
 
-**Entry condition:** the Reviewer (Step 7) has returned a verdict. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and endpoint counts. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the contract report is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
+**Entry condition:** the Reviewer (Step 7) has returned a verdict with no unresolved BLOCKs. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and endpoint counts, then run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`. Append reusable contract findings to `docs/devflow/knowledge-base/learnings.md` (By Topic → Architecture + Cycle History, dedup by appending slug). Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the contract report is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
 
 ---
 

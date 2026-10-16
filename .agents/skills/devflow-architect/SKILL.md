@@ -148,6 +148,8 @@ The spec MUST include all sections from the spec template: Spec Digest, Context,
 
 ### Step 5 — Preview, Confirm, and Persist
 
+**In CI / Autonomous mode:** skip the confirmation gate — auto-approve, persist, and proceed (log `assumption: auto-approved spec (CI/Autonomous)` in session memory).
+
 1. Present the spec summary to the user in chat (can be abbreviated; the full spec will be in the file).
 2. Ask:
 
@@ -157,7 +159,7 @@ The spec MUST include all sections from the spec template: Spec Digest, Context,
 
 - **✅ Approve** → Execute `create_file` to persist the spec at `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`, then proceed to Step 6.
 - **✏️ Request changes** → Loop back to Step 3 (do NOT call `create_file`).
-- **❌ Cancel** → Discard (do NOT call `create_file`).
+- **❌ Cancel** → Discard (do NOT call `create_file`) and STOP — skip Steps 6–7 and the Completion Protocol file confirmation below.
 
 ### Step 6 — Update Memory
 
@@ -170,9 +172,12 @@ Merge (do NOT overwrite) session memory with the following:
 - [x] Phase 3: Architect — `docs/devflow/specs/{filename}`
 ```
 
-### Step 7 — Auto-Invoke Planner
+### Step 7 — Continue the Cycle
 
-After the spec is persisted and memory updated, **automatically invoke `devflow-plan`** to continue the DevFlow cycle.
+After the spec is persisted and memory updated:
+
+- **In a `/devflow` lifecycle cycle** (invoked by the Orchestrator): STOP and return the spec path. The Orchestrator invokes `devflow-plan` itself (Step 3 → Step 4) — auto-invoking here would run the Planner twice.
+- **Standalone** (`/devflow-architect` invoked directly): **automatically invoke `devflow-plan`** to continue.
 
 ---
 
@@ -183,10 +188,10 @@ Before transitioning to the next phase, you MUST confirm in your response:
 ```markdown
 ✅ File saved: docs/devflow/specs/YYYY-MM-DD-{slug}-design.md
 📏 Size: ~{N} lines
-🔗 Planner invoked for Phase 4.
+🔗 Lifecycle cycle: Orchestrator invokes Planner for Phase 4. / Standalone: Planner invoked for Phase 4.
 ```
 
-If you cannot confirm this because `create_file` was not called → **call it NOW** before proceeding.
+If you cannot confirm this because `create_file` was not called → **call it NOW** before proceeding — unless the user chose ❌ Cancel in Step 5, in which case there is deliberately no file and you STOP here.
 
 ---
 

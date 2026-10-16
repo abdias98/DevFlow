@@ -94,7 +94,7 @@ See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) �
 
 | header | question | type |
 |--------|----------|------|
-| `reverse_confirmation` | About to {create | update} `AGENTS.md` (and, in Full/Deep mode, an Architecture Spec and Project Template under `docs/devflow/reverse/`). {`AGENTS.md` already exists and will be updated, not replaced wholesale.} Proceed? | options: ✅ Approve, ✏️ Adjust, ❌ Cancel |
+| `reverse_confirmation` | About to {create | update} `AGENTS.md` (and, in Full/Deep mode, an Architecture Spec, Stack Profile, and Analysis Report under `docs/devflow/reverse/`). {`AGENTS.md` already exists and will be updated, not replaced wholesale.} Proceed? | options: ✅ Approve, ✏️ Adjust, ❌ Cancel |
 
 **STOP. Do NOT write `AGENTS.md` or any spec file until the user approves.**
 
@@ -147,7 +147,7 @@ Generate or update the project's `AGENTS.md` file with:
 
 ### Step 8b — Vulnerability Audit *(Deep only)*
 
-1. Check dependencies against known vulnerability databases (note: report known CVEs based on version numbers).
+1. Check dependencies with `devflow-ctl scan sca` (Standard/CI: auto-execute; Pair: ask the user) — the deterministic oracle for known CVEs. Version-number-only CVE claims are heuristics: mark them `unverified (no scan)` and NEVER present a CVE id from memory as fact; if the scan is unavailable, say which database would confirm it instead of asserting.
 2. Scan for OWASP Top 10 (2021) patterns:
    - A01: Broken Access Control (missing authz checks, IDOR, CORS misconfiguration, CSRF)
    - A02: Cryptographic Failures (plaintext secrets/passwords, weak/no encryption in transit or at rest)
@@ -198,20 +198,20 @@ After the report is persisted, **automatically invoke `devflow-review`** in Stan
 Pass to the Reviewer:
 - Invoking agent: `Reverse Engineering Agent`
 - Artifact path: `docs/devflow/reverse/YYYY-MM-DD-{slug}-reverse.md`
-- Feature Type: `backend` (reverse engineering always reviews architecture)
+- Feature Type: value from `## Stack Profile` (frontend/backend/CLI/library/mobile/fullstack as detected — never hardcode).
 
 **If the Reviewer returns BLOCK findings:**
 1. Review the findings — they are mostly about missing sections, incorrect classifications, or unsupported claims.
 2. Apply fixes within the generated artifacts only. **NEVER** modify source code.
-3. Re-invoke the Reviewer once more.
-4. If BLOCK findings persist after 2 iterations → present findings to the user and ask how to proceed.
+3. Re-invoke the Reviewer, counted via `devflow-ctl iterate implement_review --slug {slug}` (same counter convention as every other standalone agent).
+4. On exit 1 (limit exceeded) or if BLOCK findings persist → present findings to the user and ask how to proceed.
 
 **If the Reviewer returns APPROVED:**
 > ✅ Reverse engineering complete and reviewed. All artifacts validated.
 
 ### Step 13 — Release Session
 
-**Entry condition:** the Reviewer (Step 12) has returned a verdict. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and files analyzed. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (`AGENTS.md` and the reverse-engineering report are the persistent artifacts). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
+**Entry condition:** the Reviewer (Step 12) has returned a verdict with no unresolved BLOCKs. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and files analyzed, then run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`. Contribute reusable architecture patterns and debt anti-patterns to `docs/devflow/knowledge-base/learnings.md` (By Topic + Cycle History, dedup by appending slug) — this agent reads learnings to avoid re-discovery and must write back for the same reason. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (`AGENTS.md` and the reverse-engineering report are the persistent artifacts). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
 
 ---
 

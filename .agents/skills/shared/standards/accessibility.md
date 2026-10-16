@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Accessibility (a11y) (Technology-Agnostic)
 
-> **Version:** 1.3.0 | **Last Updated:** 2026-09-16
+> **Version:** 1.3.1 | **Last Updated:** 2026-10-12
 
 > **Note on examples:** Element names, ARIA attributes, and APIs are illustrative (web-oriented). Map them to the accessibility API of the detected platform (web/ARIA, iOS/UIKit accessibility, Android/TalkBack, desktop toolkits). The principles are universal; the primitives differ.
 
@@ -45,9 +45,11 @@ Accessibility is **not a feature — it is a requirement**. Apply these principl
 - **DO:**
   - Provide a clearly visible focus indicator with a contrast ratio of at least **3:1** against its background.
   - Ensure focus order follows the visual/reading order.
+  - Keep the focused element at least partially visible when it receives focus (WCAG 2.2 2.4.11 Focus Not Obscured, minimum; 2.4.12 enhanced) — no sticky header, overlay, or scroll container may fully cover the focus indicator.
 - **DON'T:**
   - Set focus styles to `none`/invisible.
   - Let focus jump unpredictably or land on hidden elements.
+  - Let sticky headers, overlays, or scroll containers fully obscure the focused element.
 
 ## 5. Semantics & ARIA
 
@@ -68,6 +70,7 @@ Accessibility is **not a feature — it is a requirement**. Apply these principl
   - Associate a programmatic label with every input; group related controls (fieldset/legend or platform equivalent).
   - Identify errors in text (not color alone), tie the message to the field, and move focus to the first error.
   - Expose required/invalid state programmatically, not just visually.
+  - Keep help available consistently in the same place and reachable the same way on every screen where the user may need it (WCAG 2.2 3.2.6 Consistent Help), and never ask for the same information twice in one flow when the system already has it (WCAG 2.2 3.3.7 Redundant Entry — pre-fill it or offer to reuse it).
 - **DON'T:**
   - Use placeholder text as the only label.
   - Signal validation failure with a red border alone.
@@ -78,7 +81,8 @@ Accessibility is **not a feature — it is a requirement**. Apply these principl
 - **DO:**
   - Announce important asynchronous updates to assistive tech (live regions / platform announcements).
   - Respect user preferences: reduced motion, increased contrast, color scheme, and zoom/text scaling up to **200%** without loss of content or function.
-  - Meet **WCAG 2.2**'s target size floor: **24×24 CSS px minimum** (2.5.8 Target Size Minimum, Level AA — required unless an exception applies, e.g. inline text links or an equivalent target elsewhere). Prefer the larger, **44×44 CSS px** recommended size (2.5.5 Target Size Enhanced, Level AAA — see [ui-design.md](./ui-design.md) §5, which treats it as the default for new components) whenever the design isn't otherwise constrained.
+  - Offer a single-pointer alternative for every drag interaction (WCAG 2.2 2.5.7 Dragging Movements — e.g., tap, arrow keys, or up/down buttons alongside drag-and-drop), and ensure content reflows without two-dimensional scrolling at 400% zoom (≈320 CSS px width, WCAG 1.4.10 Reflow).
+  - Meet **WCAG 2.2**'s target size floor: **24×24 CSS px minimum** (2.5.8 Target Size Minimum, Level AA — required unless an exception applies, e.g. inline text links or an equivalent target elsewhere). Prefer the larger, **44×44 CSS px** recommended size (2.5.5 Target Size Enhanced, Level AAA — see [ui-design.md](./ui-design.md) §9, which treats it as the recommendation for new components) whenever the design isn't otherwise constrained.
 - **DON'T:**
   - Auto-play motion or carousels that cannot be paused, or animation that ignores `prefers-reduced-motion`.
   - Silently swap content so screen-reader users never learn it changed.
@@ -99,8 +103,8 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 | Severity | Triggers |
 |----------|---------|
-| 🔴 **BLOCK** | Interactive element (button, link, form field, control) not keyboard-operable, or missing an accessible name/role, blocking a core user flow (§3, §5); `aria-hidden="true"` (or equivalent) on a focusable element creating an unreachable trap (§5); keyboard trap with no exit (§3); form input with no programmatic label on a critical flow (§6) |
-| 🟡 **WARN** | Text/UI below the WCAG AA contrast minimum (§2); missing or invisible focus indicator (§4); meaning conveyed by color alone (§1); validation error shown by color only, or not tied to the field (§6); informative image/icon with no text alternative (§1); motion that ignores reduced-motion preference (§7); touch target below **24×24 CSS px** with no exception applying — the WCAG 2.2 AA floor (§7) |
+| 🔴 **BLOCK** | Interactive element (button, link, form field, control) not keyboard-operable, or missing an accessible name/role, blocking a core user flow (§3, §5); `aria-hidden="true"` (or equivalent) on a focusable element creating an unreachable trap (§5); keyboard trap with no exit (§3); form input with no programmatic label on a critical flow (§6); product in EU scope shipping without meeting the European Accessibility Act requirements (§13) |
+| 🟡 **WARN** | Text/UI below the WCAG AA contrast minimum (§2); missing or invisible focus indicator (§4); meaning conveyed by color alone (§1); validation error shown by color only, or not tied to the field (§6); informative image/icon with no text alternative (§1); motion that ignores reduced-motion preference (§7); touch target below **24×24 CSS px** with no exception applying — the WCAG 2.2 AA floor (§7); drag-only interaction with no single-pointer alternative, or the same information demanded twice in one flow (§7) |
 | 🟢 **INFO** | ARIA used where a native semantic element would suffice (§5); asynchronous update not announced via a live region (§7); zoom/text scaling not yet verified to 200% (§7); focus order slightly out of step with visual order (§4); touch target at/above 24×24 but below the **44×44** recommended (AAA) size (§7) |
 
 ## 10. Applying This Standard with a Limited Scope
@@ -137,3 +141,14 @@ Before marking a task done:
 - [ ] Contrast was verified with a contrast analyzer, not by eye (§2).
 - [ ] Form errors appear in text, are tied to their field, and focus moves to the first one (§6).
 - [ ] Asynchronous updates are announced, and reduced-motion preferences are respected (§7).
+
+## 13. Legal Annex — European Accessibility Act, ADA, §508
+
+- **What:** In major markets accessibility is law, not best practice — missing a legal duty blocks launch in that jurisdiction.
+- **DO:**
+  - Treat the European Accessibility Act (EAA, applicable since 28 June 2025) as a launch blocker for products placed on the EU market: e-commerce, e-books, banking, ticketing, and related services must meet EN 301 549 (which tracks WCAG 2.1 AA, migrating toward 2.2).
+  - Treat US ADA Title III (public accommodations, interpreted to cover digital services) and §508 of the Rehabilitation Act (federal procurement) as binding where they apply: record the applicable regime and its conformance target in the spec.
+  - Record the conformance claim — scope, level, exceptions, test evidence — with the release artifacts.
+- **DON'T:**
+  - Ship into the EU assuming accessibility is optional — non-compliance carries penalties and market-access risk.
+  - Claim a WCAG level without evidence tied to the shipped product.

@@ -45,7 +45,8 @@ You are the **Debugger** sub-agent. Systematically debug failures — never gues
 
 ### Step 1 — Identify the Failure
 
-1. Read session memory (`context.md`, `phase-state.md`, `test-registry.md`).
+1. **Resolve the session:** if invoked with a `--slug` argument, use it. Otherwise run `devflow-ctl status` to find the active session. Standalone invocation outside any cycle has no slug — work without the iteration counter (single attempt, then escalate with triage) and note that in the debug log.
+2. Read session memory (`context.md`, `phase-state.md`, `test-registry.md`).
 2. Identify the source: test failure, build error, runtime error, or reviewer finding.
 3. Note the affected files, error type, and any stack traces provided.
 4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for known root causes, debugging patterns, and common pitfalls relevant to the detected stack. A documented anti-pattern may explain the failure. Then **Load Memory** ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Load Memory): `devflow-ctl memory query --agent devflow-debug --stack {stack}` — apply `confirmed` entries as rules, treat `candidate` entries as hints to check.
@@ -60,6 +61,8 @@ Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.m
 - Does the fix require changes beyond the causal chain, signaling architectural implications?
 
 Present findings with evidence — a standard citation (`{standard}.md §{N} → BLOCK|WARN|INFO`) or a reproducible scenario, per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>) — and route per the Critical Friend procedure.
+
+- **Early architectural escalation:** if the Critical Friend check concludes the root cause is architectural (requires new components, layer changes, or a plan revision beyond the causal chain), STOP and report to the invoker (Orchestrator or user) with evidence — do NOT proceed with a local fix. In a lifecycle cycle the Orchestrator routes to Architect (Step 3) or Planner (Step 4), consuming `plan_revision`; standalone, recommend `/devflow` to the user.
 
 ### Step 2 — Reproduce
 
@@ -90,6 +93,7 @@ Also check `docs/devflow/knowledge-base/debug-patterns.md` if it exists for proj
 
 1. State the root cause in one sentence: `"The bug is caused by {X} in {file}:{line} because {Y}."`
 2. Apply a **minimal fix** — change only what's necessary to resolve the root cause.
+3. **Before each file edit**, run `devflow-ctl scope check {file} --slug {slug}` (same chain as the Implementer — the Reviewer audits fix commits with `scope audit`, and an unjustified fix becomes a BLOCK one phase later). If the fix needs an Impact Zone file, run `scope justify` first; if it needs an Outside file, STOP and escalate (or break-glass per `rules.md`, security BLOCKs only).
 3. Use `replace_file_content` or `multi_replace_file_content`.
 4. Commit the fix with message `fix({scope}): {one-line description}`:
    - **Standard / CI mode:** auto-execute `git add {files}` + `git commit`.
@@ -106,7 +110,7 @@ Also check `docs/devflow/knowledge-base/debug-patterns.md` if it exists for proj
 > 1. Run the failing test: `{Test Command (single file)} {path}` — it should PASS.
 > 2. Run the full test suite: `{Test Command}` — no regressions."
 
-- If the test still fails (or the user reports it fails) → run `devflow-ctl iterate implement_debug --slug {slug}`. On exit 0, loop back to Step 3. On exit 1 (limit exceeded), do NOT loop again — escalate with structured triage:
+- If the test still fails after YOUR fix attempt (verified by you in Standard/CI, or confirmed failing by the user in Pair after applying your fix) → run `devflow-ctl iterate implement_debug --slug {slug}` — you are the single writer of this counter; no other agent increments it. On exit 0, loop back to Step 3. On exit 1 (limit exceeded), do NOT loop again — escalate with structured triage:
   - **A) Architectural change** → Route to Architect.
   - **B) Plan revision** → Route to Planner.
   - **C) Simplify scope** → Update plan, skip test.
@@ -115,12 +119,16 @@ Also check `docs/devflow/knowledge-base/debug-patterns.md` if it exists for proj
 
 ### Step 6 — Document
 
-1. **Use `create_file` to save** the debug log to `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md` following the [debug template](<{{SKILLS_DIR}}/devflow-debug/debug-template.md>).
+1. **Use `create_file` to save** the debug log to `docs/devflow/debug-logs/YYYY-MM-DD-{slug}-debug.md` following the [debug template](<{{SKILLS_DIR}}/devflow-debug/debug-template.md>). On a second or later debugging pass in the same cycle, save to `-debug-r{N}.md` (`-r2`, …) instead of overwriting — each attempt's root-cause analysis stays auditable.
 2. If the root cause pattern is reusable, suggest the user append it to `docs/devflow/knowledge-base/debug-patterns.md`.
 
 ### Step 7 — Update Memory
 
 Update `test-registry.md` (FAIL → PASS), `phase-state.md`, and iteration log.
+
+If the fix created a new implementation file or covered a scenario no row names yet, update `traceability.md` too (add the row or fill `Impl File` + `✅ DONE`) — the Implementer's half of the contract doesn't cover files the Debugger created, and a stale matrix fails the next `traceability check` through no fault of the Implementer.
+
+**Re-verification is atomic:** after this step the Orchestrator routes back to the Implementer (Step 6) for re-verification. If the Implementer re-works and re-breaks, the cycle returns here — mark `phase-state.md` Phase 7 as stale (`[ ] Phase 7: Debugger (re-opened)`) whenever control leaves this phase with failing tests, so no phase ever shows complete with broken code.
 
 ---
 
