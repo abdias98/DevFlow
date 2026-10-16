@@ -15,9 +15,13 @@ setup() {
 }
 
 # install_snippet <name> — substitute placeholders exactly as install.sh does,
-# then merge into $TARGET.
+# then merge into $TARGET. install.sh substitutes $SKILLS_DIR, $USER_DIR and
+# $HOME (in that order); this helper must mirror it or it goes blind the day a
+# snippet uses $USER_DIR.
 install_snippet() {
-  sed -e "s|\$SKILLS_DIR|$SKILLS|g" -e "s|\$HOME|$HOME|g" "$SNIPPETS/$1" | python3 "$MERGE" "$TARGET"
+  local _ud="$BATS_TEST_TMPDIR/userdir"
+  mkdir -p "$_ud"
+  sed -e "s|\$SKILLS_DIR|$SKILLS|g" -e "s|\$USER_DIR|$_ud|g" -e "s|\$HOME|$HOME|g" "$SNIPPETS/$1" | python3 "$MERGE" "$TARGET"
 }
 
 # opencode_verdict <command> — the verdict opencode applies to a command:
@@ -104,6 +108,22 @@ JSON
   install_snippet opencode.json
   run python3 -c "import json; print(json.load(open('$TARGET'))['permission']['external_directory']['$SKILLS/**'])"
   [ "$output" = "allow" ]
+}
+
+@test "opencode: supply-chain commands require approval (no silent install/execute)" {
+  install_snippet opencode.json
+  [ "$(opencode_verdict 'npx some-package')" = "ask" ]
+  [ "$(opencode_verdict 'pnpm add lodash')" = "ask" ]
+  [ "$(opencode_verdict 'yarn add lodash')" = "ask" ]
+  [ "$(opencode_verdict 'python -m pip install requests')" = "ask" ]
+  [ "$(opencode_verdict 'python3 -m pip install requests')" = "ask" ]
+  [ "$(opencode_verdict 'make deploy')" = "ask" ]
+  [ "$(opencode_verdict 'go build ./...')" = "ask" ]
+  [ "$(opencode_verdict 'cargo build')" = "ask" ]
+  # Legitimate read-only / test commands stay allowed:
+  [ "$(opencode_verdict 'grep foo bar')" = "allow" ]
+  [ "$(opencode_verdict 'go test ./...')" = "allow" ]
+  [ "$(opencode_verdict 'python script.py')" = "allow" ]
 }
 
 # ── Any editor ────────────────────────────────────────────────────────────────

@@ -51,8 +51,10 @@ Set `REVIEW_MODE` and proceed to the corresponding procedure below.
 ### Step 1 — Gather Context
 
 1. Read session memory: spec path, plan path, test results, Stack Mode.
-2. Read spec and plan documents. **Exception — no subagents** (`subagents: no`) **or the inline path of Step 3:** defer this item and item 3 until the Correctness & Behavior blind pass is written down ([correctness-guide.md](<{{SKILLS_DIR}}/devflow-review/correctness-guide.md>) → Sequential Fallback); read only the plan's File Map in Step 2.
-3. Read Definition of Done from `context.md` — cross-reference each criterion.
+2. Read the plan's **File Map only** (the scope of the change — Step 2 needs it). Then branch on execution path:
+   - **With subagents (normal path):** read the spec + plan body and DoD now (items 3–4 below). Subagent 4 still runs its own blind pass internally — this item is about what YOU read to dispatch, not what subagents read.
+   - **No subagents or inline path:** defer the spec/plan body and DoD until the Correctness & Behavior blind pass is written down ([correctness-guide.md](<{{SKILLS_DIR}}/devflow-review/correctness-guide.md>) → Sequential Fallback). Proceed with the File Map only.
+3. Read Definition of Done from `context.md` — cross-reference each criterion (normal path only; deferred otherwise per item 2).
 4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for known anti-patterns from previous cycles. If any documented anti-patterns match the changed files, flag them as findings. Also read the **standards profile** (`docs/devflow/knowledge-base/standards-profile.md`) if it exists: subagent 3 uses its idioms and canonical examples when judging consistency, and a divergence from a profile idiom is a finding against `project-design.md §1`; code that repeats a *Known Deviation* is not excused by it. Then **Load Memory** ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Load Memory): `devflow-ctl memory query --agent devflow-review --stack {stack}` — apply `confirmed` entries as rules, treat `candidate` entries as hints to check.
 
 ### Step 2 — Identify Changed Files
@@ -72,9 +74,9 @@ Before any LLM review — and regardless of the skip criteria below — run the 
 
 Treat every scanner finding as a **🔴 BLOCK** in synthesis (a committed secret or a high/critical CVE is never optional), cited as `devflow-ctl scan → {secrets|sca}`. If the scanner exits non-zero, the verdict is **CHANGES REQUESTED** no matter how clean the LLM dimensions look. If a scanner is unavailable the command **skips gracefully** — record the skipped scan in the review's `## Coverage` section so the gap is visible. The scanner *finds*; subagent 1 and the Implementer *explain and fix*.
 
-**Scope audit (Impact Zone).** Also auto-execute (Standard/CI) or ask the user to run (Pair) `devflow-ctl scope audit --slug {slug}` — the deterministic check from rules.md → Scope-Locking — Three Zones. Exit 1 means an Impact Zone file was modified without a recorded `scope justify` — treat it as a **🔴 BLOCK**, cited as `devflow-ctl scope audit`, and route it back to the Implementer the same as a failed `scan`. This only applies when the plan declared an Impact Zone (Wave 12); older plans with none will find nothing to audit.
+**Scope audit (Impact Zone).** Also auto-execute (Standard/CI) or ask the user to run (Pair) `devflow-ctl scope audit --slug {slug}` — the deterministic check from rules.md → Scope-Locking — Three Zones. Exit 1 means an Impact Zone file was modified without a recorded `scope justify` — treat it as a **🔴 BLOCK**, cited as `devflow-ctl scope audit`, and route it back to the Implementer the same as a failed `scan`. This only applies when the plan declared an Impact Zone (see the plan's File Map / Impact Zone table); plans with none will find nothing to audit.
 
-**Traceability check.** If `docs/devflow/session/{slug}/traceability.md` exists, also auto-execute (Standard/CI) or ask the user to run (Pair) `devflow-ctl traceability check docs/devflow/session/{slug}/traceability.md` — this is the Reviewer's half of the traceability contract (`shared/traceability-matrix.md` → "Validated by: Reviewer"). Exit 1 means at least one requirement row is still `⬜ PENDING`/`🟡 IN PROGRESS`; treat each uncovered row as a **🟡 WARN** by default, escalated to **🔴 BLOCK** if it maps to a DoD criterion or a HIGH-risk mitigation from the spec — route it back to the Implementer to either complete the task or justify the gap, the same as a failed `scan`. If the file doesn't exist for this cycle, record that in `## Coverage` as a gap rather than silently skipping it — the Planner's Step 8a should have generated it.
+**Traceability check.** If `docs/devflow/session/{slug}/traceability.md` exists, also auto-execute (Standard/CI) or ask the user to run (Pair) `devflow-ctl traceability check docs/devflow/session/{slug}/traceability.md` — this is the Reviewer's half of the traceability contract (`shared/traceability-matrix.md` → "Validated by: Reviewer"). Exit 1 means at least one requirement row is still `⬜ PENDING`/`🟡 IN PROGRESS`; treat each uncovered row as a **🔴 BLOCK** if it maps to a DoD criterion or a HIGH-risk mitigation from the spec (these gate the Finalizer at 100% — approving them as WARN would pass a review that can never finalize), **🟡 WARN** otherwise — route BLOCKs back to the Implementer to either complete the task or justify the gap, the same as a failed `scan`. If the file doesn't exist for this cycle, record that in `## Coverage` as a gap rather than silently skipping it — the Planner's Step 8a should have generated it.
 
 #### Skip criteria (review inline when ALL hold)
 
@@ -158,15 +160,15 @@ When the condition is met, add a **runtime verification** sub-step after Visual 
 
 ### Step 4 — Generate Review Document
 
-**Use `create_file` to save** to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`. Follow the template defined in the review checklist, including **`## Coverage`** — built from what each subagent reported (every subagent returns its standards loaded, and Correctness & Behavior its consumers read and scenarios walked) plus the deterministic checks, review path and diff signals. Before saving, validate the review against the [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Review Document section — and run `devflow-ctl artifacts check review {path}` (auto-execute in Standard/CI, ask the user in Pair); it fails a review with no Coverage section or one that does not account for Correctness & Behavior.
+**Use `create_file` to save** to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`. **On a re-review** (second or later pass of the same cycle — the Implementer looped back), do NOT overwrite: save to `YYYY-MM-DD-{slug}-review-r{N}.md` (`-r2`, `-r3`, …) instead, so the BLOCK history and its resolution stay auditable; the Finalizer aggregates over all `-rN` files. Follow the template defined in the review checklist, including **`## Coverage`** — built from what each subagent reported (every subagent returns its standards loaded, and Correctness & Behavior its consumers read and scenarios walked) plus the deterministic checks, review path and diff signals. Before saving, validate the review against the [artifact checklist](<{{SKILLS_DIR}}/shared/artifact-checklist.md>) — Review Document section — and run `devflow-ctl artifacts check review {path}` (auto-execute in Standard/CI, ask the user in Pair); it fails a review with no Coverage section or one that does not account for Correctness & Behavior.
 
 ### Step 5 — Route Decision
 
 | Findings | Action |
 |----------|--------|
-| No BLOCK | ✅ APPROVED → Route to Phase 8 (Finalizer) |
+| No BLOCK **and `traceability check` exits 0** | ✅ APPROVED → Route to Phase 8 (Finalizer) |
 | BLOCK exists | 🔄 CHANGES REQUESTED → Route to Implementer with specific fixes |
-| Plan gap (including Correctness & Behavior findings classified *plan gap*) | 🔄 Route to Planner for revision — the plan gains the missing behavior and its test before the Implementer fixes the code |
+| Plan gap (including Correctness & Behavior findings classified *plan gap*) | 🔄 Route to Planner for revision — the plan gains the missing behavior and its test before the Implementer fixes the code. Count this loop with `devflow-ctl iterate plan_revision --slug {slug}` (exit 1 = limit exhausted, escalate instead of looping) |
 | Architecture flaw | 🔄 Route to Architect for redesign |
 
 **Deterministic-scan BLOCKs have a verification oracle.** A finding from `devflow-ctl scan` is not cleared by the LLM judging the fix "looks right" — it is cleared **only when a re-run of `devflow-ctl scan` exits 0** for that finding. On re-review, the scan runs again (it always runs first); a scan that still reports the issue keeps the verdict at CHANGES REQUESTED no matter what else changed. The Implementer follows the [Security-TDD remediation loop](<{{SKILLS_DIR}}/devflow-implement/SKILL.md>) (Red→fix→re-scan→record) to resolve these.
@@ -232,7 +234,7 @@ See Cycle Mode Step 3 for the subagent briefs, standards mapping, and synthesis 
 
 ### Step 4 — Generate Review Document
 
-**Use `create_file` to save** to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`. Follow the same template and `## Coverage` requirement as Cycle Mode Step 4. Include a header indicating standalone mode:
+**Use `create_file` to save** to `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md` (on a re-review, `-review-r{N}.md` as in Cycle Mode — never overwrite). Follow the same template and `## Coverage` requirement as Cycle Mode Step 4. Include a header indicating standalone mode:
 ```markdown
 **Review Mode:** Standalone (invoked by {Feature Agent | Refactorer | Bug-Fixer | Performance Agent | Migration Agent | Contract Agent | Documentation Agent | Template Agent | Tutorial Agent | Reverse Agent})
 **Reference:** `docs/devflow/{type}/{artifact-file}`
@@ -243,7 +245,7 @@ See Cycle Mode Step 3 for the subagent briefs, standards mapping, and synthesis 
 | Findings | Action |
 |----------|--------|
 | No BLOCK | ✅ APPROVED → Inform user. Work is complete. |
-| BLOCK exists (including a *plan gap* at BLOCK severity — the agent amends its plan first) | 🔄 CHANGES REQUESTED → Return to invoking agent with specific fixes. The agent applies fixes and re-invokes the Reviewer, counted via `devflow-ctl iterate implement_review` (limit 3, not the "2" this used to say in prose — see `devflow-ctl`'s `iterate_default_max`). |
+| BLOCK exists (including a *plan gap* at BLOCK severity — the agent amends its plan first) | 🔄 CHANGES REQUESTED → Return to invoking agent with specific fixes. The agent applies fixes and re-invokes the Reviewer, counted via `devflow-ctl iterate implement_review` (limit from `devflow-ctl`'s `iterate_default_max`). Re-reviews save to `-review-r{N}.md`, never overwriting the prior pass. |
 | Architectural flaw requiring full redesign | 🔄 Recommend `/devflow` full cycle instead. |
 
 A disputed finding follows Cycle Mode → Disputed Findings unchanged.

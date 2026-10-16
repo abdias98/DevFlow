@@ -41,7 +41,7 @@ Do NOT ask a rigid questionnaire. Act intelligently:
 ### Step 3 — The Approval Loop (Identify & Restate)
 
 1. Produce the Understanding Summary using the template from [questions template](./questions-template.md).
-2. Present it to the user and explicitly ask: *"Is this correct? Do I have your approval to save this context and proceed to the Architect?"*
+2. Present it to the user and explicitly ask: *"Is this correct? Do I have your approval to save this context and proceed to the Validation Gate?"*
 3. **STOP** and wait for the user's explicit approval ("Yes", "Looks good", etc.).
 4. If the user corrects you, update the summary and ask for approval again. Do not proceed until you receive explicit approval.
 
@@ -52,12 +52,14 @@ Once approved, save the context to session memory ensuring the target directory 
 - **`context.md`**: Create using the template in [questions template](./questions-template.md). Leave the `Tech Stack` or stack details as `[To be detected by Architect]` — do not guess the technology stack without codebase exploration.
 - **`phase-state.md`**: Initialize or update to reflect Phase 1 complete.
 
-### Step 5 — Hand Off to Architect
+### Step 5 — Hand Off
 
-Inform the user that the understanding phase is complete and instruct them to invoke the next agent.
+Inform the user that the understanding phase is complete. The next step is **Phase 2 — Validation Gate** (run by the Orchestrator in `/devflow`); the Architect is Phase 3 and must NOT be invoked until the Validation Gate passes.
 
 > ✅ Understanding complete. Context saved to session memory.
-> Please invoke `@devflow-architect` to proceed to Phase 2.
+> Next: Phase 2 — Validation Gate. In a `/devflow` cycle the Orchestrator runs it automatically; standalone, invoke the Orchestrator (do NOT invoke `@devflow-architect` directly — that would skip the gate).
+
+**CI / Autonomous mode:** do NOT STOP for approval in Steps 2–3. Infer answers from the request, record every inference as an assumption in `context.md`, and proceed through save + handoff without waiting.
 
 ---
 

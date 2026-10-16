@@ -35,16 +35,17 @@ Read session memory: `context.md` (feature, slug, Stack Mode), `phase-state.md` 
    - **Standard / CI mode:** auto-execute `{Test Command}` and read the result.
    - **Pair mode:** ask the user — *"Run the full test suite: `{Test Command}`. Did all tests pass?"*
    - If ANY fail → STOP, route to Debugger.
-2. **Review:** Check the latest review document in `docs/devflow/reviews/`. If BLOCK findings remain unresolved → STOP, route to Implementer.
+2. **Review:** Check the latest review document in `docs/devflow/reviews/` (all `-review-r{N}.md` passes if re-reviews happened — every pass's BLOCKs must be resolved or explicitly dismissed, not just absent from the last file). If BLOCK findings remain unresolved → STOP, route to Implementer.
 3. **Deferred backlog:** Re-read the review document for any `🟠 INCOMPLETE` finding. Run `devflow-ctl backlog list --area {this cycle's scope}` and confirm every one of them has a matching entry — an INCOMPLETE finding must never vanish when session memory is cleaned. If one is missing (e.g., the Reviewer's step was skipped), run `devflow-ctl backlog add {file} "{reason}" --severity incomplete` for it now, before proceeding.
-4. **DoD:** Verify each criterion from `context.md`. Flag any unverifiable items to the user.
+4. **DoD:** Verify each criterion from `context.md`. Flag any unverifiable items to the user — **in CI / Autonomous mode**, log them to `send-to-user.md` instead of waiting.
 5. **Dependencies:** Run `devflow-ctl scan sca` (mode-aware — see Rules) — the same deterministic, language-agnostic dependency-vulnerability audit the Validation Gate already uses, so both gates report through one path instead of two uncorrelated mechanisms:
    - **Standard / CI mode:** auto-execute the read-only command and read the result.
    - **Pair mode:** ask the user — *"Run `devflow-ctl scan sca`. Report any vulnerabilities found."*
-   - Critical/High vulnerabilities → WARN the user. Recommend fixing before release.
+    - Critical/High vulnerabilities → 🔴 BLOCK: STOP, route to Implementer to fix before release (same policy as Reviewer — `devflow-ctl scan` findings are never optional). Do NOT proceed to summary or session cleanup with a known critical/high CVE.
    - The command skips gracefully when no supported manifest or audit tool is found — note that explicitly rather than silently omitting the check.
    - Record the finding (or the skip reason) in the final summary's Quality section (Step 4) — including non-blocking findings, so they aren't silently lost between here and the summary.
 6. **Stack branches** *(if Stack Mode = yes)*: Verify all expected branches exist (ask user to confirm with `git branch`).
+7. **Traceability gate (pre-deletion, non-bypassable):** Run `devflow-ctl traceability check docs/devflow/session/{slug}/traceability.md` (mode-aware — auto-execute in Standard/CI, ask user in Pair). If it exits non-zero (coverage < 100%) → STOP, route to Implementer to complete or justify pending rows. NEVER proceed to session cleanup (Step 5.4) with traceability below 100% — the deletion is irreversible and would destroy the evidence needed to remediate.
 
 ### Step 3 — Collect Artifacts
 
@@ -60,7 +61,7 @@ Gather:
   - Run `devflow-ctl traceability check docs/devflow/session/{slug}/traceability.md` → coverage percentage (do not count rows yourself).
   - Fill all remaining values in `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`.
   - Run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` — it appends the row to `_aggregate.md` and recomputes the 4 Averages that have a real column behind them (cycle duration, BLOCKs, test pass rate, total cycles). Do NOT recompute these by reading the table yourself. "Most frequent BLOCK category" and "Phase with most retries" have no structured column to derive from — the command leaves them as a manual entry; fill or update them yourself from this cycle's review/iteration data if you have something concrete to add.
-- **Escape analysis** ([escape-analysis.md](<{{SKILLS_DIR}}/shared/escape-analysis.md>)): ask the user — *"Did the previous cycle in this area receive any external correction (a PR review comment, a QA bug, an incident) since it was approved?"* If yes, classify each one (class + layer, per the doc) and run `devflow-ctl escape add --class <class> --layer <layer> --ref "<ref>" --note "<note>" --slug {slug}` for it — in Standard/CI mode, a PR reference may be read read-only via `gh pr view {n} --comments` and proposed to the user for classification before recording; never write back to the PR. When `escape add` reports a **framework layer**, also record or re-see the lesson in the framework memory, in the abstract ([escape-analysis.md](<{{SKILLS_DIR}}/shared/escape-analysis.md>) → What Recording One Does, step 4). Fill this cycle's own `Escapes after APPROVED` metric from the result (0 if none). Skip silently if this is the area's first cycle.
+- **Escape analysis** ([escape-analysis.md](<{{SKILLS_DIR}}/shared/escape-analysis.md>)): ask the user — *"Did the previous cycle in this area receive any external correction (a PR review comment, a QA bug, an incident) since it was approved?"* **In CI / Autonomous mode**, skip the question and record `Escapes after APPROVED: 0 (unverified — no user present)`; the next interactive cycle re-checks. If yes, classify each one (class + layer, per the doc) and run `devflow-ctl escape add --class <class> --layer <layer> --ref "<ref>" --note "<note>" --slug {slug}` for it — in Standard/CI mode, a PR reference may be read read-only via `gh pr view {n} --comments` and proposed to the user for classification before recording; never write back to the PR. When `escape add` reports a **framework layer**, also record or re-see the lesson in the framework memory, in the abstract ([escape-analysis.md](<{{SKILLS_DIR}}/shared/escape-analysis.md>) → What Recording One Does, step 4). Fill this cycle's own `Escapes after APPROVED` metric from the result (0 if none). Skip silently if this is the area's first cycle.
 - **Append to knowledge base** (`docs/devflow/knowledge-base/learnings.md`):
   - If Step above recorded any escape, add its anti-pattern to By Topic and Cycle History alongside the cycle's own patterns — same dedup rule.
   - Extract reusable patterns from the Architect's spec (design patterns, component structures).
@@ -125,12 +126,12 @@ Present this to the user: *"Here's a PR description you can use when creating th
 ### Step 5 — Archive & Clean Session Memory
 
 1. **Archive validation report** (if not already done by the Orchestrator):
-   - Check if `docs/devflow/validations/YYYY-MM-DD-{slug}-validation.md` exists.
-   - If NOT present: copy `docs/devflow/session/{slug}/validation-report.md` to that path before deleting.
-   - If accepted risks exist in `context.md` under `## Accepted Risks`: ensure they are in the archived report.
+    - Use the canonical archive path recorded in `phase-state.md` by the Orchestrator — do NOT recompute the date (it may differ past midnight, which would fork two divergent archives).
+    - If NOT present: copy `docs/devflow/session/{slug}/validation-report.md` to that path before deleting. Overwrite an existing archive only when its content hash differs.
+    - If accepted risks exist in `context.md` under `## Accepted Risks`: ensure they are in the archived report.
 2. **Archive autonomous-mode artifacts, if present.** If `docs/devflow/session/{slug}/autonomous-log.md` or `send-to-user.md` exist (autonomous mode was active this cycle), copy each to `docs/devflow/summaries/YYYY-MM-DD-{slug}-autonomous-log.md` / `-send-to-user.md` before deleting — see [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>). If neither file exists, skip this step.
-3. Confirm with the user that all artifacts are saved and the feature is complete.
-4. **Release the lock, then delete the whole session directory** (`docs/devflow/session/{slug}/`) — run `devflow-ctl lock release --slug {slug}`, then remove the directory itself, not a hand-picked file list. This is deliberate: a fixed list of filenames (`context.md`, `phase-state.md`, ...) silently leaves behind anything not on it — exactly how `autonomous-log.md` and `send-to-user.md` were orphaned before this fix. Deleting the directory guarantees nothing survives that wasn't archived in steps 1–2.
+3. Confirm with the user that all artifacts are saved and the feature is complete. **In CI / Autonomous mode:** do NOT wait — auto-confirm, log the artifact checklist to `send-to-user.md` as the deliverable record, and proceed.
+4. **Release the lock, then delete the whole session directory** (`docs/devflow/session/{slug}/`) — run `devflow-ctl lock release --slug {slug}`, then remove the directory itself, not a hand-picked file list. If `lock release` fails, STOP and report — do NOT delete the directory while the lock is held (it would orphan a live lock). This is deliberate: a fixed list of filenames (`context.md`, `phase-state.md`, ...) silently leaves behind anything not on it — exactly how `autonomous-log.md` and `send-to-user.md` were orphaned before this fix. Deleting the directory guarantees nothing survives that wasn't archived in steps 1–2.
 
 ### Step 6 — Final Confirmation
 

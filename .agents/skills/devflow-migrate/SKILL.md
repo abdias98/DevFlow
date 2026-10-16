@@ -28,8 +28,8 @@ You are the **Migration Agent** standalone agent. Analyze schema changes, genera
 ### Step 0 — Session Opening
 
 1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
-2. **Initialize the standalone session:** run `devflow-ctl init --mode migrate --slug {slug}`.
-3. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Migration Agent`, slug, and stack. Leave quality values empty until Step 7.
+2. **Initialize the standalone session:** run `devflow-ctl init --mode migrate --slug {slug} --scope {migrations-dir}` — register the migrations directory (from Step 4 conventions, or the project default) as scope; without it, the Step 5 `scope check` always fails. If conventions reveal a different directory, run `devflow-ctl scope add {glob} --slug {slug}` to update it.
+3. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Migration Agent`, slug, and stack. Leave quality values empty until Step 8.
 
 See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Step 0 — Session Opening for the canonical pattern. The environment capability probe and knowledge base read happen in Step 2, below.
 
@@ -50,7 +50,7 @@ Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.m
 - Is sensitive data being stored in plain text instead of encrypted? (`security.md §7`)
 - Does the schema change violate the data model defined in the architecture spec?
 
-Present findings with evidence — a standard citation (`{standard}.md §{N} → BLOCK|WARN|INFO`) or a reproducible scenario, per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>) — and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
+Present findings with evidence — a standard citation (`{standard}.md §{N} → BLOCK|WARN|INFO`) or a reproducible scenario, per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>) — and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.** **In CI / Autonomous mode** (no user to resolve it): do NOT deadlock — log the BLOCK as `assumption-risk` in session memory, surface it in the final report, and continue.
 
 ### Step 2 — Load Stack Profile
 
@@ -92,6 +92,8 @@ Before generating any migration file, present the planned changes (schema change
 
 **STOP. Do NOT generate any migration file until the user approves.**
 
+- **In CI / Autonomous mode** (no user present): do NOT stop — log the planned changes as approved-by-default with `assumption: auto-approved gate (CI/Autonomous)` in session memory and proceed to Step 5.
+
 - **✅ Approve** → proceed to Step 5.
 - **✏️ Adjust** → collect the user's feedback, revise the analysis from Step 3, and re-present this gate.
 - **❌ Cancel** → run `devflow-ctl lock release` and stop.
@@ -127,9 +129,11 @@ Pass to the Reviewer:
 - Artifact path: `docs/devflow/migrations/YYYY-MM-DD-{slug}-migration.md`
 - Feature Type: value from `## Stack Profile`
 
+**If the Reviewer returns BLOCK findings:** fix the migration files or report and re-invoke the Reviewer, counted via `devflow-ctl iterate implement_review --slug {slug}` (limit from `iterate_default_max`). Do NOT proceed to Step 8 with unresolved BLOCKs.
+
 ### Step 8 — Release Session
 
-**Entry condition:** the Reviewer (Step 7) has returned a verdict. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and file counts. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the migration report is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
+**Entry condition:** the Reviewer (Step 7) has returned a verdict with no unresolved BLOCKs. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and file counts, then run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`. Append reusable migration patterns to `docs/devflow/knowledge-base/learnings.md` (By Topic → Stack-Specific + Cycle History, dedup by appending slug). Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the migration report is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
 
 ---
 

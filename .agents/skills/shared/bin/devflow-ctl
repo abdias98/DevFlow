@@ -25,7 +25,7 @@
 #   scope impact <file> [--record]                   Discover dependents/dependencies; --record persists them
 #   scope justify <file> <reason>                    Record why an Impact Zone edit is a coherence change
 #   scope audit [<file>...]                          Exit 1 if a modified Impact Zone file has no justification
-#   iterate <loop> [--max <N>]                       Increment loop counter; exit 1 over limit
+#   iterate [check] <loop> [--max <N>]            Increment loop counter (or read-only check); exit 1 over limit
 #   lock check | acquire <agent> [--force] | release Manage the session lock
 #   config set <key> <value> | get <key>             Session settings (branch, pair_mode, mode, phase, rigor)
 #   checkpoint set <name> <sha> | get <name>         Record / read rollback SHAs
@@ -638,8 +638,13 @@ iterate_default_max() {
 
 cmd_iterate() {
   resolve_session
+  # Read-only mode: `iterate check <loop>` reports remaining attempts WITHOUT
+  # consuming one. Non-owning agents (Orchestrator, Implementer) use it to
+  # decide whether to route to the owning agent; only the owner increments.
+  local check_mode=0
+  if [[ "${1:-}" == "check" ]]; then check_mode=1; shift; fi
   local loop="${1:-}"; shift || true
-  [[ -n "$loop" ]] || die "usage: devflow-ctl iterate <loop> [--max <N>]"
+  [[ -n "$loop" ]] || die "usage: devflow-ctl iterate [check] <loop> [--max <N>]"
   local max=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -649,7 +654,16 @@ cmd_iterate() {
   done
   max="${max:-${DEVFLOW_MAX_ITERATIONS:-$(iterate_default_max "$loop")}}"
   local count; count="$(fm_get "iterations.$loop")"
-  count=$(( ${count:-0} + 1 ))
+  count="${count:-0}"
+  if (( check_mode )); then
+    if (( count >= max )); then
+      FRICTION_EVENT="iterate-limit"; FRICTION_DETAIL="$loop"
+      fail "loop '$loop' has no attempts remaining ($count >= $max) — STOP iterating and escalate to the user with the structured triage"
+    fi
+    ok "loop '$loop': $count of $max used"
+    return 0
+  fi
+  count=$(( count + 1 ))
   fm_set "iterations.$loop" "$count"
   if (( count > max )); then
     FRICTION_EVENT="iterate-limit"; FRICTION_DETAIL="$loop"
@@ -781,6 +795,8 @@ artifacts_required() {
     contract)   printf '%s\n' "Endpoints Validated" "Contract Definition" "Discrepancies" "Coverage Summary" ;;
     docs)       printf '%s\n' "Documentation Generated" "Artifact Sources Used" ;;
     reverse)    printf '%s\n' "Project Overview" "Generated Artifacts" "Stack Profile" "Known Unknowns" ;;
+    templates)  printf '%s\n' "Tech Stack" "Layer Structure" "Data Flow" "Design Decisions" "Common Patterns" "Test Conventions" ;;
+    tutorial)   printf '%s\n' "What We Built" "Cycle Summary" "Files Created" "Next Steps" ;;
     *) return 1 ;;
   esac
 }
@@ -916,7 +932,7 @@ _artifacts_check_review_coverage() {
 }
 
 cmd_artifacts() {
-  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse> <path> [--spec <spec-path>]"
+  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse|templates|tutorial> <path> [--spec <spec-path>]"
   local type="${2:-}" path="${3:-}" spec_path=""
   [[ -n "$type" && -n "$path" ]] || die "usage: devflow-ctl artifacts check <type> <path> [--spec <spec-path>]"
   shift 3
@@ -929,7 +945,7 @@ cmd_artifacts() {
   FRICTION_EVENT="artifact-incomplete"; FRICTION_DETAIL="$type"
   [[ -f "$path" ]] || fail "artifact not found at $path — it was never saved with create_file"
   local required missing=()
-  required="$(artifacts_required "$type")" || die "unknown artifact type '$type' (spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse)"
+  required="$(artifacts_required "$type")" || die "unknown artifact type '$type' (spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse|templates|tutorial)"
   while IFS= read -r section; do
     grep -qiE "^#{1,4} .*${section}" "$path" || missing+=("$section")
   done <<< "$required"

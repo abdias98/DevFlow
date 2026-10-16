@@ -13,10 +13,20 @@ echo ""
 # memory is kept: it holds lessons from every project, not code.
 PURGE_MEMORY=false
 [[ "${DEVFLOW_PURGE_MEMORY:-}" == "1" ]] && PURGE_MEMORY=true
+DEVFLOW_EDITOR=""
+DEVFLOW_YES="${DEVFLOW_YES:-0}"
 for _arg in "$@"; do
   case "$_arg" in
     --purge-memory) PURGE_MEMORY=true ;;
+    --editor=*) DEVFLOW_EDITOR="${_arg#--editor=}" ;;
+    --yes|--non-interactive|-y) DEVFLOW_YES=1 ;;
   esac
+done
+# --editor <id> without '=' (needs lookahead — handled here, not in the loop above)
+for (( _i=1; _i<=$#; _i++ )); do
+  if [[ "${!_i}" == "--editor" ]]; then
+    _j=$((_i+1)); DEVFLOW_EDITOR="${!_j:-}"
+  fi
 done
 
 # Allow overriding the source repository
@@ -25,7 +35,7 @@ DEVFLOW_REPO="${DEVFLOW_REPO:-https://github.com/abdias98/DevFlow.git}"
 # ── Detect OS ────────────────────────────────────────────────────────────────
 if [[ "$OSTYPE" == "darwin"* ]]; then
   OS_NAME="macOS"
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+elif [[ "$OSTYPE" == "linux"* ]]; then
   OS_NAME="Linux"
 elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
   OS_NAME="Windows"
@@ -108,6 +118,23 @@ done
 echo ""
 
 while true; do
+  if [[ -n "$DEVFLOW_EDITOR" ]]; then
+    _found=""
+    for p in "${ALL_PROFILES[@]}"; do
+      if [[ "$(parse_yaml_value "$p" "" "id")" == "$DEVFLOW_EDITOR" ]]; then _found="$p"; break; fi
+    done
+    if [[ -z "$_found" ]]; then echo "❌ Unknown --editor '$DEVFLOW_EDITOR'."; exit 1; fi
+    SELECTED_PROFILE="$_found"
+    break
+  fi
+  if [[ "$DEVFLOW_YES" == "1" ]]; then
+    echo "❌ --yes requires --editor <id> for uninstall (refusing to guess what to delete)."
+    exit 1
+  fi
+  if [[ ! -t 0 ]]; then
+    echo "❌ No TTY detected — re-run with --editor <id> (see install.sh --help)."
+    exit 1
+  fi
   read -rp "Enter number [1-${#ALL_PROFILES[@]}]: " choice
   if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#ALL_PROFILES[@]}" ]; then
     SELECTED_PROFILE="${ALL_PROFILES[$((choice - 1))]}"
@@ -148,10 +175,11 @@ AGENTS_DIR="${raw_agents//\$HOME/$HOME}"
 AGENTS_DIR="${AGENTS_DIR//\$APPDATA/${APPDATA:-}}"
 AGENTS_DIR="${AGENTS_DIR//\$USER_DIR/$USER_DIR}"
 
-# Safety: abort if any resolved path is empty or is a filesystem root.
+# Safety: abort if any resolved path is empty, a filesystem root, or the user's
+# own home / editor root (a bad profile must never wipe those).
 for _var in USER_DIR SKILLS_DIR PROMPTS_DIR INSTR_DIR AGENTS_DIR; do
   _val="${!_var}"
-  if [[ -z "$_val" || "$_val" == "/" || "$_val" == "//" ]]; then
+  if [[ -z "$_val" || "$_val" == "/" || "$_val" == "//" || "$_val" == "$HOME" || "$_val" == "$USER_DIR" ]]; then
     echo "❌ Resolved path for $_var is empty or unsafe ('$_val'). Aborting."
     exit 1
   fi
@@ -221,6 +249,24 @@ if [ -d "$MEMORY_HOME" ]; then
   else
     echo "  • Kept framework memory: $MEMORY_HOME (shared by every editor; pass --purge-memory to delete it)"
   fi
+fi
+
+# ── Global gitignore: remove DevFlow entries, restore previous excludesFile ──
+GLOBAL_GITIGNORE="$HOME/.gitignore_global"
+for entry in ".agents/" ".github/instructions/devflow-*.instructions.md" ".github/prompts/devflow*.prompt.md"; do
+  # Literal entries only (glob patterns stay — they may predate DevFlow).
+  if [[ "$entry" != *"*"* ]] && grep -qxF "$entry" "$GLOBAL_GITIGNORE" 2>/dev/null; then
+    grep -vxF "$entry" "$GLOBAL_GITIGNORE" > "$GLOBAL_GITIGNORE.tmp" && mv "$GLOBAL_GITIGNORE.tmp" "$GLOBAL_GITIGNORE"
+    echo "  ✓ Removed gitignore entry: $entry"
+  fi
+done
+if [[ -f "$HOME/.gitignore_global.devflow-backup-excludes" ]]; then
+  _prev="$(cat "$HOME/.gitignore_global.devflow-backup-excludes" 2>/dev/null || true)"
+  if [[ -n "$_prev" ]]; then
+    git config --global core.excludesFile "$_prev" 2>/dev/null || true
+    echo "  ✓ Restored previous core.excludesFile: $_prev"
+  fi
+  rm -f "$HOME/.gitignore_global.devflow-backup-excludes"
 fi
 
 echo ""

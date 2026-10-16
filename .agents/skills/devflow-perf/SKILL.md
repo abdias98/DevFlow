@@ -40,8 +40,8 @@ You are the **Performance Agent** standalone agent. Analyze code for performance
 ### Step 0 — Session Opening
 
 1. **Check for an active lifecycle cycle:** run `devflow-ctl lock check` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If a non-stale lock is held by another cycle, STOP and inform the user.
-2. **Initialize the standalone session:** run `devflow-ctl init --mode perf --slug {slug}`.
-3. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Performance Agent`, slug, and stack. Leave quality values empty until Step 8.
+2. **Initialize the standalone session:** run `devflow-ctl init --mode perf --slug {slug} --scope {target-area}` — register the target area from Step 1 (file, module, endpoint) as scope; if the target is refined in Step 1, run `devflow-ctl scope add {glob} --slug {slug}` to update it. Without a registered scope, later `scope check` calls cannot succeed.
+3. **Initialize metrics:** create `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` using the [metrics template](<{{SKILLS_DIR}}/shared/metrics-template.md>) — *Standalone Agent Metrics Format* — with the started timestamp, `Agent: Performance Agent`, slug, and stack. Leave quality values empty until Step 9.
 
 See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Step 0 — Session Opening for the canonical pattern. The environment capability probe and knowledge base read happen in Step 2, below.
 
@@ -95,10 +95,12 @@ Document findings with file:line references and severity (🔴 Critical / 🟡 W
    - Tell the user: *"Run existing benchmarks: `{benchmark command}`. Provide the output for baseline comparison."*
 2. **If no benchmarks exist**:
    - Suggest creating a minimal benchmark for the target code.
-   - Provide the benchmark code snippet following the project's test conventions.
+   - Provide the benchmark code snippet following the project's test conventions (a snippet to DISPLAY — never write benchmark files yourself; the report is your only file artifact).
    - Tell the user: *"No benchmarks found. Create this benchmark file and run: `{command}`."*
 3. **For HTTP endpoints:** Suggest load-testing commands (e.g., `wrk`, `autocannon`, `ab`, `k6`).
 4. **For database queries:** Suggest `EXPLAIN ANALYZE` or ORM query logging.
+
+**STOP. Do NOT proceed to Step 5 until the user provides benchmark/profiling output** (or confirms none can be produced — then record `baseline: none (unavailable: {reason})` and mark every finding's impact as estimated, not measured).
 
 ### Step 5 — Analyze Results
 
@@ -131,9 +133,11 @@ Pass to the Reviewer:
 - Artifact path: `docs/devflow/performance/YYYY-MM-DD-{slug}-perf.md`
 - Feature Type: value from `## Stack Profile`
 
+**If the Reviewer returns BLOCK findings:** fix the report (missing evidence, wrong file:line, unchecked anti-pattern) and re-invoke the Reviewer, counted via `devflow-ctl iterate implement_review --slug {slug}` (limit from `iterate_default_max`). Do NOT proceed to Step 9 with unresolved BLOCKs.
+
 ### Step 9 — Release Session
 
-**Entry condition:** the Reviewer (Step 8) has returned a verdict. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and findings count. Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the performance report is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
+**Entry condition:** the Reviewer (Step 8) has returned a verdict with no unresolved BLOCKs. Finalize `docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md` (created in Step 0) with the completed timestamp and findings count, then run `devflow-ctl metrics aggregate docs/devflow/metrics/YYYY-MM-DD-{slug}-metrics.md`. Append reusable findings to `docs/devflow/knowledge-base/learnings.md` (By Topic → Performance + Cycle History, dedup by appending slug). Then run `devflow-ctl lock release` and delete `docs/devflow/session/{slug}/` (the performance report is the persistent artifact). See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Canonical Closing Order.
 
 ---
 

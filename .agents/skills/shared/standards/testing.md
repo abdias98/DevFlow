@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Testing (Technology-Agnostic)
 
-> **Version:** 1.5.0 | **Last Updated:** 2026-09-16
+> **Version:** 1.5.1 | **Last Updated:** 2026-10-12
 
 > **Note on examples:** All tool names, directory names, and code fragments are illustrative. Replace them with the actual test runner, utilities, and conventions of the detected stack.
 
@@ -37,8 +37,10 @@ Apply these principles to all tests you design, generate, or review. TDD is non-
 - **What:** Over-mocking produces tests that pass but do not verify real behavior.
 - **DO:**
   - Mock external I/O: network calls, database queries, file system, time (`Date.now()`, `clock`), randomness.
-  - Mock at the port/interface boundary (the abstraction defined in the application layer) — never mock a concrete implementation directly.
+  - Mock at the port/interface boundary (the abstraction defined in the application layer) — never mock a concrete implementation directly, except for the legacy/stdlib seam below.
   - Prefer test doubles (fakes, stubs) over full mock libraries for simple cases — a fake repository that stores data in memory is more reliable than a mock with fragile expectations.
+  - Use the right double for the job: dummy (placeholder never exercised), stub (canned answers), spy (records calls for later verification), mock (verifies a specific interaction), fake (working in-memory implementation). Prefer stub/fake over mock where the interaction itself is not the requirement.
+  - Exception — concrete seam in legacy or stdlib code: where no port exists yet (a legacy concrete collaborator, stdlib time/randomness such as `Date.now()`), substituting the concrete seam or a thin clock/random wrapper is acceptable. Introduce a proper port when the seam grows beyond time/randomness.
 - **DON'T:**
   - Mock domain logic — test it directly with unit tests. If domain logic is hard to test without mocking, it is a design problem (missing abstraction, hidden dependency).
   - Mock everything by default. If you can use a real, fast, in-memory alternative (SQLite, in-process HTTP client, in-memory cache), prefer it.
@@ -51,6 +53,9 @@ Apply these principles to all tests you design, generate, or review. TDD is non-
   - Require tests for every happy path, at least one edge case, and at least one failure/error scenario (as defined in DevFlow's plan template).
   - Use coverage as a floor, not a target. A test that merely executes a line without asserting anything is worse than no test.
   - Prioritize coverage of: domain logic, use cases, error paths, and boundary conditions.
+  - Cover boundary values explicitly (min-1 / min / max / max+1, empty / single / full, zero / negative) for every numeric, length, or range rule — "happy + 1 edge + 1 failure" alone is insufficient for branching logic.
+  - Use decision tables for combinational rules (each condition combination maps to its expected outcome) so no branch hides behind line coverage.
+  - Track branch coverage separately from line coverage — an executed line is not a verified branch — and use mutation score (mutants killed over total mutants) as the strength signal on critical logic; see §15 for the mutation-testing technique.
   - Track coverage trends over time. A drop in coverage on a new feature signals missing tests.
 - **DON'T:**
   - Chase 100% coverage mechanically — trivial getters, generated code, and framework boilerplate do not need tests.
@@ -76,6 +81,8 @@ Apply these principles to all tests you design, generate, or review. TDD is non-
   - Reset state between tests: use `beforeEach`/`setUp`/`teardown` to restore a clean baseline.
   - Use transactions that roll back, or in-memory stores that reset, for database-backed tests.
   - Run tests in parallel safely — no shared mutable state, no reliance on execution order.
+  - For parallel runs against a shared database, isolate by schema or transaction per worker, or by unique identifiers per test — never mutate a single shared dataset in place.
+  - Quarantine flaky or timing-dependent tests explicitly: control time with a mock clock, await asynchronous work deterministically (no fixed sleeps), and track a flaky test separately until its root cause is fixed — never retry a red suite until it turns green.
   - Use unique identifiers (UUIDs, random names) in integration tests to avoid collisions.
 - **DON'T:**
   - Rely on test execution order. Randomize order periodically to surface hidden dependencies.
@@ -102,10 +109,11 @@ Apply these principles to all tests you design, generate, or review. TDD is non-
   - Keep the unit test suite under 30 seconds for a typical project.
   - Use in-memory alternatives to slow resources (in-memory DB, local file stubs) for unit and integration tests.
   - Tag slow tests (E2E, load tests) and run them separately in CI, not on every commit.
+  - Exception — trunk-based delivery with ephemeral environments: when every change gets an isolated ephemeral environment with seed data, a small smoke subset of E2E may run per change; keep the full E2E suite gated on pre-release or nightly.
   - Parallelize independent test suites.
 - **DON'T:**
   - Add real `sleep`/`delay` calls in tests. Control time with a mock clock.
-  - Run E2E tests on every push — gate them on a pre-release or nightly pipeline.
+  - Run the full E2E suite on every push — gate it on a pre-release or nightly pipeline (except for the ephemeral-environment smoke subset above).
 
 ## 9. The TDD Cycle (Red → Green → Refactor)
 
@@ -115,7 +123,7 @@ Apply these principles to all tests you design, generate, or review. TDD is non-
   - The test must be confirmed failing before any production code is written. Writing the implementation first and the test second is not TDD, even if the test happens to pass afterward.
 - **A minimal Green:**
   - Write the smallest change that makes the failing assertion pass — no extra branches, no unrequested generalization, no unrelated cleanup folded into the same step.
-  - A Green that required editing more than the task's declared files, or that also silently fixed a different failing test, is a signal the task was mis-scoped — flag it rather than accepting the extra change quietly.
+  - A Green that also silently fixed a different failing test, or that changed behavior outside the task's declared files, may signal the task was mis-scoped — flag it rather than accepting the extra change quietly. File count alone is not the verdict: a minimal Green can legitimately touch several files (production code plus its test plus a factory), and scope is decided by `rules.md` → Scope-Locking, not by counting files.
   - "No extra branches" means no branch **without a failing test that demands it**. A reachable case of the requested behavior that no test covers is not an extra branch to avoid — it is a missing test: write it, see it fail, then add the branch. Minimal Green limits *how much* code a test justifies; it never justifies leaving a known wrong behavior untested.
 - **When to refactor:** only after Green, only on the code just touched, and only if the full test suite for the affected area still passes afterward with no behavior change. Refactor-while-Green is not an excuse to skip the "minimal" rule above — the sequence is Red → Green → *then* Refactor, never interleaved.
 - **The commit rule:** a Green phase is never committed on the strength of "it should pass now" — it must be committed only after a test-run output (auto-executed in Standard/CI mode, pasted by the user in Pair mode) actually confirms PASS. See `rules.md` → Implementation Modes for the mode-dependent execution rule this section assumes.
@@ -125,11 +133,13 @@ When reviewing tests, verify:
 - [ ] Each test has a clear Arrange / Act / Assert structure.
 - [ ] Test names describe the scenario and expected outcome without reading the code.
 - [ ] Happy path, at least one edge case, and at least one error scenario are covered per feature.
-- [ ] Mocks are at port/interface boundaries, not on concrete classes or the unit under test.
+- [ ] Boundary values and decision-table combinations are covered for branching logic — branch coverage tracked separately from line coverage (§4).
+- [ ] Mocks are at port/interface boundaries, not on concrete classes or the unit under test (legacy/stdlib time-randomness seam excepted, §3).
 - [ ] Tests are independent — no shared mutable state, no execution-order dependency.
 - [ ] Regression tests exist for any bug fix (fail before fix, pass after).
 - [ ] No `sleep`/`delay` in tests; time is controlled via mock clock.
 - [ ] Coverage is meaningful — assertions actually verify behavior, not just execute lines.
+- [ ] Complementary techniques applied where decided: property-based, contract, or mutation testing for critical logic; snapshots used only with explicit expectations (§15).
 
 ## 11. Severity Classification
 
@@ -138,7 +148,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | Severity | Triggers |
 |----------|---------|
 | 🔴 **BLOCK** | Bug fix applied with no regression test (§5); test has no real assertions — always passes regardless of code behavior (§4); test file missing for a new feature that modifies domain logic (§4) |
-| 🟡 **WARN** | Test verifies implementation details instead of behavior (§2); multiple unrelated assertions in one test producing unreadable failures (§2); test relies on execution order — fails when run in isolation (§6); real `sleep`/`delay` in test body (§8); no edge case or error scenario covered for a feature (§4) |
+| 🟡 **WARN** | Test verifies implementation details instead of behavior (§2); multiple unrelated assertions in one test producing unreadable failures (§2); test relies on execution order — fails when run in isolation (§6); real `sleep`/`delay` in test body (§8); no edge case or error scenario covered for a feature (§4); branching logic covered only by line execution with no boundary values or decision-table combinations (§4); snapshot assertion with no explicit expectation that verifies change instead of correctness (§15); flaky timing-dependent test with no quarantine or deterministic async handling (§6) |
 | 🟢 **INFO** | Test name does not describe the scenario clearly (§7); test file not mirroring source structure (§7); in-memory alternative available but not used (test is slow but not blocking) (§8) |
 
 ## 12. Applying This Standard with a Limited Scope
@@ -161,6 +171,7 @@ The spec's **Test Architecture** and **State & Interaction Matrix** carry these 
 - **Test level per behavior** — unit, integration or end-to-end, plus a concurrency test wherever a business-critical invariant is contended (§1).
 - **Seams** — what is replaced at port boundaries and what runs against real or in-memory implementations (§3).
 - **Scenarios** — happy path, edge cases and failures per task, plus the feature-level sequence scenarios derived from the matrix (§4).
+- **Complementary techniques** — which critical behaviors need property-based, contract, or mutation testing beyond example-based tests, and which snapshots carry explicit expectations (§15).
 - **Test data and isolation** — factories or fixtures, and how state is reset between tests (§6).
 - **Regression coverage** — the reproduction test for each bug the change fixes (§5).
 
@@ -171,6 +182,30 @@ Before marking a task done:
 - [ ] Each new test was seen failing for the right reason before the production code was written (§9).
 - [ ] Assertions check observable outcomes, not internal calls — unless a call count is itself the requirement (§2).
 - [ ] Mocks sit only at port boundaries, and the unit under test is never mocked (§3).
+- [ ] Branching logic has boundary-value and decision-table coverage, and mutation score was considered for critical logic (§4).
 - [ ] Tests pass in isolation and in any order, with no shared mutable state (§6).
 - [ ] No real sleep or delay — time is controlled (§8).
 - [ ] Every test name describes the behavior and scenario, readable without opening the code (§7).
+
+## 15. Complementary Test Techniques
+
+- **What:** Example-based tests alone miss property violations, weak assertions, contract drift, and false-confidence snapshots on critical logic.
+- **DO:**
+  - Use property-based testing (e.g., fast-check, Hypothesis, proptest) for invariant-heavy logic: declare properties that must hold over generated inputs (round-trips, idempotence, ordering), and let shrinking minimize the failing case.
+  - Use mutation testing to judge assertion strength on critical logic: introduce small mutants and require the suite to kill them; track the mutation score (mutants killed over total mutants) alongside branch coverage from §4.
+  - Use contract testing (e.g., Pact) for service boundaries: the consumer publishes its expectations as a contract the provider verifies, catching drift that unit tests on either side alone cannot see.
+  - Treat snapshots as change detectors, not correctness proofs: keep snapshots small and curated, assert explicit expectations alongside them, and review every snapshot diff as a behavior change.
+- **DON'T:**
+  - Rely on large auto-generated snapshots with no explicit expectation — they verify that output changed, not that the changed output is correct.
+  - Assume high line coverage means strong tests — an assertion-free suite can cover lines while killing no mutants.
+
+## 16. Test Data Builders & Parallel Isolation
+
+- **What:** Readable test data setup and deterministic isolation decide whether a suite stays fast and trustworthy under parallel execution.
+- **DO:**
+  - Build complex test objects through builders or factories with sensible defaults, overriding only the fields the scenario cares about — so each test states its intent instead of repeating full construction.
+  - Keep builders beside the test suite (or in the approved shared location) and compose them for nested structures rather than duplicating fixture literals.
+  - Isolate parallel database tests by worker (separate schema, transaction rollback, or unique identifiers per test) so concurrent workers never mutate the same rows; see §6 for the quarantine and shared-database rules this section extends.
+- **DON'T:**
+  - Copy-paste full object literals with magic values across tests — a schema change then breaks dozens of unrelated tests.
+  - Share one mutable dataset across parallel workers and hope ordering saves the suite.

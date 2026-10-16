@@ -44,12 +44,15 @@ if ($scriptDir -and (Test-Path $localSh)) {
 # We must find Git for Windows' bash.exe specifically.
 $bashPath = $null
 
-# 1) Check PATH — but EXCLUDE WSL bash (WindowsApps) and System32
-$bashCmd = Get-Command bash.exe -ErrorAction SilentlyContinue
-if ($bashCmd) {
+# 1) Check PATH — but EXCLUDE WSL bash (WindowsApps) and System32.
+# -All because the first bash.exe on PATH may be the excluded WSL one while a
+# Git Bash sits further down PATH; without -All we would falsely report missing.
+$bashCmds = Get-Command bash.exe -All -ErrorAction SilentlyContinue
+foreach ($bashCmd in @($bashCmds)) {
     $candidate = $bashCmd.Source
     if ($candidate -notmatch 'WindowsApps|System32') {
         $bashPath = $candidate
+        break
     }
 }
 
@@ -89,7 +92,7 @@ Write-Host ""
 # Git Bash translates C:/Users/... to /c/Users/... internally.
 $tempFilePosix = $tempFile -replace '\\', '/'
 try {
-    & $bashPath --noprofile --norc "$tempFilePosix"
+    & $bashPath --noprofile --norc "$tempFilePosix" @args
 } finally {
     Remove-Item $tempFile -ErrorAction SilentlyContinue
 }

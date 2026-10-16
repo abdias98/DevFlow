@@ -25,7 +25,7 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 - Follow the plan **step by step** — do not skip or reorder.
 - For each task: Red phase (create test file, inform user) → Green phase (write code to pass, inform user).
 - **NEVER run tests.** Provide the exact command and let the user execute it. **Exception (Standard mode):** When `Pair Mode: no` is set, auto-execute tests, branches, commits, and git SHAs. See `rules.md` → `## Implementation Modes`.
-- **NEVER run git commands** (branch, checkout, push, pull, etc.). **Exception (Standard mode):** When `Pair Mode: no` is set, auto-execute branch creation and commits. NEVER auto-push or auto-create PRs in any mode.
+- **NEVER run git commands** (branch, checkout, push, pull, etc.). **Exception (Standard mode):** When `Pair Mode: no` is set, auto-execute commits. NEVER auto-push or auto-create PRs in any mode. **Branch ownership:** in a `/devflow` lifecycle cycle the Orchestrator creates the branch (Step 6) — never run `checkout -b` yourself; if the branch already exists, use it. Only in standalone (`/devflow-implement` invoked directly, no orchestrator branch) may Standard mode create the branch.
 - **NEVER refactor** beyond what the plan specifies **unless** you discover a justified improvement. If you find a better implementation approach while coding:
   1. Evaluate if the deviation improves correctness, performance, or maintainability without changing behavior.
   2. If yes, **document the proposed deviation** in an INFO comment or `## Additional Recommendations` section.
@@ -35,7 +35,7 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 - **ALWAYS handle a missing case of requested behavior** you find while implementing — a situation the requested behavior can actually reach and gets observably wrong (change while in flight, repetition, order, partial failure, data limit). Handle it through its own Red → Green, record it as `(discovered)` in the plan's Feature-Level Scenarios and in `traceability.md`, and name it as a plan gap in `### Additional Recommendations`. The question that separates the two: *would the person who asked for this feature call the current behavior a bug?* ([behavior-scenarios.md](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>) → Discovered During Implementation)
 - **When applying standards:** if the fix falls in the Impact Zone with a closed coherence reason, apply it and record `devflow-ctl scope justify <file> "<reason>"`; otherwise defer it via `devflow-ctl backlog add <file> "<reason>" --severity {incomplete|info}` (`rules.md` → Scope-Locking — Three Zones).
 - Commit at each task checkpoint with the pre-written message from the plan, formatted `{type}({scope}): {description}` per `git-conventions.md` §1.
-- After ALL tasks complete, **auto-invoke the Reviewer** (`devflow-review`).
+- After ALL tasks complete, continue per Step 6 (lifecycle: return to Orchestrator; standalone: invoke the Reviewer).
 - **Flow Artifacts Exception:** Test files created as per the plan are part of the approved scope and always allowed.
 
 ---
@@ -45,6 +45,7 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
 ### Step 1 — Load Context
 
 1. **Verify the Confirmation Gate:** run `devflow-ctl gate check confirmation --slug {slug}` (see [rules.md](<{{SKILLS_DIR}}/shared/rules.md>) → Deterministic Enforcement). If it exits non-zero, STOP — the user has not approved the plan. Do not write any code.
+   - **Standalone Mode** (`/devflow-implement` invoked directly, no lifecycle session): there is no Confirmation Gate state to check. Skip this gate — the plan file you were given IS the approved scope. Log `assumption: standalone invocation, plan treated as approved scope` in session memory and continue.
 2. Read session memory: `context.md` (tech stack, constraints, Stack Mode) and run `devflow-ctl status --slug {slug}` for the session state.
 3. **Read the plan** — load the plan document from `docs/devflow/plans/`. Read the **File Map** and **task list overview** to understand the full scope. For each task during execution (Step 2), read only that task's **work packet** section — not the entire plan repeatedly. This avoids loading N × (full plan) tokens when only N × (work packet) is needed.
 4. **Read the knowledge base** (`docs/devflow/knowledge-base/learnings.md`) — check for implementation patterns, anti-patterns, and known pitfalls relevant to the detected stack and the tasks ahead. Apply documented patterns and avoid known mistakes. Also read the **standards profile** (`docs/devflow/knowledge-base/standards-profile.md`) if it exists — apply each standard through the idioms, primitives and canonical examples it lists, and do not copy anything listed under *Known Deviations* into new code. Then **Load Memory** ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Load Memory): `devflow-ctl memory query --agent devflow-implement --stack {stack}` — apply `confirmed` entries as rules, treat `candidate` entries as hints to check.
@@ -131,7 +132,7 @@ After supervisor findings are resolved:
 2. **Update `traceability.md`** (session memory): for each task in this wave, find the row(s) whose `Task` column names it, fill in `Impl File` with the actual path written, and set `Status` to `✅ DONE`. This is the Implementer's half of the traceability contract (`shared/traceability-matrix.md` → "Updated by: Implementer") — do it per wave, not only once at the end, so a task that never gets to Step 4 (escalated, abandoned) doesn't leave a stale row nobody looks at again.
 3. **Standard mode:** auto-commit each task sequentially (never parallelize git commands) with the planned message from the plan.
 4. **Pair mode:** present all tasks in the wave for user approval. After approval, tell the user the commit commands.
-5. If any subagent failed (before supervisor) → run `devflow-ctl iterate implement_debug --slug {slug}`. On exit 0, diagnose and re-dispatch the failed task. On exit 1 (limit exceeded), stop and escalate to the user with the failure output instead of re-dispatching again.
+5. If any subagent failed (before supervisor) → route to `devflow-debug` for diagnosis (the Debugger owns the `implement_debug` counter — single writer; do NOT run `devflow-ctl iterate` here). The Debugger increments on each verified retry and escalates when the limit is exhausted.
 6. Proceed to the next wave.
 
 **Sequential fallback:** If the editor does not support parallel subagent invocation, execute tasks sequentially within each wave (they are independent, so order doesn't matter). The synthesis step is identical — only the execution order changes. See [parallel-subagents.md](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) → Fallback.
@@ -192,10 +193,12 @@ If the skip criteria are met, proceed directly to Step 6.
    - **Only WARN/INFO:** note them in `### Additional Recommendations` for the Reviewer, then proceed to Step 6.
    - **PASS:** proceed directly to Step 6.
 
-### Step 6 — Auto-Invoke Reviewer
+### Step 6 — Continue to Review
 
-Inform user: "Implementation complete. All tasks done. Invoking code review..."
-Invoke `devflow-review`.
+Inform user: "Implementation complete. All tasks done."
+
+- **In a `/devflow` lifecycle cycle** (invoked by the Orchestrator): STOP and return. The Orchestrator invokes `devflow-review` itself (Step 6 → Step 7) — auto-invoking here would run the Reviewer twice.
+- **Standalone** (`/devflow-implement` invoked directly): invoke `devflow-review` now.
 
 ---
 

@@ -96,8 +96,8 @@ DevFlow/
 - Enforces strict phase ordering
 - Reads `rules.md` and `lifecycle.md`
 - Enforces the **Critical Friend Principle** — ensures all agents challenge assumptions before proceeding
-- **Environment capability probe** — at Step 0, runs `devflow-ctl capabilities` to detect what primitives the environment supports (subagents, vision, terminal, filesystem). Records in `context.md` → `## Environment Capabilities`. Degrades gracefully when primitives are missing. See [environment-probe.md](.agents/skills/shared/environment-probe.md).
-- **Autonomous mode** — detects `DEVFLOW_AUTONOMOUS=true` at Step 0. Auto-approves gates, uses normal iteration limits, writes async checkpoints to `autonomous-log.md`, writes to `send-to-user.md` on genuine BLOCKs, resumes from last incomplete phase. See [autonomous-mode.md](.agents/skills/shared/autonomous-mode.md).
+- **Environment capability probe** — at Step 0, runs `devflow-ctl capabilities` to detect what primitives the environment supports (subagents, vision, terminal, filesystem). Records in `context.md` → `## Environment Capabilities`. Degrades gracefully when primitives are missing. See [environment-probe.md](../.agents/skills/shared/environment-probe.md).
+- **Autonomous mode** — detects `DEVFLOW_AUTONOMOUS=true` at Step 0. Auto-approves gates, uses normal iteration limits, writes async checkpoints to `autonomous-log.md`, writes to `send-to-user.md` on genuine BLOCKs, resumes from last incomplete phase. See [autonomous-mode.md](../.agents/skills/shared/autonomous-mode.md).
 - **Adaptive rigor** — reads the rigor level (`light`/`standard`/`deep`/`maximum`) set by the Planner and includes it in the plan summary at the Confirmation Gate.
 
 ### Brainstormer (`devflow-brainstorm`)
@@ -126,8 +126,8 @@ DevFlow/
 - **Output:** `docs/devflow/specs/YYYY-MM-DD-{slug}-design.md`
 - **Actions:**
   - Read `AGENTS.md` if present (skip general exploration sub-steps)
-  - **Parallel codebase exploration** — dispatches 4 exploration subagents (Structure & Patterns, Tech Stack & Dependencies, Test Architecture, Reusability & Reference) or 2 when AGENTS.md is present. Falls back to sequential when subagents are unavailable. See [parallel-subagents.md](.agents/skills/shared/parallel-subagents.md).
-  - **Vision (optional)** — reads existing architecture diagrams with vision tools when `vision: yes`. See [vision-verification.md](.agents/skills/shared/vision-verification.md).
+  - **Parallel codebase exploration** — dispatches 4 exploration subagents (Structure & Patterns, Tech Stack & Dependencies, Test Architecture, Reusability & Reference) or 2 when AGENTS.md is present. Falls back to sequential when subagents are unavailable. See [parallel-subagents.md](../.agents/skills/shared/parallel-subagents.md).
+  - **Vision (optional)** — reads existing architecture diagrams with vision tools when `vision: yes`. See [vision-verification.md](../.agents/skills/shared/vision-verification.md).
   - Define architecture: components, data structures, data flow
   - Save spec after user confirmation (auto-accept in CI/Autonomous mode)
   - Update `context.md` with Stack Profile and Architect Findings
@@ -158,12 +158,12 @@ DevFlow/
 - **Output:** Production code + test files in workspace
 - **Constraint:** Minimal code, follow plan strictly, NEVER run tests. **BUT allowed to suggest justified deviations.**
 - **Actions:**
-  - **Parallel independent task dispatch** — analyzes tasks for independence, groups into waves, dispatches independent tasks as parallel subagents. Falls back to sequential TDD when tasks have dependencies or share files. See [parallel-subagents.md](.agents/skills/shared/parallel-subagents.md).
+  - **Parallel independent task dispatch** — analyzes tasks for independence, groups into waves, dispatches independent tasks as parallel subagents. Falls back to sequential TDD when tasks have dependencies or share files. See [parallel-subagents.md](../.agents/skills/shared/parallel-subagents.md).
   - **Red Phase per task:** Create test file from plan, inform user how to run it
   - **Green Phase per task:** Write minimal production code, inform user how to verify
   - **Challenge & suggest:** If a better implementation exists, document in Additional Recommendations and flag user
   - Commit at task checkpoints with pre-written messages
-  - **Pre-review verification** — dispatches a fresh-context verifier subagent before invoking the Reviewer (for non-trivial implementations). Catches missing files, scope drift, plan deviations. See [verifier-subagent.md](.agents/skills/shared/verifier-subagent.md).
+  - **Pre-review verification** — dispatches a fresh-context verifier subagent before invoking the Reviewer (for non-trivial implementations). Catches missing files, scope drift, plan deviations. See [verifier-subagent.md](../.agents/skills/shared/verifier-subagent.md).
   - Auto-invoke Reviewer when all tasks complete
 
 ### Reviewer (`devflow-review`)
@@ -171,8 +171,8 @@ DevFlow/
 - **Output:** `docs/devflow/reviews/YYYY-MM-DD-{slug}-review.md`
 - **Actions:**
   - Detect mode: Cycle Mode (full lifecycle) or Standalone Mode (invoked by Feature, Refactor, Bug-Fix, Performance, Migration, Contract, Documentation, Template, Tutorial, or Reverse agents)
-  - **Parallel multi-dimension review** — dispatches Security & Safety, Performance & Concurrency, Architecture & Design (including consistency with the plan's reference implementation), Correctness & Behavior, and one Domain subagent per applicable group — Interfaces, Presentation, Operations — following [parallel-subagents.md](.agents/skills/shared/parallel-subagents.md). No subagent carries more than five standards. All but Correctness & Behavior review against standards; Correctness & Behavior ([correctness-guide.md](.agents/skills/devflow-review/correctness-guide.md)) reviews what the code does — a blind pass over the changed code, its consumers and tests before reading the spec/plan, then a contrast pass that classifies each finding as implementation defect, plan gap or deliberate decision. Trivial changes are reviewed inline, but never without the Correctness & Behavior dimension.
-  - **Visual diff (optional)** — when `vision: yes` and the feature has a UI, compares the approved mockup against a screenshot of the implemented UI. Reports layout/color/typography discrepancies. See [vision-verification.md](.agents/skills/shared/vision-verification.md).
+  - **Parallel multi-dimension review** — dispatches Security & Safety, Performance & Concurrency, Architecture & Design (including consistency with the plan's reference implementation), Correctness & Behavior, and one Domain subagent per applicable group — Interfaces, Presentation, Operations — following [parallel-subagents.md](../.agents/skills/shared/parallel-subagents.md). No subagent carries more than five standards. All but Correctness & Behavior review against standards; Correctness & Behavior ([correctness-guide.md](../.agents/skills/devflow-review/correctness-guide.md)) reviews what the code does — a blind pass over the changed code, its consumers and tests before reading the spec/plan, then a contrast pass that classifies each finding as implementation defect, plan gap or deliberate decision. Trivial changes are reviewed inline, but never without the Correctness & Behavior dimension.
+  - **Visual diff (optional)** — when `vision: yes` and the feature has a UI, compares the approved mockup against a screenshot of the implemented UI. Reports layout/color/typography discrepancies. See [vision-verification.md](../.agents/skills/shared/vision-verification.md).
   - Apply review checklist: code quality, security, architecture alignment, plan compliance, performance, test coverage
   - Classify findings (BLOCK/WARN/INFO)
   - Route back to invoking agent if blockers
@@ -184,7 +184,7 @@ DevFlow/
 - **Constraint:** Never guess, always root cause, NEVER execute tests
 - **Actions:**
   - Ask user to reproduce the error and provide output
-  - **Screenshot analysis (optional)** — when `vision: yes` and a screenshot is provided, reads it with vision tools as supplementary context. See [vision-verification.md](.agents/skills/shared/vision-verification.md).
+  - **Screenshot analysis (optional)** — when `vision: yes` and a screenshot is provided, reads it with vision tools as supplementary context. See [vision-verification.md](../.agents/skills/shared/vision-verification.md).
   - Isolate root cause
   - Apply minimal fix
   - Ask user to verify
@@ -261,7 +261,7 @@ Transient state for active development cycle:
 - `autonomous-log.md` — Async checkpoints (Autonomous mode only — append-only, per-phase progress)
 - `send-to-user.md` — Messages requiring user action (Autonomous mode only — BLOCKs, iteration limits, deliverable-ready)
 
-See [Memory Conventions](.agents/skills/shared/memory-conventions.md) for canonical file formats, rules, and Quick Reference.
+See [Memory Conventions](../.agents/skills/shared/memory-conventions.md) for canonical file formats, rules, and Quick Reference.
 
 ### Knowledge Base (`docs/devflow/knowledge-base/`)
 
@@ -339,11 +339,11 @@ When `Stack Mode: yes` is set (by the Planner, conditional on feature size), the
 - The Finalizer includes a summary table of all Stack branches.
 - **PRs are never created automatically.** The user decides if and when to push branches and open PRs.
 
-See [stack-planning.md](<{{SKILLS_DIR}}/devflow-plan/stack-planning.md>) and [stack-mode.md](<{{SKILLS_DIR}}/devflow/stack-mode.md>) for details.
+See [stack-planning.md](<../.agents/skills/devflow-plan/stack-planning.md>) and [stack-mode.md](<../.agents/skills/devflow/stack-mode.md>) for details.
 
 ## Naming Conventions
 
-All artifacts follow [Memory Conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>).
+All artifacts follow [Memory Conventions](<../.agents/skills/shared/memory-conventions.md>).
 
 | Type | Pattern | Example |
 |------|---------|---------|
@@ -392,7 +392,7 @@ The Architect stores extracted AGENTS.md data in session memory so the Planner c
 
 ## Tech Stack Detection
 
-DevFlow agents detect the project's technology stack **dynamically** by reading workspace configuration files. See [stack-detection.md](<{{SKILLS_DIR}}/shared/stack-detection.md>) for the complete detection reference. Detected values are stored in the `## Stack Profile` table in `context.md` and reused by all downstream agents.
+DevFlow agents detect the project's technology stack **dynamically** by reading workspace configuration files. See [stack-detection.md](<../.agents/skills/shared/stack-detection.md>) for the complete detection reference. Detected values are stored in the `## Stack Profile` table in `context.md` and reused by all downstream agents.
 
 ## Implementation Modes
 
@@ -409,7 +409,7 @@ DevFlow supports four execution modes, detected at Orchestrator Step 0:
 
 `git push` and `gh pr create` are NEVER auto-executed in any mode.
 
-See `rules.md` → Implementation Modes and [autonomous-mode.md](.agents/skills/shared/autonomous-mode.md).
+See `rules.md` → Implementation Modes and [autonomous-mode.md](../.agents/skills/shared/autonomous-mode.md).
 
 ## Environment Capability Probe
 
@@ -426,7 +426,7 @@ DevFlow detects what primitives the environment (editor + tools) supports at cyc
 
 Each editor profile declares a `capabilities:` section. `install.sh` writes a `.devflow-environment` marker file at install time. `devflow-ctl capabilities` reads it at runtime. The Orchestrator records results in `context.md` → `## Environment Capabilities` at Step 0.
 
-See [environment-probe.md](.agents/skills/shared/environment-probe.md).
+See [environment-probe.md](../.agents/skills/shared/environment-probe.md).
 
 ## Parallelism
 
@@ -444,7 +444,7 @@ DevFlow orchestrates parallel subagent dispatch for independent subtasks. The fr
 
 When the editor doesn't support parallel subagent invocation, execution falls back to sequential automatically — the synthesis step is identical, only the execution order changes.
 
-See [parallel-subagents.md](.agents/skills/shared/parallel-subagents.md) and [verifier-subagent.md](.agents/skills/shared/verifier-subagent.md).
+See [parallel-subagents.md](../.agents/skills/shared/parallel-subagents.md) and [verifier-subagent.md](../.agents/skills/shared/verifier-subagent.md).
 
 ## Adaptive Rigor
 
@@ -459,7 +459,7 @@ The Planner classifies each feature into one of four rigor levels based on compl
 
 Non-negotiable invariants (TDD, scope-lock, gates, artifact validation, progress grounding) are always enforced regardless of rigor level — they are the floor, not the ceiling. The rigor level adjusts the ceiling (how much scaffolding surrounds the invariants).
 
-See [adaptive-skills.md](.agents/skills/shared/adaptive-skills.md).
+See [adaptive-skills.md](../.agents/skills/shared/adaptive-skills.md).
 
 ## Vision Verification
 
@@ -471,7 +471,7 @@ When the environment supports vision (`vision: yes`), DevFlow adds visual verifi
 
 When vision is unavailable, the review is code-only (design tokens, accessibility attributes, layout code — but no rendered-output comparison). The cycle never breaks.
 
-See [vision-verification.md](.agents/skills/shared/vision-verification.md).
+See [vision-verification.md](../.agents/skills/shared/vision-verification.md).
 
 ## Extensibility
 

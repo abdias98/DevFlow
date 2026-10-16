@@ -73,7 +73,7 @@ Execute the [Critical Friend procedure](<{{SKILLS_DIR}}/shared/critical-friend.m
 - Are there assumptions in the Understanding Summary that need to be challenged?
 - Does the request actually fit the Complexity Gate, or does it warrant a full `/devflow` cycle?
 
-Present findings with evidence — a standard citation (`{standard}.md §{N} → BLOCK|WARN|INFO`) or a reproducible scenario, per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>) — and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.**
+Present findings with evidence — a standard citation (`{standard}.md §{N} → BLOCK|WARN|INFO`) or a reproducible scenario, per [rules.md → Finding Evidence](<{{SKILLS_DIR}}/shared/rules.md>) — and route per the Critical Friend procedure. **Do NOT proceed to Step 2 if a BLOCK is unresolved.** **In CI / Autonomous mode** (no user to resolve it): do NOT deadlock — log the BLOCK as `assumption-risk` in session memory, surface it in the final report, and continue.
 
 ### Step 2 — Load Stack Profile & Initialize Session
 

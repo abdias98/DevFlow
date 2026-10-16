@@ -397,6 +397,8 @@ INFO notes (backlog entries of any severity) must never modify behavior; they on
 
 **Elevation rule (BLOCK):** If the issue is a SECURITY vulnerability, DATA LOSS risk, ARCHITECTURAL VIOLATION that contradicts a core standard, or OBSERVABLE INCORRECT BEHAVIOR classified BLOCK by Behavioral Impact Severity, the agent MUST elevate it to the user as a WARNING before proceeding with any other work. Do not silently continue.
 
+**Break-glass (critical security fix outside Core):** Scope-locking never blocks a critical security remediation. If the ONLY way to fix a 🔴 BLOCK security finding (committed secret, exploitable CVE, active data-loss path) is to edit a file outside the approved Core/Impact scope, the agent MAY edit it without prior approval, then MUST: (1) run `devflow-ctl scope justify {file} "break-glass: {CVE/finding id}"` immediately after the edit, (2) report the break-glass edit first in its response with file:line + why no in-scope fix existed, (3) add a backlog entry so the next cycle reviews whether the scope should have included it. Break-glass applies ONLY to security BLOCKs — never to features, refactors, or WARN/INFO findings. In CI/Autonomous mode the same rule holds; the justification and backlog entry are the audit trail.
+
 ## Error Handling & Communication
 
 - If a required file path does not exist, ask the user for clarification or provide alternatives. Do not guess or skip the step.

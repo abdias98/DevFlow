@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Integration Consumption (Technology-Agnostic)
 
-> **Version:** 1.0.0 | **Last Updated:** 2026-09-17
+> **Version:** 1.0.1 | **Last Updated:** 2026-10-12
 
 > **Apply when:** the code *calls out* to an external service, API, or integration it does not control — a third-party HTTP API, another team's service, a payment gateway, a cloud provider SDK. This standard is the **client (consumer) side**; `rest-api.md` owns the *server* side of exposing an endpoint, and `event-driven-architecture.md` owns asynchronous producer/consumer contracts. A call to your own service's other internal layer (e.g., a use case calling a repository in the same process) is not an "integration" in this sense unless it crosses a network boundary.
 
@@ -31,9 +31,13 @@ Most of what makes an integration fail in production is invisible in a quick man
 - **DO:**
   - Retry only operations that are idempotent, or that carry an idempotency key the provider honors (`concurrency.md` §5 owns the idempotency mechanism itself; this section owns *when a client-side retry is safe to attempt at all*).
   - Retry with a bounded attempt count and backoff (with jitter) for transient failures (timeout, 502/503, connection reset); never in a tight unbounded loop.
+  - Bound total retry traffic with a retry budget (retries stay a small, fixed share of outbound calls); shed or fail fast once the budget is exhausted instead of amplifying a provider outage.
+  - Use hedging only for idempotent read-like calls: after the first attempt exceeds a latency percentile (e.g., p95), issue one parallel attempt and take the first success — then cancel the loser (§2).
   - Distinguish retryable failures (transient) from non-retryable ones (validation error, auth failure, 4xx client errors that won't change on retry) — see `error-handling.md` §8 for the general retry rule this section applies at the integration boundary.
 - **DON'T:**
   - Retry a non-idempotent operation (charge, send, create) with no idempotency guard — a retried "create payment" call can create two payments.
+  - Hedge a non-idempotent operation — a hedged "create payment" call is two payments racing.
+  - Let retries exceed their budget during an outage, turning one provider failure into a self-inflicted flood.
   - Retry indefinitely with no cap, turning a transient outage into a self-inflicted traffic amplification against the failing dependency.
 
 ## 4. Observable States During the Wait
@@ -89,8 +93,8 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 | Severity | Triggers |
 |----------|---------|
-| 🔴 **BLOCK** | A non-idempotent operation (charge, send, create) is retried with no idempotency guard (§3, canonical citation `concurrency.md §5`); no timeout on a call whose hang can exhaust a shared resource pool (e.g., a request-handling thread pool) (§1); a raw, unvalidated provider response is passed directly into domain/business logic with no boundary translation, and a malformed field would crash it (§7) |
-| 🟡 **WARN** | No explicit timeout on an outbound call, even without a demonstrated pool-exhaustion path (§1); cancellation from the caller does not propagate into the outbound call (§2); an unbounded/uncapped retry loop with no backoff for a non-critical retry (§3); no distinct failure state exposed to the caller — errors are indistinguishable from "still loading" (§4); no degradation strategy defined for a non-critical integration whose failure currently fails the whole operation (§6) |
+| 🔴 **BLOCK** | A non-idempotent operation (charge, send, create) retried or hedged with no idempotency guard — raise the BLOCK under `concurrency.md §5` (canonical); §3 states when a client retry is safe, it is not a second BLOCK; no timeout on a call whose hang can exhaust a shared resource pool (e.g., a request-handling thread pool) (§1); a raw, unvalidated provider response is passed directly into domain/business logic with no boundary translation, and a malformed field would crash it (§7) |
+| 🟡 **WARN** | No explicit timeout on an outbound call, even without a demonstrated pool-exhaustion path (§1); cancellation from the caller does not propagate into the outbound call (§2); an unbounded/uncapped retry loop with no backoff for a non-critical retry (§3); retry traffic with no budget cap, or hedging applied to a non-idempotent operation (§3); no distinct failure state exposed to the caller — errors are indistinguishable from "still loading" (§4); no degradation strategy defined for a non-critical integration whose failure currently fails the whole operation (§6) |
 | 🟢 **INFO** | A partial/paginated response is handled but not explicitly documented as a design decision (§5); provider response validated but the failure path for an unexpected shape only logs rather than degrading gracefully (§7) |
 
 ## 10. Applying This Standard with a Limited Scope
@@ -113,7 +117,7 @@ Record these in the spec's **Standards Applied** table, typically materialized i
 
 - **Timeout budget** — the timeout for each outbound call, and how it fits within the caller's own SLA/timeout budget (§1).
 - **Cancellation path** — whether and how the caller's own cancellation source reaches this call (§2).
-- **Retry policy** — which operations are safe to retry, their idempotency mechanism, attempt bound, and backoff (§3).
+- **Retry policy** — which operations are safe to retry, their idempotency mechanism, attempt bound, backoff, retry budget, and whether hedging is allowed (§3).
 - **Observable states** — the loading/success/error/degraded states this integration point exposes (§4).
 - **Response completeness handling** — how partial/paginated/stale responses are handled (§5).
 - **Degradation decision** — fail visibly, fall back, or degrade gracefully — per integration point (§6).
@@ -126,6 +130,7 @@ Before marking a task done:
 - [ ] Every new outbound call has an explicit timeout (§1).
 - [ ] Cancellation propagates where the design decided it should (§2).
 - [ ] No non-idempotent call was made retryable without an idempotency guard (§3).
+- [ ] Retry traffic stays within its budget, and no non-idempotent call is retried or hedged without a guard (§3).
 - [ ] The caller can distinguish loading, success, error and (if applicable) degraded states (§4).
 - [ ] Partial/paginated responses are handled per the design decision, not assumed complete (§5).
 - [ ] The degradation path decided at design time is implemented, not left as an unhandled exception (§6).

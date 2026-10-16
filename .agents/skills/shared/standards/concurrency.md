@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Concurrency & Async (Technology-Agnostic)
 
-> **Version:** 1.4.0 | **Last Updated:** 2026-09-16
+> **Version:** 1.4.1 | **Last Updated:** 2026-10-12
 
 > **Note on examples:** All primitives (locks, queues, atomics, async constructs) are illustrative. Replace them with the actual concurrency model and libraries of the detected stack (threads, async/await, actors, goroutines, event loop, etc.).
 
@@ -12,7 +12,8 @@ Apply these principles to all code you design, generate, or review that runs con
 - **DO:**
   - Prefer immutability and message passing over shared mutable state. The safest shared state is no shared state.
   - Confine mutable state to a single owner (one thread/actor/task) and communicate via queues/channels.
-  - When state must be shared, protect every access (read and write) with the same synchronization primitive.
+  - When state must be shared, protect every access (read and write) with the same synchronization primitive — unless the design deliberately uses a lighter guarantee: lock-free atomics, volatile reads with documented visibility (see §6), RCU-style publish-and-reclaim, or confinement inside an actor that serializes its own mailbox.
+  - Document which guarantee each shared variable relies on — a reader must never assume "same lock" when the writer actually relies on lock-free publication.
 - **DON'T:**
   - Read or write shared mutable variables from multiple contexts without synchronization.
   - Assume that operations which look atomic in source (`count++`, check-then-act) are atomic at runtime — they usually are not.
@@ -26,6 +27,8 @@ Apply these principles to all code you design, generate, or review that runs con
   - Push invariants into the data store where possible (unique constraints, conditional/optimistic updates with a version column).
   - Treat "it worked in testing" as no evidence of correctness — races are timing-dependent and intermittent.
   - **When the invariant is critical to the business** (inventory/seat/slot availability, a balance, a unique allocation, anything where a violation means overselling, double-spending, or double-allocating) — **a sequential unit test is not sufficient evidence that the fix works.** Write and run a real concurrency test: multiple simultaneous operations (threads, async tasks, or concurrent requests, whichever fits the stack) racing for the same contended resource, then assert the invariant held (e.g., stock never went negative, exactly one winner for the last unit). A code review that only reads the implementation and asserts "this looks atomic" is not verification.
+  - Size the concurrency test to the race window: enough threads or tasks (at minimum in the dozens) over enough iterations (hundreds or more) that an unguarded window fails loudly — a 2-thread, 1-iteration run that passes proves nothing.
+  - Prefer deterministic harnesses where the stack offers them (virtual-thread loom schedulers, shuffle/interleaving testers) over raw sleeps to widen the window; mark the test for isolated or repeated CI runs if it is timing-sensitive, and quarantine it on flakiness rather than deleting the signal — see §13 for the full guide.
 - **DON'T:**
   - Implement reserve/decrement-stock, balance updates, or unique-slug allocation as a non-atomic read-then-write.
   - Rely on the order in which concurrent tasks happen to run.
@@ -57,7 +60,7 @@ Apply these principles to all code you design, generate, or review that runs con
 
 ## 5. Idempotency & Exactly-Once Illusions
 
-- **What:** In a concurrent/distributed system, messages and requests can arrive more than once or out of order.
+- **What:** In a concurrent/distributed system, messages and requests can arrive more than once or out of order. **This section is the canonical owner of the idempotency mechanism** (per `standards-dry-policy.md`): `error-handling.md` §8, `integration-consumption.md` §3, `event-driven-architecture.md` §2, and `rest-api.md` §9 cite this section for the mechanism and carry no severity of their own for it — a missing dedup guard is recorded once, here.
 - **DO:**
   - Make operations that may be retried or redelivered **idempotent** (idempotency key, dedup table, conditional write).
   - Design consumers to tolerate at-least-once delivery and reordering.
@@ -67,10 +70,11 @@ Apply these principles to all code you design, generate, or review that runs con
 
 ## 6. Safe Publication & Visibility
 
-- **What:** A value written by one context is not guaranteed visible to another without proper synchronization.
+- **What:** A value written by one context is not guaranteed visible to another without proper synchronization. The happens-before / volatile / safe-publication vocabulary below is the JVM memory model; other runtimes differ — see the per-runtime note.
 - **DO:**
   - Publish shared data through the proper memory-visibility primitive (the platform's volatile/atomic/lock/happens-before mechanism).
   - Fully construct objects before making them visible to other contexts.
+  - Apply the per-runtime rule: JS (single-threaded event loop with workers) — share via message passing or `SharedArrayBuffer` with `Atomics`, never unsynchronized shared fields; Go — share by communicating or guard with mutex/atomic with explicit happens-before; Python — rely on the GIL for nothing beyond bytecode atomicity, use locks/queues for real visibility.
 - **DON'T:**
   - Assume a plain write is immediately visible to other threads.
   - Leak a reference to a partially-initialized object (e.g., from within its own constructor) to another context.
@@ -87,7 +91,7 @@ Apply these principles to all code you design, generate, or review that runs con
 
 ## 8. Code Review Checklist
 When reviewing, verify:
-- [ ] Shared mutable state is either avoided or every access (read and write) is synchronized (§1).
+- [ ] Shared mutable state is either avoided or every access (read and write) is synchronized — or covered by a documented lock-free, volatile, RCU, or actor guarantee (§1).
 - [ ] Compound check-then-act / read-modify-write sequences are atomic, not racy (§2).
 - [ ] If the atomicity being reviewed protects a business-critical invariant (inventory, balance, unique allocation), a real concurrency test exists and was run — not only a sequential unit test (§2).
 - [ ] Locks are held for the shortest critical section, acquired in a consistent order, and always released on every exit path (§3).
@@ -95,6 +99,7 @@ When reviewing, verify:
 - [ ] Operations that may be retried or redelivered are idempotent (§5).
 - [ ] Shared data is published through the platform's proper visibility primitive, not a plain write (§6).
 - [ ] Background/long-running tasks support graceful shutdown and failure supervision (§7).
+- [ ] The concurrency test follows the sizing and determinism guide — threads, iterations, and CI handling per §13.
 
 ## 9. Severity Classification
 
@@ -103,7 +108,7 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 | Severity | Triggers |
 |----------|---------|
 | 🔴 **BLOCK** | Non-atomic check-then-act / read-modify-write on shared state where a race causes data loss, overselling, double-spend, or corruption (§2); fire-and-forget async task with no error handling where failure = data loss (§4); non-idempotent side effect applied with no dedup under at-least-once delivery (§5); blocking I/O or external call performed while holding a lock, or inconsistent lock ordering that can deadlock (§3) |
-| 🟡 **WARN** | Shared mutable state accessed from multiple contexts without clear synchronization (§1); unbounded parallel task spawning (§4); sync-over-async that can exhaust the pool (§4); lock held across slow work, or critical section larger than necessary (§3); background task spawned with no cancellation/shutdown handling (§7); reliance on plain writes for cross-context visibility (§6); a business-critical atomicity fix (inventory, balance, unique allocation) with no real concurrency test — only a sequential unit test, or no test at all (§2) |
+| 🟡 **WARN** | Shared mutable state accessed from multiple contexts without clear synchronization (§1); unbounded parallel task spawning (§4); sync-over-async that can exhaust the pool (§4); lock held across slow work, or critical section larger than necessary (§3); background task spawned with no cancellation/shutdown handling (§7); reliance on plain writes for cross-context visibility (§6); a business-critical atomicity fix (inventory, balance, unique allocation) with no real concurrency test — only a sequential unit test, or no test at all (§2); a concurrency test too small to exercise the race window — fewer threads or iterations than the sizing guide requires (§13) |
 | 🟢 **INFO** | Mutable shared structure where an immutable or message-passing design would be simpler (§1); missing graceful-shutdown drain (§7); opportunity to replace a lock with an atomic/lock-free structure (§3) |
 
 ## 10. Applying This Standard with a Limited Scope
@@ -136,7 +141,21 @@ Before marking a task done:
 
 - [ ] Every compound read-then-write on shared state is atomic (§2).
 - [ ] Each critical invariant is exercised by a real concurrency test, not only a sequential one (§2).
+- [ ] The concurrency test sizes threads and iterations per the guide, and handles CI flakiness by quarantine rather than deletion (§13).
 - [ ] No blocking I/O or external call runs inside a held lock, and every lock is released on all paths (§3).
 - [ ] Every async operation whose failure matters is awaited or observed (§4).
 - [ ] Operations that can be retried or redelivered are idempotent (§5).
 - [ ] Every timer, poller or background task stops when its owner is disposed (§7).
+
+## 13. Concurrency Test Design Guide
+
+- **What:** A concurrency test that cannot fail is not evidence — it is decoration. This guide sizes the test so an unguarded race window fails loudly.
+- **DO:**
+  - Race with enough threads or tasks (at minimum in the dozens) over enough iterations (hundreds or more per worker) against the same contended resource, then assert the business invariant held — stock never negative, exactly one winner, no duplicated side effect.
+  - Widen the race window deterministically where the stack allows: virtual-thread loom schedulers, shuffle or interleaving testers, or barrier/coordinated starts — so the test does not depend on lucky timing.
+  - Handle CI flakiness without losing the signal: run the test isolated or repeated, quarantine a flaky concurrency test with its failure log attached, and fix the timing assumption — never delete the test to make the pipeline green.
+  - Seed the test so every worker contends for the same unit (the last item in stock, the same unique key), not for disjoint data that can never collide.
+- **DON'T:**
+  - Ship a 2-thread, single-iteration concurrency test and claim the invariant is verified — it exercises almost none of the interleavings a real race needs.
+  - Widen the window with fixed `sleep` calls tuned to one machine — timing tuned locally is flakiness shipped to CI.
+  - Delete or permanently skip a flaky concurrency test — quarantine it, record the interleaving that failed, and fix the code or the test determinism.

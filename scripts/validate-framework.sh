@@ -66,7 +66,7 @@ KNOWN_VARS=("SKILLS_DIR" "AGENTS_DIR" "PROMPTS_DIR" "INSTR_DIR")
 while IFS= read -r file; do
   # Find all {{...}} usages
   while IFS= read -r match; do
-    var_name=$(echo "$match" | grep -oP '(?<=\{\{)[A-Z_]+(?=\}\})')
+    var_name=$(echo "$match" | grep -oE '\{\{[A-Z_]*\}\}' | head -1 | tr -d '{}')
     known=false
     for kv in "${KNOWN_VARS[@]}"; do
       [[ "$var_name" == "$kv" ]] && known=true && break
@@ -76,7 +76,9 @@ while IFS= read -r file; do
       $FIX_MODE && echo "       FIX: Valid variables are: $(printf '{{%s}} ' "${KNOWN_VARS[@]}")"
     fi
   done < <(grep -on "{{[A-Z_]*}}" "$file" 2>/dev/null | sed 's/^/Line /' || true)
-done < <(find "$SKILLS_DIR" -name "*.md" -type f)
+# Skills AND prompts: a typo'd variable ({{SKILL_DIR}}) in a prompt installs
+# literally into every editor, so prompts get the same check as skills.
+done < <({ find "$SKILLS_DIR" -name "*.md" -type f; [[ -d .github/prompts ]] && find .github/prompts -name "*.prompt.md" -type f; } 2>/dev/null)
 
 [[ $ERRORS -eq 0 ]] && green "All template variables use known names ({{SKILLS_DIR}}, etc.)"
 
@@ -93,8 +95,24 @@ while IFS= read -r file <&3; do
       $FIX_MODE && echo "       FIX: create '$target' or update the reference path"
       ((broken_refs++)) || true
     fi
-  done < <(grep -oP '(?<=<\{\{SKILLS_DIR\}\}/)([^>]+)(?=>)' "$file" 2>/dev/null || true)
+  done < <(grep -oE '<\{\{SKILLS_DIR\}\}/[^>]+>' "$file" 2>/dev/null | sed -e 's/^<{{SKILLS_DIR}}\///' -e 's/>$//' || true)
 done 3< <(find "$SKILLS_DIR" -name "*.md" -type f)
+
+# 2b. Prompts reference skills with backtick refs (`{{SKILLS_DIR}}/...`) — the
+# same typo class ({{SKILL_DIR}}) would otherwise install literally into every
+# editor without failing anything.
+if [[ -d .github/prompts ]]; then
+  while IFS= read -r file <&3; do
+    while IFS= read -r ref; do
+      target="$SKILLS_DIR/$ref"
+      if [[ ! -f "$target" ]]; then
+        fail "$file → broken backtick reference: \`{{SKILLS_DIR}}/$ref\` (file not found)"
+        $FIX_MODE && echo "       FIX: create '$target' or update the reference path"
+        ((broken_refs++)) || true
+      fi
+    done < <(grep -oE '`\{\{SKILLS_DIR\}\}/[^`]+`' "$file" 2>/dev/null | sed -e 's/^`{{SKILLS_DIR}}\///' -e 's/`$//' || true)
+  done 3< <(find .github/prompts -name "*.prompt.md" -type f)
+fi
 
 [[ $broken_refs -eq 0 ]] && green "All cross-references resolve to existing files"
 
@@ -180,18 +198,22 @@ done
 header "7. Artifact path consistency"
 
 # Each standalone agent should declare a canonical artifact path
-declare -A SKILL_ARTIFACT_MAP=(
-  ["devflow-feature"]="docs/devflow/features/"
-  ["devflow-bug-fix"]="docs/devflow/bug-fixes/"
-  ["devflow-refactor"]="docs/devflow/refactors/"
-  ["devflow-architect"]="docs/devflow/specs/"
-  ["devflow-plan"]="docs/devflow/plans/"
-  ["devflow-review"]="docs/devflow/reviews/"
-)
+# Portable map (no associative arrays — stock macOS bash is 3.2).
+skill_artifact_path() {
+  case "$1" in
+    devflow-feature)   echo "docs/devflow/features/" ;;
+    devflow-bug-fix)   echo "docs/devflow/bug-fixes/" ;;
+    devflow-refactor)  echo "docs/devflow/refactors/" ;;
+    devflow-architect) echo "docs/devflow/specs/" ;;
+    devflow-plan)      echo "docs/devflow/plans/" ;;
+    devflow-review)    echo "docs/devflow/reviews/" ;;
+    *) return 1 ;;
+  esac
+}
 
-for agent in "${!SKILL_ARTIFACT_MAP[@]}"; do
+for agent in devflow-feature devflow-bug-fix devflow-refactor devflow-architect devflow-plan devflow-review; do
   skill_file="$SKILLS_DIR/$agent/SKILL.md"
-  expected_path="${SKILL_ARTIFACT_MAP[$agent]}"
+  expected_path="$(skill_artifact_path "$agent")"
   if [[ -f "$skill_file" ]]; then
     if ! grep -q "$expected_path" "$skill_file" 2>/dev/null; then
       warn "$skill_file — expected artifact path '$expected_path' not found in skill"
@@ -219,7 +241,10 @@ fi
 
 # Every `devflow-ctl <subcommand>` referenced in skill files must exist in the CLI dispatcher.
 if [[ -f "$CTL" ]]; then
-  VALID_SUBCOMMANDS=$(awk '/^case "\$CMD" in/,/^esac/' "$CTL" | grep -oP '^\s+\K[a-z|-]+(?=\))' | tr '|' '\n')
+  # Portable (no grep -P, no \K — stock macOS grep lacks both).
+  # Order matters: split alternatives into lines FIRST, then strip spaces/tabs
+  # (never [:space:], which would also eat the newlines just created).
+  VALID_SUBCOMMANDS=$(awk '/^case "\$CMD" in/,/^esac/' "$CTL" | grep -oE '^[[:space:]]+[a-z][a-z0-9_-]*(\|[a-z-]+)*\)' | tr '|' '\n' | tr -d ' \t' | tr -d ')')
   bad_refs=0
   while IFS= read -r file <&3; do
     while IFS= read -r sub; do
@@ -227,7 +252,7 @@ if [[ -f "$CTL" ]]; then
         fail "$file — references unknown devflow-ctl subcommand: '$sub'"
         ((bad_refs++)) || true
       fi
-    done < <(grep -oP 'devflow-ctl \K[a-z-]+' "$file" 2>/dev/null | sort -u || true)
+    done < <(grep -oE 'devflow-ctl [a-z][a-z0-9_-]+' "$file" 2>/dev/null | sed 's/^devflow-ctl //' | sort -u || true)
   done 3< <(find "$SKILLS_DIR" -name "*.md" -type f)
   [[ $bad_refs -eq 0 ]] && green "All devflow-ctl subcommand references in skills are valid"
 fi
@@ -240,7 +265,7 @@ PROFILES_DIR="editor-profiles"
 if [[ -d "$PROFILES_DIR" ]]; then
   for profile in "$PROFILES_DIR"/*.yaml; do
     [[ -f "$profile" ]] || continue
-    strategy=$(awk '/^permissions:/{f=1;next} f&&/^[^ ]/{f=0} f&&/^  strategy:/{sub(/^  strategy: */,"");gsub(/["'"'"']/,"");print;exit}' "$profile")
+    strategy=$(awk '/^permissions:/{f=1;next} f&&/^[^ ]/{f=0} f&&/^  strategy:/{sub(/^  strategy: */,"");sub(/^["'"'"']/,"");sub(/["'"'"']$/,"");print;exit}' "$profile")
     if [[ -z "$strategy" ]]; then
       fail "$profile — missing permissions.strategy (none|manual|json-merge)"
       $FIX_MODE && echo "       FIX: add a 'permissions:' section with 'strategy: none|manual|json-merge'"
@@ -253,10 +278,12 @@ if [[ -d "$PROFILES_DIR" ]]; then
         [[ -z "$note" ]] && warn "$profile — strategy 'manual' without manual_note (nothing will be shown to the user)"
         ;;
       json-merge)
-        snippet=$(awk '/^permissions:/{f=1;next} f&&/^[^ ]/{f=0} f&&/^  snippet:/{sub(/^  snippet: */,"");gsub(/["'"'"']/,"");print;exit}' "$profile")
+        snippet=$(awk '/^permissions:/{f=1;next} f&&/^[^ ]/{f=0} f&&/^  snippet:/{sub(/^  snippet: */,"");sub(/^["'"'"']/,"");sub(/["'"'"']$/,"");print;exit}' "$profile")
         config=$(awk '/^permissions:/{f=1;next} f&&/^[^ ]/{f=0} f&&/^  config_file:/{print "x";exit}' "$profile")
         if [[ -z "$snippet" || -z "$config" ]]; then
           fail "$profile — strategy 'json-merge' requires both snippet and config_file"
+        elif [[ ! "$snippet" =~ ^[A-Za-z0-9_.-]+\.json$ ]]; then
+          fail "$profile — refusing unsafe snippet name '$snippet' (must be a plain *.json basename, no path)"
         elif [[ ! -f "$PROFILES_DIR/permissions/$snippet" ]]; then
           fail "$profile — permission snippet not found: $PROFILES_DIR/permissions/$snippet"
         elif command -v python3 >/dev/null 2>&1 && ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$PROFILES_DIR/permissions/$snippet" 2>/dev/null; then
@@ -270,7 +297,8 @@ import json, re, sys
 
 FORBIDDEN = ["rm ", "rmdir", "git push", "--force", "--no-verify",
              "--amend", "sudo ", "chmod ", "chown ", "kill ", "pkill ",
-             "npm install", "yarn add", "pip install"]
+             "killall", "npx", "pnpm add", "npm install", "npm i",
+             "yarn add", "pip install", "pip3 install"]
 
 with open(sys.argv[1]) as fh:
     data = json.load(fh)
@@ -282,10 +310,25 @@ def destructive(pattern):
     if any(bad in low for bad in FORBIDDEN):
         out.append(f"destructive pattern in the allow tier (move it to ask/deny): {pattern}")
 
+# Prefix-match bypass: editors match the command prefix, so an allow entry for
+# `grep *` also auto-approves `grep x; rm -rf y`, `grep x && curl … | sh` or
+# `grep x > ~/.bashrc`. Flag allow-tier patterns containing shell
+# metacharacters (none are legitimate in an allow entry).
+# Note: `|` alone is regex alternation in /…/ entries (e.g. /^(a|b)/), so for
+# regex entries only `||` (shell OR) is flagged; single `|` is still flagged
+# in plain glob patterns where it can only be a shell pipe.
+META_PLAIN = [";", "&&", "||", "$(", "`", ">", "|"]
+META_REGEX = [";", "&&", "||", "$(", "`", ">"]
+def chainable(pattern):
+    meta = META_REGEX if pattern.startswith("/") else META_PLAIN
+    if any(m in pattern for m in meta):
+        out.append(f"chainable pattern in the allow tier (prefix match bypasses approval for chained/redirected commands — move it to ask/deny): {pattern}")
+
 # Claude Code: permissions.{allow,ask,deny} are lists of Tool(pattern) rules.
 perms = data.get("permissions", {})
 for entry in perms.get("allow", []):
     destructive(entry)
+    chainable(entry)
 for tier in ("allow", "ask", "deny"):
     for entry in perms.get(tier, []):
         m = re.match(r"^(\w+)\((.*)\)$", entry)
@@ -311,6 +354,7 @@ misordered = []
 for pattern, verdict in bash.items():
     if verdict == "allow":
         destructive(pattern)
+        chainable(pattern)
     r = rank.get(verdict, -1)
     if r < seen_max[1]:
         misordered.append(pattern)
@@ -331,6 +375,7 @@ if isinstance(node, dict):
     for regex, verdict in node.items():
         if verdict is True:
             destructive(regex)
+            chainable(regex)
 
 print("\n".join(out))
 GUARDEOF
@@ -385,13 +430,23 @@ fi
 header "10. Version sync"
 
 if [[ -f package.json ]]; then
-  PKG_VERSION=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' package.json | head -1)
+  # Prefer python3 for exact top-level parsing (sed head -1 breaks the day a
+  # dependency or nested field precedes it); fall back to the legacy sed.
+  if command -v python3 >/dev/null 2>&1; then
+    PKG_VERSION=$(python3 -c "import json;print(json.load(open('package.json')).get('version',''))" 2>/dev/null)
+  else
+    PKG_VERSION=$(sed -n 's/^[[:space:]]*"version": *"\([^"]*\)".*/\1/p' package.json | head -1)
+  fi
   if [[ -z "$PKG_VERSION" ]]; then
     fail "package.json — could not extract version"
   else
     # package-lock.json must carry the same version (top-level and root package entry)
     if [[ -f package-lock.json ]]; then
-      LOCK_VERSION=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' package-lock.json | head -1)
+      if command -v python3 >/dev/null 2>&1; then
+        LOCK_VERSION=$(python3 -c "import json;d=json.load(open('package-lock.json'));print(d.get('version','') or d.get('packages',{}).get('',{}).get('version',''))" 2>/dev/null)
+      else
+        LOCK_VERSION=$(sed -n 's/^[[:space:]]*"version": *"\([^"]*\)".*/\1/p' package-lock.json | head -1)
+      fi
       if [[ "$LOCK_VERSION" != "$PKG_VERSION" ]]; then
         fail "package-lock.json version ($LOCK_VERSION) does not match package.json ($PKG_VERSION)"
         $FIX_MODE && echo "       FIX: update package-lock.json (npm install --package-lock-only)"
@@ -463,7 +518,7 @@ if [[ -d "$STANDARDS_DIR" ]]; then
     fi
 
     # 12.2 — Numbering: no duplicate "## N." headings.
-    dup_numbers=$(grep -oP '^## \K[0-9]+(?=\.)' "$std_file" | sort | uniq -d || true)
+    dup_numbers=$(sed -n 's/^## \([0-9][0-9]*\)\..*/\1/p' "$std_file" | sort | uniq -d || true)
     if [[ -n "$dup_numbers" ]]; then
       while IFS= read -r n; do
         fail "$std_file — duplicate section number '## $n.' (used more than once)"
@@ -510,7 +565,7 @@ if [[ -d "$STANDARDS_DIR" ]]; then
         if ! $match; then
           warn "$std_file — citation '(§$sect_num)' shares no significant term with section §$sect_num's body: \"${ctx:0:80}...\""
         fi
-      done < <(grep -oP "[^;.|]*\(§${sect_num}\)" "$std_file" 2>/dev/null || true)
+      done < <(grep -oE "[^;.|]*\(§${sect_num}\)" "$std_file" 2>/dev/null || true)
     done < <(awk '
       /^## [0-9]+\./ {
         if (n != "") print n "\t" body;
@@ -619,23 +674,33 @@ _std_dup_lines() {
 }
 
 if [[ -d "$STANDARDS_DIR" ]]; then
-  mapfile -t _STD_FILES < <(find "$STANDARDS_DIR" -name "*.md" -not -name "CHANGELOG.md" -type f | sort)
+  _STD_FILES=""
+  while IFS= read -r _f; do
+    _STD_FILES="$_STD_FILES
+$_f"
+  done < <(find "$STANDARDS_DIR" -name "*.md" -not -name "CHANGELOG.md" -type f | sort)
+  _STD_FILES="$(echo "$_STD_FILES" | sed '/^$/d')"
   dup_warnings=0
-  for ((_i = 0; _i < ${#_STD_FILES[@]}; _i++)); do
-    for ((_j = _i + 1; _j < ${#_STD_FILES[@]}; _j++)); do
-      a="${_STD_FILES[$_i]}"; b="${_STD_FILES[$_j]}"
-      while IFS= read -r line; do
-        [[ -z "$line" ]] && continue
-        # `--`: nearly every prose line in a standard is a "- " bullet, which
-        # grep would otherwise parse as an option and fail silently (2>/dev/null)
-        # -- leaving every bullet uncompared since this check was written.
-        if grep -qxF -- "$line" "$b" 2>/dev/null; then
-          warn "$(basename "$a") and $(basename "$b") share a near-identical line — possible unresolved DRY overlap (see standards-dry-policy.md): \"${line:0:90}...\""
-          ((dup_warnings++)) || true
-        fi
-      done < <(_std_dup_lines "$a")
-    done
-  done
+  while IFS= read -r a; do
+    [[ -z "$a" ]] && continue
+    _after_a=0
+    while IFS= read -r b; do
+      [[ -z "$b" ]] && continue
+      if [[ $_after_a -eq 1 ]]; then
+        while IFS= read -r line; do
+          [[ -z "$line" ]] && continue
+          # `--`: nearly every prose line in a standard is a "- " bullet, which
+          # grep would otherwise parse as an option and fail silently (2>/dev/null)
+          # -- leaving every bullet uncompared since this check was written.
+          if grep -qxF -- "$line" "$b" 2>/dev/null; then
+            warn "$(basename "$a") and $(basename "$b") share a near-identical line — possible unresolved DRY overlap (see standards-dry-policy.md): \"${line:0:90}...\""
+            ((dup_warnings++)) || true
+          fi
+        done < <(_std_dup_lines "$a")
+      fi
+      [[ "$b" == "$a" ]] && _after_a=1
+    done <<< "$_STD_FILES"
+  done <<< "$_STD_FILES"
   [[ $dup_warnings -eq 0 ]] && green "No unresolved duplication found between standards"
 else
   warn "$STANDARDS_DIR/ not found — skipping standards duplication check (run from the repo root)"
@@ -1055,6 +1120,53 @@ if [[ -f "$FM_DOC" ]]; then
 else
   warn "shared/framework-memory.md not found — skipping framework memory contract check"
 fi
+
+header "21. Handoff contracts (single writer, guarded invokes, no prose limits)"
+# F105+. Three sources of truth compete (prose ↔ devflow-ctl ↔ validator).
+# devflow-ctl wins for limits/formats/states; prose only cites it:
+#   21.1 no literal caps in prose — `(limit N)` / `limit is|of N` in skills or
+#        prompts drifts from iterate_default_max (the "limit 3, not the 2 this
+#        used to say in prose" class). Behavioral phrasing without a digit
+#        ("exit 1 (limit exceeded)") is fine;
+#   21.2 any lifecycle skill that invokes another devflow-* agent must branch
+#        lifecycle vs standalone (dual-context invokes ran twice);
+#   21.3 every `iterate check <loop>` referenced in prose exists in devflow-ctl
+#        and names a loop iterate_default_max knows.
+
+HANDOFF_ERRORS_BEFORE=$ERRORS
+
+# 21.1
+while IFS= read -r hit; do
+  [[ -n "$hit" ]] || continue
+  fail "${hit%%:*}:$(cut -d: -f2 <<< "$hit") — literal iteration cap in prose ('$(cut -d: -f3- <<< "$hit" | head -c 80)') — cite devflow-ctl's iterate_default_max instead of duplicating the number"
+done < <(grep -rnE '\(limit [0-9]|limit (is|of) [0-9]' --include='SKILL.md' "$SKILLS_DIR" .github/prompts 2>/dev/null | grep -v 'iterate_default_max' || true)
+
+# 21.2
+for dual in devflow-architect devflow-implement; do
+  f="$SKILLS_DIR/$dual/SKILL.md"
+  [[ -f "$f" ]] || continue
+  if grep -qE '[Ii]nvoke `devflow-' "$f"; then
+    grep -qi 'standalone' "$f" || fail "$dual/SKILL.md — invokes another agent but has no Standalone branch (dual-context invoke runs twice in a lifecycle cycle)"
+    grep -qiE 'lifecycle|cycle mode' "$f" || fail "$dual/SKILL.md — invokes another agent but has no lifecycle/cycle branch (dual-context invoke runs twice in a lifecycle cycle)"
+  fi
+done
+
+# 21.3
+CTL_21="$SKILLS_DIR/shared/bin/devflow-ctl"
+if [[ -f "$CTL_21" ]] && grep -q '"${1:-}" == "check"' "$CTL_21"; then
+  known_loops="$(sed -n '/^iterate_default_max()/,/^}/p' "$SKILLS_DIR/shared/bin/devflow-ctl" | grep -oE '[a-z_]+\)' | tr -d ')' | paste -sd' ' -)"
+  while IFS= read -r hit; do
+    [[ -n "$hit" ]] || continue
+    loop="$(grep -oE 'iterate check [a-z_]+' <<< "$hit" | awk '{print $3}')"
+    [[ -n "$loop" ]] || continue
+    grep -qw "$loop" <<< "$known_loops" \
+      || fail "${hit%%:*}:$(cut -d: -f2 <<< "$hit") — 'iterate check $loop' names a loop iterate_default_max does not know (known: $known_loops)"
+  done < <(grep -rnE 'iterate check [a-z_]+' --include='SKILL.md' "$SKILLS_DIR" 2>/dev/null || true)
+elif [[ -f "$CTL_21" ]] && grep -q 'cmd_iterate' "$CTL_21"; then
+  fail "shared/bin/devflow-ctl — cmd_iterate has no read-only 'check' mode (non-owning agents must consult remaining attempts without consuming them)"
+fi
+
+[[ $ERRORS -eq $HANDOFF_ERRORS_BEFORE ]] && green "Iteration limits live in devflow-ctl (no prose literals), dual-context invokes branch lifecycle/standalone, and every 'iterate check' names a known loop"
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""

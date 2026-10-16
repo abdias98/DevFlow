@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: Dependency Management & Supply Chain (Technology-Agnostic)
 
-> **Version:** 1.3.0 | **Last Updated:** 2026-09-16
+> **Version:** 1.3.1 | **Last Updated:** 2026-10-12
 
 > **Note on examples:** All manifest files, lockfiles, audit tools, and registries are illustrative. Replace them with the actual package manager and ecosystem of the detected stack (npm, pip, Maven, Cargo, Go modules, Composer, NuGet, etc.).
 
@@ -25,8 +25,10 @@ Apply these principles whenever you add, update, remove, or review third-party d
   - Commit the lockfile (or equivalent) so CI, teammates, and production resolve identical versions.
   - Use the ecosystem's reproducible-install command in CI (the one that fails if the lockfile is out of date), not a loose install.
   - Use explicit, bounded version ranges in the manifest; let the lockfile pin the exact resolved versions.
+  - Distinguish applications from published libraries: an application (deployed service, app, tool) commits its lockfile so every environment resolves identically; a published library declares bounded ranges in the manifest and does not impose a lockfile on its consumers. Exact-pin policy for releases is owned by `security.md §5` — follow it there instead of duplicating it here.
 - **DON'T:**
   - Use unbounded/floating specifiers (`*`, `latest`) for production dependencies.
+  - Commit a lockfile inside a published library as if it constrained consumers, or demand exact pins in a library manifest where a bounded range keeps the library combinable.
   - Add a `.gitignore` entry for the lockfile, or regenerate it casually without reviewing the resulting diff.
   - Hand-edit the lockfile.
 
@@ -34,7 +36,7 @@ Apply these principles whenever you add, update, remove, or review third-party d
 
 - **What:** Known-vulnerable dependencies are one of the most common breach vectors.
 - **DO:**
-  - Run the ecosystem's audit/advisory tool (the project's `Audit Command`) and treat **critical/high** vulnerabilities as release blockers.
+  - Run the ecosystem's audit/advisory tool (the project's `Audit Command`) and triage **critical/high** findings by reachability and exploitability before blocking a release: consult a VEX statement where the supplier publishes one, and the environmental CVSS score where one exists. A reachable, exploitable critical/high with no mitigation blocks the release; a non-reachable, non-exploitable transitive (e.g., dev-only tooling that never ships) is WARN with a documented, time-boxed follow-up, not a release BLOCK.
   - Keep auditing in CI so new advisories on existing dependencies are caught over time, not only at install.
   - Remediate by upgrading to a patched version; if none exists, isolate, apply a vetted override, or remove the dependency.
 - **DON'T:**
@@ -46,6 +48,9 @@ Apply these principles whenever you add, update, remove, or review third-party d
 - **What:** Dependencies must come from trusted sources and arrive unmodified.
 - **DO:**
   - Install only from the official/approved registry (or an internal mirror); verify integrity hashes/checksums where the ecosystem supports it.
+  - Verify the lockfile's integrity hashes on install — the reproducible-install command must fail on a hash mismatch rather than silently re-resolving.
+  - Defeat dependency confusion with scoped registries: internal package names resolve only from the internal registry/mirror (never fall through to the public registry), and public names resolve only from the approved registry.
+  - Publish a software bill of materials (SBOM) for distributed products — see §13 for format and lifecycle (CycloneDX/SPDX, EU CRA).
   - Be alert to typosquatting and dependency confusion: confirm the exact package name and that internal package names cannot be shadowed by a public registry.
   - Prefer dependencies that publish provenance/signatures when available.
 - **DON'T:**
@@ -101,8 +106,8 @@ Use when raising findings in code review or the Validation Gate. Always cite thi
 
 | Severity | Triggers |
 |----------|---------|
-| 🔴 **BLOCK** | Release with a known **critical/high** dependency vulnerability and no documented mitigation (§3); dependency installed from an untrusted/arbitrary source or with integrity verification disabled (§4); dependency whose license is incompatible with the product's distribution model added to shipped code (§5); lockfile removed/ignored so builds are non-reproducible (§2) |
-| 🟡 **WARN** | Unbounded/floating version specifier (`*`/`latest`) for a production dependency (§2); new dependency added with no justification when an existing one or the standard library suffices (§1); unmaintained/archived package added for security-sensitive functionality (§1); development/build tool declared as a production runtime dependency (§7); audit not run in CI (§3) |
+| 🔴 **BLOCK** | Release with a known **reachable and exploitable critical/high** dependency vulnerability and no documented mitigation (§3); dependency installed from an untrusted/arbitrary source or with integrity verification disabled (§4); dependency whose license is incompatible with the product's distribution model added to shipped code (§5); lockfile removed/ignored so builds are non-reproducible (§2) |
+| 🟡 **WARN** | Unbounded/floating version specifier (`*`/`latest`) for a production dependency (§2); new dependency added with no justification when an existing one or the standard library suffices (§1); unmaintained/archived package added for security-sensitive functionality (§1); development/build tool declared as a production runtime dependency (§7); audit not run in CI (§3); critical/high finding shipped with no reachability/exploitability triage recorded (§3); distributed product with no SBOM where one is required (§13) |
 | 🟢 **INFO** | Heavy dependency added for a trivial utility (§1); routine upgrades long overdue (§6); dependency tree could be leaner / transitive footprint noted (§7); license attribution/notice missing (§5) |
 
 ## 10. Applying This Standard with a Limited Scope
@@ -127,6 +132,7 @@ When a design needs a new dependency, record the decision in the spec's **Design
 - **License** — compatibility with how the product is distributed (§5).
 - **Placement** — runtime dependency or development/build-only (§7).
 - **Footprint** — the transitive dependencies it brings in, and whether that tree is acceptable (§7).
+- **SBOM** — whether this release publishes one, in which format, and where it is stored (§13).
 
 ## 12. Implementation Self-Check
 
@@ -138,3 +144,14 @@ Before marking a task done:
 - [ ] The license was checked against the project's allowed-license policy (§5).
 - [ ] Development and test tooling was not added as a runtime dependency (§7).
 - [ ] Any upgrade of existing dependencies sits in its own commit, apart from feature changes (§6).
+- [ ] A distributed release publishes a current SBOM in the decided format, and no direct dependency sits on an EOL major without a dated plan (§6, §13).
+
+## 13. SBOM & Lifecycle (EOL)
+
+- **What:** A shipped product must be able to answer "what is inside it" and "is anything inside it dead" — distributors, auditors, and (under the EU Cyber Resilience Act) regulators ask both.
+- **DO:**
+  - Publish an SBOM in CycloneDX or SPDX format for every distributed release, regenerate it whenever the dependency tree changes, and retain it with the release artifacts over the product's supported lifecycle.
+  - Track the end-of-life date of every direct dependency's major line; plan migration off an EOL/unsupported line before it lapses. Patch urgency is owned by `security.md §5` and upgrade mechanics by §6 — this section owns only the inventory and the dated plan.
+- **DON'T:**
+  - Ship a distributed product with no SBOM while claiming supply-chain transparency.
+  - Stay on an EOL major with no dated migration plan.

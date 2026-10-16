@@ -52,6 +52,7 @@ check 2 "fails" false'
 }
 
 @test "score: writes a machine-readable scorecard.json" {
+  requires_jq
   make_task 50 'check 3 "passes" true
 check 2 "fails" false'
   run "$EVAL" score "$TASK" "$RESULT"
@@ -101,14 +102,17 @@ check 1 "has --xml" file_matches help.txt --xml'
 @test "list: shows the seed golden tasks" {
   run "$EVAL" list
   [ "$status" -eq 0 ]
-  [[ "$output" == *"001-cli-json-flag"* ]]
-  [[ "$output" == *"002-rest-health-endpoint"* ]]
-  [[ "$output" == *"003-order-payment-lifecycle"* ]]
-  [[ "$output" == *"004-project-panel-tab"* ]]
-  [[ "$output" == *"005-stats-median-cli"* ]]
-  [[ "$output" == *"006-config-env-overrides"* ]]
-  [[ "$output" == *"007-notes-import-cli"* ]]
-  [[ "$output" == *"008-customer-lookup-cache"* ]]
+  # Dynamic: every task directory on disk appears in the list (no hardcoded
+  # IDs — adding task 009 must not break this test), and every listed ID
+  # resolves to a directory (no stale entries).
+  for d in "$REPO"/eval/tasks/*/; do
+    id="$(basename "$d")"
+    [[ "$output" == *"$id"* ]] || { echo "task dir $id missing from list output"; return 1; }
+  done
+  while IFS= read -r listed; do
+    [[ -z "$listed" ]] && continue
+    [[ -d "$REPO/eval/tasks/$listed" ]] || { echo "listed task $listed has no directory"; return 1; }
+  done < <(grep -oE '00[0-9]-[a-z0-9-]+' <<< "$output" | sort -u)
 }
 
 @test "score: usage error when arguments are missing" {
@@ -151,6 +155,7 @@ check_process 5 "spec produced" true'
 }
 
 @test "split: JSON carries outcome_percent and process_percent" {
+  requires_jq
   make_task 50 'check_outcome 3 "works" true
 check_process 2 "spec produced" false'
   run "$EVAL" score "$TASK" "$RESULT"
@@ -182,6 +187,8 @@ check_process 1 "summary only" devflow_artifact_any summary'
 }
 
 @test "helper: eval_serve manages a server and leaves no leaked process" {
+  requires_node
+  requires_serve
   printf 'require("http").createServer((q,s)=>{s.writeHead(200);s.end("ok");}).listen(process.env.PORT);\n' \
     > "$RESULT/server.js"
   make_task 50 'eval_serve_start "node server.js evalbats-leakcheck" /
@@ -197,6 +204,8 @@ eval_serve_stop'
 }
 
 @test "helper: eval_serve_start returns at once when the service process exits" {
+  requires_node
+  requires_serve
   printf 'process.exit(1);\n' > "$RESULT/server.js"
   make_task 50 'if eval_serve_start "node server.js" /; then check 1 "started" true; else check 1 "started" false; fi
 eval_serve_stop'
@@ -278,6 +287,15 @@ calibrate() { # calibrate <task-id> <fixture|naive|correct>
 requires_node() {
   command -v node >/dev/null 2>&1 || skip "node not installed"
   command -v npm  >/dev/null 2>&1 || skip "npm not installed"
+}
+
+requires_jq() {
+  command -v jq >/dev/null 2>&1 || skip "jq not installed"
+}
+
+requires_serve() {
+  command -v curl >/dev/null 2>&1 || skip "curl not installed"
+  command -v pgrep >/dev/null 2>&1 || skip "pgrep not installed"
 }
 
 @test "calibration 003: untouched fixture fails" {
