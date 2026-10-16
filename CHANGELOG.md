@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.17.0] — 2026-10-16
+
+> **The audit-remediation release.** A full independent audit of the framework (every flow, command, standard, design pattern and security control — report in `docs/devflow/reviews/2026-10-12-framework-audit-report.md`) found 9 critical, 18 high and ~35 medium issues the deterministic validator could not see: the gate only checks syntax and cross-references, never logic, handoffs or severity. This release fixes all of them across three waves, and teaches the validator the new handoff contracts (§21) so the same classes fail loudly from now on.
+>
+> **Re-run `install.sh` for each editor.** Permission tiers changed (supply-chain commands now ask), and the installer has new flags (`--editor`, `--yes`), a profile-collision guard and a pinned-ref mode.
+
+### 🔒 Fixed — Wave 1 (safety)
+- **`sca` High/Critical no longer degrades to WARN in Finalizer.** Reviewer BLOCKs and the Finalizer only warned — a CVE published between review and finalize shipped as a recommendation. Both gates now BLOCK, and the Finalizer STOPs before its irreversible session cleanup without traceability at 100%.
+- **Single-writer `implement_debug` counter.** Orchestrator, Implementer and Debugger all incremented it, exhausting retries at double speed. Only the Debugger increments now; the rest use the new read-only `devflow-ctl iterate check <loop>`.
+- **`init --scope` + Reviewer BLOCK branch + CI bypasses + `metrics aggregate` + knowledge write-back** in `perf`/`migrate`/`contract` (their `scope check` could never succeed; their BLOCKs had nowhere to go).
+- **Supply-chain allowlist closed:** `npx`, `pnpm/yarn add`, `go/cargo build`, `make`, `pip install` moved to ask-tier (plus bare-command variants); validator guardrail flags chainable metacharacters (`; && || $() > |`) and a hardened FORBIDDEN list.
+- **Verifiable installs:** `DEVFLOW_REF` pinning, signed-tag verification when `gpg` exists, installed commit SHA printed; README documents the pinned method.
+- **Safe deletion:** `${VAR:?}` guards, `$HOME`/`$USER_DIR` blocks, global-gitignore backup/prompt/revert on uninstall.
+- **Break-glass** for critical security fixes outside scope + **anti-poisoning** trust boundary for framework-memory candidates.
+
+### 🔧 Fixed — Wave 2 (handoffs)
+- **No more double Planner / double Reviewer** (lifecycle↔standalone guards in Architect and Implementer); corrected Phase 2 messaging/routing, Validation Gate rollback, idempotent validation archive, `paused` resume.
+- **Branch ownership** (orchestrator creates, implementer commits), standalone Implementer mode, Debugger with `scope check` + traceability updates + early architectural escalation, atomic F7↔F5 transitions, CI/Autonomous bypasses everywhere a human was mandatory.
+- **Reviewer:** `plan_revision` counting for Planner loops, `-rN`/`-dbgN` versioned artifacts (history preserved), blind-pass rewritten, Wave 12 reference removed, DoD-linked traceability gaps BLOCK so an APPROVED review can actually finalize.
+- **Planner:** traceability checked at the orchestrator gate, Phase 4 marked complete only post-approval, `rigor=standard` default.
+- **Standalone agents:** Complexity Gate in refactor, full-suite verification in bug-fix, evidence STOP in perf, 5-artifact gate + scan-only CVEs in reverse, Debugger explained + 11 skills + dated cheatsheets + doc review in tutorial, Reviewer in all template procedures, merge/skip in contract, Critical Friend + memory in docs.
+- **Validator §21** (handoff contracts) + `templates`/`tutorial` artifact types + read-only `iterate check` in `devflow-ctl`.
+
+### 📚 Changed — Wave 3 (standards 2026 + robustness)
+- **C1–C7 contradictions resolved** with a single canonical owner each (OCP↔YAGNI, edge↔domain validation, layered↔feature, 44px↔24px, pin↔range, lossy↔lossless, 5× idempotence BLOCK → only `concurrency.md §5`).
+- **`security.md` 2.7.0:** BFF, DPoP/mTLS, `__Host-`, JWT `aud`/`iss` + `kid` confusion, SSRF egress/metadata/DNS defenses, passkeys first, pepper + bcrypt limits + breach checks, TLS 1.2+, AES-GCM/envelope/KMS, CSRF tokens primary, **BOLA BLOCK**, **LLM Top 10 2025** rows.
+- **`rest-api.md` 2.5.0:** 202/304/412/415, optional envelope + RFC 7240 `Prefer`, sort-encoding fix, mandatory page-size bounds, atomic idempotency, `RateLimit-*`, OpenAPI 3.1, webhooks.
+- **15 more standards bumped** (details: `shared/standards/CHANGELOG.md` 2.25.0) — Outbox + Schema Registry, hedging + retry budgets, SBOM/EOL, EAA/ADA legal annex, WCAG 2.2, signed commits, property-based/mutation/Pact testing, fetch-join replacing lazy ORM, and more.
+- **Installer:** `--editor`/`--yes` non-interactive mode, single `sed_escape`, snippet-name whitelist, python3 version parsing, `Get-Command -All` + `@args` symmetry, hardened `merge-settings.py`, portable validator (no `grep -P`/`declare -A`/`mapfile`).
+- **Coverage:** prompts under validator §§1–2, 21 fixed ARCHITECTURE.md links, profile-collision marker, new tests (VS Code, `write_file`, supply-chain, `iterate check`), hardened `devflow-eval` (mktemp logs, python3 JSON, validated weights/rows).
+
+### ✅ Verification
+- `npm run validate` green (22 sections, incl. new §21).
+- `npm test`: 314 passing, 0 failing.
+
 ## [4.16.1] — 2026-10-02
 
 > **The tool-names release.** Since v2.2.0, `install.sh` built every editor's tool substitutions and then never applied one: a parsing slip left each key with a trailing `=`, so nothing matched. Every editor got VS Code's tool names. Claude Code was told to ask through a tool it does not have, so it asked every DevFlow question as plain text the user had to type — approval gates, mode selection, clarifying questions. The same slip told Claude Code and opencode to save files with `create_file`.
