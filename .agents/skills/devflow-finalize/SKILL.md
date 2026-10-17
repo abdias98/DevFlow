@@ -122,7 +122,7 @@ Gather:
 - Single file: `{Test Command (single file)} {test paths}`
 ```
 
-Present this to the user: *"Here's a PR description you can use when creating the pull request:"* followed by the PR description block. The user copies it — DevFlow never creates the PR automatically.
+Present this to the user: *"Here's a PR description you can use when creating the pull request:"* followed by the PR description block. The user copies it — DevFlow never creates the PR automatically. Close with one line: *"When this PR gets reviewed, run `/devflow-review intake {PR#}` to bring the review's findings back into DevFlow."*
 
 ### Step 5 — Archive & Clean Session Memory
 

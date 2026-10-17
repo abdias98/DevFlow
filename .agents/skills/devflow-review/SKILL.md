@@ -1,7 +1,7 @@
 ---
 name: devflow-review
 description: "Performs automated code review analyzing diffs against the architecture spec and plan (cycle mode) OR against engineering standards directly (standalone mode). Checks code quality, security (OWASP), performance, and test coverage. Classifies findings as BLOCK/WARN/INFO. Routes back to the invoking agent on blockers. USE WHEN: code review, review implementation, check code quality, devflow review phase, validate changes."
-argument-hint: "Optional: path to specific files to review, or 'auto' to review all changes."
+argument-hint: "Optional: path to specific files to review, 'auto' to review all changes, or 'intake <PR#|URL>' to bring an external review back into the framework."
 ---
 
 # DevFlow Reviewer
@@ -40,6 +40,7 @@ You are the **Reviewer** sub-agent. Perform deep code review — either comparin
 |-----------|------|
 | Invoked from the full `/devflow` lifecycle (Implementer auto-invoked me) | **Cycle Mode** |
 | Invoked from `/devflow-feature`, `/devflow-refactor`, `/devflow-bug-fix`, `/devflow-perf`, `/devflow-migrate`, `/devflow-contract`, `/devflow-docs`, `/devflow-templates`, `/devflow-tutorial`, or `/devflow-reverse` | **Standalone Mode** |
+| Invoked as `/devflow-review intake {PR# \| URL}`, or the user pastes an external review to bring back | **Intake Mode** |
 | Invoked directly via `/devflow-review` by the user | **Cycle Mode** (falls back to Standalone if no spec/plan found) |
 
 Set `REVIEW_MODE` and proceed to the corresponding procedure below.
@@ -258,6 +259,41 @@ Update session memory:
 ```markdown
 - [x] Standalone Review ({invoking agent}) — {APPROVED | CHANGES REQUESTED (N blockers)}
 ```
+
+---
+
+## Procedure — Intake Mode
+
+An external review — a PR review, a QA report, another agent's review — only helps the framework if what it found comes back into it. This mode brings it back on demand, without waiting for another cycle in the same area ([escape-analysis.md](<{{SKILLS_DIR}}/shared/escape-analysis.md>) → When This Is Invoked). It reviews no code itself.
+
+### Step 1 — Fetch the Review (read-only)
+
+- **Standard/CI:** `gh pr view {n} --comments` (or the `Artifact` tool's `comments` action for an artifact-hosted review).
+- **Pair:** ask the user to paste the comments.
+- **Never write back** — no reply, no resolve, no reaction on the external thread (escape-analysis.md → Anti-Patterns).
+
+Identify the cycle the PR came from — its branch name, or the review document of the same change in `docs/devflow/reviews/` — and read that internal review, if one exists. Ignore comments that are questions, praise or bookkeeping.
+
+### Step 2 — Classify Each Comment
+
+Propose one class per comment, with your reason, and let the user confirm or correct it — the user owns the classification:
+
+| Class | What it means | Action |
+|-------|---------------|--------|
+| **Defect** | Correct, and in code a DevFlow cycle approved | `devflow-ctl escape add --class {class} --layer {layer} --ref "{PR#}#{comment}" --note "{one line}"` — class and layer per escape-analysis.md. When the internal review's checklist had the item that covers it and the review did not flag it, the layer is `reviewer:{dimension}` and the note names that checklist item: it is the input for the next improvement of the Reviewer. A framework layer also follows escape-analysis.md → What Recording One Does, step 4 |
+| **Style / formatting** | Correct, but a formatter or linter rule could have caught it | Not an escape. Propose the rule for the project's formatter/linter config or for `standards-profile.md`; the user decides and applies it |
+| **Correct, not fixed now** | A decision | `devflow-ctl backlog add {file} "{reason}"` when it should be fixed later; nothing to the framework memory |
+| **Disagreement** | The external reviewer is wrong | Nothing recorded. A wrong external comment says nothing about DevFlow's own Reviewer, so it is **never** recorded as a `false-positive` — that type is for findings of the internal Reviewer the user dismissed |
+
+**CI / Autonomous mode:** there is no one to confirm, so record nothing — write the proposed classification to the intake report (and, in Autonomous mode, a line in `send-to-user.md`) for the next interactive session to confirm.
+
+### Step 3 — Recurrence
+
+Run `devflow-ctl escape report`. Each class / layer it lists under **Recurring in this project** has reached three escapes: the same miss three times is a rule, not three incidents. For each, propose a concrete entry for `docs/devflow/knowledge-base/standards-profile.md` — what the code must do and where, verifiable, not "validate better" — and write it only with the user's approval.
+
+### Step 4 — Save the Intake Report
+
+Save `docs/devflow/reviews/YYYY-MM-DD-{slug}-intake.md`: one row per comment (ref, summary, class, action taken, escape or backlog id), the rule proposals and what the user decided about each. Tell the user what was recorded.
 
 ---
 

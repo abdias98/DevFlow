@@ -89,6 +89,7 @@ Stored at `docs/devflow/knowledge-base/escapes.md`, one row per escape, in a sta
 
 - **Finalizer** (Phase 8) — asks explicitly: *"Did the previous cycle in this area receive any external correction (a PR review comment, a QA bug, an incident) since it was approved?"* If yes, walks through recording it before closing.
 - **Standalone agents** — the same question, asked once per invocation of `/devflow-review` in Standalone Mode when re-invoked after a prior APPROVED in the same area, and at the closing step of Feature/Bug-Fix/Refactor.
+- **Intake of an external review** — `/devflow-review intake {PR# | URL}` (or a pasted review) runs the read-only ingestion above for one review, whenever it arrives, without waiting for another cycle in the same area ([devflow-review/SKILL.md](<{{SKILLS_DIR}}/devflow-review/SKILL.md>) → Intake Mode). It also turns each class / layer that `escape report` lists as **recurring in this project** (3+ escapes) into a proposed `standards-profile.md` rule.
 - **On demand** — a user can record an escape at any time with `devflow-ctl escape add`, independent of any active session.
 
 ---
