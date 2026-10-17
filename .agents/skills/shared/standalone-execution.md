@@ -132,10 +132,14 @@ Exit 1 means the limit is exhausted: STOP iterating and escalate to the user wit
 
 ## 7. Lint / Typecheck Gate
 
-Before self-review or verifier dispatch (§8), run the project's `Lint Command` from `## Stack Profile` (including any typecheck script the project defines) scoped to the changed files where possible:
+Before self-review or verifier dispatch (§8), run the project's mechanical checks from `## Stack Profile`, in this order, each one only if its key is configured:
 
-- **Standard/CI:** auto-run it. Fix mechanical failures (formatting, unused imports) in-scope and re-run. Report persistent violations as findings rather than hand-waving them.
-- **Pair:** inform the user of the exact command and wait for pasted output before continuing.
+1. **Format** — `devflow-ctl evidence run --kind format --path <file>...`, with the changed files the session may edit. The `Format Command`'s `{files}` placeholder receives them; a Format Command without `{files}` is never run in write mode (formatting the whole project rewrites files outside the scope) — the linter reports formatting instead.
+2. **Lint** — `devflow-ctl evidence run --kind lint` (add `--path <file>...` when the `Lint Command` takes `{files}`).
+3. **Typecheck** — `devflow-ctl evidence run --kind typecheck`.
+
+- **Standard/CI:** run each check through `evidence run`, never by hand, so its result is recorded in the session's evidence ledger instead of reported. Exit 1 → fix mechanical failures (formatting, unused imports, type errors in code you wrote) in-scope and re-run; report persistent violations as findings rather than hand-waving them. Exit 2 with *no command configured* → the project has no such check: say so in the report, never invent a command.
+- **Pair:** inform the user of each exact command and wait for the pasted output before continuing. Save it to `docs/devflow/session/{slug}/evidence/pasted-{kind}.txt` and record it with `devflow-ctl evidence attest --kind {kind} --file <that file>`.
 
 ---
 

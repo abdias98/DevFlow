@@ -189,6 +189,69 @@ profile() {
   grep -q '^| EV001 | test | run | 0 | ' "$DEVFLOW_SESSION_ROOT/demo/evidence.md"
 }
 
+# ── typecheck / format and {files} (F109) ────────────────────────────────────
+
+@test "evidence run: typecheck reads 'Typecheck Command'" {
+  profile "Typecheck Command" "./bin/echo.sh tsc --noEmit"
+  run "$CTL" evidence run --kind typecheck
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"args:tsc --noEmit"* ]]
+  grep -q '^| EV001 | typecheck | run | 0 | ' "$DEVFLOW_SESSION_ROOT/demo/evidence.md"
+}
+
+@test "evidence run: a Format Command without {files} is not run" {
+  profile "Format Command" "./bin/echo.sh --write ."
+  run "$CTL" evidence run --kind format
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"no {files} placeholder"* ]]
+  [ ! -f "$DEVFLOW_SESSION_ROOT/demo/evidence.md" ]
+}
+
+@test "evidence run: {files} becomes the --path list, one argument each, recorded as a count" {
+  "$CTL" scope add 'src/**' --slug demo >/dev/null
+  mkdir -p src && echo a > src/a.ts && echo b > src/b.ts
+  profile "Format Command" "./bin/echo.sh --write {files}"
+  run "$CTL" evidence run --kind format --path src/a.ts --path src/b.ts
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"args:--write src/a.ts src/b.ts"* ]]
+  grep -q '^| EV001 | format | run | 0 | .* | ./bin/echo.sh --write {files} \[2 file(s)\] | ' "$DEVFLOW_SESSION_ROOT/demo/evidence.md"
+}
+
+@test "evidence run: {files} refuses a path outside the scope, and nothing runs" {
+  "$CTL" scope add 'src/**' --slug demo >/dev/null
+  mkdir -p src && echo a > src/a.ts
+  printf '#!/bin/sh\ntouch ran\n' > bin/mark.sh; chmod +x bin/mark.sh
+  profile "Format Command" "./bin/mark.sh {files}"
+  run "$CTL" evidence run --kind format --path src/a.ts --path app.txt
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"'app.txt' is outside the session scope"* ]]
+  [ ! -e ran ]
+}
+
+@test "evidence run: {files} needs --path, existing files, and no option-looking paths" {
+  "$CTL" scope add '**' --slug demo >/dev/null
+  profile "Lint Command" "./bin/echo.sh {files}"
+  run "$CTL" evidence run --kind lint
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"pass the changed files with --path"* ]]
+  run "$CTL" evidence run --kind lint --path nope.ts
+  [ "$status" -eq 2 ]
+  echo x > ./-rf
+  run "$CTL" evidence run --kind lint --path -rf
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"would be read as an option"* ]]
+}
+
+@test "evidence run: --path without {files}, or {files} glued to another word, is refused" {
+  profile "Lint Command" "./bin/echo.sh ." "Typecheck Command" "./bin/echo.sh --files={files}"
+  run "$CTL" evidence run --kind lint --path app.txt
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"has no {files} placeholder"* ]]
+  run "$CTL" evidence run --kind typecheck --path app.txt
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"must be a separate word"* ]]
+}
+
 # ── Monorepo profiles ─────────────────────────────────────────────────────────
 
 monorepo() { # monorepo <n-packages>

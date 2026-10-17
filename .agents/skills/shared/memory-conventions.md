@@ -54,6 +54,8 @@ These files live only for the duration of a DevFlow session. They are not versio
 | **E2E Test Command** | {npx cypress run \| npx playwright test \| ...} *(optional — omit if no E2E tests)* |
 | **Build Command** | {npm run build \| go build \| dotnet build \| mvn package \| ...} |
 | **Lint Command** | {npm run lint \| eslint . \| flake8 \| golangci-lint run \| ...} |
+| **Typecheck Command** | {npm run typecheck \| tsc --noEmit \| mypy src \| pyright \| ...} *(optional — omit if the language or project has no separate type check)* |
+| **Format Command** | {npx prettier --write {files} \| black {files} \| gofmt -w {files} \| rustfmt {files} \| ...} *(optional — MUST contain the `{files}` placeholder: it is run only on the changed files the session may edit, so a command without it is never run in write mode)* |
 | **Audit Command** | {npm audit \| pnpm audit \| pip-audit \| safety check \| owasp dependency-check \| cargo audit \| ...} *(optional — omit if no audit tool configured)* |
 | **Watch Command** | {npm run dev \| next dev \| vite \| python manage.py runserver \| go run . \| air \| ...} |
 | **Source Root** | {src/ \| app/ \| lib/ \| cmd/ \| ...} |

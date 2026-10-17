@@ -105,7 +105,7 @@ See [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) â
 ### Step 5 â€” Generate AGENTS.md
 
 Generate or update the project's `AGENTS.md` file with:
-1. **Tech Stack** table (language, runtime, package manager, test runner, test command, lint command, source root, test root).
+1. **Tech Stack** table (language, runtime, package manager, test runner, test command, lint command, typecheck command, format command, source root, test root).
 2. **Folder Structure** (top-level directory tree with annotations).
 3. **Naming Conventions** table (type, convention, example).
 4. **Architecture Patterns** (architectural style, key patterns, cross-cutting concerns).

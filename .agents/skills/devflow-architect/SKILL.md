@@ -102,7 +102,7 @@ Dispatch **4 parallel exploration subagents**. Each is read-only and returns fin
 | Subagent | Axis | Exploration guide sub-steps | Brief |
 |----------|------|----------------------------|-------|
 | **A — Structure & Patterns** | Project shape | 1, 2, 5, 6 | Map folder hierarchy, module boundaries, naming conventions, architecture patterns, and conventions for similar features. Return a structured summary. |
-| **B — Tech Stack & Dependencies** | Stack detection | 4 | Detect frameworks, test runners, build tools, ORM, DI, state management, package manager from config files. Return the Stack Profile fields (Language, Runtime, Framework, Database, Package Manager, Build/Lint/Audit/Watch Command, Source Root). Do NOT write to `context.md` — return the fields. |
+| **B — Tech Stack & Dependencies** | Stack detection | 4 | Detect frameworks, test runners, build tools, ORM, DI, state management, package manager from config files. Return the Stack Profile fields (Language, Runtime, Framework, Database, Package Manager, Build/Lint/Typecheck/Format/Audit/Watch Command, Source Root). Do NOT write to `context.md` — return the fields. |
 | **C — Test Architecture** | Test patterns | 8 | Discover test file structure, frameworks, utilities, and exact commands (full suite, subset, single file, coverage). Return the Test Stack Profile fields (Test Runner, Test Command, Test Command single file, Test Root, Test Utilities). Do NOT write to `context.md` — return the fields. |
 | **D — Reusability & Reference** | What to reuse | 3, 7 | Find the closest existing feature to what will be built. Exhaustively map everything that already exists in areas the feature touches. Return a reusability inventory: for each area, "reuse X" or "create new (no match found)". |
 

@@ -39,7 +39,7 @@
 #   escape add --class <c> --layer <l> --ref <r> --note <n>  Record a post-approval defect
 #   escape list [--layer <layer>]                     List escapes, optionally by layer
 #   escape report                                      Escape counts by layer and class
-#   evidence run --kind <k> [--profile <p>]          Run the Stack Profile's command for <k>, record exit code + tree
+#   evidence run --kind <k> [--profile <p>] [--path <f>]...  Run the Stack Profile's command for <k> ({files} ← --path), record exit + tree
 #   evidence attest --kind <k> --file <f>            Record output the user pasted (Pair mode) — attested, not verified
 #   evidence list                                    Print the session's evidence ledger
 #   metrics aggregate <metrics-file>                  Append a cycle's metrics to _aggregate.md, recompute averages
@@ -1480,14 +1480,16 @@ EVIDENCE_TIMEOUT="${DEVFLOW_EVIDENCE_TIMEOUT:-1800}"
 
 _evidence_key() { # _evidence_key <kind> — the Stack Profile key that holds its command
   case "$1" in
-    test)  echo "Test Command" ;;
-    lint)  echo "Lint Command" ;;
-    build) echo "Build Command" ;;
+    test)      echo "Test Command" ;;
+    lint)      echo "Lint Command" ;;
+    typecheck) echo "Typecheck Command" ;;
+    format)    echo "Format Command" ;;
+    build)     echo "Build Command" ;;
     *) return 1 ;;
   esac
 }
 
-_evidence_kinds() { echo "test|lint|build"; }
+_evidence_kinds() { echo "test|lint|typecheck|format|build"; }
 
 # Prints one key's value from context.md's Stack Profile; exit 1 if the file
 # has no Stack Profile, 3 if a monorepo profile name is needed or unknown.
@@ -1597,10 +1599,11 @@ _evidence_record() {
 
 cmd_evidence() {
   local sub="${1:-}"; shift || true
-  local kind="" profile="" from_file=""
+  local kind="" profile="" from_file="" paths=()
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --kind)    kind="${2:-}";    shift 2 ;;
+      --path)    paths+=("${2:-}"); shift 2 ;;
       --profile) profile="${2:-}"; shift 2 ;;
       --file)    from_file="${2:-}"; shift 2 ;;
       *) die "evidence $sub: unknown option '$1'" ;;
@@ -1610,7 +1613,7 @@ cmd_evidence() {
     run)
       [[ "${ORIG_ARGV[0]:-}" == "evidence" && "${ORIG_ARGV[1]:-}" == "run" ]] \
         || die "evidence run must start the command line ('devflow-ctl evidence run --kind <k> [--slug s]') — permission rules match that prefix to ask before running it"
-      [[ -n "$kind" ]] || die "usage: devflow-ctl evidence run --kind <$(_evidence_kinds)> [--profile <package>] [--slug s]"
+      [[ -n "$kind" ]] || die "usage: devflow-ctl evidence run --kind <$(_evidence_kinds)> [--profile <package>] [--path <file>]... [--slug s]"
       local key; key="$(_evidence_key "$kind")" || die "evidence run: --kind must be one of $(_evidence_kinds) (got '$kind')"
       resolve_session
       local context="$SESSION_ROOT/$SLUG/context.md" cmd rc=0
@@ -1629,6 +1632,34 @@ cmd_evidence() {
           die "evidence run: '$key' contains shell syntax (; & | < > \` \$ quotes or backslash) — it runs without a shell; wrap it in a project script (e.g. an npm script or make target) and point the profile at that" ;;
       esac
       local words; read -ra words <<< "$cmd"
+      # `{files}` is replaced by the --path list, one argv entry each. A
+      # formatter rewrites what it is given, so it only ever gets files the
+      # session may edit -- run over the whole repo it would break the scope
+      # lock -- and a Format Command without the placeholder is not run.
+      local has_files=false w argv=() p recorded="$cmd"
+      for w in "${words[@]}"; do [[ "$w" == "{files}" ]] && has_files=true; done
+      if [[ "$cmd" == *"{files}"* ]] && ! $has_files; then
+        die "evidence run: '{files}' must be a separate word in '$key' (got '$cmd')"
+      fi
+      if [[ "$kind" == format ]] && ! $has_files; then
+        die "evidence run: '$key' has no {files} placeholder — a formatter run over the whole project would rewrite files outside the scope; not run (give it {files}, or let the linter report formatting)"
+      fi
+      if $has_files; then
+        [[ ${#paths[@]} -gt 0 ]] || die "evidence run: '$key' takes {files} — pass the changed files with --path <file> (repeatable)"
+        for p in "${paths[@]}"; do
+          [[ "$p" != -* ]] || die "evidence run: --path '$p' starts with '-' and would be read as an option"
+          [[ -f "$p" ]] || die "evidence run: --path '$p' is not a file"
+          ( cmd_scope check "$p" ) >/dev/null 2>&1 \
+            || fail "evidence run: --path '$p' is outside the session scope — '$kind' only runs on files the session may edit (devflow-ctl scope check $p)"
+        done
+        for w in "${words[@]}"; do
+          if [[ "$w" == "{files}" ]]; then argv+=("${paths[@]}"); else argv+=("$w"); fi
+        done
+        words=("${argv[@]}")
+        recorded="$cmd [${#paths[@]} file(s)]"
+      elif [[ ${#paths[@]} -gt 0 ]]; then
+        die "evidence run: --path given but '$key' has no {files} placeholder"
+      fi
       local tree; tree="$(_evidence_tree)"
       local out; out="$(mktemp)"
       local runner=(env --)
@@ -1637,7 +1668,7 @@ cmd_evidence() {
       rc=0
       "${runner[@]}" "${words[@]}" > "$out" 2>&1 < /dev/null || rc=$?
       tail -n 40 "$out"
-      local id; id="$(_evidence_record "$kind" run "$rc" "$tree" "$cmd" "$out")"
+      local id; id="$(_evidence_record "$kind" run "$rc" "$tree" "$recorded" "$out")"
       rm -f "$out"
       if [[ "$rc" -eq 0 ]]; then
         ok "evidence $id recorded — $kind passed (exit 0, tree ${tree:0:12})"
@@ -1662,7 +1693,7 @@ cmd_evidence() {
       [[ -f "$file" ]] || { echo "No evidence recorded for session '$SLUG'"; return 0; }
       cat "$file"
       ;;
-    *) die "usage: devflow-ctl evidence run --kind <k> [--profile <p>] | attest --kind <k> --file <f> | list   [--slug s]" ;;
+    *) die "usage: devflow-ctl evidence run --kind <k> [--profile <p>] [--path <f>]... | attest --kind <k> --file <f> | list   [--slug s]" ;;
   esac
 }
 
