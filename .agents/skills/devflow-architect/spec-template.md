@@ -73,15 +73,16 @@ ASCII wireframes with component annotations using the detected stack's syntax. I
 
 ### API Contract *(if backend/API feature)*
 
-**REST endpoint template:**
+One block per endpoint added or changed — the decisions of `rest-api.md §15`, made here before any code. `devflow-ctl artifacts check spec` fails a block without **Auth**, a **Success** with a 2xx status, or **Errors** with at least one 4xx status; write `N/A — {reason}` when the feature has no HTTP endpoints.
 
+#### {METHOD} /api/v{version}/{resource}
 | Field | Value |
 |-------|-------|
-| Method | {HTTP verb} |
-| Path | /api/v{version}/{resource} |
-| Auth | {detect from project} |
-
-Request body, response body, error responses (400, 401, 403, 404, 409, 422, 500).
+| Auth | {who may call it — detect from project, e.g. Bearer with scope `orders:write`} |
+| Request | {body / query shape, or —} |
+| Success | {status} → {response shape} |
+| Errors | {status} {when} · {status} {error body} … (every error the operation can produce, `rest-api.md §3`, §7) |
+| Idempotency | {Idempotency-Key / naturally idempotent / N/A — reason} |
 
 **GraphQL** *(if project uses GraphQL)*: operation name, input variables, returned fields.
 

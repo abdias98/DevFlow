@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: REST API Design (Technology-Agnostic)
 
-> **Version:** 2.5.0 | **Last Updated:** 2026-10-12
+> **Version:** 2.6.0 | **Last Updated:** 2026-10-17
 
 > **Apply only if:** the project has HTTP endpoints, REST controllers, or API contracts.
 > If this is a CLI, library, background worker, or frontend-only project, skip this standard entirely.
@@ -225,3 +225,13 @@ Before marking a task done:
 - [ ] Error responses use the project's error format (§7).
 - [ ] Operations the contract declares idempotent behave identically when repeated (§9).
 - [ ] The API specification includes the endpoint, with request/response examples, and matches the implementation (§10).
+
+## 17. Contract Test Coverage
+- **What:** Every endpoint the spec's API Contract names (§15) gets its contract tests written before the code that serves it — a mismatch found before implementation is design, after it is rework.
+- **DO:**
+  - Cover four categories per endpoint, one or more tests each: **success** — a valid request returns the contracted status and response shape; **validation** — an invalid request returns the contracted error status and error body (§7); **authorization** — a missing or insufficient credential is refused with the contracted status (§8); **error shape** — every other error the contract lists returns it with the project's error format.
+  - Assert the shape the consumer relies on — field names, types, nullability — not only the status code.
+  - Write them in the task that owns the endpoint, failing first, alongside its other tests.
+- **DON'T:**
+  - Leave an error status from the contract untested because the happy path passes — the error paths are the part of a contract consumers handle in code.
+  - Generate contract tests from the implementation after the fact: they then assert what the code does, not what the contract promised.

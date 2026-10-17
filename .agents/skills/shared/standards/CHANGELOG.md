@@ -4,6 +4,11 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.26.0 — 2026-10-17
+
+### Added — 2.26.0
+- **`rest-api.md`** (v2.5.0 → v2.6.0): new §17 *Contract Test Coverage* — per endpoint, success / validation / authorization / error-shape tests written before the code, asserting the shape and not only the status. Moved here from `devflow-contract` Step 4, which now cites it, so the Planner derives the same tests pre-code. Appended; no section renumbered. Refs: F111, Wave 23.
+
 ## 2.25.0 — 2026-10-12
 
 ### Changed — 2.25.0
