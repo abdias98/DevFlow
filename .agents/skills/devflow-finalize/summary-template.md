@@ -8,8 +8,12 @@
 |-----------|--------|
 | {criterion from context.md} | ✅ Met / ⚠️ Not verified |
 
-### ✅ Tests
-{N} tests passing | 0 failing (confirmed by user)
+### ✅ Verification
+{N} tests passing | 0 failing — evidence `EV{NNN}`: recorded by `devflow-ctl evidence run` on the final tree, or attested by the user (Pair mode)
+
+| Check | Result |
+|-------|--------|
+| test / build / lint / typecheck | ✔ passed on the final tree · – not configured (not verified) · attested by the user · waived: {reason} (see Accepted Risks) |
 
 ### 📦 Files Changed
 **Created:**

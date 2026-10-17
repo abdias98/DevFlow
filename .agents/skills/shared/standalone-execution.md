@@ -140,6 +140,7 @@ Before self-review or verifier dispatch (§8), run the project's mechanical chec
 
 - **Standard/CI:** run each check through `evidence run`, never by hand, so its result is recorded in the session's evidence ledger instead of reported. Exit 1 → fix mechanical failures (formatting, unused imports, type errors in code you wrote) in-scope and re-run; report persistent violations as findings rather than hand-waving them. Exit 2 with *no command configured* → the project has no such check: say so in the report, never invent a command.
 - **Pair:** inform the user of each exact command and wait for the pasted output before continuing. Save it to `docs/devflow/session/{slug}/evidence/pasted-{kind}.txt` and record it with `devflow-ctl evidence attest --kind {kind} --file <that file>`.
+- **Close the gate** with `devflow-ctl evidence check --kind format,lint,typecheck --slug {slug}`. Exit 1 → do what each `✘` line names and re-run; a `–` line is a check this project doesn't have — report it, don't treat it as passed.
 
 ---
 
@@ -162,7 +163,10 @@ The verification method depends on environment capabilities and the rigor level 
 **This is the fix for a recurring defect (F01): session memory being destroyed before the steps that still need to read it.** The order below is mandatory and MUST NOT be reordered:
 
 ```
-1. Verify Definition of Done → fill the report's DoD section
+1. Verify Definition of Done → first the evidence gate: `devflow-ctl evidence run --kind test` and `--kind build`
+   (Pair: `evidence attest`; exit 2 "no command configured" for build → this project has none, move on), then
+   `devflow-ctl evidence check --kind test,lint,typecheck,build` — exit 1 → fix and re-run, never fill the DoD
+   section from a claim → fill the report's DoD section
 2. Persist the final report to {artifact-dir} (report-suffix, never overwriting the plan)
 3. Auto-invoke the Reviewer — wait for its verdict
 4. Resolve any BLOCK findings (iterate implement_review; escalate on exit 1)

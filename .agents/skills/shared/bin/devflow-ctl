@@ -41,6 +41,9 @@
 #   escape report                                      Escape counts by layer and class
 #   evidence run --kind <k> [--profile <p>] [--path <f>]...  Run the Stack Profile's command for <k> ({files} ← --path), record exit + tree
 #   evidence attest --kind <k> --file <f>            Record output the user pasted (Pair mode) — attested, not verified
+#   evidence check --kind <k>[,<k>...] [--profile <p>]  Exit 1 unless each kind passed on the current tree (or is waived/unconfigured)
+#   evidence waive --kind <k> --reason <r>           Record the user's waiver for a kind that cannot run (refused in CI/Autonomous)
+#   evidence snapshot [--profile <p>]                Record which kinds the Stack Profile configures (check compares against it)
 #   evidence list                                    Print the session's evidence ledger
 #   metrics aggregate <metrics-file>                  Append a cycle's metrics to _aggregate.md, recompute averages
 #   memory add --type <t> --key <k> --title <t> --rule <r> [...]  Record a cross-project framework lesson
@@ -1570,6 +1573,51 @@ _evidence_tree() {
 
 _evidence_file() { echo "$SESSION_ROOT/$SLUG/evidence.md"; }
 
+# A kind is configured when its Stack Profile key holds a command -- and, for
+# format, one with the {files} placeholder, since without it `evidence run`
+# refuses to run it. Prints nothing; exit 0 configured, 1 not, 2 no profile,
+# 3 the monorepo profile name is ambiguous or unknown.
+_evidence_configured() { # _evidence_configured <kind> [profile]
+  local key cmd rc=0
+  key="$(_evidence_key "$1")"
+  cmd="$(_stack_profile_value "$SESSION_ROOT/$SLUG/context.md" "$key" "${2:-}" 2>/dev/null)" || rc=$?
+  [[ "$rc" -eq 0 ]] || return $(( rc == 3 ? 3 : 2 ))
+  _evidence_unconfigured "$cmd" && return 1
+  [[ "$1" != format || " $cmd " == *" {files} "* ]] || return 1
+  return 0
+}
+
+# The frontmatter subkey a snapshot is stored under: one per monorepo profile.
+_evidence_snapshot_key() {
+  local p="${1:-}"
+  [[ -n "$p" ]] || { echo "default"; return; }
+  p="$(printf '%s' "$p" | tr -c 'A-Za-z0-9_-' '-')"
+  echo "p_$p"
+}
+
+# Latest ledger row for a kind, as "source<TAB>exit<TAB>tree<TAB>id".
+_evidence_latest() {
+  local file; file="$(_evidence_file)"
+  [[ -f "$file" ]] || return 0
+  LC_ALL=C awk -F'|' -v k="$1" '
+    /^\| EV[0-9]/ {
+      for (i = 2; i <= 6; i++) gsub(/^ +| +$/, "", $i)
+      if ($3 == k) last = $4 "\t" $5 "\t" $6 "\t" $2
+    }
+    END { if (last != "") print last }
+  ' "$file"
+}
+
+_evidence_kind_list() { # validates a comma list of kinds, prints one per line
+  local list="$1" k
+  [[ -n "$list" ]] || return 1
+  for k in ${list//,/ }; do
+    _evidence_key "$k" >/dev/null || die "evidence: unknown kind '$k' — kinds are $(_evidence_kinds)"
+    echo "$k"
+  done
+}
+
+
 # Appends one ledger row and prints its id. $1 kind, $2 source, $3 exit,
 # $4 tree, $5 command, $6 path of the output to keep.
 _evidence_record() {
@@ -1599,10 +1647,11 @@ _evidence_record() {
 
 cmd_evidence() {
   local sub="${1:-}"; shift || true
-  local kind="" profile="" from_file="" paths=()
+  local kind="" profile="" from_file="" paths=() reason=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --kind)    kind="${2:-}";    shift 2 ;;
+      --reason)  reason="${2:-}";  shift 2 ;;
       --path)    paths+=("${2:-}"); shift 2 ;;
       --profile) profile="${2:-}"; shift 2 ;;
       --file)    from_file="${2:-}"; shift 2 ;;
@@ -1667,6 +1716,11 @@ cmd_evidence() {
       echo "[devflow-ctl] running ($kind): $cmd"
       rc=0
       "${runner[@]}" "${words[@]}" > "$out" 2>&1 < /dev/null || rc=$?
+      # A formatter, or a linter with --fix, rewrites files: its exit 0
+      # certifies the tree it leaves behind, so that is the one recorded --
+      # hashed before, its own fixes would make it stale at once. test,
+      # typecheck and build certify the code they ran on.
+      case "$kind" in format|lint) tree="$(_evidence_tree)" ;; esac
       tail -n 40 "$out"
       local id; id="$(_evidence_record "$kind" run "$rc" "$tree" "$recorded" "$out")"
       rm -f "$out"
@@ -1687,13 +1741,111 @@ cmd_evidence() {
       id="$(_evidence_record "$kind" attested "?" "$tree" "(pasted by user)" "$from_file")"
       ok "evidence $id recorded — $kind attested by the user (not verified by devflow-ctl)"
       ;;
+    waive)
+      # The only way to close a required kind without running it. Owned by the
+      # user: the agent asks first and records the answer, the same rule as
+      # dismissing a BLOCK. With no user present there is no one to approve it.
+      [[ -n "$kind" && -n "$reason" ]] || die 'usage: devflow-ctl evidence waive --kind <k> --reason "<why it cannot run — the user approved this>" [--slug s]'
+      _evidence_key "$kind" >/dev/null || die "evidence waive: --kind must be one of $(_evidence_kinds) (got '$kind')"
+      resolve_session
+      if [[ "${CI:-}" == "true" || "${DEVFLOW_AUTONOMOUS:-}" == "true" ]]; then
+        FRICTION_EVENT="evidence-waive-unattended"; FRICTION_DETAIL="$kind"
+        fail "evidence waive: refused in CI / Autonomous mode — a waiver needs the user's explicit approval and no user is present; configure the command or fix the run (Autonomous: report it in send-to-user.md)"
+      fi
+      local tree id out; tree="$(_evidence_tree)"; out="$(mktemp)"
+      printf 'Waived by the user: %s\n' "$reason" > "$out"
+      reason="${reason//|/-}"
+      id="$(_evidence_record "$kind" waived "-" "$tree" "waived: $reason" "$out")"
+      rm -f "$out"
+      ok "evidence $id recorded — $kind waived by the user ($reason); the Finalizer lists it under Accepted Risks"
+      ;;
+    snapshot)
+      # Which kinds the Stack Profile configured when it was written. `check`
+      # compares against it, so emptying a key mid-cycle cannot open a gate.
+      resolve_session
+      local k rc conf=() sk
+      for k in test lint typecheck format build; do
+        rc=0; _evidence_configured "$k" "$profile" || rc=$?
+        case "$rc" in
+          0) conf+=("$k") ;;
+          1) ;;
+          3) die "evidence snapshot: the Stack Profiles name several packages — pick one with --profile" ;;
+          *) die "evidence snapshot: no Stack Profile in $SESSION_ROOT/$SLUG/context.md — run Quick Stack Detection (shared/stack-detection.md) first" ;;
+        esac
+      done
+      sk="$(_evidence_snapshot_key "$profile")"
+      local joined; joined="$(IFS=,; echo "${conf[*]+"${conf[*]}"}")"
+      fm_set "stack_keys.$sk" "${joined:-none}"
+      ok "evidence snapshot: configured kinds ${joined:-none}${profile:+ (profile $profile)}"
+      ;;
+    check)
+      [[ -n "$kind" ]] || die "usage: devflow-ctl evidence check --kind <k>[,<k>...] [--profile <p>] [--slug s]"
+      local kinds; kinds="$(_evidence_kind_list "$kind")"
+      resolve_session
+      [[ -f "$SESSION_ROOT/$SLUG/context.md" ]] && grep -qE '^## Stack Profiles?[[:space:]]*$' "$SESSION_ROOT/$SLUG/context.md" \
+        || die "evidence check: no Stack Profile in $SESSION_ROOT/$SLUG/context.md — run Quick Stack Detection (shared/stack-detection.md) first"
+      local snap pair now k rc row src rcode rtree rid failed=0 first_event=""
+      snap="$(fm_get "stack_keys.$(_evidence_snapshot_key "$profile")")"
+      pair="$(fm_get pair_mode)"
+      now="$(_evidence_tree)"
+      [[ -n "$snap" ]] || echo "[devflow-ctl] NOTE: no Stack Profile snapshot for this session — checking against the profile as it is now (run 'evidence snapshot' when the profile is written)"
+      [[ "$now" != none ]] || echo "[devflow-ctl] NOTE: not a git work tree — freshness of the evidence is unverifiable"
+      while IFS= read -r k; do
+        rc=0; _evidence_configured "$k" "$profile" || rc=$?
+        [[ "$rc" -ne 3 ]] || die "evidence check: the Stack Profiles name several packages — pick one with --profile"
+        row="$(_evidence_latest "$k")"
+        IFS=$'\t' read -r src rcode rtree rid <<< "${row:-}"
+        if [[ "$src" == waived ]]; then
+          echo "  ✔ $k: waived by the user ($rid) — not verified"
+          continue
+        fi
+        if [[ "$rc" -ne 0 ]]; then
+          if [[ ",$snap," == *",$k,"* ]]; then
+            echo "  ✘ $k: '$(_evidence_key "$k")' was configured when the Stack Profile was written and is not now — restore it; a gate does not open by emptying its command"
+            failed=1; first_event="${first_event:-evidence-unconfigured}"
+          elif [[ "$k" == test ]]; then
+            echo "  ✘ test: no Test Command — tests are required (dod-template.md → Testing): complete the key with the user, or record their explicit waiver with 'evidence waive'"
+            failed=1; first_event="${first_event:-evidence-missing}"
+          else
+            echo "  – $k: not configured — not verified (say so in the report)"
+          fi
+          continue
+        fi
+        if [[ -z "$row" ]]; then
+          echo "  ✘ $k: missing — no run recorded; run 'devflow-ctl evidence run --kind $k'"
+          failed=1; first_event="${first_event:-evidence-missing}"; continue
+        fi
+        if [[ "$src" == attested && "$pair" != true ]]; then
+          echo "  ✘ $k: $rid is attested (pasted) but this session is not in Pair mode — Standard/CI needs 'evidence run'"
+          failed=1; first_event="${first_event:-evidence-attested}"; continue
+        fi
+        if [[ "$src" == run && "$rcode" != 0 ]]; then
+          echo "  ✘ $k: failing — $rid exited $rcode"
+          failed=1; first_event="${first_event:-evidence-failing}"; continue
+        fi
+        if [[ "$now" != none && "$rtree" != "$now" ]]; then
+          echo "  ✘ $k: stale — the code changed after $rid; re-run it on the current tree"
+          failed=1; first_event="${first_event:-evidence-stale}"; continue
+        fi
+        if [[ "$src" == attested ]]; then
+          echo "  ✔ $k: $rid attested by the user (Pair mode) — not verified by devflow-ctl"
+        else
+          echo "  ✔ $k: $rid passed on the current tree"
+        fi
+      done <<< "$kinds"
+      if [[ "$failed" -ne 0 ]]; then
+        FRICTION_EVENT="$first_event"; FRICTION_DETAIL="${kind//,/+}"
+        fail "evidence check: not every kind has passing evidence on the current tree (${kind})"
+      fi
+      ok "evidence check passed (${kind})"
+      ;;
     list)
       resolve_session
       local file; file="$(_evidence_file)"
       [[ -f "$file" ]] || { echo "No evidence recorded for session '$SLUG'"; return 0; }
       cat "$file"
       ;;
-    *) die "usage: devflow-ctl evidence run --kind <k> [--profile <p>] [--path <f>]... | attest --kind <k> --file <f> | list   [--slug s]" ;;
+    *) die "usage: devflow-ctl evidence run --kind <k> [--profile <p>] [--path <f>]... | check --kind <k,...> | waive --kind <k> --reason <r> | snapshot | attest --kind <k> --file <f> | list   [--slug s]" ;;
   esac
 }
 

@@ -168,6 +168,8 @@ Confirm `traceability.md` is current: every row for a task completed this cycle 
 
 Before the Verifier or the Reviewer see any of this, run the format → lint → typecheck gate, each check through `devflow-ctl evidence run` so its result is recorded rather than reported — see [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Lint / Typecheck Gate for the order, the `{files}` rule for formatters and the canonical Standard/CI-vs-Pair behavior (the Feature Agent already follows the same rule). Fix mechanical failures (formatting, unused imports, type errors) in-scope and re-run; report persistent violations as findings for the Reviewer instead of hand-waving them. This is the fix for a gap where the Implementer — the phase that writes the most code — was the only phase without a mechanical lint/typecheck check before review.
 
+Then run the full suite the same way — `devflow-ctl evidence run --kind test` (Pair: the user runs `{Test Command}`, you record the pasted output with `evidence attest`) — and close the step with **`devflow-ctl evidence check --kind test,format,lint,typecheck --slug {slug}`**. Exit 1 → do what each `✘` line names (fix, or re-run on the current tree) before Step 5; the Reviewer must never receive a green that is not on the code it is about to read. Exit 2 → the session has no Stack Profile: run Quick Stack Detection first. A `–` line (kind not configured) is not a failure, but carry it into your completion message.
+
 ### Step 5 — Pre-Review Verification
 
 Before invoking the Reviewer, run a fresh-context verification pass to catch low-hanging fruit (missing files, scope drift, plan deviations). See [verifier-subagent.md](<{{SKILLS_DIR}}/shared/verifier-subagent.md>) for the canonical pattern.
