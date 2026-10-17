@@ -807,6 +807,7 @@ artifacts_required() {
     reverse)    printf '%s\n' "Project Overview" "Generated Artifacts" "Stack Profile" "Known Unknowns" ;;
     templates)  printf '%s\n' "Tech Stack" "Layer Structure" "Data Flow" "Design Decisions" "Common Patterns" "Test Conventions" ;;
     tutorial)   printf '%s\n' "What We Built" "Cycle Summary" "Files Created" "Next Steps" ;;
+    context)    printf '%s\n' "Definition of Done" ;;
     *) return 1 ;;
   esac
 }
@@ -941,8 +942,76 @@ _artifacts_check_review_coverage() {
   return 0
 }
 
+# A Definition of Done criterion that names no way to verify it passes every
+# gate and is mapped to an equally vague test (F108). Each criterion carries
+# `→ verify: test|command|manual — <observable result>`: in context.md as a
+# bullet, in the feature/bugfix/refactor reports as a `Verify` column holding
+# `test|command|manual — <observable result>`. Structural only -- whether the
+# test really asserts the observable is the Reviewer's call. Vague wording
+# ("works", "correctly") is reported, never failed: a word list cannot be
+# complete, and failing on it would teach agents to dodge it.
+DOD_VERIFY_RE='^(test|command|manual)[[:space:]]*(—|–|--|-|:)[[:space:]]*[^[:space:]].*$'
+DOD_VAGUE_RE='(^|[^[:alnum:]])(works?|working|properly|correctly|as expected|should work|fine|funciona|correctamente|bien|adecuadamente|como se espera)([^[:alnum:]]|$)'
+
+_artifacts_dod_body() { # the Definition of Done section, any heading level
+  awk '
+    /^#+ / { if (f && index($0, " ") <= lvl) exit }
+    tolower($0) ~ /^#+ definition of done[[:space:]]*$/ { f = 1; lvl = index($0, " "); next }
+    f { print }
+  ' "$1"
+}
+
+_artifacts_check_dod() { # <file> <bullets|table>
+  local file="$1" mode="$2" body bad=() vague=() n=0 line crit verify col
+  body="$(_artifacts_dod_body "$file")"
+  if [[ "$mode" == bullets ]]; then
+    while IFS= read -r line; do
+      [[ "$line" =~ ^[[:space:]]*-[[:space:]] ]] || continue
+      n=$((n + 1))
+      crit="$(sed -E 's/^[[:space:]]*-[[:space:]]+(\[[ xX]\][[:space:]]+)?//' <<< "$line")"
+      if [[ "$crit" =~ (→|->)[[:space:]]*verify:[[:space:]]*(.*)$ ]]; then
+        verify="${BASH_REMATCH[2]}"
+      else
+        verify=""
+      fi
+      if ! LC_ALL=C grep -qE "$DOD_VERIFY_RE" <<< "$verify"; then
+        bad+=("$crit")
+      elif LC_ALL=C grep -qiE "$DOD_VAGUE_RE" <<< "$verify"; then
+        vague+=("$crit")
+      fi
+    done <<< "$body"
+  else
+    col="$(awk -F'|' '/^\|/ { for (i = 2; i < NF; i++) { c = $i; gsub(/^[ \t]+|[ \t]+$/, "", c); if (tolower(c) == "verify") { print i; exit } } }' <<< "$body")"
+    if [[ -z "$col" ]] && grep -qE '^\|' <<< "$body"; then
+      fail "artifact '$file' — the Definition of Done table has no 'Verify' column: give each criterion 'test|command|manual — <observable result>' (devflow-brainstorm/questions-template.md → Definition of Done)"
+    fi
+    while IFS= read -r line; do
+      [[ "$line" =~ ^\|[[:space:]]*[0-9]+[[:space:]]*\| ]] || continue
+      n=$((n + 1))
+      crit="$(awk -F'|' '{ c = $3; gsub(/^[ \t]+|[ \t]+$/, "", c); print c }' <<< "$line")"
+      verify="$(awk -F'|' -v k="$col" '{ c = $k; gsub(/^[ \t]+|[ \t]+$/, "", c); print c }' <<< "$line")"
+      if ! LC_ALL=C grep -qE "$DOD_VERIFY_RE" <<< "$verify"; then
+        bad+=("$crit")
+      elif LC_ALL=C grep -qiE "$DOD_VAGUE_RE" <<< "$verify"; then
+        vague+=("$crit")
+      fi
+    done <<< "$body"
+  fi
+  [[ "$n" -gt 0 ]] || fail "artifact '$file' — the Definition of Done has no criteria: list each one with how it is verified"
+  if [[ ${#vague[@]} -gt 0 ]]; then
+    local v
+    for v in "${vague[@]}"; do
+      echo "[devflow-ctl] WARN: DoD criterion with a vague observable — name the status, value or output that proves it: $v"
+    done
+  fi
+  if [[ ${#bad[@]} -gt 0 ]]; then
+    fail "artifact '$file' — DoD criteria without a verification method ($(printf '%s; ' "${bad[@]}" | sed 's/; $//')): write '→ verify: test|command|manual — <observable result>' (a manual check names its reason)"
+  fi
+  return 0
+}
+
 cmd_artifacts() {
-  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse|templates|tutorial> <path> [--spec <spec-path>]"
+  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|context|feature|bugfix|refactor|perf|migration|contract|docs|reverse|templates|tutorial> <path> [--spec <spec-path>]"
   local type="${2:-}" path="${3:-}" spec_path=""
   [[ -n "$type" && -n "$path" ]] || die "usage: devflow-ctl artifacts check <type> <path> [--spec <spec-path>]"
   shift 3
@@ -955,7 +1024,7 @@ cmd_artifacts() {
   FRICTION_EVENT="artifact-incomplete"; FRICTION_DETAIL="$type"
   [[ -f "$path" ]] || fail "artifact not found at $path — it was never saved with create_file"
   local required missing=()
-  required="$(artifacts_required "$type")" || die "unknown artifact type '$type' (spec|plan|review|validation|feature|bugfix|refactor|perf|migration|contract|docs|reverse|templates|tutorial)"
+  required="$(artifacts_required "$type")" || die "unknown artifact type '$type' (spec|plan|review|validation|context|feature|bugfix|refactor|perf|migration|contract|docs|reverse|templates|tutorial)"
   while IFS= read -r section; do
     grep -qiE "^#{1,4} .*${section}" "$path" || missing+=("$section")
   done <<< "$required"
@@ -977,6 +1046,10 @@ cmd_artifacts() {
   if [[ "$type" == "review" && ${#missing[@]} -eq 0 ]]; then
     _artifacts_check_review_coverage "$path"
   fi
+  case "$type" in
+    context)                 _artifacts_check_dod "$path" bullets ;;
+    feature|bugfix|refactor) _artifacts_check_dod "$path" table ;;
+  esac
   FRICTION_EVENT=""
   ok "artifact '$path' has all required $type sections"
 }

@@ -17,10 +17,10 @@ Save to `docs/devflow/features/YYYY-MM-DD-{slug}-feature.md`:
 
 Verify each criterion captured during understanding (Step 1). Mark **Met** only when evidenced by a test, file, or observed behavior.
 
-| # | Criterion | Met? | Evidence |
-|---|-----------|:----:|----------|
-| 1 | {criterion 1} | ✅ / ❌ | {test name · file:line · manual check} |
-| 2 | {criterion 2} | ✅ / ❌ | {evidence} |
+| # | Criterion | Verify | Met? | Evidence |
+|---|-----------|--------|:----:|----------|
+| 1 | {criterion 1} | {test \| command \| manual} — {observable result, copied from Step 1} | ✅ / ❌ | {test name · file:line · manual check} |
+| 2 | {criterion 2} | {verify} | ✅ / ❌ | {evidence} |
 
 **Result:** {N}/{M} criteria met. {If any ❌ → list what remains and why.}
 

@@ -26,9 +26,9 @@ Save to `docs/devflow/features/YYYY-MM-DD-{slug}-feature-plan.md`:
 
 **Goal:** {one sentence}
 
-**Definition of Done:**
-- [ ] {criterion 1}
-- [ ] {criterion 2}
+**Definition of Done:** *(copied from the Understanding Summary, `→ verify:` included)*
+- [ ] {criterion 1} → verify: {test | command | manual} — {observable result}
+- [ ] {criterion 2} → verify: {…}
 
 ### Scope
 

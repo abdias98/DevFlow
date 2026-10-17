@@ -35,10 +35,10 @@ Save to `docs/devflow/refactors/YYYY-MM-DD-{slug}-refactor.md`:
 
 Verify each criterion captured during understanding (Step 1). For a refactor, the central criterion is **observable behavior unchanged**. Mark **Met** only when evidenced.
 
-| # | Criterion | Met? | Evidence |
-|---|-----------|:----:|----------|
-| 1 | External behavior unchanged | ✅ / ❌ | {regression test · manual check} |
-| 2 | {target improvement, e.g., duplication removed} | ✅ / ❌ | {file:line} |
+| # | Criterion | Verify | Met? | Evidence |
+|---|-----------|--------|:----:|----------|
+| 1 | External behavior unchanged | test — the regression guard suite passes unchanged before and after | ✅ / ❌ | {regression test · manual check} |
+| 2 | {target improvement, e.g., duplication removed} | {test \| command \| manual} — {observable result} | ✅ / ❌ | {file:line} |
 
 **Result:** {N}/{M} criteria met. {If any ❌ → list what remains and why.}
 

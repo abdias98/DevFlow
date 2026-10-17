@@ -58,7 +58,7 @@ When the project has **no** test infrastructure, both checkpoints are manual-ver
    - **Exception:** If the user's request already includes a specific file/function/class, the desired pattern, and the pain points, you may skip the questions template and proceed directly to Step 2 after confirming your understanding in the **Understanding Summary**.
 3. Identify: pain points, scope, existing tests, and desired patterns.
 4. **STOP after sending the questions**. Wait for the user to answer before proceeding.
-5. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
+5. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory. Run `devflow-ctl artifacts check context docs/devflow/session/{slug}/context.md` — every Definition of Done criterion needs `→ verify: test|command|manual — {observable}`; fix the ones it names before planning.
 
 ### Step 1.5 — Critical Friend Check
 

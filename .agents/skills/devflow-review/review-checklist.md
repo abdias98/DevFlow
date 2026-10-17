@@ -81,6 +81,7 @@ Performed by subagent 4 following [correctness-guide.md](./correctness-guide.md)
 - [ ] Contract with consumers: shape, nullability, ordering, error type and timing each consumer relies on still hold.
 - [ ] Data limits and partial failure: what the inputs can actually produce, and what is left behind when a step fails halfway.
 - [ ] Test adequacy: no plausible single mutation on a behavior-relevant path survives every test (`testing.md §4`).
+- [ ] Each `DoD` row of `traceability.md` has a test that asserts the observable its criterion names (`→ verify:` — the status, value or output), not merely one that runs the code path (`testing.md §4`).
 - [ ] Each finding classified as implementation defect, plan gap or deliberate decision; untraceable suspicions listed as Open Questions, not findings.
 
 ### Error Handling

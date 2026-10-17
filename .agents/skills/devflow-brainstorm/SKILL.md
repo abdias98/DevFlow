@@ -49,7 +49,7 @@ Do NOT ask a rigid questionnaire. Act intelligently:
 
 Once approved, save the context to session memory ensuring the target directory exists (`docs/devflow/session/{slug}/` as per [memory conventions](<{{SKILLS_DIR}}/shared/memory-conventions.md>)).
 
-- **`context.md`**: Create using the template in [questions template](./questions-template.md). Leave the `Tech Stack` or stack details as `[To be detected by Architect]` — do not guess the technology stack without codebase exploration.
+- **`context.md`**: Create using the template in [questions template](./questions-template.md). Leave the `Tech Stack` or stack details as `[To be detected by Architect]` — do not guess the technology stack without codebase exploration. Then run `devflow-ctl artifacts check context docs/devflow/session/{slug}/context.md`: exit 1 names each Definition of Done criterion with no `→ verify: test|command|manual — {observable}` — rewrite it with the user (CI/Autonomous: write the observable yourself and record it as an assumption) and re-run before handing off. A `WARN` about a vague observable is worth one more question, not a block.
 - **`phase-state.md`**: Initialize or update to reflect Phase 1 complete.
 
 ### Step 5 — Hand Off

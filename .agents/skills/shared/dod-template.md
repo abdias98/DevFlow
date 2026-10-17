@@ -42,9 +42,9 @@ The Brainstormer generates the feature-specific DoD in `context.md`. The univers
 Example feature-specific criteria added by Brainstormer:
 ```markdown
 ## Definition of Done
-- [ ] User can register with email and password
-- [ ] Invalid email shows validation error
-- [ ] Confirmation email is sent after registration
+- [ ] User can register with email and password → verify: test — POST /register returns 201 and the user row exists
+- [ ] Invalid email shows validation error → verify: test — 422 with error `email.invalid`, nothing persisted
+- [ ] Confirmation email is sent after registration → verify: test — the mail adapter receives exactly one message to that address
 ```
 
 These are combined with the universal criteria above to form the complete DoD.

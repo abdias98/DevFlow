@@ -31,7 +31,7 @@ These questions MUST always be asked to ensure a deep understanding of the refac
 - {constraint 1}
 
 ### Definition of Done
-- {criterion 1}
+- {criterion} → verify: {test | command | manual} — {observable result: the status, value or output that proves it}
 
 ### Problem Restatement
 {2-3 sentences restating the refactoring task}

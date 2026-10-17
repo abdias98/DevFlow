@@ -22,7 +22,7 @@ This session memory file (`docs/devflow/session/{slug}/traceability.md`) cross-r
 
 | # | Source | Requirement | Task | Test File | Test Scenario | Impl File | Status |
 |---|--------|-------------|------|-----------|---------------|-----------|--------|
-| R1 | DoD | {criterion} | Task N | `path` | {scenario} | `path` | ⬜ PENDING |
+| R1 | DoD | {criterion} | Task N | `path` | {the criterion's `→ verify:` observable, as written} | `path` | ⬜ PENDING |
 | R2 | Edge Case | {case} | Task N | `path` | {scenario} | `path` | ⬜ PENDING |
 | R6 | Behavior Scenario | S{N}: {given → when → then} | Task N | `path` | {sequence test} | `path` | ⬜ PENDING |
 | R3 | Spec Section | {section} | Task N | `path` | {scenario} | `path` | ⬜ PENDING |

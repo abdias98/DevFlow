@@ -13,7 +13,7 @@ Use this matrix to analyze the user's request. **Do NOT ask all of these questio
 | **Edge Cases** | Invalid, empty, or unexpected input behavior? |
 | **Transitions & Lifecycle** | What happens when something changes over time: the input or context changes while work is in flight, an action is repeated, results arrive out of order, the user leaves halfway, a step fails after another succeeded? What must reset and what must persist? Use the [Transition Prompts](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>) — ask only what this feature can actually exhibit, in the user's terms, never as design. |
 | **Assumptions** | What is assumed but not explicitly stated? |
-| **Definition of Done** | How to verify it works? What specific output or behavior proves completion? **Universal criteria** (lint, build, tests, no BLOCKs, etc.) are defined in [dod-template.md](<{{SKILLS_DIR}}/shared/dod-template.md>) and apply automatically to every cycle. Only add feature-specific criteria here. |
+| **Definition of Done** | How to verify it works? What specific output or behavior proves completion? Write each criterion as `{criterion} → verify: test|command|manual — {observable result}` — *"POST /orders → verify: test — responds 201 with `{id, status}`"*, never *"works well"*; a `manual` check names its reason. `devflow-ctl artifacts check context` fails a criterion without it. **Universal criteria** (lint, build, tests, no BLOCKs, etc.) are defined in [dod-template.md](<{{SKILLS_DIR}}/shared/dod-template.md>) and apply automatically to every cycle. Only add feature-specific criteria here. |
 | **Feature Type** | web frontend / backend / fullstack / mobile / CLI / library / desktop / other |
 | **Impact** | Does this change existing behavior? Which features could be affected? |
 
@@ -57,8 +57,7 @@ Use this matrix to analyze the user's request. **Do NOT ask all of these questio
 - **Affected features:** {list or "None"}
 
 ### Definition of Done
-- {criterion 1}
-- {criterion 2}
+- {criterion} → verify: {test | command | manual} — {observable result: the status, value or output that proves it}
 
 ### Problem Restatement
 {2-3 sentences restating the problem}
@@ -82,7 +81,7 @@ Use this matrix to analyze the user's request. **Do NOT ask all of these questio
 {One-sentence summary}
 
 ## Definition of Done
-- {verifiable criterion 1}
+- {criterion} → verify: {test | command | manual} — {observable result: the status, value or output that proves it}
 
 ## Constraints
 - {constraint 1}

@@ -63,7 +63,7 @@ Applied to the TDD-per-task flow in Step 5: **Red phase** = the test file create
    - **Exception:** If the user's request already includes the specific scope (files, components), the Definition of Done, and any relevant reference implementation, you may skip the questions template and proceed directly to Step 2 after confirming your understanding in the **Understanding Summary**.
 3. Identify: goal, scope, DoD, reusable code, and constraints.
 4. **STOP after sending the questions**. Wait for the user to answer before proceeding.
-5. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
+5. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory. Run `devflow-ctl artifacts check context docs/devflow/session/{slug}/context.md` — every Definition of Done criterion needs `→ verify: test|command|manual — {observable}`; fix the ones it names before planning.
 
 ### Step 1.5 — Critical Friend Check
 
