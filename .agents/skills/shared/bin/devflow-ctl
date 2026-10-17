@@ -2031,18 +2031,23 @@ _mem_project_id() {
 }
 
 # Serialize id allocation and rewrites across concurrent sessions (two
-# projects can close a cycle at the same moment). mkdir is atomic everywhere.
+# projects can close a cycle at the same moment). The lock is a file created
+# by bash's own noclobber redirection, an O_EXCL open: atomic whatever mkdir
+# the system ships. `mkdir` is not -- uutils coreutils (Ubuntu's default)
+# lets several racing processes all "create" the same directory.
+_mem_lock_try() { ( set -o noclobber; echo "$$" > "$MEM_DIR/.lock" ) 2>/dev/null; }
 _mem_lock() {
   local i
   for i in $(seq 1 50); do
-    mkdir "$MEM_DIR/.lock" 2>/dev/null && return 0
+    _mem_lock_try && return 0
     sleep 0.1
   done
-  # A lock older than the retry window belongs to a crashed writer.
-  rmdir "$MEM_DIR/.lock" 2>/dev/null || true
-  mkdir "$MEM_DIR/.lock" 2>/dev/null
+  # A lock older than the retry window belongs to a crashed writer -- a file,
+  # or the directory that earlier versions used.
+  rm -f "$MEM_DIR/.lock" 2>/dev/null || rmdir "$MEM_DIR/.lock" 2>/dev/null || true
+  _mem_lock_try
 }
-_mem_unlock() { rmdir "$MEM_DIR/.lock" 2>/dev/null || true; }
+_mem_unlock() { rm -f "$MEM_DIR/.lock" 2>/dev/null || true; }
 
 # Scalar frontmatter value of an entry file.
 _mem_get() { # _mem_get <file> <key>

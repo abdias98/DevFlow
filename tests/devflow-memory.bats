@@ -109,6 +109,19 @@ add_entry() {
   [ "$(ls "$ENTRIES" | cut -c1-5 | sort -u | wc -l)" -eq 6 ]
 }
 
+@test "memory add: a stale lock left by a crashed writer is recovered (a file, or an earlier version's directory)" {
+  add_entry k:first >/dev/null
+  mkdir "$DEVFLOW_HOME/memory/.lock"
+  run add_entry k:after-dir-lock
+  [ "$status" -eq 0 ]
+  [ ! -e "$DEVFLOW_HOME/memory/.lock" ]
+  echo 999 > "$DEVFLOW_HOME/memory/.lock"
+  run add_entry k:after-file-lock
+  [ "$status" -eq 0 ]
+  [ ! -e "$DEVFLOW_HOME/memory/.lock" ]
+  [ "$(ls "$ENTRIES" | wc -l)" -eq 3 ]
+}
+
 # ── Privacy guard ─────────────────────────────────────────────────────────────
 
 @test "privacy: refuses absolute paths, emails, foreign URLs, secrets and long text" {

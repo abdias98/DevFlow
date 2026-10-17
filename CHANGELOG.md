@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 🐛 Fixed
+
+- **Framework-memory lock was not atomic on systems with uutils coreutils.** `_mem_lock` relied on `mkdir` being atomic, and the code said so ("mkdir is atomic everywhere"). It is not: uutils coreutils (Rust `mkdir`, the default on recent Ubuntu) lets several racing processes all succeed in creating the same directory, so two sessions writing to the framework memory at once could allocate the same entry id. The bats test `memory add: concurrent writers never reuse an id` failed on every run on such a system, and passed on GNU coreutils. The lock is now a file created by bash's own `noclobber` redirection (an `O_EXCL` open), which does not depend on which `mkdir` the system ships. A stale lock (a file, or the directory earlier versions left behind) is still broken after the retry window, now covered by a test.
+
 ## [4.17.0] — 2026-10-16
 
 > **The audit-remediation release.** A full independent audit of the framework (every flow, command, standard, design pattern and security control — report in `docs/devflow/reviews/2026-10-12-framework-audit-report.md`) found 9 critical, 18 high and ~35 medium issues the deterministic validator could not see: the gate only checks syntax and cross-references, never logic, handoffs or severity. This release fixes all of them across three waves, and teaches the validator the new handoff contracts (§21) so the same classes fail loudly from now on.
