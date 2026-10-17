@@ -39,6 +39,9 @@
 #   escape add --class <c> --layer <l> --ref <r> --note <n>  Record a post-approval defect
 #   escape list [--layer <layer>]                     List escapes, optionally by layer
 #   escape report                                      Escape counts by layer and class
+#   evidence run --kind <k> [--profile <p>]          Run the Stack Profile's command for <k>, record exit code + tree
+#   evidence attest --kind <k> --file <f>            Record output the user pasted (Pair mode) — attested, not verified
+#   evidence list                                    Print the session's evidence ledger
 #   metrics aggregate <metrics-file>                  Append a cycle's metrics to _aggregate.md, recompute averages
 #   memory add --type <t> --key <k> --title <t> --rule <r> [...]  Record a cross-project framework lesson
 #   memory query [--agent a] [--stack s] [--limit N]  Relevant confirmed/candidate lessons, ranked and bounded
@@ -109,6 +112,10 @@ to_epoch() {
 
 SLUG=""
 STATE_FILE=""
+
+# The command line as typed, before --slug is lifted out: `evidence run` checks
+# its own position in it (see the Evidence ledger section).
+ORIG_ARGV=("$@")
 
 # Extract a global --slug flag from anywhere in the argument list.
 ARGS=()
@@ -1457,6 +1464,205 @@ cmd_metrics() {
       _metrics_aggregate "$metrics_file"
       ;;
     *) die "usage: devflow-ctl metrics aggregate <metrics-file>" ;;
+  esac
+}
+
+# ── Evidence ledger (F106) ────────────────────────────────────────────────────
+# Moves "the tests pass" from an agent's claim to a record: which command ran,
+# its exit code, its output, and the working tree it ran against. The command
+# is never free text -- it is read from the session's Stack Profile -- because
+# `devflow-ctl *` is auto-approved in every editor: a free command here would
+# run anything without a prompt. The permission snippets put `evidence run`
+# back in the ask tier, and they match the command prefix, which is why `run`
+# must come first on the command line (no `--slug` before it).
+
+EVIDENCE_TIMEOUT="${DEVFLOW_EVIDENCE_TIMEOUT:-1800}"
+
+_evidence_key() { # _evidence_key <kind> — the Stack Profile key that holds its command
+  case "$1" in
+    test)  echo "Test Command" ;;
+    lint)  echo "Lint Command" ;;
+    build) echo "Build Command" ;;
+    *) return 1 ;;
+  esac
+}
+
+_evidence_kinds() { echo "test|lint|build"; }
+
+# Prints one key's value from context.md's Stack Profile; exit 1 if the file
+# has no Stack Profile, 3 if a monorepo profile name is needed or unknown.
+# Single project: `## Stack Profile`. Monorepo: `## Stack Profiles` with one
+# `### {package}` table each, falling back to `### Workspace root` for shared
+# keys (lint, build). A value may not contain a pipe -- the split takes the
+# first cell boundary after the key, so `a | b` reaches the metacharacter check
+# whole instead of being silently truncated to `a`.
+_stack_profile_value() { # _stack_profile_value <context-file> <key> [profile]
+  local file="$1" key="$2" profile="${3:-}"
+  [[ -f "$file" ]] || return 1
+  LC_ALL=C awk -v key="$key" -v want="$profile" '
+    function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
+    function norm(s) { s = trim(s); gsub(/^\{|\}$/, "", s); return s }
+    /^## Stack Profile[ \t]*$/  { mode = "single"; found = 1; sect = ""; next }
+    /^## Stack Profiles[ \t]*$/ { mode = "multi";  found = 1; sect = ""; next }
+    /^## /                      { mode = ""; next }
+    mode == "multi" && /^### / {
+      sect = norm(substr($0, 5))
+      if (sect != "Workspace root") names[++n] = sect
+      next
+    }
+    mode != "" && /^\|/ {
+      line = $0; sub(/^\|/, "", line); sub(/\|[ \t]*$/, "", line)
+      i = index(line, "|"); if (!i) next
+      k = trim(substr(line, 1, i - 1)); gsub(/\*/, "", k); k = trim(k)
+      if (k != key) next
+      v = trim(substr(line, i + 1))
+      if (v ~ /^`.*`$/) v = substr(v, 2, length(v) - 2)
+      if (mode == "single") single = v
+      else if (sect == "Workspace root") root = v
+      else val[sect] = v
+    }
+    END {
+      if (!found) exit 1
+      if (single != "" || (n == 0 && root == "")) { print single; exit 0 }
+      if (want == "") {
+        if (n == 1) want = names[1]
+        else if (n == 0) { print root; exit 0 }
+        else { for (j = 1; j <= n; j++) printf "%s%s", (j > 1 ? ", " : ""), names[j] > "/dev/stderr"; exit 3 }
+      }
+      known = 0; for (j = 1; j <= n; j++) if (names[j] == want) known = 1
+      if (!known) { for (j = 1; j <= n; j++) printf "%s%s", (j > 1 ? ", " : ""), names[j] > "/dev/stderr"; exit 3 }
+      print ((want in val) ? val[want] : root)
+    }
+  ' "$file"
+}
+
+# A value nobody filled in: detection leaves `unknown` (stack-detection.md →
+# Fallback), templates leave `{...}` placeholders.
+_evidence_unconfigured() {
+  local v; v="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"  # bash 3.2 (macOS) has no ${1,,}
+  [[ -z "$v" || "$v" == unknown* || "$v" == n/a* || "$v" == none || "$v" == "-" || "$v" == "—" || "$v" == "{"* ]]
+}
+
+# Identity of the working tree, uncommitted changes included, without touching
+# the user's index: a copy of it (keeping git's stat cache, so only changed
+# files are rehashed) receives `add -A` and `write-tree`. docs/devflow/ is
+# excluded -- writing the evidence, a review or a plan must not make the
+# evidence it certifies stale -- and so is the session root wherever it lives.
+_evidence_tree() {
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || { echo none; return 0; }
+  local top gitdir idx tree excl=() sroot
+  top="$(git rev-parse --show-toplevel)"
+  gitdir="$(git rev-parse --absolute-git-dir)"
+  excl+=(":(exclude)docs/devflow")
+  sroot="$(cd "$SESSION_ROOT" 2>/dev/null && pwd -P)" || sroot=""
+  if [[ -n "$sroot" && "$sroot/" == "$(cd "$top" && pwd -P)/"* ]]; then
+    excl+=(":(exclude)${sroot#"$(cd "$top" && pwd -P)/"}")
+  fi
+  idx="$(mktemp)"
+  if [[ -f "$gitdir/index" ]]; then cp "$gitdir/index" "$idx"; else rm -f "$idx"; fi
+  tree="$(cd "$top" && GIT_INDEX_FILE="$idx" git add -A -- . "${excl[@]}" >/dev/null 2>&1 \
+    && GIT_INDEX_FILE="$idx" git write-tree 2>/dev/null)" || tree="none"
+  rm -f "$idx"
+  echo "${tree:-none}"
+}
+
+_evidence_file() { echo "$SESSION_ROOT/$SLUG/evidence.md"; }
+
+# Appends one ledger row and prints its id. $1 kind, $2 source, $3 exit,
+# $4 tree, $5 command, $6 path of the output to keep.
+_evidence_record() {
+  local kind="$1" source="$2" rc="$3" tree="$4" command="$5" output="$6"
+  local file n num id log
+  file="$(_evidence_file)"
+  mkdir -p "$SESSION_ROOT/$SLUG/evidence"
+  if [[ ! -f "$file" ]]; then
+    {
+      echo "# Evidence Ledger — $SLUG"
+      echo ""
+      echo "What actually ran, with its exit code and the working tree it ran against. Written only by \`devflow-ctl evidence\`."
+      echo ""
+      echo "| ID | Kind | Source | Exit | Tree | Command | At | Log |"
+      echo "|----|------|--------|:----:|------|---------|----|-----|"
+    } > "$file"
+  fi
+  n="$(grep -c '^| EV[0-9]' "$file" 2>/dev/null || true)"
+  num="$(printf '%03d' "$(( ${n:-0} + 1 ))")"
+  id="EV$num"
+  log="evidence/$num-$kind.log"
+  cp "$output" "$SESSION_ROOT/$SLUG/$log"
+  command="${command//|/-}"
+  echo "| $id | $kind | $source | $rc | $tree | $command | $(now_iso) | $log |" >> "$file"
+  echo "$id"
+}
+
+cmd_evidence() {
+  local sub="${1:-}"; shift || true
+  local kind="" profile="" from_file=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --kind)    kind="${2:-}";    shift 2 ;;
+      --profile) profile="${2:-}"; shift 2 ;;
+      --file)    from_file="${2:-}"; shift 2 ;;
+      *) die "evidence $sub: unknown option '$1'" ;;
+    esac
+  done
+  case "$sub" in
+    run)
+      [[ "${ORIG_ARGV[0]:-}" == "evidence" && "${ORIG_ARGV[1]:-}" == "run" ]] \
+        || die "evidence run must start the command line ('devflow-ctl evidence run --kind <k> [--slug s]') — permission rules match that prefix to ask before running it"
+      [[ -n "$kind" ]] || die "usage: devflow-ctl evidence run --kind <$(_evidence_kinds)> [--profile <package>] [--slug s]"
+      local key; key="$(_evidence_key "$kind")" || die "evidence run: --kind must be one of $(_evidence_kinds) (got '$kind')"
+      resolve_session
+      local context="$SESSION_ROOT/$SLUG/context.md" cmd rc=0
+      cmd="$(_stack_profile_value "$context" "$key" "$profile" 2>"$SESSION_ROOT/$SLUG/.profiles")" || rc=$?
+      local names; names="$(cat "$SESSION_ROOT/$SLUG/.profiles" 2>/dev/null)"; rm -f "$SESSION_ROOT/$SLUG/.profiles"
+      case "$rc" in
+        0) ;;
+        3) die "evidence run: ${profile:+unknown profile '$profile' — }the Stack Profiles name several packages ($names) — pick one with --profile" ;;
+        *) die "evidence run: no Stack Profile in $context — run Quick Stack Detection (shared/stack-detection.md) first" ;;
+      esac
+      _evidence_unconfigured "$cmd" && die "evidence run: no command configured for kind '$kind' — '$key' in the Stack Profile is '${cmd:-empty}'"
+      # No shell: the command is split on whitespace and run as argv, so
+      # nothing in the profile can chain, redirect or substitute.
+      case "$cmd" in
+        *[\;\&\|\<\>\`\$\'\"\\]*|*$'\n'*)
+          die "evidence run: '$key' contains shell syntax (; & | < > \` \$ quotes or backslash) — it runs without a shell; wrap it in a project script (e.g. an npm script or make target) and point the profile at that" ;;
+      esac
+      local words; read -ra words <<< "$cmd"
+      local tree; tree="$(_evidence_tree)"
+      local out; out="$(mktemp)"
+      local runner=(env --)
+      command -v timeout >/dev/null 2>&1 && runner=(timeout "$EVIDENCE_TIMEOUT" env --)
+      echo "[devflow-ctl] running ($kind): $cmd"
+      rc=0
+      "${runner[@]}" "${words[@]}" > "$out" 2>&1 < /dev/null || rc=$?
+      tail -n 40 "$out"
+      local id; id="$(_evidence_record "$kind" run "$rc" "$tree" "$cmd" "$out")"
+      rm -f "$out"
+      if [[ "$rc" -eq 0 ]]; then
+        ok "evidence $id recorded — $kind passed (exit 0, tree ${tree:0:12})"
+      elif [[ "$rc" -eq 124 ]] && [[ "${runner[0]}" == timeout ]]; then
+        fail "evidence $id recorded — $kind timed out after ${EVIDENCE_TIMEOUT}s (DEVFLOW_EVIDENCE_TIMEOUT)"
+      else
+        fail "evidence $id recorded — $kind failed (exit $rc); full output in $SESSION_ROOT/$SLUG/evidence/"
+      fi
+      ;;
+    attest)
+      [[ -n "$kind" && -n "$from_file" ]] || die "usage: devflow-ctl evidence attest --kind <$(_evidence_kinds)> --file <pasted-output.txt> [--slug s]"
+      _evidence_key "$kind" >/dev/null || die "evidence attest: --kind must be one of $(_evidence_kinds) (got '$kind')"
+      [[ -s "$from_file" ]] || die "evidence attest: '$from_file' is missing or empty — save the output the user pasted there first"
+      resolve_session
+      local tree id; tree="$(_evidence_tree)"
+      id="$(_evidence_record "$kind" attested "?" "$tree" "(pasted by user)" "$from_file")"
+      ok "evidence $id recorded — $kind attested by the user (not verified by devflow-ctl)"
+      ;;
+    list)
+      resolve_session
+      local file; file="$(_evidence_file)"
+      [[ -f "$file" ]] || { echo "No evidence recorded for session '$SLUG'"; return 0; }
+      cat "$file"
+      ;;
+    *) die "usage: devflow-ctl evidence run --kind <k> [--profile <p>] | attest --kind <k> --file <f> | list   [--slug s]" ;;
   esac
 }
 
@@ -2836,6 +3042,7 @@ case "$CMD" in
   knowledge)  cmd_knowledge "$@" ;;
   backlog)    cmd_backlog "$@" ;;
   escape)     cmd_escape "$@" ;;
+  evidence)   cmd_evidence "$@" ;;
   metrics)    cmd_metrics "$@" ;;
   memory)     cmd_memory "$@" ;;
   traceability) cmd_traceability "$@" ;;

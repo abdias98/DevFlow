@@ -67,6 +67,9 @@
       "Bash(cargo check *)"
     ],
     "ask": [
+      "Bash(devflow-ctl evidence run*)",
+      "Bash($SKILLS_DIR/shared/bin/devflow-ctl evidence run*)",
+      "Bash(bash $SKILLS_DIR/shared/bin/devflow-ctl evidence run*)",
       "Bash(npx *)",
       "Bash(npx)",
       "Bash(pnpm *)",

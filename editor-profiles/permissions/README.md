@@ -37,6 +37,7 @@ Deletion, destructive git, privilege escalation, or supply-chain risk.
 | **Git (destructive)** | `git push`, `git reset --hard`, `git clean`, `git rebase`, `git commit --amend`, `git cherry-pick` |
 | **Privilege escalation** | `sudo`, `chmod`, `chown`, `kill`, `pkill`, `killall` |
 | **Dependencies (new packages)** | `npm install`, `yarn add`, `pip install` |
+| **DevFlow — runs a project command** | `devflow-ctl evidence run` (all three invocation forms). It executes the command written in the session's Stack Profile, a file the agent can edit — so it must not ride on the `devflow-ctl *` allow rule. `devflow-ctl` refuses it unless `evidence run` starts the command line, which keeps a prefix rule sufficient |
 
 > **Rationale:** `rules.md` states `git push` is NEVER auto-executed in any
 > mode. New dependencies trigger `dependencies.md` review (supply-chain risk).
@@ -58,7 +59,7 @@ Deletion, destructive git, privilege escalation, or supply-chain risk.
 |--------|--------|--------|--------|-----------|
 | **Claude Code** | `permissions.allow[]` | `permissions.ask[]` | `permissions.deny[]` | Glob patterns: `Bash(cmd *)`, `Read(path)`, `Edit(path)` — never `Write(path)`, which Claude Code ignores (Edit covers every file-editing tool) |
 | **opencode** | `permission.bash` → `"allow"` | `permission.bash` → `"ask"` | `permission.bash` → `"deny"` | Map of command pattern → verdict, **last match wins**: ordered allow → ask → deny. `permission.external_directory` allows the skills dir |
-| **VS Code (Copilot)** | `chat.tools.terminal.autoApprove` → `true` | *(omitted — default prompts)* | *(omitted — no deny mechanism in this key)* | Regex patterns `/^cmd\\b/` |
+| **VS Code (Copilot)** | `chat.tools.terminal.autoApprove` → `true` | `→ false` where a broader `true` would match (a `false` match blocks auto-approval); otherwise omitted — default prompts | *(omitted — no deny mechanism in this key)* | Regex patterns `/^cmd\\b/` |
 
 ### Precedence rules
 
