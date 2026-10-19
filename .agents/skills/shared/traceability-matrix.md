@@ -26,7 +26,7 @@ This session memory file (`docs/devflow/session/{slug}/traceability.md`) cross-r
 | R2 | Edge Case | {case} | Task N | `path` | {scenario} | `path` | ⬜ PENDING |
 | R6 | Behavior Scenario | S{N}: {given → when → then} | Task N | `path` | {sequence test} | `path` | ⬜ PENDING |
 | R3 | Spec Section | {section} | Task N | `path` | {scenario} | `path` | ⬜ PENDING |
-| R4 | API Contract | {endpoint} | Task N | `path` | {scenario} | `path` | ⬜ PENDING |
+| R4 | API Contract | {METHOD path} — {success \| validation \| authorization \| error shape} | Task N | `path` | {request → contracted status + shape} | `path` | ⬜ PENDING |
 | R5 | Risk | {risk mitigation} | Task N | `path` | {scenario} | `path` | ⬜ PENDING |
 
 **Status legend:** ⬜ PENDING → 🟡 IN PROGRESS → ✅ DONE

@@ -1010,6 +1010,74 @@ _artifacts_check_dod() { # <file> <bullets|table>
   return 0
 }
 
+# The API contract is decided before the code (F110): every endpoint block in
+# the spec's API Contract section names who may call it, its success status
+# and at least one error status -- a contract decided in code is a contract
+# its consumers discover by breaking (rest-api.md §15). Endpoint blocks are
+# `#### {METHOD} {path}` headings, each with a Field | Value table. A spec
+# whose section predates that format (prose) is warned, not failed.
+API_METHOD_RE='GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS'
+
+_api_contract_endpoints() { # <spec> — one "METHOD path" per endpoint block
+  _artifacts_section_body "$1" "API Contract" \
+    | LC_ALL=C sed -nE "s/^####[[:space:]]+($API_METHOD_RE)[[:space:]]+([^[:space:]]+).*/\\1 \\2/p"
+}
+
+_artifacts_check_api_contract() { # <spec>
+  local spec="$1" body
+  body="$(_artifacts_section_body "$spec" "API Contract")"
+  [[ -n "$(tr -d '[:space:]' <<< "$body")" ]] || return 0
+  _artifacts_is_na "$body" && return 0
+  if [[ -z "$(_api_contract_endpoints "$spec")" ]]; then
+    echo "[devflow-ctl] WARN: spec '$spec' — API Contract has no '#### {METHOD} {path}' endpoint blocks (prose format): its completeness cannot be checked — use the per-endpoint table (devflow-architect/spec-template.md → API Contract)"
+    return 0
+  fi
+  local problems
+  problems="$(LC_ALL=C awk -v re="^####[[:space:]]+($API_METHOD_RE)[[:space:]]+" '
+    function cell(line,   c) { n = split(line, f, "|"); c = f[3]; gsub(/^[ \t]+|[ \t]+$/, "", c); return c }
+    function field(line,   k) { n = split(line, f, "|"); k = f[2]; gsub(/\*/, "", k); gsub(/^[ \t]+|[ \t]+$/, "", k); return tolower(k) }
+    function close_ep() {
+      if (ep == "") return
+      miss = ""
+      if (auth == "")                 miss = miss ", Auth"
+      if (succ !~ /(^|[^0-9])2[0-9][0-9]([^0-9]|$)/) miss = miss ", Success (with a 2xx status)"
+      if (errs !~ /(^|[^0-9])4[0-9][0-9]([^0-9]|$)/) miss = miss ", Errors (with at least one 4xx status)"
+      if (miss != "") print ep ": " substr(miss, 3)
+    }
+    $0 ~ re { close_ep(); ep = $0; sub(/^####[[:space:]]+/, "", ep); auth = succ = errs = ""; next }
+    /^#+ / { close_ep(); ep = ""; next }
+    ep != "" && /^\|/ {
+      k = field($0); v = cell($0)
+      if (k == "auth") auth = v
+      else if (k == "success") succ = v
+      else if (k == "errors") errs = v
+    }
+    END { close_ep() }
+  ' <<< "$body")"
+  if [[ -n "$problems" ]]; then
+    fail "spec '$spec' — API Contract endpoint(s) incomplete: $(tr '\n' ';' <<< "$problems" | sed 's/;$//; s/;/; /g') — decide them in the spec, before any code (rest-api.md §15)"
+  fi
+  return 0
+}
+
+# Every endpoint the spec contracts appears in the plan (F111) -- with its
+# method on the same line -- so each one gets its contract tests written
+# before the code (rest-api.md §17). Presence only; the Reviewer judges the
+# tests themselves.
+_artifacts_check_plan_endpoints() { # <plan> <spec>
+  local plan="$1" spec="$2" ep method path missing=()
+  [[ -f "$spec" ]] || return 0
+  while IFS= read -r ep; do
+    [[ -n "$ep" ]] || continue
+    method="${ep%% *}"; path="${ep#* }"
+    grep -F -- "$path" "$plan" 2>/dev/null | grep -qw -- "$method" || missing+=("$ep")
+  done < <(_api_contract_endpoints "$spec")
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    fail "plan '$plan' — endpoint(s) in the spec's API Contract that no task names: $(printf '%s; ' "${missing[@]}" | sed 's/; $//') — give each one a task with its contract tests (rest-api.md §17)"
+  fi
+  return 0
+}
+
 cmd_artifacts() {
   [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|context|feature|bugfix|refactor|perf|migration|contract|docs|reverse|templates|tutorial> <path> [--spec <spec-path>]"
   local type="${2:-}" path="${3:-}" spec_path=""
@@ -1034,6 +1102,7 @@ cmd_artifacts() {
   if [[ "$type" == "spec" ]]; then
     _artifacts_check_behavior_section "$path" "State & Interaction Matrix" "State & Interaction Matrix"
     _artifacts_check_standards_applied "$path"
+    _artifacts_check_api_contract "$path"
   fi
   if [[ "$type" == "plan" ]]; then
     _artifacts_check_behavior_section "$path" "Feature-Level Scenarios" "Feature-Level Scenarios"
@@ -1042,6 +1111,7 @@ cmd_artifacts() {
   if [[ "$type" == "plan" && -n "$spec_path" ]]; then
     _artifacts_check_concurrency_task "$path" "$spec_path"
     _artifacts_check_scenarios_vs_matrix "$path" "$spec_path"
+    _artifacts_check_plan_endpoints "$path" "$spec_path"
   fi
   if [[ "$type" == "review" && ${#missing[@]} -eq 0 ]]; then
     _artifacts_check_review_coverage "$path"

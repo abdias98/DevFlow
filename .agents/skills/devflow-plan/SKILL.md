@@ -112,7 +112,7 @@ Using the [plan template](<{{SKILLS_DIR}}/devflow-plan/plan-template.md>), write
 **MANDATORY**: After the plan is complete, generate a traceability matrix using the [traceability matrix template](<{{SKILLS_DIR}}/shared/traceability-matrix.md>) and save it with `create_file` before proceeding to Step 9. This is the first link in a 4-step chain of custody (Planner writes → Implementer updates → Reviewer validates → Finalizer reports) — skipping this step silently breaks the other three, since none of them can validate or report on a file that was never created.
 
 1. Cross-reference each requirement (DoD criteria, Edge Cases from `context.md`, Behavior Scenarios from the plan's Feature-Level Scenarios, Spec sections, API Contracts, Risk Mitigations) with the plan tasks that address them.
-2. For each requirement, identify the task, test file, and test scenario from the plan. For a **DoD** row, the `Test Scenario` is the criterion's `→ verify:` observable, copied as written — the test must assert exactly that, and the Reviewer checks it does.
+2. For each requirement, identify the task, test file, and test scenario from the plan. For each endpoint in the spec's **API Contract**, write one `API Contract` row per category of [rest-api.md §17](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) (success, validation, authorization, error shape) — its tests live in the task that owns the endpoint, failing first; `devflow-ctl artifacts check plan --spec` fails a plan in which an endpoint's `{METHOD} {path}` appears in no task. For a **DoD** row, the `Test Scenario` is the criterion's `→ verify:` observable, copied as written — the test must assert exactly that, and the Reviewer checks it does.
 3. Leave `Impl File` and `Status` columns empty (filled by the Implementer).
 4. Save the matrix to session memory: `docs/devflow/session/{slug}/traceability.md`.
 5. Compute the Coverage Summary — every DoD criterion, Edge Case and Behavior Scenario must map to at least one task and test. Flag any gaps with a `⚠️` note.
@@ -156,7 +156,7 @@ The Orchestrator flips this to `[x] … — approved` when the user approves the
 
 ## ⚠️ Completion Protocol (ALL MODELS)
 
-Before transitioning to the next phase, run `devflow-ctl artifacts check plan docs/devflow/plans/{file} --spec docs/devflow/specs/{spec-file} --slug {slug}`. If the spec declared a real Concurrency Strategy (not "N/A") and this fails because the plan has no concurrency-test task, add that task now — per Step 4's rule above — before saving the plan as final, rather than letting the Finalizer discover it in Phase 8.
+Before transitioning to the next phase, run `devflow-ctl artifacts check plan docs/devflow/plans/{file} --spec docs/devflow/specs/{spec-file} --slug {slug}`. If the spec declared a real Concurrency Strategy (not "N/A") and this fails because the plan has no concurrency-test task, add that task now — per Step 4's rule above — before saving the plan as final, rather than letting the Finalizer discover it in Phase 8. The same applies when it names an API Contract endpoint that no task covers: give it a task with its `rest-api.md §17` contract tests.
 
 Also confirm `docs/devflow/session/{slug}/traceability.md` exists on disk (Step 8a is MANDATORY — if you skipped it under time pressure, generate it now). If it's missing, the Implementer has nothing to update, the Reviewer has nothing to validate, and the Finalizer's `devflow-ctl traceability check` will fail on a missing file in Phase 8 instead of a coverage gap it could act on.
 

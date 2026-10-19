@@ -86,11 +86,7 @@ For each test file: run `devflow-ctl scope check {file} --slug {slug}` — if it
 For each endpoint, generate a contract test file **if none exists**. If a contract test file already exists for the endpoint: do NOT overwrite it — present a merge plan (new assertions to add, stale ones to update) and ask the user whether to merge or skip. Overwriting an existing test file without approval is a BLOCK-worthy finding in your own review.
 
 1. Use the detected test framework conventions.
-2. Each test validates one contract requirement:
-   - **Happy path:** Valid request → expected response shape + status.
-   - **Validation:** Invalid request → expected error shape + status.
-   - **Auth:** Missing/expired auth → 401.
-   - **Edge cases:** Boundary values, empty payloads, large payloads.
+2. Each test validates one contract requirement, covering the four categories of [rest-api.md §17](<{{SKILLS_DIR}}/shared/standards/rest-api.md>) (success, validation, authorization, error shape) plus boundary values — empty and large payloads. In a `/devflow` cycle the Planner already derived these before the code; here you check that they exist and add the missing ones.
 3. Provide the test code and the exact run command.
 4. **DO NOT run tests.** Tell the user: *"Contract tests created at {path}. Run: `{command}`."*
 

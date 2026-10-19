@@ -1734,3 +1734,106 @@ setup_escape() { export DEVFLOW_ESCAPE_FILE="$BATS_TEST_TMPDIR/escapes.md"; }
   [ "$status" -eq 0 ]
   [[ "$output" == *"No escape analysis found"* ]]
 }
+
+# ── API contract before code (F110, F111) ────────────────────────────────────
+
+write_api_spec() { # write_api_spec <file> <api-contract-body>
+  cat > "$1" << EOF
+## Spec Digest
+## Context
+## Architecture
+## Data Structures
+## Reusability Decisions
+### State & Interaction Matrix
+N/A — stateless: request/response only
+### Standards Applied
+| Standard | Why it applies | Decisions | Where |
+|---|---|---|---|
+| rest-api.md | HTTP endpoints | status codes per outcome | API Contract |
+### API Contract *(if backend/API feature)*
+$2
+### Test Architecture
+## Risk Assessment
+## Design Decisions
+## Constraints
+EOF
+}
+
+API_OK='#### POST /api/v1/orders
+| Field | Value |
+|-------|-------|
+| Auth | Bearer (scope orders:write) |
+| Request | {items: [{sku, qty}]} |
+| Success | 201 → {id, status} |
+| Errors | 400 malformed · 401 · 422 {error, fields[]} |
+
+#### GET /api/v1/orders/{id}
+| Field | Value |
+|-------|-------|
+| **Auth** | Bearer |
+| **Success** | 200 → {id, status, items} |
+| **Errors** | 404 not found |'
+
+@test "artifacts check spec: a complete per-endpoint API Contract passes" {
+  write_api_spec "$BATS_TEST_TMPDIR/spec.md" "$API_OK"
+  run "$CTL" artifacts check spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check spec: an endpoint without Errors, Auth or a 2xx Success fails and is named" {
+  write_api_spec "$BATS_TEST_TMPDIR/spec.md" '#### DELETE /api/v1/orders/{id}
+| Field | Value |
+|-------|-------|
+| Success | 204 |
+
+#### PATCH /api/v1/orders/{id}
+| Field | Value |
+|-------|-------|
+| Auth | Bearer |
+| Success | the updated order |
+| Errors | 404 · 409 |'
+  run "$CTL" artifacts check spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"DELETE /api/v1/orders/{id}: Auth, Errors (with at least one 4xx status)"* ]]
+  [[ "$output" == *"PATCH /api/v1/orders/{id}: Success (with a 2xx status)"* ]]
+}
+
+@test "artifacts check spec: a prose API Contract (older spec) is warned, not failed" {
+  write_api_spec "$BATS_TEST_TMPDIR/spec.md" 'POST /orders creates an order; returns 201, or 422 on validation error.'
+  run "$CTL" artifacts check spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WARN"*"prose format"* ]]
+}
+
+@test "artifacts check spec: an N/A or absent API Contract requires nothing" {
+  write_api_spec "$BATS_TEST_TMPDIR/spec.md" "N/A — CLI only, no HTTP endpoints"
+  run "$CTL" artifacts check spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"WARN"* ]]
+}
+
+@test "artifacts check plan --spec: every contracted endpoint must be named by the plan, with its method" {
+  write_api_spec "$BATS_TEST_TMPDIR/spec.md" "$API_OK"
+  write_valid_plan "$BATS_TEST_TMPDIR/plan.md" "### Task 2: POST /api/v1/orders — contract tests first (rest-api.md §17)
+**Standards constraints:** \`rest-api.md §3\` — 201 on create"
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"no task names: GET /api/v1/orders/{id}"* ]]
+  write_valid_plan "$BATS_TEST_TMPDIR/plan.md" "### Task 2: POST /api/v1/orders and GET /api/v1/orders/{id} contract tests
+**Standards constraints:** \`rest-api.md §3\` — 201 on create, 404 when missing"
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check plan --spec: a path named with the wrong method does not count" {
+  write_api_spec "$BATS_TEST_TMPDIR/spec.md" '#### PUT /api/v1/orders/{id}
+| Field | Value |
+|---|---|
+| Auth | Bearer |
+| Success | 200 |
+| Errors | 404 |'
+  write_valid_plan "$BATS_TEST_TMPDIR/plan.md" "### Task 2: GET /api/v1/orders/{id}
+**Standards constraints:** \`rest-api.md §3\` — 200"
+  run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/spec.md"
+  [ "$status" -eq 1 ]
+}
