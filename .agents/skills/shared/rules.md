@@ -43,7 +43,7 @@ Session state lives in the **YAML frontmatter** of `docs/devflow/session/{slug}/
 | `devflow-ctl artifacts check {type} {path}` | LLM-reading the [artifact checklist](./artifact-checklist.md) | Required sections missing |
 | `devflow-ctl memory add\|seen\|query …` | Cross-project lessons kept in prose, or lost with the project ([framework-memory.md](./framework-memory.md)) | `add`: privacy guard refused the text, or the key already exists — use `memory seen` |
 
-**Execution policy:** `devflow-ctl` only reads and writes session state files — it never touches production code, tests, or git history. It is therefore exempt from the Test Execution Policy and may be auto-executed by agents in **all modes, including Pair mode**. It replaces the markdown edits to `phase-state.md` that agents already performed.
+**Execution policy:** `devflow-ctl` only reads and writes session state files — it never touches production code, tests, or git history. It is therefore exempt from the Test Execution Policy and may be auto-executed by agents in **all modes, including Pair mode**. It replaces the markdown edits to `phase-state.md` that agents already performed. **One exception: `devflow-ctl evidence run`** executes the project's own test / lint / typecheck / format / build command from the Stack Profile (and a formatter rewrites the in-scope files it is given), so it follows the Test Execution Policy exactly like the command it runs: auto-executed in Standard/CI, never in Pair — there the user runs the command and the agent records the pasted output with `evidence attest`. Every other `evidence` subcommand only reads or writes the session's ledger.
 
 **Exit code semantics — act on the number, not just "did it fail":**
 

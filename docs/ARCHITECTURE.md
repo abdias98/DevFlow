@@ -45,7 +45,7 @@ DevFlow/
 │       ├── traceability-matrix.md
 │       ├── i18n-es.md
 │       ├── bin/
-│       │   └── devflow-ctl      # Deterministic enforcement CLI (gates, scope, iterations, locks, capabilities, knowledge, framework memory)
+│       │   └── devflow-ctl      # Deterministic enforcement CLI (gates, scope, iterations, locks, capabilities, knowledge, framework memory, evidence)
 │       ├── standards/           # Engineering standards (Private Library)
 │       │   ├── solid.md
 │       │   ├── clean-architecture.md
@@ -237,14 +237,16 @@ Agents do not self-verify session state. A CLI at `shared/bin/devflow-ctl` perfo
 | `lock check \| acquire \| release` | Manage the session lock |
 | `config set \| get <key>` | Session settings (branch, pair_mode, mode, phase, rigor) |
 | `checkpoint set \| get <name>` | Record / read rollback SHAs |
-| `artifacts check <type> <path>` | Validate required sections in artifacts |
+| `artifacts check <type> <path>` | Validate required sections in artifacts — plus DoD `→ verify:` clauses (`context`, `feature`, `bugfix`, `refactor`), per-endpoint API Contract completeness (`spec`) and endpoint coverage (`plan --spec`) |
+| `evidence run \| attest \| check \| waive \| snapshot \| list` | Evidence ledger: run a Stack Profile command (test, lint, typecheck, format, build) and record exit code + working-tree hash; `check` exits 1 unless each kind passed on the **current** tree — the gate behind every "tests pass" |
+| `escape add \| list \| report` | Post-approval defects by class × layer; `report` lists the ones recurring 3+ times in the project as rule candidates |
 | `capabilities [get <key>]` | Print environment capabilities (from `.devflow-environment` marker) |
 | `knowledge list \| query --topic <t>` | List the project knowledge base, or print one By Topic section |
 | `memory add \| query \| seen \| confirm \| retire` | Write, query and manage the cross-project framework memory (privacy-guarded) |
 | `memory friction report \| escapes` | Aggregate the process friction and escapes the CLI records itself |
 | `memory promote-list \| promote <id>` | Turn confirmed lessons into framework PRs; mark them merged |
 
-Because the CLI only reads and writes session-state files (never code, tests, or git history), agents auto-execute it in **all modes including Pair mode**. It is editor-agnostic: every editor profile maps a terminal tool, so the same enforcement works in VS Code, Claude Code, opencode, Antigravity, and headless environments. See `rules.md` → "Deterministic Enforcement" for the command table.
+Because the CLI only reads and writes session-state files (never code, tests, or git history), agents auto-execute it in **all modes including Pair mode** — with one exception: `evidence run` executes the project's own Stack Profile command, so it follows the Test Execution Policy (Standard/CI only; in Pair the user runs it and `evidence attest` records the output), and every permission snippet makes it ask. It is editor-agnostic: every editor profile maps a terminal tool, so the same enforcement works in VS Code, Claude Code, opencode, Antigravity, and headless environments. See `rules.md` → "Deterministic Enforcement" for the command table.
 
 Standalone agents (Feature, Refactorer, Bug-Fixer) initialize their own lightweight sessions (`devflow-ctl init --mode {mode}`) with a `plan_approval` gate, so they get the same guarantees without commits or branches.
 
