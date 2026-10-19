@@ -19,6 +19,9 @@ setup() {
   export DEVFLOW_SESSION_ROOT="docs/devflow/session"
   export DEVFLOW_HOME="$BATS_TEST_TMPDIR/devflow-home"
   export DEVFLOW_MEMORY_VIEW="$BATS_TEST_TMPDIR/framework-memory-view.md"
+  # CI runners export CI=true, which (correctly) refuses `evidence waive`:
+  # tests that need it set it themselves.
+  unset CI DEVFLOW_AUTONOMOUS
   printf '#!/bin/sh\necho "all 3 tests passed"\n' > bin/pass.sh
   printf '#!/bin/sh\necho "1 test failed" >&2\nexit 3\n' > bin/fail.sh
   printf '#!/bin/sh\necho "args:$*"\necho "FOO=$FOO"\n' > bin/echo.sh
