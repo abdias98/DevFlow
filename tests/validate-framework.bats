@@ -6,7 +6,8 @@
 # that verifies behaviour rather than structure, so it is the first that can be
 # wrong in a way inspection won't reveal — plus §16 (finding evidence contract)
 # §17 (review dimension load), §18 (standards loading & skip signals) and §19
-# (review checklist single source) and §20 (framework memory contract).
+# (review checklist single source), §20 (framework memory contract) and §22
+# (evidence & verification contracts).
 #
 # Run: npm test   (or: ./node_modules/.bin/bats tests/validate-framework.bats)
 #
@@ -702,4 +703,99 @@ mk_json_profile() {
   mk_json_profile claude '{"_devflow_retired": {"permissions": {"allow": ["Write(docs/**)"]}}, "permissions": {"allow": ["Edit(docs/**)"]}}'
   run_section 9 10
   [[ "$output" != *"ERROR"* ]]
+}
+
+# ── §22: evidence & verification contracts (F106–F112) ────────────────────────
+
+run_section_22() {
+  cd "$FIXTURE" || return 1
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -nE '/22\\. Evidence & verification contracts/,/════/p'"
+}
+
+# A devflow-ctl with the evidence command, the Stack Profile table it reads,
+# gate files that call `evidence check` and snippets with the ask rule.
+mk_evidence_contract() {
+  mkdir -p "$SHARED/bin" "$SHARED/standards" "$FIXTURE/editor-profiles/permissions"
+  cat > "$SHARED/bin/devflow-ctl" <<'CTL'
+#!/usr/bin/env bash
+_evidence_key() {
+  case "$1" in
+    test)   echo "Test Command" ;;
+    format) echo "Format Command" ;;
+  esac
+}
+cmd_evidence() { :; }
+CMD="${1:-}"
+case "$CMD" in
+  evidence) cmd_evidence ;;
+esac
+CTL
+  chmod +x "$SHARED/bin/devflow-ctl"
+  printf '## Stack Profile\n| Key | Value |\n|---|---|\n| **Test Command** | {npm test} |\n| **Format Command** | {prettier --write {files}} |\n' > "$SHARED/memory-conventions.md"
+  printf '# Standalone\nRun devflow-ctl evidence check --kind test.\n' > "$SHARED/standalone-execution.md"
+  local a
+  for a in devflow-implement devflow-finalize devflow-review; do mk_skill "$a" "Run \`devflow-ctl evidence check --kind test\`."; done
+  printf '# REST\n## 1. Naming\n## 17. Contract Test Coverage\n' > "$SHARED/standards/rest-api.md"
+  echo '{"permissions": {"allow": ["Bash(devflow-ctl *)"], "ask": ["Bash(devflow-ctl evidence run*)"]}}' > "$FIXTURE/editor-profiles/permissions/claude-code.json"
+}
+
+@test "§22: a consistent evidence contract passes" {
+  mk_evidence_contract
+  run_section_22
+  [[ "$output" == *"[OK]"* ]]
+  [[ "$output" != *"ERROR"* ]]
+}
+
+@test "§22: a gate phase that never calls evidence check is an ERROR naming it" {
+  mk_evidence_contract
+  mk_skill devflow-finalize "Run {Test Command} and read the result."
+  run_section_22
+  [[ "$output" == *"devflow-finalize/SKILL.md — never calls 'devflow-ctl evidence check'"* ]]
+}
+
+@test "§22: a key devflow-ctl reads but the Stack Profile lacks is an ERROR; so is Format without {files}" {
+  mk_evidence_contract
+  printf '## Stack Profile\n| Key | Value |\n|---|---|\n| **Format Command** | {prettier --write .} |\n' > "$SHARED/memory-conventions.md"
+  run_section_22
+  [[ "$output" == *"Stack Profile has no 'Test Command' row"* ]]
+  [[ "$output" == *"Format Command row does not mention the {files} placeholder"* ]]
+}
+
+@test "§22: a questions template whose DoD lacks → verify: is an ERROR" {
+  mk_evidence_contract
+  mkdir -p "$FIXTURE/.agents/skills/devflow-feature"
+  printf '## Summary\n### Definition of Done\n- {criterion 1}\n### Scope\n' > "$FIXTURE/.agents/skills/devflow-feature/questions-template.md"
+  run_section_22
+  [[ "$output" == *"devflow-feature/questions-template.md — Definition of Done criteria without"* ]]
+  printf '### Definition of Done\n- {criterion} → verify: {test} — {observable}\n' > "$FIXTURE/.agents/skills/devflow-feature/questions-template.md"
+  run_section_22
+  [[ "$output" != *"questions-template.md"* ]]
+}
+
+@test "§22: a citation of a section the standard does not have is an ERROR with file and line" {
+  mk_evidence_contract
+  mk_skill devflow-plan "Derive contract tests per rest-api.md §17." "Status codes per rest-api.md §3."
+  run_section_22
+  [[ "$output" == *"devflow-plan/SKILL.md:3 — cites 'rest-api.md §3', but rest-api.md has no section 3"* ]]
+  [[ "$output" != *"§17'"* ]]
+}
+
+@test "§22: a snippet that allows devflow-ctl without asking for evidence run is an ERROR" {
+  mk_evidence_contract
+  echo '{"permissions": {"allow": ["Bash(devflow-ctl *)"], "ask": []}}' > "$FIXTURE/editor-profiles/permissions/claude-code.json"
+  echo '{"permission": {"bash": {"devflow-ctl *": "allow"}}}' > "$FIXTURE/editor-profiles/permissions/opencode.json"
+  echo '{"chat.tools.terminal.autoApprove": {"/devflow-ctl/": true}}' > "$FIXTURE/editor-profiles/permissions/vscode.json"
+  run_section_22
+  [[ "$output" == *"claude-code.json — permissions.ask has no 'devflow-ctl evidence run' rule"* ]]
+  [[ "$output" == *"opencode.json — permission.bash has no 'devflow-ctl evidence run': ask rule"* ]]
+  [[ "$output" == *"vscode.json — autoApprove has no false rule"* ]]
+}
+
+@test "§22: without the evidence command in devflow-ctl, only the citation and DoD checks apply" {
+  mkdir -p "$SHARED/standards"
+  printf '# REST\n## 1. Naming\n' > "$SHARED/standards/rest-api.md"
+  mk_skill devflow-finalize "Run {Test Command} and read the result."
+  run_section_22
+  [[ "$output" != *"never calls"* ]]
+  [[ "$output" == *"[OK]"* ]]
 }

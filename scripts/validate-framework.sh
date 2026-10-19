@@ -33,6 +33,10 @@
 #   20. Framework memory contract — every knowledge-base reader loads the
 #       framework memory; only devflow-ctl touches the store; documented
 #       entry types/statuses match devflow-ctl (F97-F104)
+#   22. Evidence & verification contracts — every phase that took a green on
+#       trust calls `evidence check`; Stack Profile keys match devflow-ctl;
+#       DoD templates ask for `→ verify:`; every {standard}.md §N cited
+#       anywhere exists; `evidence run` asks in every snippet (F106-F112)
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -1167,6 +1171,99 @@ elif [[ -f "$CTL_21" ]] && grep -q 'cmd_iterate' "$CTL_21"; then
 fi
 
 [[ $ERRORS -eq $HANDOFF_ERRORS_BEFORE ]] && green "Iteration limits live in devflow-ctl (no prose literals), dual-context invokes branch lifecycle/standalone, and every 'iterate check' names a known loop"
+
+header "22. Evidence & verification contracts (evidence gates, Stack Profile keys, DoD verify, citations)"
+# Wave 23 (F106–F112). What makes a green verifiable must stay wired:
+#   22.1 once devflow-ctl has `evidence`, every phase that used to take a green
+#        on trust calls `evidence check` — Implementer, Finalizer, Reviewer and
+#        standalone-execution.md (the standalone agents inherit it there);
+#   22.2 every Stack Profile key `evidence` reads exists as a row of the
+#        canonical Stack Profile table, and Format Command carries {files};
+#   22.3 every questions template with a Definition of Done asks for
+#        `→ verify:` — the format `artifacts check context` enforces;
+#   22.4 every `{standard}.md §N` cited in a skill, shared doc or prompt names
+#        a section that exists (a renumbered or invented section is a dead
+#        rule the agent cannot load);
+#   22.5 `evidence run` asks in every permission snippet: `devflow-ctl *` is
+#        auto-approved, and it runs the project's commands.
+
+EVIDENCE_ERRORS_BEFORE=$ERRORS
+CTL_22="$SKILLS_DIR/shared/bin/devflow-ctl"
+
+if [[ -f "$CTL_22" ]] && grep -q '^cmd_evidence()' "$CTL_22"; then
+  # 22.1
+  for gate_file in devflow-implement/SKILL.md devflow-finalize/SKILL.md devflow-review/SKILL.md shared/standalone-execution.md; do
+    f="$SKILLS_DIR/$gate_file"
+    [[ -f "$f" ]] || continue
+    grep -q 'evidence check' "$f" \
+      || fail "$gate_file — never calls 'devflow-ctl evidence check': a green reaches this phase as a claim instead of a record"
+  done
+
+  # 22.2
+  MC_22="$SKILLS_DIR/shared/memory-conventions.md"
+  if [[ -f "$MC_22" ]]; then
+    while IFS= read -r key; do
+      [[ -n "$key" ]] || continue
+      grep -qF "| **$key** |" "$MC_22" \
+        || fail "shared/memory-conventions.md — Stack Profile has no '$key' row, but devflow-ctl evidence reads it"
+    done < <(sed -n '/^_evidence_key()/,/^}/p' "$CTL_22" | grep -oE 'echo "[A-Za-z ]+ Command"' | sed 's/^echo "//; s/"$//')
+    if grep -qF '| **Format Command** |' "$MC_22" && ! grep -F '| **Format Command** |' "$MC_22" | grep -qF '{files}'; then
+      fail "shared/memory-conventions.md — the Format Command row does not mention the {files} placeholder evidence run requires"
+    fi
+  fi
+
+  # 22.5
+  for snip in "$PROFILES_DIR"/permissions/*.json; do
+    [[ -f "$snip" ]] || continue
+    command -v python3 >/dev/null 2>&1 || break
+    snip_out=$(python3 - "$snip" <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1]))
+d.pop("_devflow_retired", None)
+problems = []
+perms = d.get("permissions", {})
+if any("devflow-ctl" in e for e in perms.get("allow", [])):
+    if not any("evidence run" in e for e in perms.get("ask", [])):
+        problems.append("permissions.ask has no 'devflow-ctl evidence run' rule while devflow-ctl is allowed")
+bash = d.get("permission", {}).get("bash", {})
+if any("devflow-ctl" in k and v == "allow" for k, v in bash.items()):
+    if not any("evidence run" in k and v == "ask" for k, v in bash.items()):
+        problems.append("permission.bash has no 'devflow-ctl evidence run': ask rule while devflow-ctl is allowed")
+auto = d.get("chat.tools.terminal.autoApprove", {})
+if any("devflow-ctl" in k and v is True for k, v in auto.items()):
+    if not any("evidence" in k and v is False for k, v in auto.items()):
+        problems.append("autoApprove has no false rule for 'devflow-ctl evidence run' while devflow-ctl is auto-approved")
+print("\n".join(problems))
+PYEOF
+)
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && fail "$snip — $line (it runs the project's commands; editor-profiles/permissions/README.md)"
+    done <<< "$snip_out"
+  done
+fi
+
+# 22.3
+while IFS= read -r qt; do
+  [[ -n "$qt" ]] || continue
+  dod_body="$(awk 'tolower($0) ~ /^#+ definition of done/ { f = 1; next } f && /^#+ / { f = 0 } f' "$qt")"
+  [[ -n "$(tr -d '[:space:]' <<< "$dod_body")" ]] || continue
+  grep -qF -- '→ verify:' <<< "$dod_body" \
+    || fail "${qt#"$SKILLS_DIR"/} — Definition of Done criteria without '→ verify: test|command|manual — {observable}' (devflow-ctl artifacts check context rejects them)"
+done < <(find "$SKILLS_DIR" -name 'questions-template.md' 2>/dev/null | LC_ALL=C sort)
+
+# 22.4
+if [[ -d "$SKILLS_DIR/shared/standards" ]]; then
+  while IFS= read -r hit; do
+    [[ -n "$hit" ]] || continue
+    loc="${hit%%:*}"; rest="${hit#*:}"; lineno="${rest%%:*}"; cite="${rest#*:}"
+    std="${cite%% *}"; sec="${cite##*§}"
+    [[ -f "$SKILLS_DIR/shared/standards/$std" ]] || continue
+    grep -qE "^## $sec\. " "$SKILLS_DIR/shared/standards/$std" \
+      || fail "$loc:$lineno — cites '$cite', but $std has no section $sec"
+  done < <(grep -rnoE '\b[a-z-]+\.md §[0-9]+' "$SKILLS_DIR" .github/prompts --include='*.md' 2>/dev/null | grep -v '/standards/CHANGELOG.md' || true)
+fi
+
+[[ $ERRORS -eq $EVIDENCE_ERRORS_BEFORE ]] && green "Evidence gates are wired, Stack Profile keys match devflow-ctl, DoD templates ask for → verify:, every standard citation resolves, and evidence run asks before running"
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""
