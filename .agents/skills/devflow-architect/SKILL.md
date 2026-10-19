@@ -120,7 +120,7 @@ When AGENTS.md was found in Step 1.5, sub-steps 1, 2, 4, 5, 6 are already covere
 After all subagents return:
 
 1. **Merge findings** into session memory under `## Architect Findings`. Resolve any conflicts (e.g., two subagents flagged the same file from different angles — consolidate).
-2. **Merge Stack Profile fields** from subagents B and C into `context.md` (single project: `## Stack Profile` table; monorepo: `## Stack Profiles` with one entry per affected package). Use `unknown` for any field that could not be detected.
+2. **Merge Stack Profile fields** from subagents B and C into `context.md` (single project: `## Stack Profile` table; monorepo: `## Stack Profiles` with one entry per affected package). Use `unknown` for any field that could not be detected. Then run `devflow-ctl evidence snapshot --slug {slug}` (monorepo: once per affected package with `--profile {package}`) — it records which checks the profile configures, so a command emptied later in the cycle cannot open the evidence gate.
 3. **Reusability rule:** for each area the feature touches, if subagent D found an existing match → reuse or extend. Create new only when exploration confirms no match.
 
 #### Sequential fallback

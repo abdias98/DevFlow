@@ -19,6 +19,9 @@ setup() {
   export DEVFLOW_SESSION_ROOT="docs/devflow/session"
   export DEVFLOW_HOME="$BATS_TEST_TMPDIR/devflow-home"
   export DEVFLOW_MEMORY_VIEW="$BATS_TEST_TMPDIR/framework-memory-view.md"
+  # CI runners export CI=true, which (correctly) refuses `evidence waive`:
+  # tests that need it set it themselves.
+  unset CI DEVFLOW_AUTONOMOUS
   printf '#!/bin/sh\necho "all 3 tests passed"\n' > bin/pass.sh
   printf '#!/bin/sh\necho "1 test failed" >&2\nexit 3\n' > bin/fail.sh
   printf '#!/bin/sh\necho "args:$*"\necho "FOO=$FOO"\n' > bin/echo.sh
@@ -389,4 +392,227 @@ tree_of() { awk -F'|' -v id="$1" '$2 ~ " "id" " {gsub(/ /,"",$6); print $6}' "$D
   run "$CTL" evidence run --kind test
   [ "$status" -eq 2 ]
   [[ "$output" == *"no active session"* ]]
+}
+
+# ── check / waive / snapshot (F107) ───────────────────────────────────────────
+# One test per row of the plan's tables §3.3 and §3.3.1.
+
+@test "evidence check: passes when the latest run of each kind passed on the current tree" {
+  profile "Test Command" "./bin/pass.sh" "Lint Command" "./bin/pass.sh"
+  "$CTL" evidence run --kind test
+  "$CTL" evidence run --kind lint
+  run "$CTL" evidence check --kind test,lint
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"✔ test: EV001 passed on the current tree"* ]]
+  [[ "$output" == *"evidence check passed (test,lint)"* ]]
+}
+
+@test "evidence check: the LATEST run counts — a later failure closes it, a later pass reopens it" {
+  profile "Test Command" "./bin/pass.sh"
+  "$CTL" evidence run --kind test
+  profile "Test Command" "./bin/fail.sh"
+  "$CTL" evidence run --kind test || true
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"failing — EV002 exited 3"* ]]
+  profile "Test Command" "./bin/pass.sh"
+  "$CTL" evidence run --kind test
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 0 ]
+}
+
+@test "evidence check: stale when the code changed after the run" {
+  profile "Test Command" "./bin/pass.sh"
+  "$CTL" evidence run --kind test
+  echo "fix after review" >> app.txt
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"stale — the code changed after EV001"* ]]
+}
+
+@test "evidence check: writing reviews or session files does not make evidence stale" {
+  profile "Test Command" "./bin/pass.sh"
+  "$CTL" evidence run --kind test
+  mkdir -p docs/devflow/reviews && echo r > docs/devflow/reviews/x-review.md
+  echo note >> "$(CONTEXT)"
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 0 ]
+}
+
+@test "evidence check: missing when a configured kind never ran" {
+  profile "Test Command" "./bin/pass.sh" "Lint Command" "./bin/pass.sh"
+  "$CTL" evidence run --kind test
+  run "$CTL" evidence check --kind test,lint
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"lint: missing"* ]]
+}
+
+@test "evidence check: attested passes in Pair mode, fails in Standard/CI" {
+  profile "Test Command" "./bin/pass.sh"
+  echo "12 passed" > pasted.txt
+  "$CTL" evidence attest --kind test --file pasted.txt
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"not in Pair mode"* ]]
+  "$CTL" config set pair_mode true >/dev/null
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"attested by the user (Pair mode) — not verified"* ]]
+}
+
+@test "evidence check: attested evidence goes stale too" {
+  profile "Test Command" "./bin/pass.sh"
+  "$CTL" config set pair_mode true >/dev/null
+  echo "12 passed" > pasted.txt
+  "$CTL" evidence attest --kind test --file pasted.txt
+  echo edit >> app.txt
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"stale"* ]]
+}
+
+@test "evidence check: no Stack Profile is a state error (2)" {
+  echo "# Context" > "$(CONTEXT)"
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"no Stack Profile"* ]]
+}
+
+@test "evidence check: no Test Command fails — tests are required" {
+  profile "Lint Command" "./bin/pass.sh"
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"no Test Command — tests are required"* ]]
+  [[ "$output" == *"evidence waive"* ]]
+}
+
+@test "evidence check: an unconfigured optional kind passes with a notice, never silently" {
+  profile "Test Command" "./bin/pass.sh"
+  "$CTL" evidence run --kind test
+  run "$CTL" evidence check --kind test,lint,typecheck,build
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"– lint: not configured — not verified"* ]]
+  [[ "$output" == *"– typecheck: not configured"* ]]
+  [[ "$output" == *"– build: not configured"* ]]
+}
+
+@test "evidence check: a Format Command without {files} counts as unconfigured" {
+  profile "Test Command" "./bin/pass.sh" "Format Command" "prettier --write ."
+  "$CTL" evidence run --kind test
+  run "$CTL" evidence check --kind test,format
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"– format: not configured"* ]]
+}
+
+@test "evidence check: a key configured at snapshot and emptied later fails" {
+  profile "Test Command" "./bin/pass.sh" "Lint Command" "./bin/pass.sh"
+  run "$CTL" evidence snapshot
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"configured kinds test,lint"* ]]
+  "$CTL" evidence run --kind test
+  profile "Test Command" "./bin/pass.sh" "Lint Command" "unknown"
+  run "$CTL" evidence check --kind test,lint
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"lint: 'Lint Command' was configured when the Stack Profile was written"* ]]
+}
+
+@test "evidence check: without a snapshot it says so and uses the current profile" {
+  profile "Test Command" "./bin/pass.sh"
+  "$CTL" evidence run --kind test
+  run "$CTL" evidence check --kind test,lint
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"no Stack Profile snapshot"* ]]
+}
+
+@test "evidence check: a failing command whose key was fixed must be re-run" {
+  profile "Test Command" "./bin/missing-script.sh"
+  run "$CTL" evidence run --kind test
+  [ "$status" -eq 1 ]
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"failing"* ]]
+}
+
+@test "evidence check: outside git it passes with an explicit freshness notice" {
+  rm -rf .git
+  profile "Test Command" "./bin/pass.sh"
+  "$CTL" evidence run --kind test
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"freshness of the evidence is unverifiable"* ]]
+}
+
+@test "evidence check: rejects an unknown kind in the list" {
+  profile "Test Command" "./bin/pass.sh"
+  run "$CTL" evidence check --kind test,deploy
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"unknown kind 'deploy'"* ]]
+}
+
+@test "evidence check: a failure is logged as process friction" {
+  profile "Test Command" "./bin/pass.sh"
+  "$CTL" evidence run --kind test
+  echo edit >> app.txt
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 1 ]
+  grep -q "evidence-stale" "$DEVFLOW_HOME/memory/friction.log"
+}
+
+@test "evidence waive: closes a required kind, shown as waived, needs a reason" {
+  profile "Lint Command" "./bin/pass.sh"
+  run "$CTL" evidence waive --kind test
+  [ "$status" -eq 2 ]
+  run "$CTL" evidence waive --kind test --reason "no test suite yet — user approved"
+  [ "$status" -eq 0 ]
+  grep -q '^| EV001 | test | waived | - | ' "$DEVFLOW_SESSION_ROOT/demo/evidence.md"
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"test: waived by the user (EV001) — not verified"* ]]
+}
+
+@test "evidence waive: refused in CI and in Autonomous mode" {
+  profile "Lint Command" "./bin/pass.sh"
+  CI=true run "$CTL" evidence waive --kind test --reason "x"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"refused in CI / Autonomous"* ]]
+  DEVFLOW_AUTONOMOUS=true run "$CTL" evidence waive --kind test --reason "x"
+  [ "$status" -eq 1 ]
+  [ ! -f "$DEVFLOW_SESSION_ROOT/demo/evidence.md" ]
+}
+
+@test "evidence snapshot: per monorepo profile, ambiguous without --profile" {
+  monorepo 2
+  run "$CTL" evidence snapshot
+  [ "$status" -eq 2 ]
+  run "$CTL" evidence snapshot --profile packages/api
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"configured kinds test,lint (profile packages/api)"* ]]
+  grep -q '^  p_packages-api: test,lint$' "$DEVFLOW_SESSION_ROOT/demo/phase-state.md"
+}
+
+@test "evidence snapshot: no Stack Profile is a state error" {
+  echo "# Context" > "$(CONTEXT)"
+  run "$CTL" evidence snapshot
+  [ "$status" -eq 2 ]
+}
+
+@test "evidence check: a formatter that rewrites files certifies the tree it leaves (not stale at once)" {
+  "$CTL" scope add 'src/**' --slug demo >/dev/null
+  mkdir -p src && echo "ugly" > src/a.ts
+  printf '#!/bin/sh\nfor f in "$@"; do echo pretty > "$f"; done\n' > bin/fmt.sh; chmod +x bin/fmt.sh
+  profile "Test Command" "./bin/pass.sh" "Format Command" "./bin/fmt.sh {files}"
+  "$CTL" evidence run --kind format --path src/a.ts
+  [ "$(cat src/a.ts)" = "pretty" ]
+  "$CTL" evidence run --kind test
+  run "$CTL" evidence check --kind test,format
+  [ "$status" -eq 0 ]
+}
+
+@test "evidence check: a test run certifies the tree it ran on, not one it changed" {
+  printf '#!/bin/sh\necho changed >> app.txt\n' > bin/mutating-test.sh; chmod +x bin/mutating-test.sh
+  profile "Test Command" "./bin/mutating-test.sh"
+  "$CTL" evidence run --kind test
+  run "$CTL" evidence check --kind test
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"stale"* ]]
 }

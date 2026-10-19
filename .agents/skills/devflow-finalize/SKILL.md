@@ -31,10 +31,11 @@ Read session memory: `context.md` (feature, slug, Stack Mode), `phase-state.md` 
 
 ### Step 2 — Verify Completion
 
-1. **Tests:** Verify the full test suite passes (mode-aware — see Rules):
-   - **Standard / CI mode:** auto-execute `{Test Command}` and read the result.
-   - **Pair mode:** ask the user — *"Run the full test suite: `{Test Command}`. Did all tests pass?"*
-   - If ANY fail → STOP, route to Debugger.
+1. **Tests, build, lint, typecheck — on the final tree, from the evidence ledger:**
+   - **Standard / CI mode:** run `devflow-ctl evidence run --kind test` and `devflow-ctl evidence run --kind build` (exit 2 *no command configured* → the project has no such command; move on). Never run `{Test Command}` by hand and read the result — that is the claim this step exists to replace.
+   - **Pair mode:** ask the user — *"Run the full test suite: `{Test Command}` (and `{Build Command}` if the project has one) and paste the output."* Save each to `docs/devflow/session/{slug}/evidence/pasted-{kind}.txt` and record it with `devflow-ctl evidence attest --kind {kind} --file <that file>`.
+   - Then **`devflow-ctl evidence check --kind test,build,lint,typecheck --slug {slug}`**. Exit 1 → STOP before any cleanup: a failing test or build routes to the Debugger; stale or missing lint/typecheck evidence routes to the Implementer to re-run its gate. Exit 2 → no Stack Profile in the session — run Quick Stack Detection, then repeat.
+   - Copy every line that is not a plain `✔ … passed` into the summary's **Verification** section: `–` (not configured — not verified), *attested by the user*, and *waived* — a waived kind is also added to `context.md` → `## Accepted Risks` (timestamp, kind, the user's reason), which the archive step below carries into the report.
 2. **Review:** Check the latest review document in `docs/devflow/reviews/` (all `-review-r{N}.md` passes if re-reviews happened — every pass's BLOCKs must be resolved or explicitly dismissed, not just absent from the last file). If BLOCK findings remain unresolved → STOP, route to Implementer.
 3. **Deferred backlog:** Re-read the review document for any `🟠 INCOMPLETE` finding. Run `devflow-ctl backlog list --area {this cycle's scope}` and confirm every one of them has a matching entry — an INCOMPLETE finding must never vanish when session memory is cleaned. If one is missing (e.g., the Reviewer's step was skipped), run `devflow-ctl backlog add {file} "{reason}" --severity incomplete` for it now, before proceeding.
 4. **DoD:** Verify each criterion from `context.md`. Flag any unverifiable items to the user — **in CI / Autonomous mode**, log them to `send-to-user.md` instead of waiting.
@@ -106,7 +107,7 @@ Gather:
 ### Quality
 - Review: {APPROVED | CHANGES REQUESTED → resolved} ({B} BLOCKs, {W} WARNs, {I} INFOs resolved)
 - DoD: {N}/{N} criteria met
-- Test suite: {passing | N failures}
+- Verification (`devflow-ctl evidence check`): {all passed on the final tree | list each `–` not configured, attested and waived kind}
 - Dependency audit (`devflow-ctl scan sca`): {clean | N critical/high found — see detail | skipped: reason}
 { - Visual diff: {checked / skipped (no vision)} *(if UI feature)*}
 

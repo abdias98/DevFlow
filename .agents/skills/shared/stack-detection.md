@@ -141,6 +141,8 @@ If test layers are not differentiated, leave the optional fields empty. Downstre
 
 **NEVER overwrite** fields that were already populated by a prior Architect cycle. Merge incrementally.
 
+**Then snapshot it:** `devflow-ctl evidence snapshot --slug {slug}` (monorepo: `--profile {package}` for each affected package). `devflow-ctl evidence check` compares against this record, so a command that was configured here and emptied later fails the gate instead of silently skipping it.
+
 ---
 
 ## Fallback

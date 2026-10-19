@@ -7,8 +7,8 @@ These criteria apply to EVERY DevFlow cycle regardless of feature type. The Brai
 Every feature MUST satisfy these before the Finalizer can complete the cycle:
 
 ### Code Quality
-- [ ] **Lint passes:** `{Lint Command}` exits with zero errors
-- [ ] **Build succeeds:** `{Build Command}` completes without errors
+- [ ] **Lint passes:** `{Lint Command}` exits with zero errors — proven by `devflow-ctl evidence check --kind lint,typecheck`, not by a claim
+- [ ] **Build succeeds:** `{Build Command}` completes without errors — `devflow-ctl evidence check --kind build`
 - [ ] **Dependencies audited:** No critical/high vulnerabilities reported by `devflow-ctl scan sca` *(skips honestly if no supported manifest/tool is present)*
 - [ ] **No hardcoded secrets:** No API keys, tokens, or credentials in source files
 - [ ] **Scope respected:** No files modified outside the approved plan
@@ -20,7 +20,7 @@ Every feature MUST satisfy these before the Finalizer can complete the cycle:
 - [ ] **Additional Recommendations documented:** Out-of-scope improvements recorded for future cycles
 
 ### Testing
-- [ ] **All tests pass:** `{Test Command}` exits with zero failures
+- [ ] **All tests pass:** `{Test Command}` exits with zero failures — `devflow-ctl evidence check --kind test` on the final tree (a kind the project doesn't have is reported as *not verified*, never as passed)
 - [ ] **No regression:** Existing tests continue to pass
 - [ ] **New tests cover:** Happy path, edge cases, and failure scenarios for all new code
 - [ ] **Test files created:** At least one test file per task in the plan
