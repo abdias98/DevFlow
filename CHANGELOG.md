@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.18.0] — 2026-10-19
+
+> **The verifiable-evidence release (Wave 23).** A review of what an external reviewer still finds after an APPROVED cycle showed most of the usual suspects were already covered — but four gaps were real: a green test run was something an agent *said*, a Definition of Done could be unverifiable, formatting only ran if the linter happened to report it, and the API contract was checked after the code. This release turns each into a deterministic check: an **evidence ledger** in `devflow-ctl` that records what ran, its exit code and the working tree it ran against, and gates every phase on it; DoD criteria that must name how they are verified; format → lint → typecheck as Stack Profile commands; a per-endpoint API contract validated before planning, with its contract tests derived pre-code; and an intake mode that brings an external review back whenever it arrives. Plus a lock fix for systems with uutils coreutils.
+>
+> **Re-run `install.sh` for each editor** — the permission snippets gain an *ask* rule for `devflow-ctl evidence run`, which executes the project's own commands.
 
 ### ✨ Added
 
