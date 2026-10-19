@@ -1449,6 +1449,20 @@ cmd_escape() {
       echo ""
       echo "By class:"
       awk -F'|' '/^\| E[0-9]/{l=$3; gsub(/^ +| +$/,"",l); c[l]++} END{for (k in c) printf "  %-24s %d\n", k, c[k]}' "$ESCAPE_FILE" | LC_ALL=C sort -k2 -rn
+      # The same miss three times in one project is a rule, not three
+      # incidents (F112): name each class x layer that reached the threshold,
+      # for the agent to propose as a standards-profile.md entry.
+      local min="${DEVFLOW_ESCAPE_RULE_MIN:-3}" recurring
+      [[ "$min" =~ ^[0-9]+$ ]] || die "DEVFLOW_ESCAPE_RULE_MIN must be a number (got '$min')"
+      recurring="$(LC_ALL=C awk -F'|' -v min="$min" '
+        /^\| E[0-9]/ { c = $3; l = $4; gsub(/^ +| +$/, "", c); gsub(/^ +| +$/, "", l); n[c " / " l]++ }
+        END { for (k in n) if (n[k] >= min) printf "  %-40s %d\n", k, n[k] }
+      ' "$ESCAPE_FILE" | LC_ALL=C sort -k2 -rn)"
+      if [[ -n "$recurring" ]]; then
+        echo ""
+        echo "Recurring in this project (class / layer seen $min+ times) — propose each as a rule in docs/devflow/knowledge-base/standards-profile.md:"
+        echo "$recurring"
+      fi
       ;;
     *) die 'usage: devflow-ctl escape add --class <class> --layer <layer> --ref "<ref>" --note "<note>" [--slug <slug>] | list [--layer <layer>] | report' ;;
   esac

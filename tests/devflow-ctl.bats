@@ -1837,3 +1837,29 @@ API_OK='#### POST /api/v1/orders
   run "$CTL" artifacts check plan "$BATS_TEST_TMPDIR/plan.md" --spec "$BATS_TEST_TMPDIR/spec.md"
   [ "$status" -eq 1 ]
 }
+
+# ── External review intake: recurrence becomes a rule candidate (F112) ────────
+
+@test "escape report: a class / layer seen 3 times is listed as a project rule candidate" {
+  setup_escape
+  for i in 1 2 3; do "$CTL" escape add --class data-limits --layer reviewer:correctness --ref "PR#$i" --note "missing edge validation $i" >/dev/null; done
+  "$CTL" escape add --class data-limits --layer implementer --ref r4 --note n4 >/dev/null
+  "$CTL" escape add --class logic --layer implementer --ref r5 --note n5 >/dev/null
+  run "$CTL" escape report
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Recurring in this project"* ]]
+  [[ "$output" == *"data-limits / reviewer:correctness"*"3"* ]]
+  [[ "$output" != *"data-limits / implementer"* ]]
+  [[ "$output" != *"logic / implementer"* ]]
+}
+
+@test "escape report: below the threshold there is no recurring section; the threshold is configurable" {
+  setup_escape
+  for i in 1 2; do "$CTL" escape add --class logic --layer spec --ref "r$i" --note "n$i" >/dev/null; done
+  run "$CTL" escape report
+  [[ "$output" != *"Recurring in this project"* ]]
+  DEVFLOW_ESCAPE_RULE_MIN=2 run "$CTL" escape report
+  [[ "$output" == *"logic / spec"*"2"* ]]
+  DEVFLOW_ESCAPE_RULE_MIN=x run "$CTL" escape report
+  [ "$status" -eq 2 ]
+}
