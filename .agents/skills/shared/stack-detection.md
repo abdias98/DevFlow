@@ -124,10 +124,12 @@ If test layers are not differentiated, leave the optional fields empty. Downstre
 - **Test Root:** Look for `tests/`, `test/`, `__tests__/`, `spec/`. Check test runner config for configured paths.
 - **Test Utilities:** Look inside the test root for: `factories/`, `fixtures/`, `helpers/`, `mocks/`, `support/`.
 
-### Step 6 — Detect Build, Lint, Audit, and Watch Commands
+### Step 6 — Detect Build, Lint, Typecheck, Format, Audit, and Watch Commands
 
 - **Build:** `package.json` → `scripts.build`; `go build ./...`; `dotnet build`; `mvn package`.
 - **Lint:** `package.json` → `scripts.lint`; check for `.eslintrc*`, `flake8`, `golangci-lint`, etc.
+- **Typecheck:** `package.json` → `scripts.typecheck` (or `tsc --noEmit` when `tsconfig.json` exists and no script runs it); `mypy`/`pyright` configured in `pyproject.toml`, `mypy.ini` or `pyrightconfig.json`. Leave empty for languages whose compiler already runs in Build/Test (Go, Rust, Java, C#) unless the project defines a separate check.
+- **Format:** the project's formatter, written with a `{files}` placeholder — `.prettierrc*` or `prettier` in `package.json` → `npx prettier --write {files}`; `[tool.black]` → `black {files}`; `[tool.ruff.format]` → `ruff format {files}`; `go.mod` → `gofmt -w {files}`; `Cargo.toml` → `rustfmt {files}`. An `.editorconfig` alone is not a formatter. If the formatter can't take a file list, leave the key empty — the linter reports formatting instead.
 - **Audit:** Check for dependency audit tools. `package.json` → `scripts.audit`; presence of `pip-audit`, `safety`, `owasp dependency-check`, `cargo audit`, `bundler-audit` in dependencies or CI configs. Common defaults: npm → `npm audit`, pnpm → `pnpm audit`, pip → `pip-audit` or `safety check`. If no audit tool is configured, leave empty.
 - **Watch:** `package.json` → `scripts.dev` or `scripts.start`; look for `nodemon`, `air` (Go), `python manage.py runserver`, framework-specific dev servers (Next.js `next dev`, Vite `vite`). If no watch command found, leave empty or derive from the framework (e.g., Django → `python manage.py runserver`).
 

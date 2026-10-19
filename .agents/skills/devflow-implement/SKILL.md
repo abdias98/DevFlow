@@ -166,7 +166,7 @@ Confirm `traceability.md` is current: every row for a task completed this cycle 
 
 ### Step 4.5 — Lint / Typecheck Gate
 
-Before the Verifier or the Reviewer see any of this, run the project's `Lint Command` from `## Stack Profile` (including any typecheck script the project defines, e.g. `tsc --noEmit`), scoped to the changed files where possible — see [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Lint / Typecheck Gate for the canonical Standard/CI-vs-Pair behavior (the Feature Agent already follows the same rule). Fix mechanical failures (formatting, unused imports) in-scope and re-run; report persistent violations as findings for the Reviewer instead of hand-waving them. This is the fix for a gap where the Implementer — the phase that writes the most code — was the only phase without a mechanical lint/typecheck check before review.
+Before the Verifier or the Reviewer see any of this, run the format → lint → typecheck gate, each check through `devflow-ctl evidence run` so its result is recorded rather than reported — see [standalone-execution.md](<{{SKILLS_DIR}}/shared/standalone-execution.md>) → Lint / Typecheck Gate for the order, the `{files}` rule for formatters and the canonical Standard/CI-vs-Pair behavior (the Feature Agent already follows the same rule). Fix mechanical failures (formatting, unused imports, type errors) in-scope and re-run; report persistent violations as findings for the Reviewer instead of hand-waving them. This is the fix for a gap where the Implementer — the phase that writes the most code — was the only phase without a mechanical lint/typecheck check before review.
 
 ### Step 5 — Pre-Review Verification
 

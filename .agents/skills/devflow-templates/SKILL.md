@@ -111,6 +111,8 @@ Generate `docs/devflow/templates/project-architecture.md`:
 | Test | `{Test Command}` |
 | Build | `{Build Command}` |
 | Lint | `{Lint Command}` |
+| Typecheck | `{Typecheck Command}` |
+| Format | `{Format Command}` |
 | Run/Dev | `{Watch Command}` |
 ```
 

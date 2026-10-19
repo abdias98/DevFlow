@@ -104,6 +104,8 @@ Dependencies used in code but not listed in manifest:
 | Test Runner | {jest | phpunit | pytest | go test | rspec | etc.} | {file}:{line} |
 | Test Command | {command} | {file}:{line} |
 | Lint Command | {command} | {file}:{line} |
+| Typecheck Command | {command \| —} | {file}:{line} |
+| Format Command | {command with `{files}` \| —} | {file}:{line} |
 | Source Root | {directory} | {observation} |
 | Test Root | {directory} | {observation} |
 | Database | {postgresql | mysql | mongodb | sqlite | etc.} | {file}:{line} |
