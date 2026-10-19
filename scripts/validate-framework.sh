@@ -430,8 +430,9 @@ else
   warn "$PROFILES_DIR/ not found — skipping permissions check (run from the repo root)"
 fi
 
-# ── 10. Version sync (package.json ↔ package-lock.json ↔ CHANGELOG.md) ────────
+# ── 10. Version sync (package.json ↔ package-lock.json ↔ CHANGELOG.md ↔ pinned examples)
 header "10. Version sync"
+VERSION_ERRORS_BEFORE=$ERRORS
 
 if [[ -f package.json ]]; then
   # Prefer python3 for exact top-level parsing (sed head -1 breaks the day a
@@ -465,7 +466,16 @@ if [[ -f package.json ]]; then
     if grep -qE "Installing v[0-9]+\.[0-9]+\.[0-9]+" install.sh 2>/dev/null; then
       fail "install.sh — hardcoded version string found (read it from package.json instead)"
     fi
-    [[ $ERRORS -eq 0 ]] && green "package.json ($PKG_VERSION), package-lock.json, and CHANGELOG.md are in sync"
+    # Pinned-install examples (README, install.sh) name the current release:
+    # a release that bumps package.json but not these sends users to the
+    # previous tag (4.17.0 and 4.18.0 both shipped that way).
+    while IFS= read -r hit; do
+      [[ -n "$hit" ]] || continue
+      pinned="$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' <<< "${hit#*:*:}" | head -1)"
+      [[ "$pinned" == "v$PKG_VERSION" ]] \
+        || fail "${hit%%:*}:$(cut -d: -f2 <<< "$hit") — pinned-install example names $pinned, but the release is v$PKG_VERSION (update it in the release commit)"
+    done < <(grep -nE '(git (verify-tag|checkout) |DEVFLOW_REF=|signed tag \(e\.g\. )v[0-9]+\.[0-9]+\.[0-9]+' README.md install.sh 2>/dev/null || true)
+    [[ $ERRORS -eq $VERSION_ERRORS_BEFORE ]] && green "package.json ($PKG_VERSION), package-lock.json, CHANGELOG.md and the pinned-install examples are in sync"
   fi
 else
   warn "package.json not found — skipping version sync check (run from the repo root)"

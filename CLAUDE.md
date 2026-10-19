@@ -32,7 +32,7 @@ CI (`.github/workflows/ci.yml`) runs lint:sh → validate → test under **both 
 
 ## Release and versioning
 
-The version must match in `package.json`, `package-lock.json` and a `## [X.Y.Z] — YYYY-MM-DD` entry in `CHANGELOG.md` (validator §10). `install.sh` must not hardcode a version. Changelog entries cite finding IDs (`F66`) and waves (`Wave 19`) from the plans in `docs/`.
+The version must match in `package.json`, `package-lock.json`, a `## [X.Y.Z] — YYYY-MM-DD` entry in `CHANGELOG.md` and the pinned-install examples (`vX.Y.Z` in `README.md` → Method 3 and the `install.sh` header comment), all in the release commit (validator §10). `install.sh` must not hardcode a version. Changelog entries cite finding IDs (`F66`) and waves (`Wave 19`) from the plans in `docs/`.
 
 ## Changing DevFlow itself
 
