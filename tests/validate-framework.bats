@@ -799,3 +799,33 @@ CTL
   [[ "$output" != *"never calls"* ]]
   [[ "$output" == *"[OK]"* ]]
 }
+
+# ── §10: pinned-install examples follow the release version ──────────────────
+
+run_section_10() {
+  cd "$FIXTURE" || return 1
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -nE '/10\\. Version sync/,/== 11\\./p'"
+}
+
+mk_release() { # mk_release <package-version> <pinned-version>
+  printf '{"name": "x", "version": "%s"}\n' "$1" > "$FIXTURE/package.json"
+  printf '{"name": "x", "version": "%s", "lockfileVersion": 1}\n' "$1" > "$FIXTURE/package-lock.json"
+  printf '# Changelog\n\n## [%s] — 2026-10-19\n' "$1" > "$FIXTURE/CHANGELOG.md"
+  printf 'git verify-tag v%s\ngit checkout v%s\nDEVFLOW_REF=v%s bash install.sh\n' "$2" "$2" "$2" > "$FIXTURE/README.md"
+  printf '#!/usr/bin/env bash\n# set DEVFLOW_REF to a signed tag (e.g. v%s);\n' "$2" > "$FIXTURE/install.sh"
+}
+
+@test "§10: pinned-install examples that name the release version pass" {
+  mk_release 4.18.0 4.18.0
+  run_section_10
+  [[ "$output" == *"pinned-install examples are in sync"* ]]
+  [[ "$output" != *"ERROR"* ]]
+}
+
+@test "§10: a pinned-install example left at the previous release is an ERROR with file and line" {
+  mk_release 4.18.0 4.17.0
+  run_section_10
+  [[ "$output" == *"README.md:1 — pinned-install example names v4.17.0, but the release is v4.18.0"* ]]
+  [[ "$output" == *"README.md:3 —"* ]]
+  [[ "$output" == *"install.sh:2 —"* ]]
+}
