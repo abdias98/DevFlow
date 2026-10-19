@@ -71,7 +71,7 @@ Applied to the Reproduce → Isolate → Fix → Verify flow:
    - **Steps to reproduce:** from user description
    - **Expected behavior:** what should have happened
 4. **STOP after sending the questions**. Wait for the user to answer before proceeding.
-5. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory.
+5. Once answered, produce the **Understanding Summary** (see template) and save it to `context.md` in session memory. Run `devflow-ctl artifacts check context docs/devflow/session/{slug}/context.md` — every Definition of Done criterion needs `→ verify: test|command|manual — {observable}`; fix the ones it names before planning.
 
 ### Step 1.5 — Critical Friend Check
 

@@ -53,10 +53,10 @@ Save to `docs/devflow/bug-fixes/YYYY-MM-DD-{slug}-bugfix.md`:
 
 Verify each criterion captured during understanding (Step 1). Mark **Met** only when evidenced by the reproduction test, suite, or observed behavior.
 
-| # | Criterion | Met? | Evidence |
-|---|-----------|:----:|----------|
-| 1 | {e.g., reported error no longer occurs} | ✅ / ❌ | {reproduction test · file:line} |
-| 2 | {e.g., no regressions in related tests} | ✅ / ❌ | {evidence} |
+| # | Criterion | Verify | Met? | Evidence |
+|---|-----------|--------|:----:|----------|
+| 1 | {e.g., reported error no longer occurs} | test — {the reproduction test's assertion, e.g. returns 200 instead of throwing} | ✅ / ❌ | {reproduction test · file:line} |
+| 2 | {e.g., no regressions in related tests} | command — `{Test Command}` exits 0 | ✅ / ❌ | {evidence} |
 
 **Result:** {N}/{M} criteria met. {If any ❌ → list what remains and why.}
 

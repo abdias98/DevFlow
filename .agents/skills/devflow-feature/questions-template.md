@@ -35,8 +35,7 @@ Ask these ONLY when the answer is missing or ambiguous — infer what you can fr
 - **Out:** {what's excluded}
 
 ### Definition of Done
-- {criterion 1}
-- {criterion 2}
+- {criterion} → verify: {test | command | manual} — {observable result: the status, value or output that proves it}
 
 ### Reference Implementation
 - {file or pattern to follow, if any}

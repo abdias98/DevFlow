@@ -542,7 +542,7 @@ setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
 
 @test "artifacts check: feature — a complete report passes" {
   local f="$BATS_TEST_TMPDIR/r.md"
-  printf '## Summary\n## Definition of Done\n## Files Changed\n## Tasks Completed\n## Tests\n## Self-Review\n' > "$f"
+  printf '## Summary\n## Definition of Done\n| # | Criterion | Verify | Met? | Evidence |\n|---|-----------|--------|:----:|----------|\n| 1 | Order is created | test — POST /orders returns 201 with {id} | ✅ | orders.test.ts |\n## Files Changed\n## Tasks Completed\n## Tests\n## Self-Review\n' > "$f"
   run "$CTL" artifacts check feature "$f"
   [ "$status" -eq 0 ]
 }
@@ -557,16 +557,103 @@ setup_scan() { SCANDIR="$BATS_TEST_TMPDIR/scan"; mkdir -p "$SCANDIR"; }
 
 @test "artifacts check: bugfix — a complete report passes" {
   local f="$BATS_TEST_TMPDIR/r.md"
-  printf '## Bug Report\n## Root Cause\n## Reproduction Test\n## Fix Applied\n## Verification\n## Definition of Done\n' > "$f"
+  printf '## Bug Report\n## Root Cause\n## Reproduction Test\n## Fix Applied\n## Verification\n## Definition of Done\n| # | Criterion | Verify | Met? | Evidence |\n|---|-----------|--------|:----:|----------|\n| 1 | Order is created | test — POST /orders returns 201 with {id} | ✅ | orders.test.ts |\n' > "$f"
   run "$CTL" artifacts check bugfix "$f"
   [ "$status" -eq 0 ]
 }
 
 @test "artifacts check: refactor — a complete report passes" {
   local f="$BATS_TEST_TMPDIR/r.md"
-  printf '## Scope\n## Changes Applied\n## Regression Guard\n## Definition of Done\n' > "$f"
+  printf '## Scope\n## Changes Applied\n## Regression Guard\n## Definition of Done\n| # | Criterion | Verify | Met? | Evidence |\n|---|-----------|--------|:----:|----------|\n| 1 | Order is created | test — POST /orders returns 201 with {id} | ✅ | orders.test.ts |\n' > "$f"
   run "$CTL" artifacts check refactor "$f"
   [ "$status" -eq 0 ]
+}
+
+# ── Definition of Done — every criterion names how it is verified (F108) ──────
+
+ctx() { # ctx <dod bullet lines...> — a context.md with a DoD section, then another section
+  { echo "# Context"; echo ""; echo "## Definition of Done"; printf '%s\n' "$@"; echo ""; echo "## Constraints"; echo "- none"; } > "$BATS_TEST_TMPDIR/context.md"
+}
+
+@test "artifacts check context: criteria with a verify method pass (test, command, manual)" {
+  ctx "- POST /orders creates the order → verify: test — responds 201 with {id, status:\"pending\"}" \
+      "- [ ] p95 does not regress → verify: command — npm run bench stays under the README baseline" \
+      "- Prints on the kiosk -> verify: manual - needs the physical printer: the receipt prints"
+  run "$CTL" artifacts check context "$BATS_TEST_TMPDIR/context.md"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"WARN"* ]]
+}
+
+@test "artifacts check context: a criterion without verify fails and is named" {
+  ctx "- POST /orders creates the order → verify: test — responds 201" "- The feature is done"
+  run "$CTL" artifacts check context "$BATS_TEST_TMPDIR/context.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"without a verification method (The feature is done)"* ]]
+}
+
+@test "artifacts check context: an unknown verify type or an empty observable fails" {
+  ctx "- Order created → verify: vibes — looks right"
+  run "$CTL" artifacts check context "$BATS_TEST_TMPDIR/context.md"
+  [ "$status" -eq 1 ]
+  ctx "- Order created → verify: test —   "
+  run "$CTL" artifacts check context "$BATS_TEST_TMPDIR/context.md"
+  [ "$status" -eq 1 ]
+  ctx "- Kiosk prints → verify: manual"
+  run "$CTL" artifacts check context "$BATS_TEST_TMPDIR/context.md"
+  [ "$status" -eq 1 ]
+}
+
+@test "artifacts check context: a vague observable passes with a warning, never fails" {
+  ctx "- Login → verify: test — it works correctly"
+  run "$CTL" artifacts check context "$BATS_TEST_TMPDIR/context.md"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WARN: DoD criterion with a vague observable"* ]]
+}
+
+@test "artifacts check context: no criteria, or no DoD section, fails" {
+  ctx ""
+  run "$CTL" artifacts check context "$BATS_TEST_TMPDIR/context.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"has no criteria"* ]]
+  printf '# Context\n## Constraints\n- none\n' > "$BATS_TEST_TMPDIR/context.md"
+  run "$CTL" artifacts check context "$BATS_TEST_TMPDIR/context.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing required section"* ]]
+}
+
+@test "artifacts check context: bullets outside the DoD section are not criteria" {
+  ctx "- Order created → verify: test — 201"
+  printf '\n## Edge Cases\n- empty cart\n' >> "$BATS_TEST_TMPDIR/context.md"
+  run "$CTL" artifacts check context "$BATS_TEST_TMPDIR/context.md"
+  [ "$status" -eq 0 ]
+}
+
+@test "artifacts check context: works under a hostile locale" {
+  locale -a 2>/dev/null | grep -qi '^es_ES.utf' || skip "es_ES.UTF-8 not installed"
+  ctx "- Pedido creado → verify: test — responde 201" "- Sin método"
+  LC_ALL=es_ES.UTF-8 run "$CTL" artifacts check context "$BATS_TEST_TMPDIR/context.md"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"(Sin método)"* ]]
+}
+
+@test "artifacts check feature: the DoD table needs a Verify column, filled on every row" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Summary\n## Definition of Done\n| # | Criterion | Met? | Evidence |\n|---|---|---|---|\n| 1 | Order created | ✅ | t |\n## Files Changed\n## Tasks Completed\n## Tests\n## Self-Review\n' > "$f"
+  run "$CTL" artifacts check feature "$f"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"has no 'Verify' column"* ]]
+  printf '## Summary\n## Definition of Done\n| # | Criterion | Verify | Met? | Evidence |\n|---|---|---|---|---|\n| 1 | Order created | test — 201 | ✅ | t |\n| 2 | Fast enough |  | ✅ | t |\n## Files Changed\n## Tasks Completed\n## Tests\n## Self-Review\n' > "$f"
+  run "$CTL" artifacts check feature "$f"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"(Fast enough)"* ]]
+}
+
+@test "artifacts check bugfix: an empty DoD table fails" {
+  local f="$BATS_TEST_TMPDIR/r.md"
+  printf '## Bug Report\n## Root Cause\n## Reproduction Test\n## Fix Applied\n## Verification\n## Definition of Done\n| # | Criterion | Verify | Met? | Evidence |\n|---|---|---|---|---|\n' > "$f"
+  run "$CTL" artifacts check bugfix "$f"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"has no criteria"* ]]
 }
 
 @test "artifacts check: perf — a complete report passes" {

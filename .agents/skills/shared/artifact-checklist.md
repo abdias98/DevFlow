@@ -104,12 +104,19 @@ Validated by: **Reviewer** (before Step 4 — save)
 - [ ] **Review Mode** declared — Cycle or Standalone
 - [ ] **Reference artifact** path present — spec, plan, feature, refactor, or bug-fix document
 
+## Session Context (`docs/devflow/session/{slug}/context.md`) — type `context`
+
+Validated by: **Brainstormer** (Step 4) and **Feature Agent, Bug-Fixer, Refactorer** (after saving the Understanding Summary), via `devflow-ctl artifacts check context {path}`.
+
+- [ ] **Definition of Done** with at least one criterion, each written `{criterion} → verify: test|command|manual — {observable result}` (a vague observable is warned, not failed)
+
 ## Standalone Agent Reports
 
 Validated by: **each standalone agent**, via `devflow-ctl artifacts check {type} {path}`, before its Completion Protocol block. These mirror the lifecycle checks above but for the 10 standalone-only artifact types the CLI's `artifacts_required()` recognizes.
 
 ### Feature Report (`docs/devflow/features/*.md`) — type `feature`
 - [ ] **Summary**, **Definition of Done**, **Files Changed**, **Tasks Completed**, **Tests**, **Self-Review**
+- [ ] **Definition of Done** table (feature, bugfix and refactor alike) has a **Verify** column, filled on every row with `test|command|manual — {observable result}`
 
 ### Bug-Fix Report (`docs/devflow/bug-fixes/*.md`) — type `bugfix`
 - [ ] **Bug Report**, **Root Cause**, **Reproduction Test**, **Fix Applied**, **Verification**, **Definition of Done**
