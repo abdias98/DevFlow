@@ -148,3 +148,59 @@ JSON
   install_snippet opencode.json
   cmp -s "$TARGET" "$BATS_TEST_TMPDIR/first"
 }
+
+# ── devflow-ctl evidence run (F106) ───────────────────────────────────────────
+# `devflow-ctl *` is auto-approved everywhere, and `evidence run` executes the
+# command written in the session's Stack Profile — so it alone must ask, in
+# every form the agent may call it in. devflow-ctl itself refuses `evidence
+# run` unless it starts the command line, which is what makes a prefix rule
+# enough.
+
+# claude_verdict <command> — Claude Code: deny > ask > allow, '*' = any run.
+claude_verdict() {
+  python3 - "$TARGET" "$1" <<'PY'
+import json, re, sys
+perms = json.load(open(sys.argv[1]))["permissions"]
+def hit(rule):
+    m = re.match(r"^Bash\((.*)\)$", rule)
+    return m and re.fullmatch(".*".join(map(re.escape, m.group(1).split("*"))), sys.argv[2])
+for tier in ("deny", "ask", "allow"):
+    if any(hit(r) for r in perms.get(tier, [])):
+        print(tier); break
+else:
+    print("default")
+PY
+}
+
+@test "evidence run: asks in Claude Code, in every invocation form; the rest of devflow-ctl stays allowed" {
+  install_snippet claude-code.json
+  [ "$(claude_verdict 'devflow-ctl evidence run --kind test')" = "ask" ]
+  [ "$(claude_verdict "$SKILLS/shared/bin/devflow-ctl evidence run --kind lint --slug x")" = "ask" ]
+  [ "$(claude_verdict "bash $SKILLS/shared/bin/devflow-ctl evidence run --kind test")" = "ask" ]
+  [ "$(claude_verdict 'devflow-ctl evidence list')" = "allow" ]
+  [ "$(claude_verdict 'devflow-ctl gate check confirmation')" = "allow" ]
+}
+
+@test "evidence run: asks in opencode (last match wins), the rest of devflow-ctl stays allowed" {
+  install_snippet opencode.json
+  [ "$(opencode_verdict 'devflow-ctl evidence run --kind test')" = "ask" ]
+  [ "$(opencode_verdict "$SKILLS/shared/bin/devflow-ctl evidence run --kind test")" = "ask" ]
+  [ "$(opencode_verdict "bash $SKILLS/shared/bin/devflow-ctl evidence run --kind test")" = "ask" ]
+  [ "$(opencode_verdict 'devflow-ctl evidence attest --kind test --file p.txt')" = "allow" ]
+}
+
+@test "evidence run: VS Code has a false rule for it, which overrides the devflow-ctl true rule" {
+  install_snippet vscode.json
+  run python3 - "$TARGET" <<'PY'
+import json, re, sys
+rules = json.load(open(sys.argv[1]))["chat.tools.terminal.autoApprove"]
+def approved(cmd):
+    hits = [v for p, v in rules.items() if re.search(p.strip("/"), cmd)]
+    return bool(hits) and False not in hits
+assert not approved("devflow-ctl evidence run --kind test")
+assert not approved("bash /x/shared/bin/devflow-ctl evidence run --kind test")
+assert approved("devflow-ctl evidence list")
+assert approved("devflow-ctl gate check confirmation")
+PY
+  [ "$status" -eq 0 ]
+}

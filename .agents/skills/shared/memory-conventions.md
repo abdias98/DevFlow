@@ -22,6 +22,7 @@ These files live only for the duration of a DevFlow session. They are not versio
 | `phase-state.md` | Current phase, checklist, iteration counter/log | All agents |
 | `test-registry.md` | Test names, status (FAIL/PASS), files created | Implementer, Tester |
 | `traceability.md` | Cross-reference: requirements → spec → tasks → tests → files | Planner, Implementer |
+| `evidence.md` + `evidence/` | Evidence ledger: each test/lint/build run (or user-pasted output) with source, exit code, working-tree hash and log | `devflow-ctl evidence` only — never edited by hand |
 | `autonomous-log.md` | Async checkpoints (autonomous mode only) — append-only, per-phase progress | Orchestrator |
 | `send-to-user.md` | Messages requiring user action (autonomous mode only) — BLOCKs, iteration limits, deliverable-ready | Orchestrator |
 
