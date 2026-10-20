@@ -27,6 +27,7 @@ Execute all four checks. If any check raises a concern, present it to the user *
 | `rest-api.md` | API endpoints involved |
 | `ui-design.md` | UI components or views involved |
 | `accessibility.md` | Any user-facing UI — interactive controls, forms, color/contrast, keyboard/focus |
+| `user-experience.md` | Any user-facing flow in any interface (GUI or CLI) — navigation, destructive or long-running actions, user work that could be lost, messages, locales |
 | `project-design.md` | New files, modules, or architectural decisions |
 | `testing.md` | Any test creation, bug fix, or TDD task |
 | `logging.md` | Code that emits logs/traces/metrics, handles errors, or touches sensitive data |

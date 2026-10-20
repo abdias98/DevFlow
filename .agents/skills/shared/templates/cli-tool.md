@@ -27,10 +27,8 @@ tests/
 |-----------|-----|
 | **Single binary / entry point** | One command to install, one command to run |
 | **Subcommand structure** | `tool [global-flags] <command> [command-flags] [args]` |
-| **Consistent output** | `--json` flag for machine-readable, default is human-readable |
-| **Exit codes matter** | 0 = success, 1 = error, 2 = misuse. Scripts depend on this. |
-| **--help everywhere** | Every command and subcommand has clear help text |
 | **stdin/stdout pipeline** | Accept input from stdin, output to stdout. Compose with other tools. |
+| **User-facing behavior** | Help, output streams and formats, color, prompts, confirmations, dry-run, exit codes and secrets are normative in [user-experience.md §10](../standards/user-experience.md) — the Reviewer applies it; this template does not restate it |
 
 ## Common Patterns
 
@@ -38,20 +36,14 @@ tests/
 |---------|---------|
 | **Command classes** | Each command is a class with `execute(args, flags)` method |
 | **Config cascade** | Defaults → config file → env vars → CLI flags (flags win) |
-| **Progress indicators** | Spinner for long operations, progress bar for batches |
-| **Dry run** | `--dry-run` flag that shows what would happen without doing it |
-| **Interactive prompts** | Confirm destructive actions. `--yes`/`-y` to skip (CI-friendly) |
 | **Version** | `--version` prints semver from package.json/Cargo.toml/etc. |
 
 ## Common Anti-Patterns
 
 | Anti-Pattern | Fix |
 |-------------|-----|
-| Silent failures (exit 0 on error) | Always use non-zero exit codes for errors |
 | Hardcoded paths | Derive from config, env, or XDG conventions |
-| Mixing output and logging | stdout = output, stderr = logs/diagnostics |
-| No --help | Always provide usage text |
-| Synchronous only | Support async operations with progress feedback |
+| Ignoring the user-facing rules | Exit 0 on error, results mixed with diagnostics, no `--help`, required prompts — see `user-experience.md §10` |
 
 ## Test Architecture
 

@@ -4,6 +4,14 @@ Version history for all DevFlow engineering standards. Each standard's current v
 
 ---
 
+## 2.27.0 — 2026-10-20
+
+### Added — 2.27.0
+- **`user-experience.md`** (new, v1.0.0) — flow-level UX for any interface, GUI and command line: task suitability and orientation, navigation and state, error prevention and destructive actions (undo over confirmation), error messages and recovery, protecting user work, feedback and response time, learnability and efficiency, UX writing, internationalization, command-line interfaces, interruptions. Grounded in ISO 9241-110:2020, ISO 9241-11:2018, Nielsen's heuristics and response-time limits (Miller 1968, Card et al. 1991), NN/g, GOV.UK, GNOME HIG, WCAG 2.2, W3C i18n, Unicode CLDR and clig.dev; each section states its sources and evidence level, and BLOCK is reserved for strong-basis, irreversible findings. ISO's *user engagement* principle is deliberately out of scope. Refs: F113, F114, F115, Wave 24.
+
+### Changed — 2.27.0
+- **`ui-design.md`** (v2.7.1 → v2.7.2): §9's destructive-action line now owns only placement and cites `user-experience.md §3` for undo/confirmation. No section renumbered.
+
 ## 2.26.0 — 2026-10-17
 
 ### Added — 2.26.0

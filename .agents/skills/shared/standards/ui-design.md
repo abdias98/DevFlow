@@ -1,6 +1,6 @@
 # DevFlow Engineering Standards: UI Design (Technology-Agnostic)
 
-> **Version:** 2.7.1 | **Last Updated:** 2026-10-12
+> **Version:** 2.7.2 | **Last Updated:** 2026-10-20
 
 > **Apply only if:** the project has a user interface (web frontend, mobile app, desktop app, or server-rendered views).
 > If this is a pure API, CLI tool, library, or background worker, skip this standard entirely.
@@ -200,7 +200,7 @@ Forms are the primary conversation between user and application. Poor forms = po
 - **DO:** Target **44×44 CSS pixels** as the recommended touch size for reliable finger interaction (WCAG 2.5.5 AAA) — not a hard minimum. The hard floor is **24×24 CSS px** (WCAG 2.2 AA); anything between the floor and the recommendation follows the severity mapping in §16, and the normative rule lives in `accessibility.md §7`. For native platforms, adapt to the platform's equivalent (e.g., 44pt on iOS, 48dp on Android).
 - **DO:** Space interactive elements at least 8px apart to prevent accidental taps.
 - **DO:** Place primary actions in easy thumb-reach zones (bottom-center or bottom-right for one-handed mobile use).
-- **DON'T:** Place destructive actions (delete, reset) adjacent to primary actions without a confirmation step.
+- **DON'T:** Place destructive actions (delete, reset) adjacent to primary actions — this section owns their placement; whether they need undo or a confirmation, and what it says, is `user-experience.md §3`.
 
 ## 10. Accessibility
 

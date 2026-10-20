@@ -29,7 +29,7 @@ src/
 | **Design Tokens** | Colors, spacing, typography as constants. Avoid hardcoded values. |
 | **Lazy Loading** | Route-based code splitting. Load heavy components on demand. |
 | **Error Boundaries** | Catch render errors gracefully. Show fallback UI, don't crash the app. |
-| **Optimistic Updates** | Update UI immediately, rollback on error. Better UX for mutations. |
+| **Optimistic Updates** | Update UI immediately, rollback visibly on error — only for mutations that almost never fail; never for payments, sends or irreversible actions (`user-experience.md §6`, §12) |
 
 ## State Categories
 
