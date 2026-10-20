@@ -68,6 +68,21 @@ If the design has no stateful unit, write exactly `N/A — stateless: {one-line 
 | Layer/Area | Test types used | Tool | Available utilities | Reference test |
 |------------|-----------------|------|---------------------|----------------|
 
+### User Experience *(if user-facing — GUI or command line)*
+
+The Design-Time Decisions of `user-experience.md §16`, decided here before any code, from `context.md` → Context of Use. The Standards Applied row for `user-experience.md` points to this section. Write `N/A — no user-facing interface` otherwise.
+
+| Decision | Value |
+|----------|-------|
+| Context of use | {users · goal and main task · environment · interface: GUI / command line / both} |
+| Flow | {the steps of the main task; where the person can go back or leave} |
+| Addressable views | {views with their own URL or deep link, and the state they carry — or N/A} |
+| Destructive actions | {each action → undo / confirmation / typed confirmation} |
+| Work protection | {what can be lost → unsaved-changes warning / draft / recovery after re-login} |
+| Long operations | {operations that can exceed ~1 s / ~10 s → feedback, cancel, completion notice} |
+| Locales | {supported locales; plural rules, translation room, right-to-left — or single locale} |
+| Command-line contract | {commands, flags, output formats (`--json`/`--plain`), exit codes — or N/A} |
+
 ### UI Mockups *(if frontend feature)*
 ASCII wireframes with component annotations using the detected stack's syntax. Include: default state, loading state, error state, empty state — plus every state the State & Interaction Matrix defines for the component (e.g., the state shown while a new selection loads, or after a failure following a success).
 

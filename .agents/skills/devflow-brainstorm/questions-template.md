@@ -9,7 +9,8 @@ Use this matrix to analyze the user's request. **Do NOT ask all of these questio
 | **Goal** | What is the primary outcome? What does "done" look like? |
 | **Scope** | What is explicitly in scope and out of scope? |
 | **Constraints** | Performance, compatibility, deadlines, tech restrictions? |
-| **Users** | Who will use this? What are their expectations? |
+| **Users & Context of Use** | Who will use this, for which goal and main task, in what environment, through which interface (GUI, command line, both, or a script)? What do they expect? — the *context of use* of ISO 9241-11; for a user-facing feature it becomes the spec's User Experience section (`user-experience.md §16`) |
+| **Mistakes & Lost Work** *(user-facing)* | What can the user break or lose by mistake — a destructive action, a long form, an unsaved edit, an expired session — and how do they get it back (undo, confirmation, draft)? (`user-experience.md §3`, §5) |
 | **Edge Cases** | Invalid, empty, or unexpected input behavior? |
 | **Transitions & Lifecycle** | What happens when something changes over time: the input or context changes while work is in flight, an action is repeated, results arrive out of order, the user leaves halfway, a step fails after another succeeded? What must reset and what must persist? Use the [Transition Prompts](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>) — ask only what this feature can actually exhibit, in the user's terms, never as design. |
 | **Assumptions** | What is assumed but not explicitly stated? |
@@ -21,9 +22,9 @@ Use this matrix to analyze the user's request. **Do NOT ask all of these questio
 
 | Type | Follow-up |
 |------|-----------|
-| Web frontend | Target device? Responsive? WCAG? |
+| Web frontend | Target device? Responsive? WCAG? Languages/locales? |
 | Mobile | Platform? Min OS? Consumer/enterprise? Framework? |
-| CLI tool | Runtime? Distribution? Interactive or scripted? |
+| CLI tool | Runtime? Distribution? Run by a person, by scripts, or both (`user-experience.md §10`)? |
 | Library/SDK | Public API contract? Language targets? Versioning? |
 | Desktop | OS targets? Native or Electron? Distribution? |
 
@@ -51,6 +52,12 @@ Use this matrix to analyze the user's request. **Do NOT ask all of these questio
 - **Type:** {detected type}
 - **Platform/Environment:** {details}
 - **Accessibility:** {requirements or "Standard"}
+
+### Context of Use *(user-facing features only — otherwise "N/A — no user-facing interface")*
+- **Users:** {who}
+- **Goal & main task:** {what they are trying to get done}
+- **Environment & interface:** {GUI / command line / both; device, locale(s)}
+- **Mistakes & lost work:** {what they could break or lose, and how they recover it}
 
 ### Impact
 - **Modifies existing behavior:** {Yes/No}
@@ -91,6 +98,10 @@ Use this matrix to analyze the user's request. **Do NOT ask all of these questio
 
 ## Behavior Scenarios
 - When {…}, the user sees {…} — or "None — {reason}" ([behavior-scenarios.md](<{{SKILLS_DIR}}/shared/behavior-scenarios.md>))
+
+## Context of Use
+- **Users:** {who} · **Goal & main task:** {…} · **Environment & interface:** {GUI / command line / both; locales} · **Mistakes & lost work:** {…}
+- or "N/A — no user-facing interface"
 
 ## Assumptions
 - {assumption 1}

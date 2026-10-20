@@ -22,6 +22,7 @@
   - Structural placeholders: header bar, navigation, content areas, sidebars
   - Interactive elements: buttons (labeled), input fields, dropdowns, checkboxes, tables, lists — all styled but static
   - Annotation labels in `<small style="color:#999">` describing what each area does
+  - The states a person will meet, not only the happy path: empty, loading and error, and — for every destructive action — its undo notification or confirmation with the specific action label, as decided in the spec's User Experience section (`user-experience.md §3`, §4)
 - Add a simple tab/link nav at the top of the page so the user can jump between sections
 - No actual application logic — placeholders only
 
