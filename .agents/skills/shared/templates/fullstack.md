@@ -50,5 +50,5 @@ Browser → Frontend (React/Vue/Svelte)
 | **BFF (Backend For Frontend)** | Dedicated API layer that aggregates data for specific UI needs |
 | **SSR / Server Components** | Render initial HTML on server. Hydrate on client. |
 | **API Type Generation** | Generate TypeScript types from OpenAPI/Swagger. Single source of truth. |
-| **Optimistic UI** | Frontend updates immediately, backend validates, rollback on conflict |
+| **Optimistic UI** | Frontend updates immediately, backend validates, visible rollback on conflict — only where the operation rarely fails (`user-experience.md §6`) |
 | **WebSocket / SSE** | Real-time features: chat, notifications, live updates |

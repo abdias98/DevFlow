@@ -101,6 +101,11 @@ Fast-scan list of the most critical **BLOCK triggers** per standard. It is a fir
 - Keyboard trap with no exit → §3
 - Critical form input with no programmatic label → §6
 
+## user-experience.md — Red Flags (BLOCK)
+- A timeout, re-login, navigation or failed submission silently discards the person's entered work → §5
+- Irreversible destructive action with neither confirmation nor undo → §3
+- Command-line tool exits 0 on failure, or accepts a secret as a flag value → §10
+
 ## git-conventions.md — Red Flags
 - Direct commit to a protected branch (`main`/`master`) without a PR → §2 → BLOCK
 - Vague commit message with no scope or actionable description → §1 → WARN
