@@ -283,7 +283,7 @@ DevFlow is installed **globally** in your selected editor, available in **all wo
 |-----------|-------------|
 | [`.agents/skills/`](.agents/skills/) | Core logic and workflows for each agent. Each agent has its own `SKILL.md`. |
 | [`.agents/skills/shared/`](.agents/skills/shared/) | Shared rules (`rules.md`), memory conventions, stack detection, and output format. |
-| [`.agents/skills/shared/standards/`](.agents/skills/shared/standards/) | Private engineering standards library — 14 standards with conditional loading. |
+| [`.agents/skills/shared/standards/`](.agents/skills/shared/standards/) | Private engineering standards library — 21 standards with conditional loading. |
 | [`.github/prompts/`](.github/prompts/) | Prompt templates for the agents, used by the editor to trigger specific behaviors. |
 | [`editor-profiles/`](editor-profiles/) | YAML definitions for supported editors, including path and tool mappings. |
 | [`docs/`](docs/) | Architecture diagrams, flow definitions, and internal documentation. |
@@ -386,7 +386,7 @@ tests/          # Integration and e2e tests
 ✅ **Architecture First** — No code without a design spec
 ✅ **Never Guesses** — Debugger performs systematic root cause analysis
 ✅ **Accessibility Built-in** — Planner adds a11y checklist (WCAG 2.1 AA) to every UI task; Reviewer validates it
-✅ **Private Engineering Standards** — Operates as a Senior Engineering team applying 14 standards (SOLID, Clean Architecture, Security, Performance, REST API, Project Design, UI Design, Testing, Git Conventions, Logging, Error Handling, Concurrency, Dependencies, Accessibility) with conditional loading based on feature type
+✅ **Private Engineering Standards** — Operates as a Senior Engineering team applying 21 standards (SOLID, Clean Architecture, Design Principles, Design Patterns, Project Design, Security, Performance, Concurrency, Error Handling, Logging, State & Data Lifecycle, Data Persistence, Integration Consumption, REST API, Event-Driven Architecture, UI Design, User Experience, Accessibility, Testing, Git Conventions, Dependencies) with conditional loading based on feature type
 ✅ **Dynamic Stack Detection** — Tech-stack agnostic. Agents dynamically analyze your config files to extract the exact framework, ORM, and testing tools
 ✅ **AGENTS.md Support** — Place an `AGENTS.md` in your project root; DevFlow reads it and skips general exploration
 ✅ **Stacked PRs (Manual)** — Optional Stack Mode splits large features into layered branches. DevFlow prepares branches and provides commands; you create PRs manually when ready

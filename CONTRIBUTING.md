@@ -63,7 +63,7 @@ DevFlow/
 │       ├── output-format.md
 │       ├── stack-detection.md
 │       ├── bin/devflow-ctl      # Deterministic enforcement CLI (gates, scope, iterations, locks)
-│       └── standards/           # Engineering standards (Private Library — 14 standards)
+│       └── standards/           # Engineering standards (Private Library — 21 standards)
 │           ├── solid.md
 │           ├── clean-architecture.md
 │           ├── security.md

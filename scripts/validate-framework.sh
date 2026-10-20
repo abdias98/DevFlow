@@ -9,7 +9,8 @@
 #   11. Skill ↔ prompt parity (every devflow-* skill has a mirror .prompt.md)
 #   12. Standards integrity (no orphans, no duplicate numbering, mandatory
 #       sections, lightweight citation-vs-content semantic check, Quick Card
-#       and Critical Friend registration)
+#       and Critical Friend registration, documented count in README/AGENTS/
+#       CONTRIBUTING)
 #   13. Standalone enforcement matrix (init/lock check/scope/approval gate/
 #       closing order per standalone agent)
 #   14. Standards duplication (DRY) — flags near-identical prose lines shared
@@ -600,7 +601,18 @@ if [[ -d "$STANDARDS_DIR" ]]; then
     fi
   done < <(find "$STANDARDS_DIR" -name "*.md" -not -name "CHANGELOG.md" -type f)
 
-  [[ $ERRORS -eq $STD_ERRORS_BEFORE ]] && green "All standards pass the integrity check (no orphans, no duplicate numbering, all mandatory sections present)"
+  # 12.6 — The documented standard count matches the library. It drifted to
+  # "14" while the library grew to 20 (F118): every count in the public docs
+  # must equal the number of standard files.
+  STD_COUNT=$(find "$STANDARDS_DIR" -name "*.md" -not -name "CHANGELOG.md" -type f | wc -l | tr -d ' ')
+  while IFS= read -r hit; do
+    [[ -n "$hit" ]] || continue
+    doc_count=$(grep -oE '[0-9]+ (engineering )?standards' <<< "${hit#*:*:}" | head -1 | grep -oE '^[0-9]+')
+    [[ "$doc_count" == "$STD_COUNT" ]] \
+      || fail "${hit%%:*}:$(cut -d: -f2 <<< "$hit") — documents $doc_count standards, but the library has $STD_COUNT"
+  done < <(grep -nE '[0-9]+ (engineering )?standards' README.md AGENTS.md CONTRIBUTING.md 2>/dev/null || true)
+
+  [[ $ERRORS -eq $STD_ERRORS_BEFORE ]] && green "All standards pass the integrity check (no orphans, no duplicate numbering, all mandatory sections present, documented count matches)"
 else
   warn "$STANDARDS_DIR/ not found — skipping standards integrity check (run from the repo root)"
 fi
