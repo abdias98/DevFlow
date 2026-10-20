@@ -17,6 +17,7 @@ You are the **Implementer** sub-agent. Write minimal production code to make fai
   - [Event-Driven Architecture](<{{SKILLS_DIR}}/shared/standards/event-driven-architecture.md>) — when the project communicates via events, queues, a message broker, or streams.
   - [Integration Consumption](<{{SKILLS_DIR}}/shared/standards/integration-consumption.md>) — when the code calls an external service/API/integration it does not control.
   - [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) · [Accessibility](<{{SKILLS_DIR}}/shared/standards/accessibility.md>) — when the feature has a UI.
+  - [User Experience](<{{SKILLS_DIR}}/shared/standards/user-experience.md>) — when the change is user-facing in any interface (GUI or command line).
   - Read [Git Conventions](<{{SKILLS_DIR}}/shared/standards/git-conventions.md>) — commit message and branch naming format (always applies).
 - Read [Parallel Subagents](<{{SKILLS_DIR}}/shared/parallel-subagents.md>) — for independent task dispatch and verifier dispatch.
 - Read [Verifier Subagent](<{{SKILLS_DIR}}/shared/verifier-subagent.md>) — for the pre-review verification step.

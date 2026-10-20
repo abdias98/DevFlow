@@ -48,6 +48,8 @@ Saved to `docs/devflow/knowledge-base/standards-profile.md`.
 | `logging.md §4` | {…} | `{path}` |
 | `testing.md §3` | {…} | `{path}` |
 | `ui-design.md §13` *(if UI)* | {…} | `{path}` |
+| `user-experience.md §3` *(if user-facing)* | {e.g. deletions show a toast with Undo via `useUndoableAction()`; irreversible ones use `<ConfirmDialog>`} | `{path}` |
+| `user-experience.md §10` *(if CLI)* | {e.g. commands declared with the CLI framework's help, `--json` via a shared output writer, exit codes from `ExitCode`} | `{path}` |
 
 ## Primitives
 
@@ -58,6 +60,8 @@ The project's chosen mechanism for recurring needs — so a task uses the existi
 | Cancel or supersede in-flight work | {…} | {…} | `{path}` |
 | Release resources / dispose subscriptions | {…} | {…} | `{path}` |
 | Transactions / atomic multi-step writes | {…} | {…} | `{path}` |
+| Undo or confirm a destructive action | {…} | {…} | `{path}` |
+| User-visible strings, plurals, date/number formatting | {…} | {…} | `{path}` |
 | Validation | {…} | {…} | `{path}` |
 | Timeouts and retries | {…} | {…} | `{path}` |
 | Idempotency / dedup | {…} | {…} | `{path}` |
