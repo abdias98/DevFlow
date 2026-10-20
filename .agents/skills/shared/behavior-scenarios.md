@@ -30,7 +30,7 @@ Use these to discover scenarios. They are prompts for thinking, not a form to fi
 | **Change while in flight** | What if the input, selection, context or configuration changes while earlier work for the previous value is still running? |
 | **Repetition** | What if the same action happens twice — double submit, retry, re-open, re-select the same value? |
 | **Order** | What if events, responses or messages arrive in a different order than they were sent? |
-| **Interruption** | What if the user leaves, cancels, closes, navigates away, or the process stops halfway? |
+| **Interruption** | What if the user leaves, cancels, closes, navigates away, reloads, presses back, or the process stops halfway — and is what they entered still there (`user-experience.md §2`, §5)? |
 | **Partial failure** | What if one step fails after another already succeeded? What is left visible or persisted? |
 | **Reset vs keep** | When the context changes, which state must reset, which must persist, and which must be recomputed? |
 | **Other actors** | What if another user, tab, device, job or process acts on the same thing at the same time? |

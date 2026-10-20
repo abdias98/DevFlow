@@ -18,9 +18,9 @@ Ask these ONLY when the answer is missing or ambiguous — infer what you can fr
 | Type | Follow-up |
 |------|-----------|
 | API endpoint | REST or GraphQL? Request/response format? Authentication? |
-| UI component | Which screen/page? Responsive? Accessibility requirements? |
+| UI component | Which screen/page? Responsive? Accessibility requirements? Can the user lose work or delete something here, and how do they recover (`user-experience.md §3`, §5)? |
 | Utility/function | Pure function or side-effect? Performance constraints? |
-| CLI command | Subcommand structure? Flags/args? Interactive or scripted? |
+| CLI command | Subcommand structure? Flags/args? Run by a person, by scripts, or both (`user-experience.md §10`)? |
 
 ## Understanding Summary Template
 
