@@ -829,3 +829,22 @@ mk_release() { # mk_release <package-version> <pinned-version>
   [[ "$output" == *"README.md:3 —"* ]]
   [[ "$output" == *"install.sh:2 —"* ]]
 }
+
+# ── §12.6: the documented standard count matches the library (F118) ───────────
+
+run_section_12() {
+  cd "$FIXTURE" || return 1
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -nE '/12\\. Standards integrity/,/== 13\\./p'"
+}
+
+@test "§12.6: a documented standard count that differs from the library is an ERROR with file and line" {
+  mkdir -p "$SHARED/standards"
+  printf '# A\n' > "$SHARED/standards/a.md"
+  printf '# B\n' > "$SHARED/standards/b.md"
+  printf '# Changelog\n' > "$SHARED/standards/CHANGELOG.md"
+  printf 'Intro\nApplies 3 standards (A, B, C).\n' > "$FIXTURE/README.md"
+  printf -- '- 2 engineering standards loaded by agents\n' > "$FIXTURE/AGENTS.md"
+  run_section_12
+  [[ "$output" == *"README.md:2 — documents 3 standards, but the library has 2"* ]]
+  [[ "$output" != *"AGENTS.md:1 — documents"* ]]
+}

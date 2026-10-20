@@ -71,7 +71,7 @@ DevFlow/
 - **Scope-locking**: Agents only touch explicitly approved files
 - **Persistent memory**: Session memory (`context.md`, `phase-state.md`, `test-registry.md`, `traceability.md`) + persistent artifacts (`docs/devflow/`)
 - **Technology-agnostic**: All standards and guides use abstract examples, adapt to detected stack
-- **Private standards library**: 14 engineering standards loaded exclusively by DevFlow agents (SOLID, Clean Architecture, Security, Performance, REST API, Project Design, UI Design, Testing, Git Conventions, Logging, Error Handling, Concurrency, Dependencies, Accessibility)
+- **Private standards library**: 21 engineering standards loaded exclusively by DevFlow agents (SOLID, Clean Architecture, Design Principles, Design Patterns, Project Design, Security, Performance, Concurrency, Error Handling, Logging, State & Data Lifecycle, Data Persistence, Integration Consumption, REST API, Event-Driven Architecture, UI Design, User Experience, Accessibility, Testing, Git Conventions, Dependencies)
 
 ## Agent Inventory
 
