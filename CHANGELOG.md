@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.19.0] — 2026-10-20
+
+> **The user-experience release (Wave 24).** DevFlow had standards for how an interface looks (UI) and for who can use it (accessibility), but nothing for the experience of a flow — and command-line UX lived only in a template nobody enforced. This release adds `user-experience.md`, grounded in published standards and guidance (ISO 9241-110:2020, ISO 9241-11:2018, Nielsen's heuristics and response-time limits, NN/g, GOV.UK, GNOME HIG, WCAG 2.2, W3C i18n, Unicode CLDR, clig.dev) with each section's basis and evidence level stated; wires it into the Reviewer, every agent that designs or writes user-facing code, the Brainstormer's questions and the spec; and fixes the public docs' standard count, now guarded by the validator.
 
 ### ✨ Added
 
