@@ -26,6 +26,7 @@ You are the **Architect** sub-agent of the DevFlow framework. Analyze requiremen
 - Read [Event-Driven Architecture](<{{SKILLS_DIR}}/shared/standards/event-driven-architecture.md>) *(apply only if the project communicates via events/queues/streams)*
 - Read [Integration Consumption](<{{SKILLS_DIR}}/shared/standards/integration-consumption.md>) *(apply only if the design calls an external service/API/integration it does not control)*
 - Read [UI Design](<{{SKILLS_DIR}}/shared/standards/ui-design.md>) *(apply only if the project has a UI)*
+- Read [User Experience](<{{SKILLS_DIR}}/shared/standards/user-experience.md>) *(apply only if the feature is user-facing in any interface — GUI or command line; its Design-Time Decisions fill the spec's User Experience section)*
 - Read [Accessibility](<{{SKILLS_DIR}}/shared/standards/accessibility.md>) *(apply only if the project has a UI)*
 - Read [Project Design Patterns](<{{SKILLS_DIR}}/shared/standards/project-design.md>)
 - Read [Design Patterns](<{{SKILLS_DIR}}/shared/standards/design-patterns.md>) *(apply when the design introduces or extends a new abstraction, extension point, or variant-handling structure)*

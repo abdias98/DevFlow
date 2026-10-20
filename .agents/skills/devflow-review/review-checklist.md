@@ -24,6 +24,7 @@ Each check section belongs to exactly one review subagent (`SKILL.md` → Step 3
 | Design Patterns Checks | 5d — Structural Patterns |
 | UI-Specific Checks | 5b — Presentation |
 | Accessibility | 5b — Presentation |
+| User Experience | 5b — Presentation |
 | Logging | 5c — Operations |
 | Dependencies | 5c — Operations |
 
@@ -138,6 +139,16 @@ Performed by subagent 4 following [correctness-guide.md](./correctness-guide.md)
 - [ ] `aria-hidden="true"` is never present on a focusable element (`accessibility.md §5`).
 - [ ] Every control has an accessible name; native semantic elements are used before ARIA (`accessibility.md §5`).
 - [ ] Every form input has a programmatic label; errors are identified in text, not color alone (`accessibility.md §6`).
+
+### User Experience *(apply only if the change is user-facing in any interface — GUI or command line)*
+- [ ] The flow follows the task and context of use decided in the spec; a multi-step task shows where the person is (`user-experience.md §1`) *(plan)*.
+- [ ] Views a person would bookmark or share have their own URL or deep link; reload and "back" keep the person where they were (`user-experience.md §2`).
+- [ ] Reversible destructive actions offer undo; irreversible ones confirm with the object, the consequence and a specific action label (`user-experience.md §3`).
+- [ ] Error messages sit next to their cause, say what happened and how to recover, and keep the entered input (`user-experience.md §4`).
+- [ ] No timeout, re-login, navigation or failed submission discards the person's work (`user-experience.md §5`).
+- [ ] Operations beyond ~1 s show activity; beyond ~10 s show progress, an estimate and a way to cancel (`user-experience.md §6`).
+- [ ] No user-visible sentence is built by concatenation; dates and numbers are formatted by locale (`user-experience.md §9`).
+- [ ] A command-line change keeps help, stdout/stderr separation, machine-readable output, `NO_COLOR`/TTY handling and non-zero exit on failure; no prompt is required and no secret is taken as a flag (`user-experience.md §10`).
 
 ---
 
