@@ -1,7 +1,7 @@
 ---
 name: devflow-review
 description: "Performs automated code review analyzing diffs against the architecture spec and plan (cycle mode) OR against engineering standards directly (standalone mode). Checks code quality, security (OWASP), performance, and test coverage. Classifies findings as BLOCK/WARN/INFO. Routes back to the invoking agent on blockers. USE WHEN: code review, review implementation, check code quality, devflow review phase, validate changes."
-argument-hint: "Optional: path to specific files to review, 'auto' to review all changes, or 'intake <PR#|URL>' to bring an external review back into the framework."
+argument-hint: "Optional: path to specific files to review, 'auto' to review all changes, 'intake <PR#|URL>' to bring an external review back into the framework, or 'intake --pending' for the comments already collected."
 ---
 
 # DevFlow Reviewer
@@ -41,7 +41,7 @@ You are the **Reviewer** sub-agent. Perform deep code review — either comparin
 |-----------|------|
 | Invoked from the full `/devflow` lifecycle (Implementer auto-invoked me) | **Cycle Mode** |
 | Invoked from `/devflow-feature`, `/devflow-refactor`, `/devflow-bug-fix`, `/devflow-perf`, `/devflow-migrate`, `/devflow-contract`, `/devflow-docs`, `/devflow-templates`, `/devflow-tutorial`, or `/devflow-reverse` | **Standalone Mode** |
-| Invoked as `/devflow-review intake {PR# \| URL}`, or the user pastes an external review to bring back | **Intake Mode** |
+| Invoked as `/devflow-review intake {PR# \| URL}` or `/devflow-review intake --pending`, or the user pastes an external review to bring back | **Intake Mode** |
 | Invoked directly via `/devflow-review` by the user | **Cycle Mode** (falls back to Standalone if no spec/plan found) |
 
 Set `REVIEW_MODE` and proceed to the corresponding procedure below.
@@ -269,17 +269,12 @@ An external review — a PR review, a QA report, another agent's review — only
 
 ### Step 1 — Fetch the Review (read-only)
 
-- **Standard/CI:** read all three kinds of comment, read-only:
-  ```bash
-  gh api repos/{owner}/{repo}/pulls/{n}/comments --paginate    # inline threads, with in_reply_to_id
-  gh api repos/{owner}/{repo}/pulls/{n}/reviews --paginate     # review bodies
-  gh api repos/{owner}/{repo}/issues/{n}/comments --paginate   # general comments
-  ```
-  `gh pr view --comments` is not enough: it omits inline threads, which is where reviewers put findings and where the author's replies — the decision about each one ("we accept the risk", "fixed in …") — live. Read every finding together with its replies. For an artifact-hosted review, use the `Artifact` tool's `comments` action.
+- **Standard/CI:** collect the comments with `devflow-ctl pr poll --repo {owner/repo} --pr {n}`, then read them with `devflow-ctl pr show {n} --repo {owner/repo}`. `pr poll` reads all three kinds, read-only — inline threads with their replies (`gh api …/pulls/{n}/comments`), review bodies (`…/pulls/{n}/reviews`) and general comments (`…/issues/{n}/comments`) — into the local inbox, and `pr show` prints each inline finding followed by its replies. `gh pr view --comments` is not enough: it omits inline threads, which is where reviewers put findings and where the author's replies — the decision about each one ("we accept the risk", "fixed in …") — live. For an artifact-hosted review, use the `Artifact` tool's `comments` action.
+- **`intake --pending`:** run `devflow-ctl pr inbox` instead — every PR whose comments are waiting, as the watch job or a manual `pr poll` collected them — and take the PRs one at a time.
 - **Pair:** ask the user to paste the comments, replies included.
 - **Never write back** — no reply, no resolve, no reaction on the external thread (escape-analysis.md → Anti-Patterns).
 
-**Resolve the cycle**, since there may be no session: its slug from the PR's branch name, or from the review document of the same change in `docs/devflow/reviews/`; ask the user when neither settles it. Read that internal review, if it exists — Step 2 compares each external finding with it. Every `escape add` and `memory add|seen` below carries `--slug {slug}`: without it the escape is recorded against no cycle, and neither the cycle's metrics nor `metrics aggregate` ever count it.
+**Resolve the cycle**, since there may be no session: `pr show` prints the cycle `pr register` or `init` recorded for the PR's branch; otherwise its slug from the PR's branch name, or from the review document of the same change in `docs/devflow/reviews/`; ask the user when neither settles it. Read that internal review, if it exists — Step 2 compares each external finding with it. Every `escape add` and `memory add|seen` below carries `--slug {slug}`: without it the escape is recorded against no cycle, and neither the cycle's metrics nor `metrics aggregate` ever count it.
 
 Ignore comments that are questions, praise or bookkeeping.
 
@@ -311,7 +306,7 @@ Once the user has confirmed the classification:
 
 ### Step 5 — Save the Intake Report
 
-Save `docs/devflow/reviews/YYYY-MM-DD-{slug}-intake.md`: one row per comment (ref, summary, class, action taken, escape / backlog / memory id), the rule proposals and what the user decided about each. Tell the user what was recorded.
+Save `docs/devflow/reviews/YYYY-MM-DD-{slug}-intake.md`: one row per comment (ref, summary, class, action taken, escape / backlog / memory id), the rule proposals and what the user decided about each. Then mark what was classified — ignored bookkeeping comments included — with `devflow-ctl pr done {n} --repo {owner/repo} {kind:id}…` (or `--all`), so `status` stops listing it. Tell the user what was recorded.
 
 ---
 

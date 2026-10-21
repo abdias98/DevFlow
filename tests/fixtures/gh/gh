@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Fake GitHub CLI for the PR intake tests: `gh api <path> [--paginate] [--jq expr]`
+# answers from $GH_FIXTURES/<path with / ? & = replaced by _>.json, applying
+# the --jq filter with the real jq (gh prints string results raw, like jq -r).
+# Every call is appended to $GH_LOG; GH_FAIL=1 simulates a network failure.
+echo "$*" >> "${GH_LOG:-/dev/null}"
+[[ "${1:-}" == "api" ]] || { echo "fake gh: only 'api' is supported" >&2; exit 1; }
+shift
+path="" jq_expr="."
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --paginate) shift ;;
+    --jq) jq_expr="$2"; shift 2 ;;
+    -X|--method|-f|-F|--field|--raw-field|--input) echo "fake gh: write attempted ($1)" >&2; exit 3 ;;
+    *) path="$1"; shift ;;
+  esac
+done
+[[ -z "${GH_FAIL:-}" ]] || { echo 'Get "https://api.github.com/...": dial tcp: i/o timeout' >&2; exit 1; }
+f="$GH_FIXTURES/$(printf '%s' "$path" | tr '/?&=' '____').json"
+[[ -f "$f" ]] || { echo "gh: Not Found (HTTP 404) — no fixture $f" >&2; exit 1; }
+jq -r "$jq_expr" "$f"

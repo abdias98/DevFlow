@@ -54,6 +54,9 @@
 #   memory friction report [--sessions N] [--projects N]  Recurring process friction (logged automatically)
 #   memory escapes                                    Escape counts by layer × class, across every project
 #   memory sync | projects                            Write this project's memory view; list registered projects (local)
+#   pr register --slug <s> [--branch b]             Record which branch (and so which PR) a cycle produced
+#   pr poll [--repo o/r] [--pr N]                     Collect review comments of DevFlow PRs (read-only) into the local inbox
+#   pr list | show <N> | inbox | done <N> <ids>       Read the registry and the inbox; mark comments classified
 #   memory promote-list | promote <id> --ref <r>       Confirmed lessons to turn into framework PRs; mark one merged
 #   traceability check <file>                         Count Source/TOTAL coverage in a traceability matrix; exit 1 if <100%
 #   sessions                                         List all active DevFlow sessions with phase and state
@@ -353,6 +356,7 @@ cmd_init() {
   # ... and with this project's lessons rendered from the store, even when the
   # branch it starts on never had learnings.md.
   _kn_sync --quiet || true
+  _pr_record_cycle "$SLUG" || true
 }
 
 cmd_status() {
@@ -377,6 +381,7 @@ cmd_status() {
     echo "Scope:     (not declared)"
   fi
   _mem_summary
+  _pr_pending_summary "$(_pr_current_repo 2>/dev/null || echo -)"
 }
 
 cmd_phase() {
@@ -1175,6 +1180,7 @@ cmd_capabilities() {
       # Not an environment primitive, but the one place every agent reads at
       # Step 0 — so the framework memory store is never invisible.
       echo "memory: $(_mem_summary | sed 's/^Framework memory: //')"
+      _pr_pending_summary
       ;;
     *)
       die "usage: devflow-ctl capabilities [get <key>]"
@@ -3606,6 +3612,294 @@ cmd_memory() {
   esac
 }
 
+# ── Review intake: PRs and their comments (F124) ──────────────────────────────
+# DevFlow never creates the PR, so it never knew which PR came from which
+# cycle, and an external review only came back if someone remembered to run
+# the intake. These commands record the cycle a branch belongs to, find its
+# PRs, and collect their review comments into a local inbox -- read-only on
+# GitHub, never written back. Classification stays with the user
+# (/devflow-review intake --pending). Everything lives in the local registry:
+# comments name the project's code, so nothing here ever reaches an entry,
+# INDEX.md, a project view or a PR.
+
+PR_REGISTRY="$MEM_REGISTRY/prs.tsv"     # repo, pr, project id, slug, branch, state, updated
+PR_CYCLES="$MEM_REGISTRY/cycles.tsv"    # project id, slug, branch, date
+PR_WATCH="$MEM_REGISTRY/watch.tsv"      # repo (one per line; `pr watch` manages it)
+PR_INBOX="$MEM_REGISTRY/inbox"          # inbox/{owner}__{repo}/{pr}.tsv + {pr}.done
+PR_LOG="$MEM_REGISTRY/pr-watch.log"
+
+_pr_valid_repo() { [[ "$1" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ ]]; }
+
+# git@github.com:o/r.git, ssh://git@github.com/o/r, https://github.com/o/r(.git) -> o/r
+_pr_repo_of_remote() {
+  local u="$1"
+  u="${u%.git}"; u="${u%/}"
+  case "$u" in
+    *://*) u="${u#*://}"; u="${u#*/}" ;;
+    *@*:*) u="${u#*:}" ;;
+    *) return 1 ;;
+  esac
+  _pr_valid_repo "$u" || return 1
+  echo "$u"
+}
+
+_pr_current_repo() {
+  local r; r="$(git remote get-url origin 2>/dev/null)" || return 1
+  _pr_repo_of_remote "$r"
+}
+
+_pr_inbox_dir() { echo "$PR_INBOX/${1/\//__}"; }
+
+# Every cycle is recorded with its branch at init, so a PR can be traced back
+# to it later, after the session is gone. Upsert by project + slug.
+_pr_record_cycle() { # _pr_record_cycle <slug>
+  mkdir -p "$MEM_REGISTRY" 2>/dev/null && touch "$PR_CYCLES" 2>/dev/null || return 0
+  local tmp="$PR_CYCLES.tmp.$$" branch
+  branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo -)"
+  LC_ALL=C awk -F'\t' -v OFS='\t' -v p="$(_mem_project_id)" -v s="$1" -v b="$branch" -v d="$(_mem_today)" '
+    $1 == p && $2 == s { print p, s, b, d; f = 1; next }
+    { print }
+    END { if (!f) print p, s, b, d }
+  ' "$PR_CYCLES" > "$tmp" && mv "$tmp" "$PR_CYCLES"
+}
+
+# Upsert a PR row, keyed by repo + branch (or repo + number); "-" keeps a value.
+_pr_upsert() { # _pr_upsert <repo> <pr> <pid> <slug> <branch> <state>
+  mkdir -p "$MEM_REGISTRY" 2>/dev/null && touch "$PR_REGISTRY" 2>/dev/null || return 0
+  local tmp="$PR_REGISTRY.tmp.$$"
+  LC_ALL=C awk -F'\t' -v OFS='\t' -v r="$1" -v n="$2" -v p="$3" -v s="$4" -v b="$5" -v st="$6" -v d="$(now_iso)" '
+    function keep(new, old) { return (new == "-" || new == "") ? old : new }
+    !f && $1 == r && (($5 == b && b != "-") || ($2 == n && n != "-")) {
+      print r, keep(n, $2), keep(p, $3), keep(s, $4), keep(b, $5), keep(st, $6), d; f = 1; next
+    }
+    { print }
+    END { if (!f) print r, n, p, s, b, st, d }
+  ' "$PR_REGISTRY" > "$tmp" && mv "$tmp" "$PR_REGISTRY"
+}
+
+# The project ids whose checkout has this repo as its origin.
+_pr_projects_of() { # _pr_projects_of <repo>
+  [[ -f "$MEM_PROJECTS" ]] || return 0
+  local id root remote rest
+  while IFS=$'\t' read -r id root remote rest; do
+    [[ "$(_pr_repo_of_remote "$remote" 2>/dev/null || true)" == "$1" ]] && echo "$id"
+  done < "$MEM_PROJECTS"
+}
+
+# Known branches of a repo, one "pid<TAB>slug<TAB>branch" per line: the ones
+# registered by `pr register`, then every cycle of the repo's projects.
+_pr_known() { # _pr_known <repo>
+  local pids
+  pids="$(_pr_projects_of "$1" | tr '\n' ' ')"
+  { [[ -f "$PR_REGISTRY" ]] && LC_ALL=C awk -F'\t' -v OFS='\t' -v r="$1" '$1 == r { print $3, $4, $5 }' "$PR_REGISTRY"
+    [[ -f "$PR_CYCLES" ]] && LC_ALL=C awk -F'\t' -v OFS='\t' -v ids=" $pids" 'index(ids, " " $1 " ") { print $1, $2, $3 }' "$PR_CYCLES"
+  } || true
+}
+
+# Which known cycle a PR branch belongs to: the exact branch, or a branch with
+# the cycle's slug as one of its /-segments (feat/{slug}/stack-1). Prints
+# "pid<TAB>slug"; nothing when the branch is not DevFlow's.
+_pr_match() { # _pr_match <repo> <branch>
+  _pr_known "$1" | LC_ALL=C awk -F'\t' -v OFS='\t' -v ref="$2" '
+    BEGIN { n = split(ref, seg, "/") }
+    $3 == ref && ref !~ /^(main|master|develop|HEAD|-)$/ { print $1, $2; found = 1; exit }
+    $2 != "-" && $2 != "" { for (i = 1; i <= n; i++) if (seg[i] == $2) { cand = $1 OFS $2; break } }
+    END { if (!found && cand != "") print cand }
+  '
+}
+
+_pr_need_gh() { command -v gh >/dev/null 2>&1 || die "the GitHub CLI 'gh' is required for PR intake (https://cli.github.com) — install it and run 'gh auth login'"; }
+
+# Fetches every comment of one PR -- inline threads with their replies, review
+# bodies, general comments -- and appends the ones not seen before to its
+# inbox. One TSV row each: kind, id, in-reply-to, author, created, path, line,
+# url, body (tabs and newlines escaped by jq's @tsv). Prints the new count.
+_pr_fetch() { # _pr_fetch <repo> <pr>
+  local repo="$1" n="$2" dir file out tmp
+  dir="$(_pr_inbox_dir "$repo")"
+  mkdir -p "$dir" 2>/dev/null || return 1
+  file="$dir/$n.tsv"; touch "$file"
+  out="$(gh api "repos/$repo/pulls/$n/comments" --paginate --jq '.[] | ["inline", .id, (.in_reply_to_id // "-"), .user.login, .created_at, (.path // "-"), (.line // .original_line // "-"), .html_url, (.body // "")] | map(tostring) | @tsv')" || return 1
+  out+=$'\n'"$(gh api "repos/$repo/pulls/$n/reviews" --paginate --jq '.[] | select((.body // "") != "") | ["review", .id, "-", .user.login, (.submitted_at // "-"), "-", "-", .html_url, .body] | map(tostring) | @tsv')" || return 1
+  out+=$'\n'"$(gh api "repos/$repo/issues/$n/comments" --paginate --jq '.[] | ["comment", .id, "-", .user.login, .created_at, "-", "-", .html_url, (.body // "")] | map(tostring) | @tsv')" || return 1
+  tmp="$file.new.$$"
+  # (The seen-set is read in BEGIN: the NR == FNR idiom breaks on an empty file.)
+  printf '%s\n' "$out" | LC_ALL=C awk -F'\t' -v seenf="$file" '
+    BEGIN { while ((getline l < seenf) > 0) { split(l, a, "\t"); seen[a[1] ":" a[2]] = 1 } }
+    NF >= 2 && !(($1 ":" $2) in seen) { seen[$1 ":" $2] = 1; print }' > "$tmp"
+  grep -c . "$tmp" || true
+  cat "$tmp" >> "$file"; rm -f "$tmp"
+}
+
+_pr_pending() { # _pr_pending <repo> <pr> — rows of the inbox not marked done
+  local dir; dir="$(_pr_inbox_dir "$1")"
+  [[ -s "$dir/$2.tsv" ]] || return 0
+  touch "$dir/$2.done" 2>/dev/null || true
+  LC_ALL=C awk -F'\t' -v donef="$dir/$2.done" '
+    BEGIN { while ((getline l < donef) > 0) done[l] = 1 }
+    !(($1 ":" $2) in done) && !($2 in done)' "$dir/$2.tsv"
+}
+
+# Polls one repo: its open PRs that belong to a DevFlow cycle, or exactly the
+# PR named with --pr (whatever its state: the only way to read a merged or
+# closed one). Network and auth failures warn and leave the next pass to retry.
+_pr_poll_repo() { # _pr_poll_repo <repo> [pr]
+  local repo="$1" only="${2:-}" prs num ref state merged m pid slug new total=0 count=0 detail=""
+  if [[ -n "$only" ]]; then
+    prs="$(gh api "repos/$repo/pulls/$only" --jq '[.number, .head.ref, .state, (.merged_at // "-")] | map(tostring) | @tsv' 2>/dev/null)" \
+      || { echo "[devflow-ctl] WARN: $repo: could not read PR #$only (network, auth, or no such PR)" >&2; return 0; }
+  else
+    prs="$(gh api "repos/$repo/pulls?state=open&per_page=100" --paginate --jq '.[] | [.number, .head.ref, .state, "-"] | map(tostring) | @tsv' 2>/dev/null)" \
+      || { echo "[devflow-ctl] WARN: $repo: could not list open PRs (network or auth) — the next pass retries" >&2; return 0; }
+  fi
+  while IFS=$'\t' read -r num ref state merged; do
+    [[ -n "$num" ]] || continue
+    m="$(_pr_match "$repo" "$ref")"
+    if [[ -z "$m" && -z "$only" ]]; then continue; fi
+    pid="${m%%$'\t'*}"; slug="${m#*$'\t'}"
+    [[ -n "$m" ]] || { pid="-"; slug="-"; }
+    [[ "$merged" != "-" ]] && state="merged"
+    _pr_upsert "$repo" "$num" "$pid" "$slug" "$ref" "$state"
+    if ! new="$(_pr_fetch "$repo" "$num" 2>/dev/null)"; then
+      echo "[devflow-ctl] WARN: $repo#$num: could not read its comments — the next pass retries" >&2
+      continue
+    fi
+    count=$((count + 1)); total=$((total + new))
+    detail+=" #$num:$new"
+  done <<< "$prs"
+  echo "$repo: $count PR(s) read, $total new comment(s)${detail:+ —$detail}"
+}
+
+_pr_watched() { [[ -f "$PR_WATCH" ]] && cut -f1 "$PR_WATCH" | grep -v '^$' || true; }
+
+# One line per PR with comments waiting for intake, for `status` and
+# `capabilities`; nothing when there are none.
+_pr_pending_summary() { # _pr_pending_summary [repo]
+  [[ -f "$PR_REGISTRY" ]] || return 0
+  local r n rest c
+  while IFS=$'\t' read -r r n rest; do
+    [[ -n "${1:-}" && "$r" != "$1" ]] && continue
+    [[ "$n" == "-" ]] && continue
+    c="$(_pr_pending "$r" "$n" | grep -c . || true)"
+    [[ "${c:-0}" -gt 0 ]] && echo "Review intake: PR #$n ($r) has $c comment(s) pending — /devflow-review intake --pending"
+  done < "$PR_REGISTRY"
+  return 0
+}
+
+# Prints a PR's pending comments for the agent: inline threads grouped with
+# their replies, then review bodies, then general comments.
+_pr_print_pending() { # _pr_print_pending <repo> <pr>
+  _pr_pending "$1" "$2" | LC_ALL=C awk -F'\t' -v OFS='\t' '{
+      root = ($1 == "inline") ? (($3 != "-") ? $3 : $2) : "~" $1
+      print root, $5, $0 }' | LC_ALL=C sort -t$'\t' -k1,1 -k2,2 | cut -f3- |
+  while IFS=$'\t' read -r kind id reply author created path line url body; do
+    if [[ "$kind" == "inline" && "$reply" == "-" ]]; then
+      printf '\n── %s:%s · %s · %s:%s · %s\n' "$kind" "$id" "$author" "$path" "$line" "$url"
+    elif [[ "$kind" == "inline" ]]; then
+      printf '   ↳ reply %s:%s to %s · %s · %s\n' "$kind" "$id" "$reply" "$author" "$created"
+    else
+      printf '\n── %s:%s · %s · %s\n' "$kind" "$id" "$author" "$url"
+    fi
+    printf '%b\n' "$body" | sed 's/^/   /'
+  done
+}
+
+cmd_pr() {
+  local action="${1:-}"; shift || true
+  local repo="" pr="" scheduled="" all=""
+  local args=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --repo) repo="${2:-}"; shift 2 ;;
+      --pr) pr="${2:-}"; shift 2 ;;
+      --scheduled) scheduled=1; shift ;;
+      --all) all=1; shift ;;
+      --branch) args+=("--branch" "${2:-}"); shift 2 ;;
+      *) args+=("$1"); shift ;;
+    esac
+  done
+  [[ -z "$repo" ]] || _pr_valid_repo "$repo" || die "--repo must be owner/repo (got '$repo')"
+  [[ -z "$pr" || "$pr" =~ ^[0-9]+$ ]] || die "--pr must be a PR number (got '$pr')"
+  case "$action" in
+    register)
+      [[ -n "$SLUG" ]] || die "usage: devflow-ctl pr register --slug <slug> [--branch <branch>] [--repo owner/repo]"
+      local branch=""
+      [[ "${args[0]:-}" == "--branch" ]] && branch="${args[1]:-}"
+      [[ -n "$branch" ]] || branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+      [[ -n "$branch" && "$branch" != "HEAD" ]] || die "pr register: no branch — pass --branch <branch>"
+      [[ -n "$repo" ]] || repo="$(_pr_current_repo)" || die "pr register: origin is not a GitHub repository — pass --repo owner/repo"
+      _pr_upsert "$repo" "-" "$(_mem_project_id)" "$SLUG" "$branch" "-"
+      ok "cycle '$SLUG' registered for $repo, branch '$branch' — its PR is found by 'devflow-ctl pr poll'"
+      ;;
+    poll)
+      _pr_need_gh
+      local repos line
+      if [[ -n "$repo" ]]; then repos="$repo"
+      elif [[ -n "$pr" ]]; then repos="$(_pr_current_repo)" || die "pr poll --pr: pass --repo owner/repo"
+      else repos="$(_pr_watched)"; fi
+      if [[ -z "$repos" ]]; then
+        echo "No repository is watched — name one: 'devflow-ctl pr poll --repo owner/repo', or '/devflow-review intake watch start owner/repo'"
+        return 0
+      fi
+      while IFS= read -r repo; do
+        [[ -n "$repo" ]] || continue
+        line="$(_pr_poll_repo "$repo" "$pr")"
+        echo "$line"
+        [[ -z "$scheduled" ]] || { mkdir -p "$MEM_REGISTRY" 2>/dev/null && echo "$(now_iso) $line" >> "$PR_LOG"; } 2>/dev/null || true
+      done <<< "$repos"
+      [[ -n "$scheduled" ]] || _pr_pending_summary
+      ;;
+    list)
+      if [[ ! -s "$PR_REGISTRY" ]]; then echo "No PR registered yet ($PR_REGISTRY)"; return 0; fi
+      local r n s st c
+      printf '%-32s %-6s %-28s %-8s %s\n' "REPO" "PR" "CYCLE" "STATE" "PENDING"
+      while IFS=$'\t' read -r r n _ s _ st _; do
+        [[ -z "$repo" || "$r" == "$repo" ]] || continue
+        c="$( [[ "$n" == "-" ]] || _pr_pending "$r" "$n" | grep -c . || true)"
+        printf '%-32s %-6s %-28s %-8s %s\n' "$r" "${n/#-/?}" "$s" "$st" "${c:-0}"
+      done < "$PR_REGISTRY"
+      ;;
+    show|inbox)
+      local targets r n rest
+      [[ -n "$repo" ]] || repo="$(_pr_current_repo 2>/dev/null || true)"
+      [[ "$action" == "show" ]] && { pr="${pr:-${args[0]:-}}"; [[ "$pr" =~ ^[0-9]+$ && -n "$repo" ]] || die "usage: devflow-ctl pr show <N> [--repo owner/repo]"; }
+      if [[ -n "$pr" ]]; then targets="$repo"$'\t'"$pr"
+      else targets="$( [[ -f "$PR_REGISTRY" ]] && LC_ALL=C awk -F'\t' -v OFS='\t' -v r="$repo" '(r == "" || $1 == r) && $2 != "-" { print $1, $2 }' "$PR_REGISTRY" || true)"; fi
+      local shown=0
+      while IFS=$'\t' read -r r n; do
+        [[ -n "$n" ]] || continue
+        local pend; pend="$(_pr_pending "$r" "$n" | grep -c . || true)"
+        [[ "$action" == "inbox" && "${pend:-0}" -eq 0 ]] && continue
+        shown=1
+        local row; row="$( [[ -f "$PR_REGISTRY" ]] && LC_ALL=C awk -F'\t' -v r="$r" -v n="$n" '$1 == r && $2 == n { print "cycle: " $4 " · branch: " $5 " · state: " $6; exit }' "$PR_REGISTRY" || true)"
+        echo "PR #$n ($r) — ${row:-not registered} — ${pend:-0} pending"
+        _pr_print_pending "$r" "$n"
+        echo ""
+      done <<< "$targets"
+      [[ "$shown" -eq 1 ]] || echo "No review comment is pending intake."
+      ;;
+    done)
+      pr="${pr:-${args[0]:-}}"
+      [[ -n "$repo" ]] || repo="$(_pr_current_repo 2>/dev/null || true)"
+      [[ "$pr" =~ ^[0-9]+$ && -n "$repo" ]] || die "usage: devflow-ctl pr done <N> [--repo owner/repo] (--all | <kind:id|id>...)"
+      local dir; dir="$(_pr_inbox_dir "$repo")"
+      [[ -f "$dir/$pr.tsv" ]] || die "pr done: no inbox for $repo#$pr — run 'devflow-ctl pr poll' first"
+      local ids=("${args[@]:1}") marked=0 id
+      [[ "${args[0]:-}" == "$pr" ]] || ids=("${args[@]}")
+      if [[ -n "$all" ]]; then
+        while IFS=$'\t' read -r kind id _; do echo "$kind:$id" >> "$dir/$pr.done"; marked=$((marked + 1)); done < <(_pr_pending "$repo" "$pr")
+      else
+        [[ ${#ids[@]} -gt 0 ]] || die "pr done: name the comments (kind:id or id), or pass --all"
+        for id in "${ids[@]}"; do echo "$id" >> "$dir/$pr.done"; marked=$((marked + 1)); done
+      fi
+      ok "$marked comment(s) of $repo#$pr marked as classified"
+      ;;
+    *)
+      die "usage: devflow-ctl pr register --slug <s> [--branch b] [--repo o/r] | poll [--repo o/r] [--pr N] | list [--repo o/r] | show <N> [--repo o/r] | inbox [--repo o/r] | done <N> [--repo o/r] (--all | ids...)"
+      ;;
+  esac
+}
+
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 CMD="${1:-help}"; shift || true
@@ -3627,6 +3921,7 @@ case "$CMD" in
   evidence)   cmd_evidence "$@" ;;
   metrics)    cmd_metrics "$@" ;;
   memory)     cmd_memory "$@" ;;
+  pr)         cmd_pr "$@" ;;
   traceability) cmd_traceability "$@" ;;
   sessions)   cmd_sessions "$@" ;;
   clean)      cmd_clean "$@" ;;
