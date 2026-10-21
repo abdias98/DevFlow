@@ -152,6 +152,16 @@ Rules for writing one:
    asserts all three for every behavioural task.
 5. **Threshold 90:** missing any behavioural class weighted ≥ 2 fails the task.
 
+## Intake tasks
+
+`009-review-intake-underrated` (`category: intake`) measures the review intake
+itself: a closed cycle, an APPROVED internal review and an external PR review
+with the author's replies. It has no bare run — without DevFlow there is no
+escape log, cycle metric or framework memory to update — so run it on every
+version that changes Intake Mode or `escape-analysis.md`, with
+`DEVFLOW_HOME=<workspace>/.devflow-home` so the memory is scored too. Its
+`naive` reference is what the intake produced before Wave 25.
+
 ## Comparing versions
 
 A wave that changes verification is worth its cost only if the **outcome** moves.
