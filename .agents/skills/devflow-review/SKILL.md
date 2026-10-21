@@ -307,7 +307,7 @@ Once the user has confirmed the classification:
 
 1. **Knowledge base** — append `#### 🔎 Found after review ({PR#})` to the cycle's entry in `docs/devflow/knowledge-base/learnings.md` (Cycle History), one line per Defect or Underrated comment: what was missed, in terms the next cycle in this area can apply. Mark each line with where it went — `→ E{n}` for the escape, plus `→ M{id}` when the framework memory has it ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Capture, Marks). Add or update the matching By Topic entry, same deduplication rule as the Finalizer.
 2. **Metrics** — set `Escapes after APPROVED` in `docs/devflow/metrics/*-{slug}-metrics.md` to the number of escapes `devflow-ctl escape list` shows for this slug. If the cycle is already in `docs/devflow/metrics/_aggregate.md`, run `devflow-ctl metrics aggregate` on that file again so the escape rate includes it.
-3. **Memory view** — run `devflow-ctl memory sync`; if the project view changed, say so and leave committing it to the user.
+3. **Store and views** — run `devflow-ctl knowledge sync` (what this intake added reaches the project's knowledge store), then `devflow-ctl artifacts check learnings docs/devflow/knowledge-base/learnings.md --slug {slug}`, then `devflow-ctl memory sync`; if the project view changed, say so and leave committing it to the user.
 
 ### Step 5 — Save the Intake Report
 

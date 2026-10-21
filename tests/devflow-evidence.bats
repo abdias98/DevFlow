@@ -17,6 +17,7 @@ setup() {
   mkdir -p "$PROJ/bin"
   cd "$PROJ"
   export DEVFLOW_SESSION_ROOT="docs/devflow/session"
+  export DEVFLOW_KNOWLEDGE_FILE="$BATS_TEST_TMPDIR/learnings.md"
   export DEVFLOW_HOME="$BATS_TEST_TMPDIR/devflow-home"
   export DEVFLOW_MEMORY_VIEW="$BATS_TEST_TMPDIR/framework-memory-view.md"
   # CI runners export CI=true, which (correctly) refuses `evidence waive`:

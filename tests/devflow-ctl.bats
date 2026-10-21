@@ -14,6 +14,7 @@ setup() {
   export DEVFLOW_SESSION_ROOT="$BATS_TEST_TMPDIR/session"
   # Framework memory (friction log, escape counts) must never reach the real home.
   export DEVFLOW_HOME="$BATS_TEST_TMPDIR/devflow-home"
+  export DEVFLOW_KNOWLEDGE_FILE="$BATS_TEST_TMPDIR/learnings.md"
   export DEVFLOW_MEMORY_VIEW="$BATS_TEST_TMPDIR/framework-memory-view.md"
 }
 
@@ -1862,4 +1863,239 @@ API_OK='#### POST /api/v1/orders
   [[ "$output" == *"logic / spec"*"2"* ]]
   DEVFLOW_ESCAPE_RULE_MIN=x run "$CTL" escape report
   [ "$status" -eq 2 ]
+}
+
+
+# ── Learnings: classified lessons, local archive (F120) ──────────────────────
+
+write_marked_kb() {
+  cat > "$DEVFLOW_KNOWLEDGE_FILE" << 'EOF'
+# KB
+
+## By Topic
+
+### Testing
+- Assert every mapped field. → M0020
+
+## Cycle History
+
+### old-cycle — 2026-10-01
+- An older lesson. (project)
+
+### quote-pdf — 2026-10-20
+- Print view clipped by the shell CSS. → M0022
+- Dates follow the list's time zone. (project)
+- Hot reload does not re-run startup. -> M0027
+  - a sub-bullet needs no mark
+#### 🔎 Found after review (PR #1)
+- Sensitive field excused as deliberate. → E1 → M0024
+
+## Notes
+- unrelated
+EOF
+}
+
+@test "artifacts check learnings: an entry whose every lesson is marked passes (→, ->, (project))" {
+  setup_knowledge
+  write_marked_kb
+  run "$CTL" artifacts check learnings "$DEVFLOW_KNOWLEDGE_FILE" --slug quote-pdf
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"every lesson is classified"* ]]
+}
+
+@test "artifacts check learnings: an unmarked lesson fails, is named, and logs friction" {
+  setup_knowledge
+  write_marked_kb
+  sed -i 's/ (project)$//' "$DEVFLOW_KNOWLEDGE_FILE"
+  run "$CTL" artifacts check learnings "$DEVFLOW_KNOWLEDGE_FILE" --slug quote-pdf
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Dates follow the list's time zone."* ]]
+  [[ "$output" == *"1 lesson(s) in the 'quote-pdf' entry carry no mark"* ]]
+  [[ "$output" != *"An older lesson"* ]]
+  grep -q "artifact-incomplete" "$DEVFLOW_HOME/memory/friction.log"
+}
+
+@test "artifacts check learnings: missing By Topic, missing entry, or no --slug" {
+  setup_knowledge
+  write_marked_kb
+  run "$CTL" artifacts check learnings "$DEVFLOW_KNOWLEDGE_FILE" --slug other
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"no '### other"* ]]
+  run "$CTL" artifacts check learnings "$DEVFLOW_KNOWLEDGE_FILE"
+  [ "$status" -eq 2 ]
+  sed -i 's/^## By Topic$/## Topics/' "$DEVFLOW_KNOWLEDGE_FILE"
+  run "$CTL" artifacts check learnings "$DEVFLOW_KNOWLEDGE_FILE" --slug quote-pdf
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing ## By Topic"* ]]
+}
+
+@test "artifacts check learnings: works under a hostile locale" {
+  setup_knowledge
+  write_marked_kb
+  LC_ALL=es_ES.UTF-8 run "$CTL" artifacts check learnings "$DEVFLOW_KNOWLEDGE_FILE" --slug quote-pdf
+  [ "$status" -eq 0 ]
+}
+
+@test "metrics aggregate: re-aggregating a cycle replaces its row instead of appending a duplicate" {
+  setup_metrics
+  write_full_metrics
+  write_standalone_metrics
+  run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/full-metrics.md"
+  run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/feat-metrics.md"
+  sed -i 's/| Tests created | 4 |/| Tests created | 6 |/' "$BATS_TEST_TMPDIR/feat-metrics.md"
+  run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/feat-metrics.md"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"replaced row #2"* ]]
+  [ "$(grep -c '| demo-feat |' "$DEVFLOW_AGGREGATE_FILE")" -eq 1 ]
+  grep -q "| 2 | 2026-09-08 | feature | demo-feat | — | 6 | 0 | — | 1 |" "$DEVFLOW_AGGREGATE_FILE"
+  [ "$(grep -c '^| [0-9]' "$DEVFLOW_AGGREGATE_FILE")" -eq 2 ]
+}
+
+
+# ── Knowledge store: learnings.md is a view of the local store (F120) ───────
+
+write_legacy_kb() {
+  cat > "$DEVFLOW_KNOWLEDGE_FILE" << 'EOF'
+# Knowledge Base — Some Project
+
+Intro line.
+
+---
+
+## Cycle: alpha-cycle — 2026-06-12
+
+### ✅ Patterns
+- Alpha pattern. (project)
+
+---
+
+## Cycle: beta-cycle — 2026-08-14
+
+### ❌ Anti-patterns
+- Beta anti-pattern. → M0001
+EOF
+}
+
+setup_store() {
+  setup_knowledge
+  export DEVFLOW_PROJECT_ID=p-0000beef
+  STORE="$DEVFLOW_HOME/memory/registry/projects/p-0000beef/knowledge"
+}
+
+@test "knowledge sync: a file in the old per-cycle layout is imported and rendered as a view" {
+  setup_store
+  write_legacy_kb
+  run "$CTL" knowledge sync
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"2 entries added"* ]]
+  [ -f "$STORE/entries/alpha-cycle.md" ]
+  grep -q "^#### ✅ Patterns" "$STORE/entries/alpha-cycle.md"
+  ! grep -q "^---" "$STORE/entries/alpha-cycle.md"
+  grep -q "^<!-- devflow:knowledge-view store=[0-9a-f]* rev=1 -->" "$DEVFLOW_KNOWLEDGE_FILE"
+  grep -q "^## By Topic" "$DEVFLOW_KNOWLEDGE_FILE"
+  grep -q "^### alpha-cycle — 2026-06-12" "$DEVFLOW_KNOWLEDGE_FILE"
+  run "$CTL" artifacts check learnings "$DEVFLOW_KNOWLEDGE_FILE" --slug beta-cycle
+  [ "$status" -eq 0 ]
+}
+
+@test "knowledge sync: a lost view is written again, identical, from the store" {
+  setup_store
+  write_legacy_kb
+  run "$CTL" knowledge sync
+  cp "$DEVFLOW_KNOWLEDGE_FILE" "$BATS_TEST_TMPDIR/before.md"
+  rm "$DEVFLOW_KNOWLEDGE_FILE"
+  run "$CTL" knowledge sync
+  [ "$status" -eq 0 ]
+  cmp "$DEVFLOW_KNOWLEDGE_FILE" "$BATS_TEST_TMPDIR/before.md"
+  run "$CTL" knowledge sync
+  [[ "$output" == *"up to date"* ]]
+}
+
+@test "knowledge sync: edits to a current view go into the store and bump the revision" {
+  setup_store
+  write_legacy_kb
+  run "$CTL" knowledge sync
+  sed -i 's/^- Alpha pattern. (project)$/- Alpha pattern, revised. (project)/' "$DEVFLOW_KNOWLEDGE_FILE"
+  printf '\n### gamma-cycle — 2026-09-01\n- Gamma lesson. (project)\n' >> "$DEVFLOW_KNOWLEDGE_FILE"
+  sed -i 's/^## By Topic$/## By Topic\n\n### Testing\n- Assert every field. → M0002/' "$DEVFLOW_KNOWLEDGE_FILE"
+  run "$CTL" knowledge sync
+  [ "$status" -eq 0 ]
+  grep -q "Alpha pattern, revised." "$STORE/entries/alpha-cycle.md"
+  [ -f "$STORE/entries/gamma-cycle.md" ]
+  grep -q "^### Testing" "$STORE/topics.md"
+  [ "$(cat "$STORE/rev")" -eq 2 ]
+  grep -q "rev=2 -->" "$DEVFLOW_KNOWLEDGE_FILE"
+}
+
+@test "knowledge sync: a stale view never overwrites the store; its differences are kept aside" {
+  setup_store
+  write_legacy_kb
+  run "$CTL" knowledge sync
+  cp "$DEVFLOW_KNOWLEDGE_FILE" "$BATS_TEST_TMPDIR/old-branch.md"
+  # The store moves on (another branch's close)...
+  printf '\n### delta-cycle — 2026-09-02\n- Delta. (project)\n' >> "$DEVFLOW_KNOWLEDGE_FILE"
+  run "$CTL" knowledge sync
+  # ...then an old branch's view, edited, comes back.
+  cp "$BATS_TEST_TMPDIR/old-branch.md" "$DEVFLOW_KNOWLEDGE_FILE"
+  sed -i 's/^- Alpha pattern. (project)$/- Alpha rewritten on the old branch. (project)/' "$DEVFLOW_KNOWLEDGE_FILE"
+  printf '\n### epsilon-cycle — 2026-09-03\n- Epsilon. (project)\n' >> "$DEVFLOW_KNOWLEDGE_FILE"
+  run "$CTL" knowledge sync
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"alpha-cycle"* ]]
+  [[ "$output" == *".unsynced"* ]]
+  grep -q "^- Alpha pattern. (project)" "$STORE/entries/alpha-cycle.md"
+  [ -f "$STORE/entries/delta-cycle.md" ]
+  [ -f "$STORE/entries/epsilon-cycle.md" ]
+  grep -q "Alpha rewritten on the old branch." "$DEVFLOW_KNOWLEDGE_FILE.unsynced"
+  grep -q "^### delta-cycle" "$DEVFLOW_KNOWLEDGE_FILE"
+}
+
+@test "knowledge sync: a view from another store only adds what this store lacks" {
+  setup_store
+  write_legacy_kb
+  run "$CTL" knowledge sync
+  sed -i 's/store=[0-9a-f]* rev=1/store=deadbeef rev=1/' "$DEVFLOW_KNOWLEDGE_FILE"
+  printf '\n### zeta-cycle — 2026-09-04\n- Zeta. (project)\n' >> "$DEVFLOW_KNOWLEDGE_FILE"
+  run "$CTL" knowledge sync
+  [ "$status" -eq 0 ]
+  [ -f "$STORE/entries/zeta-cycle.md" ]
+  [ ! -f "$DEVFLOW_KNOWLEDGE_FILE.unsynced" ]
+  ! grep -q "store=deadbeef" "$DEVFLOW_KNOWLEDGE_FILE"
+}
+
+@test "knowledge: query and list read the store when learnings.md is gone; init writes the view" {
+  setup_store
+  write_topics_kb
+  run "$CTL" knowledge sync
+  rm "$DEVFLOW_KNOWLEDGE_FILE"
+  run "$CTL" knowledge query --topic testing
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Use a fake clock."* ]]
+  rm -f "$DEVFLOW_KNOWLEDGE_FILE"
+  run "$CTL" init --mode lifecycle --slug kn-init
+  [ "$status" -eq 0 ]
+  grep -q "Use a fake clock." "$DEVFLOW_KNOWLEDGE_FILE"
+}
+
+@test "knowledge sync: nothing to record writes no file; an unwritable store only warns" {
+  setup_store
+  run "$CTL" knowledge sync
+  [ "$status" -eq 0 ]
+  [ ! -f "$DEVFLOW_KNOWLEDGE_FILE" ]
+  write_legacy_kb
+  export DEVFLOW_PROJECT_ID=p-0000dead
+  mkdir -p "$DEVFLOW_HOME/memory/registry/projects"
+  touch "$DEVFLOW_HOME/memory/registry/projects/p-0000dead"
+  run "$CTL" knowledge sync
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"unavailable"* ]]
+}
+
+@test "knowledge sync: stable under a hostile locale" {
+  setup_store
+  write_legacy_kb
+  LC_ALL=es_ES.UTF-8 run "$CTL" knowledge sync
+  [ "$status" -eq 0 ]
+  LC_ALL=es_ES.UTF-8 run "$CTL" knowledge sync
+  [[ "$output" == *"up to date"* ]]
 }

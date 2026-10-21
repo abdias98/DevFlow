@@ -34,6 +34,7 @@
 #   knowledge list                                   List knowledge base entries and the standards profile status
 #   knowledge query --topic <topic>                  Print one By Topic section of the project knowledge base
 #   knowledge add <file>                             Add a knowledge base entry from a file
+#   knowledge sync                                   Take learnings.md edits into the local store, re-render the view
 #   backlog add <file> <reason> [--severity b|i|f]    Record a deferred (Outside-zone) finding
 #   backlog list [--area <glob>]                      List deferred findings, optionally by area
 #   escape add --class <c> --layer <l> --ref <r> --note <n>  Record a post-approval defect
@@ -45,7 +46,7 @@
 #   evidence waive --kind <k> --reason <r>           Record the user's waiver for a kind that cannot run (refused in CI/Autonomous)
 #   evidence snapshot [--profile <p>]                Record which kinds the Stack Profile configures (check compares against it)
 #   evidence list                                    Print the session's evidence ledger
-#   metrics aggregate <metrics-file>                  Append a cycle's metrics to _aggregate.md, recompute averages
+#   metrics aggregate <metrics-file>                  Add (or replace) a cycle's row in _aggregate.md, recompute averages
 #   memory add --type <t> --key <k> --title <t> --rule <r> [...]  Record a cross-project framework lesson
 #   memory query [--agent a] [--stack s] [--limit N]  Relevant confirmed/candidate lessons, ranked and bounded
 #   memory seen <id> | confirm <id> | retire <id> --reason <r>  Recurrence and lifecycle of an entry
@@ -349,6 +350,9 @@ cmd_init() {
   # Every cycle starts with the framework memory visible in the project.
   _mem_register_project
   _mem_sync_view --quiet || true
+  # ... and with this project's lessons rendered from the store, even when the
+  # branch it starts on never had learnings.md.
+  _kn_sync --quiet || true
 }
 
 cmd_status() {
@@ -1079,7 +1083,7 @@ _artifacts_check_plan_endpoints() { # <plan> <spec>
 }
 
 cmd_artifacts() {
-  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|context|feature|bugfix|refactor|perf|migration|contract|docs|reverse|templates|tutorial> <path> [--spec <spec-path>]"
+  [[ "${1:-}" == "check" ]] || die "usage: devflow-ctl artifacts check <spec|plan|review|validation|context|feature|bugfix|refactor|perf|migration|contract|docs|reverse|templates|tutorial|learnings> <path> [--spec <spec-path>] [--slug <slug>]"
   local type="${2:-}" path="${3:-}" spec_path=""
   [[ -n "$type" && -n "$path" ]] || die "usage: devflow-ctl artifacts check <type> <path> [--spec <spec-path>]"
   shift 3
@@ -1089,6 +1093,11 @@ cmd_artifacts() {
       *) shift ;;
     esac
   done
+  if [[ "$type" == "learnings" ]]; then
+    [[ -n "$SLUG" ]] || die "usage: devflow-ctl artifacts check learnings <path> --slug <slug>"
+    _knowledge_check "$path" "$SLUG"
+    return 0
+  fi
   FRICTION_EVENT="artifact-incomplete"; FRICTION_DETAIL="$type"
   [[ -f "$path" ]] || fail "artifact not found at $path — it was never saved with create_file"
   local required missing=()
@@ -1197,28 +1206,244 @@ _knowledge_profile_summary() {
   echo "Rows: $rows · Last updated: ${updated:-unknown}"
 }
 
+# A cycle's entry in learnings.md: from `### {slug}` under `## Cycle History`
+# to the next `###`/`##` heading. Prints the entry; exit 1 when absent.
+_knowledge_entry() { # _knowledge_entry <file> <slug>
+  [[ -f "$1" ]] || return 1
+  LC_ALL=C awk -v slug="$2" '
+    /^## / { inch = ($0 ~ /^## Cycle History/); if (on) exit; next }
+    on && /^### / { exit }
+    inch && /^### / {
+      t = substr($0, 5)
+      if (t == slug || index(t, slug " ") == 1) { on = 1; found = 1 }
+    }
+    on { print }
+    END { exit (found ? 0 : 1) }
+  ' "$1"
+}
+
+# ── Project knowledge store (F120) ───────────────────────────────────────────
+# The project's lessons live in the local registry of the framework memory
+# store, keyed by the project id (the same on every branch, clone and
+# worktree). docs/devflow/knowledge-base/learnings.md is a generated VIEW of
+# it: agents edit the view as before, and `knowledge sync` takes their edits
+# back into the store and re-renders the view. A view that is lost with a
+# branch is rendered again; it is never the only copy.
+#
+# The view carries a marker with the store id and the revision it was
+# rendered from. Sync only takes edits from a view rendered from this store at
+# its current revision. Any other view (a stale branch, a teammate's committed
+# copy, a file written before the store existed) is imported: entries the
+# store lacks are added, nothing the store has is overwritten, and a view that
+# disagrees with the store is kept aside as learnings.md.unsynced.
+
+_kn_dir() { echo "$MEM_REGISTRY/projects/$(_mem_project_id)/knowledge"; }
+
+_kn_store_id() {
+  local f="$MEM_REGISTRY/store-id" id
+  if [[ ! -s "$f" ]]; then
+    id="$(LC_ALL=C od -An -N4 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n')"
+    [[ -n "$id" ]] || id="$(printf '%08x' "$$$RANDOM")"
+    mkdir -p "$MEM_REGISTRY" 2>/dev/null && printf '%s\n' "$id" > "$f" 2>/dev/null || true
+  fi
+  cat "$f" 2>/dev/null || echo "unknown"
+}
+
+_kn_has_content() { # the store holds at least one entry or topic
+  local d; d="$(_kn_dir)"
+  [[ -s "$d/topics.md" ]] && return 0
+  compgen -G "$d/entries/*.md" >/dev/null
+}
+
+# Splits a view (or any learnings.md) into <outdir>/topics.md, other.md and
+# entries/<slug>.md. Understands the per-cycle layout written before the
+# Cycle History convention (`## Cycle: {slug} — {date}`), demoting its
+# subheadings one level so the entry nests under Cycle History.
+_kn_parse() { # _kn_parse <file> <outdir>
+  mkdir -p "$2/entries"
+  LC_ALL=C awk -v out="$2" '
+    function slugof(t,   a) { split(t, a, " "); gsub(/[^A-Za-z0-9._-]/, "-", a[1]); return a[1] }
+    function to(f) { if (cur != "" && cur != f) close(cur); cur = f }
+    /^<!-- devflow:knowledge-view / { next }
+    /^# / && !h1 { h1 = 1; next }
+    /^> Generated by `devflow-ctl knowledge sync`/ { next }
+    /^## By Topic[ \t]*$/     { sec = "topics";  to(out "/topics.md"); next }
+    /^## Cycle History[ \t]*$/ { sec = "history"; cur = ""; next }
+    /^## Cycle: / {
+      sec = "legacy"; t = substr($0, 11)
+      to(out "/entries/" slugof(t) ".md"); print "### " t > cur; next
+    }
+    /^## / { sec = "other"; to(out "/other.md"); print > cur; next }
+    sec == "history" && /^### / {
+      to(out "/entries/" slugof(substr($0, 5)) ".md"); print > cur; next
+    }
+    sec == "legacy" && /^#{3,5} / { print "#" $0 > cur; next }
+    sec != "" && cur != "" { print > cur }
+  ' "$1"
+  local f
+  # Normalize: no leading or trailing blank lines (nor a trailing `---`
+  # separator), so comparisons are stable.
+  for f in "$2"/topics.md "$2"/other.md "$2"/entries/*.md; do
+    [[ -f "$f" ]] || continue
+    LC_ALL=C awk 'NF { started = 1 } started { buf[++n] = $0 } END { while (n > 0 && buf[n] ~ /^([ \t]*|---+[ \t]*)$/) n--; for (i = 1; i <= n; i++) print buf[i] }' "$f" > "$f.n" && mv "$f.n" "$f"
+    [[ -s "$f" ]] || rm -f "$f"
+  done
+}
+
+_kn_render() { # _kn_render — the view, on stdout
+  local d sid rev f
+  d="$(_kn_dir)"; sid="$(_kn_store_id)"; rev="$(cat "$d/rev" 2>/dev/null || echo 0)"
+  echo "# DevFlow Knowledge Base"
+  echo ""
+  echo "<!-- devflow:knowledge-view store=$sid rev=$rev -->"
+  echo '> Generated by `devflow-ctl knowledge sync` from the local DevFlow store, where these lessons live. Edit this file as usual, then run `devflow-ctl knowledge sync`; if the file is lost, the next sync writes it again. Committing it is your call.'
+  echo ""
+  echo "## By Topic"
+  if [[ -s "$d/topics.md" ]]; then echo ""; cat "$d/topics.md"; fi
+  echo ""
+  echo "## Cycle History"
+  for f in "$d"/entries/*.md; do
+    [[ -f "$f" ]] || continue
+    printf '%s\t%s\n' "$(head -1 "$f" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1 || true)" "$f"
+  done | LC_ALL=C sort | cut -f2- | while IFS= read -r f; do
+    echo ""; cat "$f"
+  done
+  if [[ -s "$d/other.md" ]]; then echo ""; cat "$d/other.md"; fi
+}
+
+# Appends to <store-topics> each `### Topic` block of <new-topics> whose
+# heading the store does not have yet. Existing topics are never rewritten.
+_kn_merge_topics() { # _kn_merge_topics <store-topics> <new-topics>
+  local have tmp="$1.tmp.$$"
+  have="$(grep '^### ' "$1" 2>/dev/null || true)"
+  { cat "$1" 2>/dev/null
+    LC_ALL=C awk -v have="$have" '
+      BEGIN { n = split(have, h, "\n"); for (i = 1; i <= n; i++) known[h[i]] = 1 }
+      /^### / { on = !($0 in known); if (on) print "" }
+      on { print }
+    ' "$2"
+  } | LC_ALL=C awk 'NF { s = 1 } s' > "$tmp" && mv "$tmp" "$1"
+}
+
+_kn_sync() { # _kn_sync [--quiet]
+  local quiet="${1:-}" d view="$KNOWLEDGE_FILE" sid rev msid="" mrev="" mode tmp f name added=0 changed=0 differ=()
+  d="$(_kn_dir)"
+  if ! mkdir -p "$d/entries" 2>/dev/null; then
+    echo "[devflow-ctl] WARN: knowledge store unavailable at $d — learnings.md left as is" >&2
+    return 0
+  fi
+  sid="$(_kn_store_id)"; rev="$(cat "$d/rev" 2>/dev/null || echo 0)"
+  if [[ -f "$view" ]]; then
+    msid="$(grep -m1 -oE 'devflow:knowledge-view store=[^ ]+' "$view" | sed 's/.*store=//' || true)"
+    mrev="$(grep -m1 -oE 'devflow:knowledge-view store=[^ ]+ rev=[0-9]+' "$view" | sed 's/.*rev=//' || true)"
+    if [[ "$msid" == "$sid" && "$mrev" == "$rev" ]]; then mode="edit"; else mode="import"; fi
+    tmp="$(mktemp -d "${TMPDIR:-/tmp}/devflow-kn.XXXXXX")"
+    _kn_parse "$view" "$tmp"
+    for f in "$tmp"/entries/*.md; do
+      [[ -f "$f" ]] || continue
+      name="$(basename "$f")"
+      if [[ ! -f "$d/entries/$name" ]]; then
+        cp "$f" "$d/entries/$name"; added=$((added + 1))
+      elif ! cmp -s "$f" "$d/entries/$name"; then
+        if [[ "$mode" == "edit" ]]; then cp "$f" "$d/entries/$name"; changed=$((changed + 1))
+        else differ+=("${name%.md}"); fi
+      fi
+    done
+    if [[ -f "$tmp/topics.md" ]] && ! cmp -s "$tmp/topics.md" "$d/topics.md"; then
+      if [[ "$mode" == "edit" || ! -s "$d/topics.md" ]]; then cp "$tmp/topics.md" "$d/topics.md"; changed=$((changed + 1))
+      else
+        local before; before="$(cat "$d/topics.md")"
+        _kn_merge_topics "$d/topics.md" "$tmp/topics.md"
+        [[ "$(cat "$d/topics.md")" == "$before" ]] || changed=$((changed + 1))
+        # Lines of the file's topics the store still lacks (an edit to an
+        # existing topic) cannot be merged safely: report them.
+        LC_ALL=C grep -vxF -f "$d/topics.md" "$tmp/topics.md" | grep -q . && differ+=("By Topic")
+      fi
+    fi
+    if [[ -f "$tmp/other.md" ]] && ! cmp -s "$tmp/other.md" "$d/other.md"; then
+      if [[ "$mode" == "edit" || ! -s "$d/other.md" ]]; then cp "$tmp/other.md" "$d/other.md"; changed=$((changed + 1)); fi
+    fi
+    rm -rf "$tmp"
+    if [[ ${#differ[@]} -gt 0 ]]; then
+      cp "$view" "$view.unsynced"
+      echo "[devflow-ctl] WARN: $view was not rendered from the current store (a stale branch, another machine, or written by hand), and differs from it in: ${differ[*]}. The store was kept; your file is saved as $view.unsynced — re-apply what is missing to the regenerated view, then sync." >&2
+    fi
+  fi
+  if [[ $((added + changed)) -gt 0 ]]; then rev=$((rev + 1)); printf '%s\n' "$rev" > "$d/rev"; fi
+  _kn_has_content || { [[ -n "$quiet" ]] || echo "Knowledge base: nothing recorded for this project yet"; return 0; }
+  local content; content="$(_kn_render)"
+  if [[ -f "$view" ]] && [[ "$(cat "$view")" == "$content" ]]; then
+    [[ -n "$quiet" ]] || echo "Knowledge base up to date: $view (store: $d)"
+    return 0
+  fi
+  mkdir -p "$(dirname "$view")" 2>/dev/null || return 0
+  printf '%s\n' "$content" > "$view.tmp.$$" && mv "$view.tmp.$$" "$view"
+  if [[ -n "$quiet" ]]; then
+    echo "[devflow-ctl] NOTE: knowledge base view updated at $view ($added added, $changed updated in the store)"
+  else
+    ok "knowledge base view written to $view — $added entr$([[ $added -eq 1 ]] && echo y || echo ies) added, $changed section(s) updated in the store ($d)"
+  fi
+}
+
+# Which file to read for list/query: the store rendered, when it has
+# anything; otherwise whatever learnings.md exists.
+_kn_read_path() {
+  if _kn_has_content; then
+    local f; f="$(mktemp "${TMPDIR:-/tmp}/devflow-kn-view.XXXXXX")"
+    _kn_render > "$f"; echo "$f"
+  else
+    echo "$KNOWLEDGE_FILE"
+  fi
+}
+
+# F119 marks: every top-level bullet of a cycle's entry says where its lesson
+# went -- a framework memory entry, an escape, or this project only.
+KNOWLEDGE_MARK_RE='(→|->) *[ME][0-9]+|\(project\)'
+
+_knowledge_check() { # _knowledge_check <file> <slug>
+  local file="$1" slug="$2" missing=() unmarked
+  FRICTION_EVENT="artifact-incomplete"; FRICTION_DETAIL="learnings"
+  [[ -f "$file" ]] || fail "learnings not found at $file — the closing write-back never ran"
+  grep -q '^## By Topic' "$file" || missing+=("## By Topic")
+  grep -q '^## Cycle History' "$file" || missing+=("## Cycle History")
+  [[ ${#missing[@]} -eq 0 ]] || fail "$file is missing ${missing[*]} — agents read lessons by topic (knowledge query --topic) and the cycle's own entry under Cycle History (shared/memory-conventions.md → Persistent Artifacts)"
+  _knowledge_entry "$file" "$slug" >/dev/null || fail "$file has no '### $slug — {date}' entry under ## Cycle History"
+  unmarked="$(_knowledge_entry "$file" "$slug" | LC_ALL=C grep -nE '^[-*] ' | LC_ALL=C grep -vE "$KNOWLEDGE_MARK_RE" || true)"
+  if [[ -n "$unmarked" ]]; then
+    echo "$unmarked" | head -10 | sed 's/^/  entry line /' >&2
+    fail "$(grep -c . <<< "$unmarked") lesson(s) in the '$slug' entry carry no mark — end each with '→ M{id}', '→ E{n}' or '(project)' once it is classified (shared/framework-memory.md → Capture, Marks)"
+  fi
+  FRICTION_EVENT=""
+  ok "learnings entry '$slug' is complete and every lesson is classified"
+}
+
 cmd_knowledge() {
   case "${1:-}" in
     list)
-      if [[ ! -f "$KNOWLEDGE_FILE" ]]; then
+      local src; _kn_sync --quiet >/dev/null 2>&1 || true; src="$(_kn_read_path)"
+      if [[ ! -f "$src" ]]; then
         echo "Knowledge base not found at $KNOWLEDGE_FILE"
         echo "Run '/devflow-templates bootstrap-knowledge' to create it from historical artifacts."
         _knowledge_profile_summary
         exit 0
       fi
       local entries
-      entries="$(grep -c '^### ' "$KNOWLEDGE_FILE" 2>/dev/null || true)"; entries="${entries:-0}"
+      entries="$(grep -c '^### ' "$src" 2>/dev/null || true)"; entries="${entries:-0}"
       echo "Knowledge base: $KNOWLEDGE_FILE"
+      _kn_has_content && echo "Store: $(_kn_dir) (the source of truth; the file above is its view)"
       echo "Entries: $entries"
       echo ""
-      grep '^### ' "$KNOWLEDGE_FILE" 2>/dev/null || echo "(no entries yet)"
+      grep '^### ' "$src" 2>/dev/null || echo "(no entries yet)"
+      [[ "$src" == "$KNOWLEDGE_FILE" ]] || rm -f "$src"
       _knowledge_profile_summary
       ;;
     add)
       local entry_file="${2:-}"
       [[ -n "$entry_file" ]] || die "usage: devflow-ctl knowledge add <file>"
       [[ -f "$entry_file" ]] || die "knowledge add: file not found at $entry_file"
-      # Ensure KB directory exists
+      # Bring the view up to date first, so the entry lands on the store's
+      # current content, then take it into the store.
+      _kn_sync --quiet >/dev/null
       mkdir -p "$(dirname "$KNOWLEDGE_FILE")"
       # If KB doesn't exist, create it with the header
       if [[ ! -f "$KNOWLEDGE_FILE" ]]; then
@@ -1232,14 +1457,15 @@ cmd_knowledge() {
       # Append the entry file content to the KB
       echo "" >> "$KNOWLEDGE_FILE"
       cat "$entry_file" >> "$KNOWLEDGE_FILE"
+      _kn_sync --quiet >/dev/null
       ok "knowledge entry from $entry_file appended to $KNOWLEDGE_FILE"
       ;;
     query)
       # One By Topic section instead of the whole file: the knowledge base grows
       # every cycle, the context an agent can afford does not.
       [[ "${2:-}" == "--topic" && -n "${3:-}" ]] || die "usage: devflow-ctl knowledge query --topic <topic>"
-      local topic="$3"
-      if [[ ! -f "$KNOWLEDGE_FILE" ]]; then
+      local topic="$3" src; _kn_sync --quiet >/dev/null 2>&1 || true; src="$(_kn_read_path)"
+      if [[ ! -f "$src" ]]; then
         echo "Knowledge base not found at $KNOWLEDGE_FILE"
         exit 0
       fi
@@ -1254,16 +1480,20 @@ cmd_knowledge() {
           if (!on && index(lc(title), lc(want)) > 0) { on = 1; onlvl = lvl }
         }
         on { print }
-      ' "$KNOWLEDGE_FILE")"
+      ' "$src")"
       if [[ -z "$out" ]]; then
         echo "No '$topic' topic under By Topic in $KNOWLEDGE_FILE. Topics:"
-        awk '/^## /{inbt=($0 ~ /^## By Topic/); next} inbt && /^### /{sub(/^### /,"  - "); print}' "$KNOWLEDGE_FILE"
+        awk '/^## /{inbt=($0 ~ /^## By Topic/); next} inbt && /^### /{sub(/^### /,"  - "); print}' "$src"
       else
         printf '%s\n' "$out"
       fi
+      [[ "$src" == "$KNOWLEDGE_FILE" ]] || rm -f "$src"
+      ;;
+    sync)
+      _kn_sync
       ;;
     *)
-      die "usage: devflow-ctl knowledge list | query --topic <topic> | add <file>"
+      die "usage: devflow-ctl knowledge list | query --topic <topic> | add <file> | sync"
       ;;
   esac
 }
@@ -1532,6 +1762,18 @@ _metrics_aggregate() {
   local row_num=$(( ${n:-0} + 1 ))
   local test_pass_display="—"
   [[ "$test_pass_pct" != "—" ]] && test_pass_display="${test_pass_pct}%"
+
+  # Re-aggregating a cycle (an intake updated its escape count) replaces its
+  # row in place, keeping its number, instead of appending a duplicate.
+  local existing; existing="$(LC_ALL=C awk -F'|' -v s="$slug" '/^\| [0-9]+ \|/ { f = $5; gsub(/^ +| +$/, "", f); if (f == s) { n = $2; gsub(/ /, "", n); print n; exit } }' "$AGGREGATE_FILE")"
+  if [[ -n "$existing" ]]; then
+    local tmp="$AGGREGATE_FILE.tmp.$$"
+    local row="| $existing | $date | $type | $slug | $duration | $tests | $blocks | $test_pass_display | $iterations |"
+    LC_ALL=C awk -F'|' -v s="$slug" -v row="$row" '/^\| [0-9]+ \|/ { f = $5; gsub(/^ +| +$/, "", f); if (f == s) { print row; next } } { print }' "$AGGREGATE_FILE" > "$tmp" && mv "$tmp" "$AGGREGATE_FILE"
+    _metrics_recalculate_averages
+    ok "metrics from '$file' replaced row #$existing in $AGGREGATE_FILE; averages recalculated"
+    return 0
+  fi
   local newrow="| $row_num | $date | $type | $slug | $duration | $tests | $blocks | $test_pass_display | $iterations |"
 
   # A plain `>>` only works the first time. On every run after the first, the

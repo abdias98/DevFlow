@@ -32,6 +32,7 @@ $DEVFLOW_HOME/
     ├── escape-counts.tsv      # class × layer counts of every escape, no text
     └── registry/              # LOCAL ONLY — never copied into an entry or a PR
         ├── projects.tsv       # project id → checkout path, remote, stacks
+        ├── projects/{id}/knowledge/   # the project's learnings.md, as entries (memory-conventions.md)
         └── sightings.tsv      # entry id → project id, cycle slug, date
 ```
 
