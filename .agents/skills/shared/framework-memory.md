@@ -33,6 +33,11 @@ $DEVFLOW_HOME/
     └── registry/              # LOCAL ONLY — never copied into an entry or a PR
         ├── projects.tsv       # project id → checkout path, remote, stacks
         ├── projects/{id}/knowledge/   # the project's learnings.md, as entries (memory-conventions.md)
+        ├── cycles.tsv         # project id → cycle slug, branch, date (written by init)
+        ├── prs.tsv            # repo, PR, project id, cycle, branch, state (pr register / pr poll)
+        ├── watch.tsv          # repositories whose PRs are polled (pr watch)
+        ├── inbox/{owner}__{repo}/{pr}.tsv   # collected review comments, raw; {pr}.done marks the classified ones
+        ├── pr-watch.log       # one line per scheduled poll
         └── sightings.tsv      # entry id → project id, cycle slug, date
 ```
 
@@ -46,6 +51,7 @@ $DEVFLOW_HOME/
 Entries name projects only by hash, so they can be shared and promoted without exposing anyone's code. The **registry** is the other half, and it never leaves the machine: `memory add` and `memory seen` record the checkout (path, remote) behind the hash and the **cycle** the lesson was seen in — `--slug`, or the one active session — and `memory query --stack` records the project's stack. Nothing in the registry is ever written into an entry, `INDEX.md`, a project view's *Applies here* section or a PR.
 
 - `devflow-ctl memory show <id>` ends with the entry's local sightings: date, checkout and cycle.
+- **Review intake.** `pr register` (Finalizer) and `init` record which branch a cycle produced; `pr poll` finds that branch's open PRs — or exactly the PR named with `--pr`, whatever its state — and collects their review comments, read-only, into the inbox; `status` and `capabilities` list the PRs with comments pending, and `/devflow-review intake --pending` classifies them with the user. The raw comments name the project's code, which is why they stay in the registry: only what the user classifies leaves it, in the abstract, as an escape count or a memory entry.
 - `devflow-ctl memory projects` lists the registered checkouts, their stacks, how many entries each has seen, and marks a checkout that no longer exists.
 
 ### Project view — the memory, shown in every project

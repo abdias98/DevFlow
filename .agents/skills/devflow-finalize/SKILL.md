@@ -125,7 +125,7 @@ Gather:
 - Single file: `{Test Command (single file)} {test paths}`
 ```
 
-Present this to the user: *"Here's a PR description you can use when creating the pull request:"* followed by the PR description block. The user copies it — DevFlow never creates the PR automatically. Close with one line: *"When this PR gets reviewed, run `/devflow-review intake {PR#}` to bring the review's findings back into DevFlow."*
+Present this to the user: *"Here's a PR description you can use when creating the pull request:"* followed by the PR description block. The user copies it — DevFlow never creates the PR automatically. Then run `devflow-ctl pr register --slug {slug}` (on the cycle's branch; `--branch` names another): it records which branch this cycle produced, so its PR — and the review comments it gets — can be traced back to the cycle after the session is gone. Close with one line: *"When this PR gets reviewed, `devflow-ctl pr poll` (or the watch job, `/devflow-review intake watch start`) collects the comments, and `devflow-ctl status` lists them; run `/devflow-review intake --pending` to bring them back into DevFlow."*
 
 ### Step 5 — Archive & Clean Session Memory
 
