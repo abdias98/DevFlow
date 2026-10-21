@@ -57,6 +57,7 @@
 #   pr register --slug <s> [--branch b]             Record which branch (and so which PR) a cycle produced
 #   pr poll [--repo o/r] [--pr N]                     Collect review comments of DevFlow PRs (read-only) into the local inbox
 #   pr list | show <N> | inbox | done <N> <ids>       Read the registry and the inbox; mark comments classified
+#   pr watch start [--repo o/r]… [--every 30m] | stop | status   Run pr poll on a schedule (systemd --user, launchd or cron)
 #   memory promote-list | promote <id> --ref <r>       Confirmed lessons to turn into framework PRs; mark one merged
 #   traceability check <file>                         Count Source/TOTAL coverage in a traceability matrix; exit 1 if <100%
 #   sessions                                         List all active DevFlow sessions with phase and state
@@ -3804,13 +3805,260 @@ _pr_print_pending() { # _pr_print_pending <repo> <pr>
   done
 }
 
+# ── pr watch: the collector on a schedule (F125) ─────────────────────────────
+# Runs `pr poll --scheduled` with the system's own scheduler, so it survives a
+# reboot and needs no editor open: a systemd --user timer, a launchd agent, or
+# a crontab line marked `# devflow-pr-watch`. Nothing is ever installed
+# without the user asking (and, through the agent, confirming), never in CI or
+# Autonomous mode, and no repository is ever watched by default.
+
+PR_WATCH_STATE="$MEM_REGISTRY/watch.state"   # scheduler=, every=, ctl=, since=
+PR_UNIT="devflow-pr-watch"
+PR_PLIST_LABEL="dev.devflow.pr-watch"
+PR_CRON_MARK="# devflow-pr-watch"
+
+_pr_every_minutes() { # 30m | 2h | 1d -> minutes; exit 1 when invalid or < 5m
+  [[ "$1" =~ ^([0-9]+)([mhd])$ ]] || return 1
+  local n="${BASH_REMATCH[1]}" u="${BASH_REMATCH[2]}" m
+  case "$u" in m) m="$n" ;; h) m=$((n * 60)) ;; d) m=$((n * 1440)) ;; esac
+  [[ "$m" -ge 5 ]] || return 1
+  echo "$m"
+}
+
+_pr_scheduler() {
+  if [[ -n "${DEVFLOW_PR_SCHEDULER:-}" ]]; then echo "$DEVFLOW_PR_SCHEDULER"; return; fi
+  if [[ "$(uname -s 2>/dev/null)" == "Darwin" ]] && command -v launchctl >/dev/null 2>&1; then echo launchd; return; fi
+  if command -v systemctl >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then echo systemd; return; fi
+  if command -v crontab >/dev/null 2>&1; then echo cron; return; fi
+  echo none
+}
+
+_pr_ctl_path() { echo "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"; }
+_pr_state_get() { [[ -f "$PR_WATCH_STATE" ]] && sed -n "s/^$1=//p" "$PR_WATCH_STATE" | head -1; return 0; }
+_pr_systemd_dir() { echo "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"; }
+_pr_plist() { echo "$HOME/Library/LaunchAgents/$PR_PLIST_LABEL.plist"; }
+_pr_xml() { local s="$1"; s="${s//&/&amp;}"; s="${s//</&lt;}"; s="${s//>/&gt;}"; printf '%s' "$s"; }
+
+# Where the job would be written, for --dry-run and for the user's OK.
+_pr_scheduler_target() { # _pr_scheduler_target <scheduler>
+  case "$1" in
+    systemd) echo "systemd --user timer: $(_pr_systemd_dir)/$PR_UNIT.{service,timer}" ;;
+    launchd) echo "launchd agent: $(_pr_plist)" ;;
+    cron)    echo "crontab line marked '$PR_CRON_MARK'" ;;
+  esac
+}
+
+_pr_install() { # _pr_install <scheduler> <minutes> <ctl>
+  local sch="$1" min="$2" ctl="$3" home="$MEM_HOME" d
+  case "$sch" in
+    systemd)
+      d="$(_pr_systemd_dir)"; mkdir -p "$d"
+      printf '%s\n' "[Unit]" "Description=DevFlow review intake: collect PR review comments (read-only)" "" \
+        "[Service]" "Type=oneshot" "Environment=\"DEVFLOW_HOME=$home\"" "Environment=\"PATH=$PATH\"" \
+        "ExecStart=\"$ctl\" pr poll --scheduled" > "$d/$PR_UNIT.service"
+      printf '%s\n' "[Unit]" "Description=Run the DevFlow review intake every ${min} min" "" \
+        "[Timer]" "OnBootSec=5min" "OnUnitActiveSec=${min}min" "Persistent=true" "" \
+        "[Install]" "WantedBy=timers.target" > "$d/$PR_UNIT.timer"
+      systemctl --user daemon-reload && systemctl --user enable --now "$PR_UNIT.timer" >/dev/null 2>&1 \
+        && systemctl --user restart "$PR_UNIT.timer"
+      ;;
+    launchd)
+      local p; p="$(_pr_plist)"; mkdir -p "$(dirname "$p")"
+      cat > "$p" << PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$PR_PLIST_LABEL</string>
+  <key>ProgramArguments</key>
+  <array><string>$(_pr_xml "$ctl")</string><string>pr</string><string>poll</string><string>--scheduled</string></array>
+  <key>StartInterval</key><integer>$((min * 60))</integer>
+  <key>RunAtLoad</key><true/>
+  <key>EnvironmentVariables</key>
+  <dict><key>DEVFLOW_HOME</key><string>$(_pr_xml "$home")</string><key>PATH</key><string>$(_pr_xml "$PATH")</string></dict>
+</dict>
+</plist>
+PLIST
+      launchctl unload "$p" >/dev/null 2>&1 || true
+      launchctl load -w "$p"
+      ;;
+    cron)
+      local when q="'"
+      if [[ "$min" -lt 60 ]]; then when="*/$min * * * *"
+      elif [[ "$min" -lt 1440 ]]; then when="0 */$((min / 60)) * * *"
+      else when="0 0 */$((min / 1440)) * *"; fi
+      # Read the table fully before writing it back: the user's other lines stay.
+      local rest; rest="$(crontab -l 2>/dev/null | grep -vF "$PR_CRON_MARK" || true)"
+      { [[ -z "$rest" ]] || printf '%s\n' "$rest"
+        echo "$when DEVFLOW_HOME=$q$home$q PATH=$q$PATH$q $q$ctl$q pr poll --scheduled >/dev/null 2>&1 $PR_CRON_MARK"
+      } | crontab -
+      ;;
+    *) return 1 ;;
+  esac
+}
+
+_pr_uninstall() { # _pr_uninstall <scheduler>
+  case "$1" in
+    systemd)
+      systemctl --user disable --now "$PR_UNIT.timer" >/dev/null 2>&1 || true
+      rm -f "$(_pr_systemd_dir)/$PR_UNIT.service" "$(_pr_systemd_dir)/$PR_UNIT.timer"
+      systemctl --user daemon-reload >/dev/null 2>&1 || true
+      ;;
+    launchd)
+      launchctl unload -w "$(_pr_plist)" >/dev/null 2>&1 || true
+      rm -f "$(_pr_plist)"
+      ;;
+    cron)
+      local rest; rest="$(crontab -l 2>/dev/null | grep -vF "$PR_CRON_MARK" || true)"
+      if [[ -n "$rest" ]]; then printf '%s\n' "$rest" | crontab -; else crontab -r >/dev/null 2>&1 || true; fi
+      ;;
+  esac
+}
+
+# Repositories to offer: the ones the user can reach on GitHub, those with
+# DevFlow cycles on this machine first (★). Optional case-insensitive filter.
+_pr_candidates() { # _pr_candidates [filter]
+  local known gh_repos
+  known="$( [[ -f "$MEM_PROJECTS" ]] && while IFS=$'\t' read -r _ _ remote _; do _pr_repo_of_remote "$remote" 2>/dev/null || true; done < "$MEM_PROJECTS" | LC_ALL=C sort -u || true)"
+  gh_repos="$(gh api "user/repos?per_page=100&affiliation=owner,collaborator,organization_member&sort=pushed" --paginate --jq '.[].full_name' 2>/dev/null || true)"
+  { printf '%s\n' "$known" | grep -v '^$' | sed 's/^/★ /'
+    printf '%s\n' "$gh_repos" | grep -v '^$' | grep -vxF -f <(printf '%s\n' "$known" | grep -v '^$'; echo "//none//") | sed 's/^/  /'
+  } | { if [[ -n "${1:-}" ]]; then grep -iF -- "$1" || true; else cat; fi; }
+}
+
+# Interactive pick in a terminal: numbers, or text to filter the list.
+_pr_pick_repos() {
+  local filter="" list answer i picked=()
+  while true; do
+    list="$(_pr_candidates "$filter")"
+    [[ -n "$list" ]] || { echo "No repository matches '$filter'." >&2; filter=""; list="$(_pr_candidates)"; }
+    [[ -n "$list" ]] || die "no repository found — check 'gh auth status', or pass --repo owner/repo"
+    echo "Repositories (★ = has DevFlow cycles on this machine):" >&2
+    printf '%s\n' "$list" | awk '{ printf "  %3d %s\n", NR, $0 }' >&2
+    printf 'Filter (text) or pick numbers separated by commas: ' >&2
+    read -r answer || die "no answer — pass --repo owner/repo"
+    if [[ "$answer" =~ ^[0-9]+([,\ ]+[0-9]+)*$ ]]; then
+      for i in ${answer//,/ }; do
+        picked+=("$(printf '%s\n' "$list" | sed -n "${i}p" | sed 's/^[★ ]*//')")
+      done
+      printf '%s\n' "${picked[@]}" | grep -v '^$'
+      return 0
+    fi
+    filter="$answer"
+  done
+}
+
+_pr_watch() { # _pr_watch <start|stop|status|add|remove|list|candidates> — repos/every/dry-run from cmd_pr
+  local sub="${1:-}" sch ctl min r new_repos=() line
+  # start/stop change the machine, so the permission snippets put them in the
+  # ask tier with a prefix rule -- which only holds if they start the line.
+  if [[ "$sub" == "start" || "$sub" == "stop" ]] && \
+     [[ "${ORIG_ARGV[0]:-}" != "pr" || "${ORIG_ARGV[1]:-}" != "watch" || "${ORIG_ARGV[2]:-}" != "$sub" ]]; then
+    die "pr watch $sub must start the command line ('devflow-ctl pr watch $sub …'), so the editor's permission rule sees it"
+  fi
+  case "$sub" in
+    start)
+      if [[ "${CI:-}" == "true" || "${DEVFLOW_AUTONOMOUS:-}" == "true" ]]; then
+        die "pr watch start: refused in CI/Autonomous mode — a scheduled job is the user's decision, on their own machine"
+      fi
+      _pr_need_gh
+      new_repos=("${PR_ARG_REPOS[@]+"${PR_ARG_REPOS[@]}"}")
+      if [[ ${#new_repos[@]} -eq 0 && -z "$(_pr_watched)" ]]; then
+        [[ -t 0 && -t 1 ]] || die "pr watch start: no repository — pass --repo owner/repo (no one is here to choose one)"
+        while IFS= read -r r; do new_repos+=("$r"); done < <(_pr_pick_repos)
+        [[ ${#new_repos[@]} -gt 0 ]] || die "pr watch start: no repository chosen"
+      fi
+      local every="${PR_ARG_EVERY:-$(_pr_state_get every)}"
+      if [[ -z "$every" ]]; then
+        if [[ -t 0 && -t 1 && -z "$PR_ARG_DRY" ]]; then printf 'Interval [30m]: ' >&2; read -r every || true; fi
+        every="${every:-30m}"
+      fi
+      min="$(_pr_every_minutes "$every")" || die "pr watch start: --every must be <N>m, <N>h or <N>d, at least 5m (got '$every')"
+      sch="$(_pr_scheduler)"
+      [[ "$sch" =~ ^(systemd|launchd|cron)$ ]] || die "pr watch start: no scheduler available (no systemd --user, launchd or crontab) — run 'devflow-ctl pr poll' yourself when you want the comments"
+      ctl="$(_pr_ctl_path)"
+      for r in "${new_repos[@]+"${new_repos[@]}"}"; do
+        _pr_valid_repo "$r" || die "pr watch start: '$r' is not owner/repo"
+        gh api "repos/$r" --jq .full_name >/dev/null 2>&1 || fail "pr watch start: cannot read $r with your gh login — check the name and 'gh auth status'"
+      done
+      local all_repos
+      all_repos="$( { _pr_watched; printf '%s\n' "${new_repos[@]+"${new_repos[@]}"}"; } | grep -v '^$' | awk '!seen[$0]++')"
+      if [[ -n "$PR_ARG_DRY" ]]; then
+        echo "Would watch: $(echo "$all_repos" | tr '\n' ' ')"
+        echo "Every: $every"
+        echo "Would install: $(_pr_scheduler_target "$sch")"
+        echo "Runs: $ctl pr poll --scheduled  (read-only on GitHub; open PRs of DevFlow cycles only)"
+        return 0
+      fi
+      mkdir -p "$MEM_REGISTRY"
+      printf '%s\n' "$all_repos" > "$PR_WATCH"
+      local prev; prev="$(_pr_state_get scheduler)"
+      [[ -z "$prev" || "$prev" == "$sch" ]] || _pr_uninstall "$prev"
+      _pr_install "$sch" "$min" "$ctl" || fail "pr watch start: could not install the $sch job"
+      printf '%s\n' "scheduler=$sch" "every=$every" "ctl=$ctl" "since=$(now_iso)" > "$PR_WATCH_STATE"
+      ok "watching $(grep -c . "$PR_WATCH") repo(s) every $every — $(_pr_scheduler_target "$sch")"
+      echo "First pass now:"
+      while IFS= read -r r; do
+        [[ -n "$r" ]] || continue
+        line="$(_pr_poll_repo "$r" "")"; echo "  $line"
+        echo "$(now_iso) $line" >> "$PR_LOG"
+      done <<< "$all_repos"
+      ;;
+    stop)
+      sch="$(_pr_state_get scheduler)"
+      [[ -n "$sch" ]] || { echo "PR watch is not running."; return 0; }
+      _pr_uninstall "$sch"
+      rm -f "$PR_WATCH_STATE"
+      ok "PR watch stopped ($sch job removed); the watched repositories and the inbox are kept"
+      ;;
+    status)
+      sch="$(_pr_state_get scheduler)"
+      if [[ -n "$sch" ]]; then
+        echo "PR watch: on — $(_pr_scheduler_target "$sch"), every $(_pr_state_get every), since $(_pr_state_get since)"
+        ctl="$(_pr_state_get ctl)"
+        [[ -x "$ctl" ]] || echo "  WARN: the job runs $ctl, which no longer exists — run 'pr watch start' again"
+      else
+        echo "PR watch: off"
+      fi
+      echo "Repositories: $( [[ -n "$(_pr_watched)" ]] && _pr_watched | tr '\n' ' ' || echo '(none)')"
+      [[ -s "$PR_LOG" ]] && echo "Last pass: $(tail -1 "$PR_LOG")"
+      _pr_pending_summary
+      ;;
+    add)
+      [[ ${#PR_ARG_REPOS[@]} -gt 0 ]] || die "usage: devflow-ctl pr watch add --repo owner/repo"
+      mkdir -p "$MEM_REGISTRY"
+      { _pr_watched; printf '%s\n' "${PR_ARG_REPOS[@]}"; } | grep -v '^$' | awk '!seen[$0]++' > "$PR_WATCH.tmp.$$" && mv "$PR_WATCH.tmp.$$" "$PR_WATCH"
+      ok "watching: $(tr '\n' ' ' < "$PR_WATCH")"
+      ;;
+    remove)
+      [[ ${#PR_ARG_REPOS[@]} -gt 0 ]] || die "usage: devflow-ctl pr watch remove --repo owner/repo"
+      [[ -f "$PR_WATCH" ]] || { echo "No repository is watched."; return 0; }
+      grep -vxF -f <(printf '%s\n' "${PR_ARG_REPOS[@]}") "$PR_WATCH" > "$PR_WATCH.tmp.$$" || true
+      mv "$PR_WATCH.tmp.$$" "$PR_WATCH"
+      ok "watching: $( [[ -s "$PR_WATCH" ]] && tr '\n' ' ' < "$PR_WATCH" || echo '(none)')"
+      ;;
+    list)
+      [[ -s "$PR_WATCH" ]] && cat "$PR_WATCH" || echo "No repository is watched."
+      ;;
+    candidates)
+      _pr_need_gh
+      _pr_candidates "${PR_ARG_FILTER:-}"
+      ;;
+    *) die "usage: devflow-ctl pr watch start [--repo o/r]… [--every 30m] [--dry-run] | stop | status | add --repo o/r | remove --repo o/r | list | candidates [--filter text]" ;;
+  esac
+}
+
 cmd_pr() {
   local action="${1:-}"; shift || true
   local repo="" pr="" scheduled="" all=""
   local args=()
+  PR_ARG_REPOS=(); PR_ARG_EVERY=""; PR_ARG_DRY=""; PR_ARG_FILTER=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --repo) repo="${2:-}"; shift 2 ;;
+      --repo) repo="${repo:-${2:-}}"; PR_ARG_REPOS+=("${2:-}"); _pr_valid_repo "${2:-}" || die "--repo must be owner/repo (got '${2:-}')"; shift 2 ;;
+      --every) PR_ARG_EVERY="${2:-}"; shift 2 ;;
+      --dry-run) PR_ARG_DRY=1; shift ;;
+      --filter) PR_ARG_FILTER="${2:-}"; shift 2 ;;
       --pr) pr="${2:-}"; shift 2 ;;
       --scheduled) scheduled=1; shift ;;
       --all) all=1; shift ;;
@@ -3894,8 +4142,11 @@ cmd_pr() {
       fi
       ok "$marked comment(s) of $repo#$pr marked as classified"
       ;;
+    watch)
+      _pr_watch "${args[@]+"${args[@]}"}"
+      ;;
     *)
-      die "usage: devflow-ctl pr register --slug <s> [--branch b] [--repo o/r] | poll [--repo o/r] [--pr N] | list [--repo o/r] | show <N> [--repo o/r] | inbox [--repo o/r] | done <N> [--repo o/r] (--all | ids...)"
+      die "usage: devflow-ctl pr register --slug <s> [--branch b] [--repo o/r] | watch start|stop|status|add|remove|list|candidates | poll [--repo o/r] [--pr N] | list [--repo o/r] | show <N> [--repo o/r] | inbox [--repo o/r] | done <N> [--repo o/r] (--all | ids...)"
       ;;
   esac
 }

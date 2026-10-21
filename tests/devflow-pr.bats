@@ -177,3 +177,146 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"5 new comment(s)"* ]]
 }
+
+
+# ── pr watch (F125) ───────────────────────────────────────────────────────────
+# The schedulers are fakes on PATH; HOME and XDG_CONFIG_HOME point into the
+# test directory, so nothing on the real machine is ever scheduled.
+
+setup_watch() {
+  export PATH="$REPO/tests/fixtures/sched:$PATH"
+  export HOME="$BATS_TEST_TMPDIR/userhome"
+  export XDG_CONFIG_HOME="$BATS_TEST_TMPDIR/config"
+  export SCHED_LOG="$BATS_TEST_TMPDIR/sched.log"
+  export CRONTAB_FILE="$BATS_TEST_TMPDIR/crontab"
+  mkdir -p "$HOME"
+  echo '{"full_name": "acme/shop"}' | fixture "repos/acme/shop"
+  echo '[]' | fixture "repos/acme/shop/pulls?state=open&per_page=100"
+  STATE="$DEVFLOW_HOME/memory/registry/watch.state"
+}
+
+@test "pr watch start: systemd --user timer with the interval, the absolute ctl path, DEVFLOW_HOME and PATH" {
+  setup_watch
+  export DEVFLOW_PR_SCHEDULER=systemd
+  run "$CTL" pr watch start --repo acme/shop --every 30m
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"watching 1 repo(s) every 30m"* ]]
+  [[ "$output" == *"First pass now:"*"acme/shop: 0 PR(s) read"* ]]
+  unit="$XDG_CONFIG_HOME/systemd/user/devflow-pr-watch"
+  grep -q "OnUnitActiveSec=30min" "$unit.timer"
+  grep -q "ExecStart=\"$CTL\" pr poll --scheduled" "$unit.service"
+  grep -q "DEVFLOW_HOME=$DEVFLOW_HOME" "$unit.service"
+  grep -q "enable --now devflow-pr-watch.timer" "$SCHED_LOG"
+  grep -qx "scheduler=systemd" "$STATE"
+  grep -qx "acme/shop" "$DEVFLOW_HOME/memory/registry/watch.tsv"
+}
+
+@test "pr watch start again: adds a repository and changes the interval without a second job" {
+  setup_watch
+  export DEVFLOW_PR_SCHEDULER=cron
+  echo '{"full_name": "acme/api"}' | fixture "repos/acme/api"
+  echo '[]' | fixture "repos/acme/api/pulls?state=open&per_page=100"
+  echo "0 3 * * * backup.sh" > "$CRONTAB_FILE"
+  run "$CTL" pr watch start --repo acme/shop --every 30m
+  [ "$status" -eq 0 ]
+  run "$CTL" pr watch start --repo acme/api --every 2h
+  [ "$status" -eq 0 ]
+  [ "$(grep -c 'devflow-pr-watch' "$CRONTAB_FILE")" -eq 1 ]
+  grep -q '^0 \*/2 \* \* \* .* pr poll --scheduled .*# devflow-pr-watch$' "$CRONTAB_FILE"
+  grep -q "backup.sh" "$CRONTAB_FILE"
+  [ "$(grep -c . "$DEVFLOW_HOME/memory/registry/watch.tsv")" -eq 2 ]
+}
+
+@test "pr watch stop: removes exactly what start installed and keeps repos and inbox" {
+  setup_watch
+  export DEVFLOW_PR_SCHEDULER=cron
+  echo "0 3 * * * backup.sh" > "$CRONTAB_FILE"
+  "$CTL" pr watch start --repo acme/shop --every 15m >/dev/null
+  run "$CTL" pr watch stop
+  [ "$status" -eq 0 ]
+  ! grep -q "devflow-pr-watch" "$CRONTAB_FILE"
+  grep -q "backup.sh" "$CRONTAB_FILE"
+  [ ! -f "$STATE" ]
+  grep -qx "acme/shop" "$DEVFLOW_HOME/memory/registry/watch.tsv"
+  run "$CTL" pr watch stop
+  [[ "$output" == *"not running"* ]]
+}
+
+@test "pr watch: launchd agent on macOS; stop unloads and deletes it" {
+  setup_watch
+  export DEVFLOW_PR_SCHEDULER=launchd
+  run "$CTL" pr watch start --repo acme/shop --every 1h
+  [ "$status" -eq 0 ]
+  plist="$HOME/Library/LaunchAgents/dev.devflow.pr-watch.plist"
+  grep -q "<integer>3600</integer>" "$plist"
+  grep -q "launchctl load -w $plist" "$SCHED_LOG"
+  run "$CTL" pr watch stop
+  [ ! -f "$plist" ]
+}
+
+@test "pr watch start: refuses without a repository when no one can choose, in CI, with a bad interval or an unreadable repo" {
+  setup_watch
+  export DEVFLOW_PR_SCHEDULER=cron
+  run "$CTL" pr watch start < /dev/null
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"no repository"* ]]
+  CI=true run "$CTL" pr watch start --repo acme/shop
+  [ "$status" -eq 2 ]
+  DEVFLOW_AUTONOMOUS=true run "$CTL" pr watch start --repo acme/shop
+  [ "$status" -eq 2 ]
+  run "$CTL" pr watch start --repo acme/shop --every 2m
+  [ "$status" -eq 2 ]
+  run "$CTL" pr watch start --repo acme/missing
+  [ "$status" -eq 1 ]
+  DEVFLOW_PR_SCHEDULER=none run "$CTL" pr watch start --repo acme/shop
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"no scheduler available"* ]]
+  [ ! -f "$STATE" ]
+  [ ! -f "$CRONTAB_FILE" ]
+}
+
+@test "pr watch start --dry-run: says what it would install and changes nothing" {
+  setup_watch
+  export DEVFLOW_PR_SCHEDULER=systemd
+  run "$CTL" pr watch start --repo acme/shop --every 30m --dry-run
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Would watch: acme/shop"* ]]
+  [[ "$output" == *"Would install: systemd --user timer"* ]]
+  [ ! -f "$STATE" ]
+  [ ! -e "$XDG_CONFIG_HOME/systemd" ]
+  [ ! -s "$SCHED_LOG" ]
+}
+
+@test "pr watch status, add, remove, candidates" {
+  setup_watch
+  export DEVFLOW_PR_SCHEDULER=cron
+  run "$CTL" pr watch status
+  [[ "$output" == *"PR watch: off"*"Repositories: (none)"* ]]
+  "$CTL" pr watch start --repo acme/shop --every 30m >/dev/null
+  run "$CTL" pr watch status
+  [[ "$output" == *"PR watch: on — crontab line"*"every 30m"* ]]
+  [[ "$output" == *"Last pass:"*"acme/shop"* ]]
+  "$CTL" pr watch add --repo acme/api >/dev/null
+  "$CTL" pr watch remove --repo acme/shop >/dev/null
+  run "$CTL" pr watch list
+  [ "$output" = "acme/api" ]
+  "$CTL" init --mode lifecycle --slug quote-pdf >/dev/null
+  echo '[{"full_name": "acme/shop"}, {"full_name": "other/lib"}]' | fixture "user/repos?per_page=100&affiliation=owner,collaborator,organization_member&sort=pushed"
+  run "$CTL" pr watch candidates
+  [ "${lines[0]}" = "★ acme/shop" ]
+  [ "${lines[1]}" = "  other/lib" ]
+  run "$CTL" pr watch candidates --filter LIB
+  [ "$output" = "  other/lib" ]
+}
+
+
+@test "pr watch start/stop must start the command line, so a prefix permission rule sees them" {
+  setup_watch
+  export DEVFLOW_PR_SCHEDULER=cron
+  run "$CTL" pr watch --repo acme/shop start
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"must start the command line"* ]]
+  run "$CTL" --slug x pr watch stop
+  [ "$status" -eq 2 ]
+  [ ! -f "$CRONTAB_FILE" ]
+}

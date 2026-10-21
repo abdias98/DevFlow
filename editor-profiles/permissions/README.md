@@ -38,6 +38,7 @@ Deletion, destructive git, privilege escalation, or supply-chain risk.
 | **Privilege escalation** | `sudo`, `chmod`, `chown`, `kill`, `pkill`, `killall` |
 | **Dependencies (new packages)** | `npm install`, `yarn add`, `pip install` |
 | **DevFlow — runs a project command** | `devflow-ctl evidence run` (all three invocation forms). It executes the command written in the session's Stack Profile, a file the agent can edit — so it must not ride on the `devflow-ctl *` allow rule. `devflow-ctl` refuses it unless `evidence run` starts the command line, which keeps a prefix rule sufficient |
+| **DevFlow — schedules a job on the machine** | `devflow-ctl pr watch start` and `devflow-ctl pr watch stop` (all three invocation forms). They install or remove a systemd `--user` timer, a launchd agent or a crontab line that outlives the session — the user's decision, never one riding on the `devflow-ctl *` allow rule. `devflow-ctl` refuses them unless `pr watch start\|stop` starts the command line |
 
 > **Rationale:** `rules.md` states `git push` is NEVER auto-executed in any
 > mode. New dependencies trigger `dependencies.md` review (supply-chain risk).

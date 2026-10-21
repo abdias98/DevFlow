@@ -136,6 +136,21 @@ Runs all phases: Brainstorm → Architect → Plan+TDD → ⏸️ Confirm → Im
 /devflow-feature      Implement a small-medium feature (lightweight TDD)
 ```
 
+### Bring PR reviews back into DevFlow
+
+When a PR from a DevFlow cycle gets reviewed — by a person or another review agent — the findings come back into the framework: escapes per cycle, lessons in the project's knowledge base and in the framework memory.
+
+```
+/devflow-review intake 1065                                 One PR, open or already merged
+/devflow-review intake watch start owner/repo 30m           Collect review comments every 30 min
+/devflow-review intake --pending                            Classify what was collected, with you
+/devflow-review intake watch status | stop
+```
+
+- **No repository is watched by default.** Name it, or run `watch start` with no repository and pick from the list of yours (★ = has DevFlow cycles on this machine).
+- The job polls only **open** PRs of DevFlow cycles; a merged or closed one is read only when you name it.
+- It is read-only on GitHub (needs `gh`, logged in), runs with your system's scheduler (systemd `--user`, launchd or cron) and asks before installing anything. `devflow-ctl status` tells every agent which PRs have comments waiting.
+
 ---
 
 ## 🔄 How It Works

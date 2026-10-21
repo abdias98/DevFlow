@@ -1,7 +1,7 @@
 ---
 name: devflow-review
 description: "Performs automated code review analyzing diffs against the architecture spec and plan (cycle mode) OR against engineering standards directly (standalone mode). Checks code quality, security (OWASP), performance, and test coverage. Classifies findings as BLOCK/WARN/INFO. Routes back to the invoking agent on blockers. USE WHEN: code review, review implementation, check code quality, devflow review phase, validate changes."
-argument-hint: "Optional: path to specific files to review, 'auto' to review all changes, 'intake <PR#|URL>' to bring an external review back into the framework, or 'intake --pending' for the comments already collected."
+argument-hint: "Optional: path to specific files to review, 'auto' to review all changes, 'intake <PR#|URL>' to bring an external review back into the framework, 'intake --pending' for the comments already collected, or 'intake watch start [owner/repo…] [30m] | stop | status' to collect them on a schedule."
 ---
 
 # DevFlow Reviewer
@@ -42,6 +42,7 @@ You are the **Reviewer** sub-agent. Perform deep code review — either comparin
 | Invoked from the full `/devflow` lifecycle (Implementer auto-invoked me) | **Cycle Mode** |
 | Invoked from `/devflow-feature`, `/devflow-refactor`, `/devflow-bug-fix`, `/devflow-perf`, `/devflow-migrate`, `/devflow-contract`, `/devflow-docs`, `/devflow-templates`, `/devflow-tutorial`, or `/devflow-reverse` | **Standalone Mode** |
 | Invoked as `/devflow-review intake {PR# \| URL}` or `/devflow-review intake --pending`, or the user pastes an external review to bring back | **Intake Mode** |
+| Invoked as `/devflow-review intake watch start\|stop\|status …` | **Intake Mode → Watch** |
 | Invoked directly via `/devflow-review` by the user | **Cycle Mode** (falls back to Standalone if no spec/plan found) |
 
 Set `REVIEW_MODE` and proceed to the corresponding procedure below.
@@ -266,6 +267,20 @@ Update session memory:
 ## Procedure — Intake Mode
 
 An external review — a PR review, a QA report, another agent's review — only helps the framework if what it found comes back into it. This mode brings it back on demand, without waiting for another cycle in the same area ([escape-analysis.md](<{{SKILLS_DIR}}/shared/escape-analysis.md>) → When This Is Invoked). It reviews no code itself, and it **needs no session**: it is usually run after the cycle closed and its session was deleted.
+
+### Watch — `intake watch start|stop|status`
+
+Turns the collector into a job the user switches on and off: `devflow-ctl pr poll` on a schedule, so review comments arrive without anyone asking, and `devflow-ctl status` — which every agent runs at Step 0 — lists them. The job only **collects**; classification still happens here, with the user, through `intake --pending`.
+
+- **`watch start [owner/repo …] [interval]`** — e.g. `/devflow-review intake watch start acme/shop 30m`.
+  1. Read the arguments: a word shaped `owner/repo` is a repository; `{N}m`, `{N}h` or `{N}d` is the interval (at least `5m`). Anything else → ask what was meant.
+  2. **No repository given and none watched yet:** run `devflow-ctl pr watch candidates` and show the list — repositories with DevFlow cycles on this machine first (★) — and ask which to watch, offering a filter (`pr watch candidates --filter <text>`) when the list is long. **Never pick one for the user**: there is no default repository. No interval given → ask, suggesting `30m`.
+  3. Run `devflow-ctl pr watch start --repo … --every … --dry-run` and show the user exactly what it would install (scheduler, file, interval, repositories). **Wait for their OK** — it schedules a job on their machine that outlives this session.
+  4. On OK, run `devflow-ctl pr watch start --repo … --every …` and show its result, first pass included. Running it again later adds repositories or changes the interval; it never creates a second job.
+- **`watch stop`** — `devflow-ctl pr watch stop`: removes the job; the watched repositories and the collected comments are kept.
+- **`watch status`** — `devflow-ctl pr watch status`: on/off, scheduler, interval, repositories, last pass, comments pending.
+- **Pair mode:** give the user the commands of steps 3–4 to run themselves. **CI / Autonomous mode:** never start or stop a job (`devflow-ctl` refuses too).
+- Only **open** PRs of DevFlow cycles are polled. A merged or closed PR is read only when the user names it: `/devflow-review intake {PR#}`.
 
 ### Step 1 — Fetch the Review (read-only)
 

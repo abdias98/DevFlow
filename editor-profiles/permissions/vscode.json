@@ -12,6 +12,7 @@
     "/^(ruff|mypy|node|tsc)\\b/": true,
     "/^go (test|vet)\\b/": true,
     "/^cargo (test|check)\\b/": true,
-    "/devflow-ctl\\b.*\\bevidence\\s+run\\b/": false
+    "/devflow-ctl\\b.*\\bevidence\\s+run\\b/": false,
+    "/devflow-ctl\\b.*\\bpr\\s+watch\\s+(start|stop)\\b/": false
   }
 }
