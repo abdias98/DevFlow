@@ -237,16 +237,18 @@ Agents do not self-verify session state. A CLI at `shared/bin/devflow-ctl` perfo
 | `lock check \| acquire \| release` | Manage the session lock |
 | `config set \| get <key>` | Session settings (branch, pair_mode, mode, phase, rigor) |
 | `checkpoint set \| get <name>` | Record / read rollback SHAs |
-| `artifacts check <type> <path>` | Validate required sections in artifacts — plus DoD `→ verify:` clauses (`context`, `feature`, `bugfix`, `refactor`), per-endpoint API Contract completeness (`spec`) and endpoint coverage (`plan --spec`) |
+| `artifacts check <type> <path>` | Validate required sections in artifacts — plus DoD `→ verify:` clauses (`context`, `feature`, `bugfix`, `refactor`), per-endpoint API Contract completeness (`spec`), endpoint coverage (`plan --spec`) and classified lessons (`learnings --slug`) |
 | `evidence run \| attest \| check \| waive \| snapshot \| list` | Evidence ledger: run a Stack Profile command (test, lint, typecheck, format, build) and record exit code + working-tree hash; `check` exits 1 unless each kind passed on the **current** tree — the gate behind every "tests pass" |
 | `escape add \| list \| report` | Post-approval defects by class × layer; `report` lists the ones recurring 3+ times in the project as rule candidates |
 | `capabilities [get <key>]` | Print environment capabilities (from `.devflow-environment` marker) |
-| `knowledge list \| query --topic <t>` | List the project knowledge base, or print one By Topic section |
+| `knowledge list \| query --topic <t> \| sync` | List the project knowledge base or print one By Topic section, read from the project's knowledge store; `sync` takes `learnings.md` edits into the store and re-renders the file |
+| `pr register \| poll \| list \| show \| inbox \| done` | Which branch (and so which PR) a cycle produced; collect its PR review comments, read-only, into a local inbox for the intake |
+| `pr watch start \| stop \| status \| add \| remove \| candidates` | Run `pr poll` on a schedule the user switches on and off (systemd `--user`, launchd or cron); start/stop ask in every permission snippet |
 | `memory add \| query \| seen \| confirm \| retire` | Write, query and manage the cross-project framework memory (privacy-guarded) |
 | `memory friction report \| escapes` | Aggregate the process friction and escapes the CLI records itself |
 | `memory promote-list \| promote <id>` | Turn confirmed lessons into framework PRs; mark them merged |
 
-Because the CLI only reads and writes session-state files (never code, tests, or git history), agents auto-execute it in **all modes including Pair mode** — with one exception: `evidence run` executes the project's own Stack Profile command, so it follows the Test Execution Policy (Standard/CI only; in Pair the user runs it and `evidence attest` records the output), and every permission snippet makes it ask. It is editor-agnostic: every editor profile maps a terminal tool, so the same enforcement works in VS Code, Claude Code, opencode, Antigravity, and headless environments. See `rules.md` → "Deterministic Enforcement" for the command table.
+Because the CLI only reads and writes session-state files (never code, tests, or git history), agents auto-execute it in **all modes including Pair mode** — with two exceptions: `evidence run` executes the project's own Stack Profile command, so it follows the Test Execution Policy (Standard/CI only; in Pair the user runs it and `evidence attest` records the output); and `pr watch start|stop` schedule or remove a job on the user's machine, so they need the user's OK. Every permission snippet makes all three ask. It is editor-agnostic: every editor profile maps a terminal tool, so the same enforcement works in VS Code, Claude Code, opencode, Antigravity, and headless environments. See `rules.md` → "Deterministic Enforcement" for the command table.
 
 Standalone agents (Feature, Refactorer, Bug-Fixer) initialize their own lightweight sessions (`devflow-ctl init --mode {mode}`) with a `plan_approval` gate, so they get the same guarantees without commits or branches.
 
@@ -267,8 +269,9 @@ See [Memory Conventions](../.agents/skills/shared/memory-conventions.md) for can
 
 ### Knowledge Base (`docs/devflow/knowledge-base/`)
 
-Versioned with git, survives across conversations. Accumulated learnings from all cycles:
-- `learnings.md` — Patterns discovered, anti-patterns to avoid, key architectural decisions. Read by all mid-cycle agents (Brainstormer, Architect, Planner, Implementer, Reviewer, Debugger). Updated by the Finalizer at cycle end. Can be bootstrapped from historical artifacts via `/devflow-templates bootstrap-knowledge`.
+Accumulated learnings from all cycles:
+- `learnings.md` — Patterns discovered, anti-patterns to avoid, key architectural decisions, each lesson marked with where it went (`→ M…` framework memory, `→ E…` escape, `(project)`). Read by all mid-cycle agents (Brainstormer, Architect, Planner, Implementer, Reviewer, Debugger). Updated by the Finalizer at cycle end. Can be bootstrapped from historical artifacts via `/devflow-templates bootstrap-knowledge`.
+- **The file is a view.** `docs/devflow/` often lives uncommitted on one branch, so the lessons themselves live in the project's **knowledge store** in the local registry (`$DEVFLOW_HOME/memory/registry/projects/{id}/knowledge/`, the same on every branch, clone and worktree). Agents edit `learnings.md` as usual and run `devflow-ctl knowledge sync`; `init` renders it at the start of every cycle; a stale or foreign copy only adds what the store lacks.
 
 ### Framework Memory (`$DEVFLOW_HOME/memory/`)
 
@@ -280,6 +283,7 @@ The knowledge base above belongs to one project. Lessons about **how DevFlow wor
 - **Lifecycle:** `candidate` → `confirmed` (seen in two distinct projects, or confirmed by the user) → `promoted` (merged into a standard, skill or checklist of this repository through a normal PR) or `retired`. Promotion is how the memory empties into the framework instead of growing forever.
 
 - **Local registry and project view:** a machine-local registry maps each project hash to its checkout and each sighting to its cycle (`memory show`, `memory projects`), and every project gets a generated `docs/devflow/knowledge-base/framework-memory.md` — lessons learned there with their cycles, and anonymous lessons from other projects on the same stack — refreshed by `init` and every memory write. Committing it is the user's decision.
+- **Review intake:** the registry also records which branch each cycle produced (`init`, `pr register`), the PRs found for it and their review comments, collected read-only by `devflow-ctl pr poll` — by hand or on the schedule `pr watch` installs — into a local inbox. `devflow-ctl status` lists the PRs with comments pending, and `/devflow-review intake --pending` classifies them with the user: an escape against the cycle (including a finding the internal review underrated, or one the user accepts as a risk), a backlog item, a style rule, or nothing. Raw comments never leave the registry.
 
 Precedence: standards > project standards profile > project learnings > framework memory. See [framework-memory.md](../.agents/skills/shared/framework-memory.md).
 
