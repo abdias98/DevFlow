@@ -12,6 +12,7 @@
 setup() {
   REPO="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
   CTL="$REPO/.agents/skills/shared/bin/devflow-ctl"
+  export DEVFLOW_KNOWLEDGE_FILE="$BATS_TEST_TMPDIR/learnings.md"
   export DEVFLOW_HOME="$BATS_TEST_TMPDIR/home"
   export DEVFLOW_SESSION_ROOT="$BATS_TEST_TMPDIR/session"
   export DEVFLOW_PROJECT_ID="p-aaaa0001"

@@ -104,6 +104,14 @@ Validated by: **Reviewer** (before Step 4 — save)
 - [ ] **Review Mode** declared — Cycle or Standalone
 - [ ] **Reference artifact** path present — spec, plan, feature, refactor, or bug-fix document
 
+## Knowledge Base (`docs/devflow/knowledge-base/learnings.md`) — type `learnings`
+
+Validated by: **Finalizer** (Step 3), **every standalone agent's closing write-back** (standalone-execution.md §10) and **Intake Mode** (Step 4), via `devflow-ctl artifacts check learnings {path} --slug {slug}`.
+
+- [ ] **By Topic** and **Cycle History** sections present
+- [ ] A `### {slug} — {date}` entry for the cycle under Cycle History
+- [ ] Every top-level lesson in that entry ends with a mark — `→ M{id}`, `→ E{n}` or `(project)` ([framework-memory.md](./framework-memory.md) → Capture, Marks)
+
 ## Session Context (`docs/devflow/session/{slug}/context.md`) — type `context`
 
 Validated by: **Brainstormer** (Step 4) and **Feature Agent, Bug-Fixer, Refactorer** (after saving the Understanding Summary), via `devflow-ctl artifacts check context {path}`.
