@@ -265,25 +265,34 @@ Update session memory:
 
 ## Procedure — Intake Mode
 
-An external review — a PR review, a QA report, another agent's review — only helps the framework if what it found comes back into it. This mode brings it back on demand, without waiting for another cycle in the same area ([escape-analysis.md](<{{SKILLS_DIR}}/shared/escape-analysis.md>) → When This Is Invoked). It reviews no code itself.
+An external review — a PR review, a QA report, another agent's review — only helps the framework if what it found comes back into it. This mode brings it back on demand, without waiting for another cycle in the same area ([escape-analysis.md](<{{SKILLS_DIR}}/shared/escape-analysis.md>) → When This Is Invoked). It reviews no code itself, and it **needs no session**: it is usually run after the cycle closed and its session was deleted.
 
 ### Step 1 — Fetch the Review (read-only)
 
-- **Standard/CI:** `gh pr view {n} --comments` (or the `Artifact` tool's `comments` action for an artifact-hosted review).
-- **Pair:** ask the user to paste the comments.
+- **Standard/CI:** read all three kinds of comment, read-only:
+  ```bash
+  gh api repos/{owner}/{repo}/pulls/{n}/comments --paginate    # inline threads, with in_reply_to_id
+  gh api repos/{owner}/{repo}/pulls/{n}/reviews --paginate     # review bodies
+  gh api repos/{owner}/{repo}/issues/{n}/comments --paginate   # general comments
+  ```
+  `gh pr view --comments` is not enough: it omits inline threads, which is where reviewers put findings and where the author's replies — the decision about each one ("we accept the risk", "fixed in …") — live. Read every finding together with its replies. For an artifact-hosted review, use the `Artifact` tool's `comments` action.
+- **Pair:** ask the user to paste the comments, replies included.
 - **Never write back** — no reply, no resolve, no reaction on the external thread (escape-analysis.md → Anti-Patterns).
 
-Identify the cycle the PR came from — its branch name, or the review document of the same change in `docs/devflow/reviews/` — and read that internal review, if one exists. Ignore comments that are questions, praise or bookkeeping.
+**Resolve the cycle**, since there may be no session: its slug from the PR's branch name, or from the review document of the same change in `docs/devflow/reviews/`; ask the user when neither settles it. Read that internal review, if it exists — Step 2 compares each external finding with it. Every `escape add` and `memory add|seen` below carries `--slug {slug}`: without it the escape is recorded against no cycle, and neither the cycle's metrics nor `metrics aggregate` ever count it.
+
+Ignore comments that are questions, praise or bookkeeping.
 
 ### Step 2 — Classify Each Comment
 
-Propose one class per comment, with your reason, and let the user confirm or correct it — the user owns the classification:
+Two questions, kept apart: **did our review see it?** (that decides the escape) and **will it be fixed now?** (that is the user's decision, and never cancels an escape — escape-analysis.md → When to Record One). Propose one class per comment, with your reason, and let the user confirm or correct it — the user owns the classification:
 
 | Class | What it means | Action |
 |-------|---------------|--------|
-| **Defect** | Correct, and in code a DevFlow cycle approved | `devflow-ctl escape add --class {class} --layer {layer} --ref "{PR#}#{comment}" --note "{one line}"` — class and layer per escape-analysis.md. When the internal review's checklist had the item that covers it and the review did not flag it, the layer is `reviewer:{dimension}` and the note names that checklist item: it is the input for the next improvement of the Reviewer. A framework layer also follows escape-analysis.md → What Recording One Does, step 4 |
+| **Defect** | Correct, in code a DevFlow cycle approved, and the internal review did not report it | `devflow-ctl escape add --class {class} --layer {layer} --ref "{PR#}#{comment}" --note "{one line}" --slug {slug}` — class and layer per escape-analysis.md. When the internal review's checklist had the item that covers it and the review did not flag it, the layer is `reviewer:{dimension}` and the note names that checklist item: it is the input for the next improvement of the Reviewer. A framework layer also follows escape-analysis.md → What Recording One Does, step 4. If the user decides not to fix it now, also `devflow-ctl backlog add {file} "{reason}"` |
+| **Underrated** | The internal review reported it, but at a lower severity than the external one shows it deserves, or excused it as a deliberate decision on a reason that does not hold | `escape add` as for a Defect, with the layer of the subagent that rated it (`reviewer:{dimension}`) and a note naming the reason that failed; plus `backlog add` if it is not fixed now |
 | **Style / formatting** | Correct, but a formatter or linter rule could have caught it | Not an escape. Propose the rule for the project's formatter/linter config or for `standards-profile.md`; the user decides and applies it |
-| **Correct, not fixed now** | A decision | `devflow-ctl backlog add {file} "{reason}"` when it should be fixed later; nothing to the framework memory |
+| **Already decided** | The internal review reported it at the right severity, on a reason that holds, and the user chose not to act on it | `backlog add` when it should be fixed later; nothing to the framework memory |
 | **Disagreement** | The external reviewer is wrong | Nothing recorded. A wrong external comment says nothing about DevFlow's own Reviewer, so it is **never** recorded as a `false-positive` — that type is for findings of the internal Reviewer the user dismissed |
 
 **CI / Autonomous mode:** there is no one to confirm, so record nothing — write the proposed classification to the intake report (and, in Autonomous mode, a line in `send-to-user.md`) for the next interactive session to confirm.
@@ -292,9 +301,17 @@ Propose one class per comment, with your reason, and let the user confirm or cor
 
 Run `devflow-ctl escape report`. Each class / layer it lists under **Recurring in this project** has reached three escapes: the same miss three times is a rule, not three incidents. For each, propose a concrete entry for `docs/devflow/knowledge-base/standards-profile.md` — what the code must do and where, verifiable, not "validate better" — and write it only with the user's approval.
 
-### Step 4 — Save the Intake Report
+### Step 4 — Write Back
 
-Save `docs/devflow/reviews/YYYY-MM-DD-{slug}-intake.md`: one row per comment (ref, summary, class, action taken, escape or backlog id), the rule proposals and what the user decided about each. Tell the user what was recorded.
+Once the user has confirmed the classification:
+
+1. **Knowledge base** — append `#### 🔎 Found after review ({PR#})` to the cycle's entry in `docs/devflow/knowledge-base/learnings.md` (Cycle History), one line per Defect or Underrated comment: what was missed, in terms the next cycle in this area can apply. Mark each line with where it went — `→ E{n}` for the escape, plus `→ M{id}` when the framework memory has it ([framework-memory.md](<{{SKILLS_DIR}}/shared/framework-memory.md>) → Capture, Marks). Add or update the matching By Topic entry, same deduplication rule as the Finalizer.
+2. **Metrics** — set `Escapes after APPROVED` in `docs/devflow/metrics/*-{slug}-metrics.md` to the number of escapes `devflow-ctl escape list` shows for this slug. If the cycle is already in `docs/devflow/metrics/_aggregate.md`, run `devflow-ctl metrics aggregate` on that file again so the escape rate includes it.
+3. **Memory view** — run `devflow-ctl memory sync`; if the project view changed, say so and leave committing it to the user.
+
+### Step 5 — Save the Intake Report
+
+Save `docs/devflow/reviews/YYYY-MM-DD-{slug}-intake.md`: one row per comment (ref, summary, class, action taken, escape / backlog / memory id), the rule proposals and what the user decided about each. Tell the user what was recorded.
 
 ---
 

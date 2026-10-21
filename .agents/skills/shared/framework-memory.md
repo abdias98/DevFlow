@@ -181,7 +181,7 @@ Five entry types, each with one trigger and one owner. The first is deterministi
 | `friction` | A gate check fails, a file is outside scope, an iteration limit is exceeded, an artifact check fails, a stale lock is broken or forced | `devflow-ctl` itself, in `friction.log` (below) |
 | `correction` | The user sends an artifact back at an approval gate (✏️ Modify / Request changes / Revise, or ❌ Cancel with a reason) and the reason would apply to the same agent in **another** project | The agent that owns the gate — [Corrections](#corrections) below |
 | `false-positive` | The user dismisses a Reviewer finding as **incorrect** — not "correct but we won't fix it", which is a decision | The Reviewer — `devflow-review/SKILL.md` → Disputed Findings |
-| `stack-pattern` | A lesson written to `learnings.md` at a cycle's close holds for **any** project on that stack, not only this one | Finalizer / standalone closing write-back — [Stack patterns](#stack-patterns) below |
+| `stack-pattern` | A lesson written to `learnings.md` at a cycle's close holds for **any** project on that stack, not only this one | Finalizer / standalone closing write-back — [Stack patterns](#stack-patterns) below. The same write-back sends a lesson about **DevFlow itself** to an `escape`, `correction` or `friction` entry: every lesson is classified, not only the stack ones |
 | `escape` | `escape add` records a defect whose layer is a framework layer (`standard-missing`, `verifier`, `spec`, `plan-tests`, `reviewer:{dimension}`) | Finalizer / the agent recording the escape — [escape-analysis.md](./escape-analysis.md) → What Recording One Does. `escape add` itself counts every escape's class × layer, with no text (`memory escapes`) |
 
 ### Friction (deterministic)
@@ -216,6 +216,18 @@ At the closing write-back (Finalizer Step 3; [standalone-execution.md](./standal
 | **DevFlow itself**: a step, gate or template that got in the way or let something through | the framework memory as `correction`/`friction`/`escape` — see the rows above |
 
 For a stack lesson: `devflow-ctl memory query --stack <stack> --type stack-pattern` → `memory seen <id>` if it is already there, else `memory add --type stack-pattern --stack <stack[,version]> --agent <the agents that should apply it> --key stack:<stack>:<short-kebab> --title "..." --rule "..."`. Name the stack the way the Stack Profile does, lowercase (`node`, `react`, `python`, `django`) so `memory query --stack` matches it.
+
+### Marks
+
+Every pattern or anti-pattern a cycle writes to `learnings.md` — at its close, or later by an intake of an external review — ends with one mark saying where its lesson went:
+
+| Mark | Means |
+|---|---|
+| `→ M0023` | Recorded in, or re-seen on, that framework memory entry |
+| `→ E4` | Recorded as that escape in `docs/devflow/knowledge-base/escapes.md` (and, for a framework layer, also an `→ M…` mark) |
+| `(project)` | About this codebase only — deliberately not in the framework memory |
+
+The mark is what lets a later close, an intake, or a person reading the file tell what was already classified, instead of the lesson silently staying in a file that may not survive the branch.
 
 ### At every close
 
