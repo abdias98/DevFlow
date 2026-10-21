@@ -14,7 +14,11 @@ Whenever a defect surfaces in code a DevFlow cycle already approved:
 - A bug found in QA or by a user, traced to a recently-approved cycle.
 - An incident whose root cause is in code a DevFlow cycle produced.
 
-Do **not** record: a WARN/INFO finding the Reviewer already reported and the user chose not to act on (that is a decision, not an escape); a request for new functionality (not a defect); a defect in code no DevFlow cycle touched.
+Do **not** record: a WARN/INFO finding the Reviewer already reported **at the right severity and on a reason that holds**, which the user then chose not to act on (that is a decision, not an escape); a request for new functionality (not a defect); a defect in code no DevFlow cycle touched.
+
+**Do record** a finding the internal review **underrated** — reported at a lower severity than the external review shows it deserves, or excused as a deliberate decision on a reason that turns out not to hold. The layer is the `reviewer:{dimension}` that rated it, and the note names the reason that failed.
+
+**Whether the defect gets fixed never decides whether it is an escape.** An accepted risk the internal review did not see — or underrated — is still something the chain missed; the decision not to fix it goes to the backlog as well.
 
 ---
 
@@ -96,7 +100,8 @@ Stored at `docs/devflow/knowledge-base/escapes.md`, one row per escape, in a sta
 
 ## Anti-Patterns
 
-- ❌ **Recording a WARN/INFO the user already saw and chose not to act on** — that's a decision, not something the framework missed.
+- ❌ **Recording a WARN/INFO the user already saw, correctly rated, and chose not to act on** — that's a decision, not something the framework missed. (Underrated is different — see When to Record One.)
+- ❌ **Skipping an escape because the user decided not to fix it** — fixing is a decision about the code; the escape records what the review chain saw.
 - ❌ **Writing back to the external review** — intake is read-only; the framework never posts, replies, or resolves on someone else's review thread.
 - ❌ **Skipping classification "because it's obviously implementer"** — a `verifier` or `reviewer:{dimension}` escape that gets mis-classified as `implementer` hides which layer actually needs to change.
 - ❌ **Treating `escapes.md` as a blame log** — it is instrumentation for the framework's own effectiveness, not a record of who to blame for a specific cycle.

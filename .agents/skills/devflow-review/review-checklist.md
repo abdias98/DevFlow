@@ -53,6 +53,7 @@ When a source's severity table has no trigger for a finding, the finding takes t
 - [ ] Authentication and authorization are enforced wherever private data is exposed or mutated (`security.md §2`).
 - [ ] No hardcoded secrets or credentials (`security.md §3`).
 - [ ] No sensitive data or internal detail in error responses (`security.md §6`).
+- [ ] Sensitive data exposed to a caller who does not own the object is authorized per object, and a spec decision that excuses it was accepted by the user as a risk — an equivalence claimed with another path is checked against the data that path returns (`security.md §8`).
 
 ### Architecture Alignment
 - [ ] Implementation matches the spec/plan design and data flow *(plan)*.
