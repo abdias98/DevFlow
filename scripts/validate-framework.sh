@@ -38,6 +38,10 @@
 #       trust calls `evidence check`; Stack Profile keys match devflow-ctl;
 #       DoD templates ask for `→ verify:`; every {standard}.md §N cited
 #       anywhere exists; `evidence run` asks in every snippet (F106-F112)
+#   23. Review intake & knowledge contracts — no skill reads a PR with
+#       `gh pr view --comments`; every escape an intake or close records names
+#       its cycle; the closing write-backs sync the knowledge store and check
+#       learnings.md; `pr watch start|stop` asks in every snippet (F119-F126)
 #
 # Usage:
 #   bash scripts/validate-framework.sh           # from repo root
@@ -1286,6 +1290,88 @@ if [[ -d "$SKILLS_DIR/shared/standards" ]]; then
 fi
 
 [[ $ERRORS -eq $EVIDENCE_ERRORS_BEFORE ]] && green "Evidence gates are wired, Stack Profile keys match devflow-ctl, DoD templates ask for → verify:, every standard citation resolves, and evidence run asks before running"
+
+
+header "23. Review intake & knowledge contracts (PR comments, escape slugs, knowledge store, pr watch)"
+# Wave 25 (F119–F126). What brings an external review and a cycle's lessons
+# back must stay wired:
+#   23.1 no skill, shared doc or prompt tells the agent to read a PR with
+#        `gh pr view … --comments` — it omits inline threads, where reviewers
+#        put findings and authors record decisions (a line explaining exactly
+#        that is the one allowed mention);
+#   23.2 every `devflow-ctl escape add` the Reviewer, the Finalizer or the
+#        standalone close runs carries `--slug` — without it the escape counts
+#        against no cycle, and no metric ever sees it;
+#   23.3 once devflow-ctl keeps the project knowledge store, every closing
+#        write-back (Finalizer, standalone-execution.md, Intake Mode) runs
+#        `knowledge sync` and `artifacts check learnings`;
+#   23.4 once devflow-ctl has `pr watch`, its start and stop ask in every
+#        permission snippet — they schedule a job on the user's machine.
+
+INTAKE_ERRORS_BEFORE=$ERRORS
+CTL_23="$SKILLS_DIR/shared/bin/devflow-ctl"
+
+# 23.1
+while IFS= read -r hit; do
+  [[ -n "$hit" ]] || continue
+  grep -qiE 'not enough|omits' <<< "$hit" && continue
+  loc="${hit%%:*}"; rest="${hit#*:}"; lineno="${rest%%:*}"
+  fail "$loc:$lineno — reads a PR with 'gh pr view --comments', which omits inline review threads; use 'devflow-ctl pr poll' / 'pr show' (devflow-review/SKILL.md → Intake Mode)"
+done < <(grep -rnE 'gh pr view[^`]*--comments' "$SKILLS_DIR" .github/prompts --include='*.md' 2>/dev/null | grep -v '/standards/CHANGELOG.md' || true)
+
+# 23.2
+for f23 in devflow-review/SKILL.md devflow-finalize/SKILL.md shared/standalone-execution.md; do
+  [[ -f "$SKILLS_DIR/$f23" ]] || continue
+  while IFS= read -r hit; do
+    [[ -n "$hit" ]] || continue
+    grep -qF -- '--slug' <<< "$hit" && continue
+    fail "$f23:${hit%%:*} — 'devflow-ctl escape add' without --slug: the escape would count against no cycle"
+  done < <(grep -noE '`devflow-ctl escape add[^`]*`' "$SKILLS_DIR/$f23" 2>/dev/null || true)
+done
+
+# 23.3
+if [[ -f "$CTL_23" ]] && grep -q '^_kn_sync()' "$CTL_23"; then
+  for f23 in devflow-finalize/SKILL.md shared/standalone-execution.md devflow-review/SKILL.md; do
+    [[ -f "$SKILLS_DIR/$f23" ]] || continue
+    for need in 'knowledge sync' 'artifacts check learnings'; do
+      grep -qF "$need" "$SKILLS_DIR/$f23" \
+        || fail "$f23 — never runs 'devflow-ctl $need': the cycle's lessons may stay in a learnings.md that does not survive the branch"
+    done
+  done
+fi
+
+# 23.4
+if [[ -f "$CTL_23" ]] && grep -q '^_pr_watch()' "$CTL_23" && command -v python3 >/dev/null 2>&1; then
+  for snip in "$PROFILES_DIR"/permissions/*.json; do
+    [[ -f "$snip" ]] || continue
+    snip_out=$(python3 - "$snip" <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1]))
+d.pop("_devflow_retired", None)
+problems = []
+for sub in ("start", "stop"):
+    perms = d.get("permissions", {})
+    if any("devflow-ctl" in e for e in perms.get("allow", [])):
+        if not any("pr watch " + sub in e for e in perms.get("ask", [])):
+            problems.append("permissions.ask has no 'devflow-ctl pr watch %s' rule while devflow-ctl is allowed" % sub)
+    bash = d.get("permission", {}).get("bash", {})
+    if any("devflow-ctl" in k and v == "allow" for k, v in bash.items()):
+        if not any("pr watch " + sub in k and v == "ask" for k, v in bash.items()):
+            problems.append("permission.bash has no 'devflow-ctl pr watch %s': ask rule while devflow-ctl is allowed" % sub)
+    auto = d.get("chat.tools.terminal.autoApprove", {})
+    if any("devflow-ctl" in k and v is True for k, v in auto.items()):
+        if not any("watch" in k and sub in k and v is False for k, v in auto.items()):
+            problems.append("autoApprove has no false rule for 'devflow-ctl pr watch %s' while devflow-ctl is auto-approved" % sub)
+print("\n".join(problems))
+PYEOF
+)
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && fail "$snip — $line (it schedules a job on the user's machine; editor-profiles/permissions/README.md)"
+    done <<< "$snip_out"
+  done
+fi
+
+[[ $ERRORS -eq $INTAKE_ERRORS_BEFORE ]] && green "PRs are read with their inline threads, every recorded escape names its cycle, closing write-backs sync the knowledge store, and pr watch start/stop ask before scheduling"
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""

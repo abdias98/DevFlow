@@ -709,7 +709,7 @@ mk_json_profile() {
 
 run_section_22() {
   cd "$FIXTURE" || return 1
-  run bash -c "bash '$VALIDATE' 2>&1 | sed -nE '/22\\. Evidence & verification contracts/,/════/p'"
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -nE '/22\\. Evidence & verification contracts/,/23\\. Review intake|════/p'"
 }
 
 # A devflow-ctl with the evidence command, the Stack Profile table it reads,
@@ -847,4 +847,78 @@ run_section_12() {
   run_section_12
   [[ "$output" == *"README.md:2 — documents 3 standards, but the library has 2"* ]]
   [[ "$output" != *"AGENTS.md:1 — documents"* ]]
+}
+
+
+# ── §23: review intake & knowledge contracts (F119–F126) ─────────────────────
+
+run_section_23() {
+  cd "$FIXTURE" || return 1
+  run bash -c "bash '$VALIDATE' 2>&1 | sed -nE '/23\\. Review intake/,/════/p'"
+}
+
+# A devflow-ctl with the knowledge store and pr watch, closing write-backs
+# that sync and check, and snippets that ask for pr watch start/stop.
+mk_intake_contract() {
+  mkdir -p "$SHARED/bin" "$FIXTURE/editor-profiles/permissions"
+  cat > "$SHARED/bin/devflow-ctl" <<'CTL'
+#!/usr/bin/env bash
+_kn_sync() { :; }
+_pr_watch() { :; }
+CMD="${1:-}"
+case "$CMD" in
+  knowledge) _kn_sync ;;
+esac
+CTL
+  chmod +x "$SHARED/bin/devflow-ctl"
+  local close='Run `devflow-ctl knowledge sync`, then `devflow-ctl artifacts check learnings docs/x.md --slug {slug}`.'
+  mk_skill devflow-finalize "$close" 'Record it: `devflow-ctl escape add --class c --layer l --ref "r" --note "n" --slug <that cycle'"'"'s slug>`.'
+  mk_skill devflow-review "$close" '`gh pr view --comments` is not enough: it omits inline threads.'
+  printf '# Standalone\n%s\n' "$close" > "$SHARED/standalone-execution.md"
+  cat > "$FIXTURE/editor-profiles/permissions/claude-code.json" <<'JSON'
+{"permissions": {"allow": ["Bash(devflow-ctl *)"],
+  "ask": ["Bash(devflow-ctl evidence run*)", "Bash(devflow-ctl pr watch start*)", "Bash(devflow-ctl pr watch stop*)"]}}
+JSON
+}
+
+@test "§23: a consistent intake contract passes (the line explaining why gh pr view is not enough is allowed)" {
+  mk_intake_contract
+  run_section_23
+  [[ "$output" == *"[OK]"* ]]
+  [[ "$output" != *"ERROR"* ]]
+}
+
+@test "§23: telling the agent to read a PR with gh pr view --comments is an ERROR with file and line" {
+  mk_intake_contract
+  printf '# Escape\n\nRead it with `gh pr view {n} --comments` and classify.\n' > "$SHARED/escape-analysis.md"
+  run_section_23
+  [[ "$output" == *"shared/escape-analysis.md:3 — reads a PR with 'gh pr view --comments'"* ]]
+}
+
+@test "§23: an escape add without --slug in a closing or intake step is an ERROR" {
+  mk_intake_contract
+  mk_skill devflow-finalize 'Run `devflow-ctl knowledge sync` and `devflow-ctl artifacts check learnings x --slug s`.' 'Then `devflow-ctl escape add --class c --layer l --ref "r" --note "n"`.'
+  run_section_23
+  [[ "$output" == *"devflow-finalize/SKILL.md:3 — 'devflow-ctl escape add' without --slug"* ]]
+}
+
+@test "§23: a closing write-back that never syncs the knowledge store is an ERROR — only once devflow-ctl has it" {
+  mk_intake_contract
+  printf '# Standalone\nWrite learnings.md.\n' > "$SHARED/standalone-execution.md"
+  run_section_23
+  [[ "$output" == *"shared/standalone-execution.md — never runs 'devflow-ctl knowledge sync'"* ]]
+  [[ "$output" == *"shared/standalone-execution.md — never runs 'devflow-ctl artifacts check learnings'"* ]]
+  sed -i '/_kn_sync/d' "$SHARED/bin/devflow-ctl"
+  run_section_23
+  [[ "$output" != *"never runs"* ]]
+}
+
+@test "§23: a snippet that allows devflow-ctl without asking for pr watch start/stop is an ERROR" {
+  mk_intake_contract
+  echo '{"permissions": {"allow": ["Bash(devflow-ctl *)"], "ask": ["Bash(devflow-ctl evidence run*)"]}}' > "$FIXTURE/editor-profiles/permissions/claude-code.json"
+  echo '{"chat.tools.terminal.autoApprove": {"/devflow-ctl/": true, "/devflow-ctl\\b.*\\bpr\\s+watch\\s+(start|stop)\\b/": false}}' > "$FIXTURE/editor-profiles/permissions/vscode.json"
+  run_section_23
+  [[ "$output" == *"claude-code.json — permissions.ask has no 'devflow-ctl pr watch start' rule"* ]]
+  [[ "$output" == *"claude-code.json — permissions.ask has no 'devflow-ctl pr watch stop' rule"* ]]
+  [[ "$output" != *"vscode.json"* ]]
 }

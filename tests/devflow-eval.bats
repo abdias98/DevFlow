@@ -424,6 +424,26 @@ requires_serve() {
   [[ "$output" == *"Outcome:** 15/15 = **100%**"* ]]
 }
 
+@test "calibration 009: untouched fixture fails and earns no outcome point" {
+  calibrate 009-review-intake-underrated fixture
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Outcome:** 0/16"* ]]
+}
+
+@test "calibration 009: the pre-Wave-25 intake fails on the underrated and accepted-risk findings" {
+  calibrate 009-review-intake-underrated naive
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"| ❌ | outcome | 3 | [underrated]"* ]]
+  [[ "$output" == *"| ❌ | outcome | 2 | [accepted risk]"* ]]
+  [[ "$output" == *"| ❌ | outcome | 2 | Every escape names the cycle"* ]]
+}
+
+@test "calibration 009: correct reference passes every outcome check" {
+  calibrate 009-review-intake-underrated correct
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Outcome:** 16/16 = **100%**"* ]]
+}
+
 # ── Coverage of the behavioural suite ─────────────────────────────────────────
 # The suite exists to probe the six behavioural defect classes the Correctness &
 # Behavior dimension is built around (devflow-review/correctness-guide.md) across
