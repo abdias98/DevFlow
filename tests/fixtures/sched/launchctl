@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Fake launchctl for the pr watch tests: records the call, changes nothing.
+echo "launchctl $*" >> "${SCHED_LOG:-/dev/null}"

@@ -204,3 +204,40 @@ assert approved("devflow-ctl gate check confirmation")
 PY
   [ "$status" -eq 0 ]
 }
+
+
+# ── devflow-ctl pr watch start|stop (F125) ────────────────────────────────────
+# They install or remove a scheduled job on the user's machine, so they ask in
+# every editor; the rest of `pr` (poll, inbox, watch status…) stays allowed.
+
+@test "pr watch start/stop: ask in Claude Code in every form; poll and watch status stay allowed" {
+  install_snippet claude-code.json
+  [ "$(claude_verdict 'devflow-ctl pr watch start --repo o/r --every 30m')" = "ask" ]
+  [ "$(claude_verdict "$SKILLS/shared/bin/devflow-ctl pr watch stop")" = "ask" ]
+  [ "$(claude_verdict "bash $SKILLS/shared/bin/devflow-ctl pr watch start")" = "ask" ]
+  [ "$(claude_verdict 'devflow-ctl pr watch status')" = "allow" ]
+  [ "$(claude_verdict 'devflow-ctl pr poll --repo o/r')" = "allow" ]
+}
+
+@test "pr watch start/stop: ask in opencode (last match wins); poll stays allowed" {
+  install_snippet opencode.json
+  [ "$(opencode_verdict 'devflow-ctl pr watch start --repo o/r')" = "ask" ]
+  [ "$(opencode_verdict "bash $SKILLS/shared/bin/devflow-ctl pr watch stop")" = "ask" ]
+  [ "$(opencode_verdict 'devflow-ctl pr inbox')" = "allow" ]
+}
+
+@test "pr watch start/stop: VS Code false rule overrides the devflow-ctl true rule" {
+  install_snippet vscode.json
+  run python3 - "$TARGET" <<'PY'
+import json, re, sys
+rules = json.load(open(sys.argv[1]))["chat.tools.terminal.autoApprove"]
+def approved(cmd):
+    hits = [v for p, v in rules.items() if re.search(p.strip("/"), cmd)]
+    return bool(hits) and False not in hits
+assert not approved("devflow-ctl pr watch start --repo o/r")
+assert not approved("bash /x/shared/bin/devflow-ctl pr watch stop")
+assert approved("devflow-ctl pr watch status")
+assert approved("devflow-ctl pr poll")
+PY
+  [ "$status" -eq 0 ]
+}

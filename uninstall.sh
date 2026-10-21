@@ -214,6 +214,17 @@ for skill_dir in "$SKILLS_DIR"/devflow/ "$SKILLS_DIR"/devflow-*/; do
   fi
 done
 
+# A PR watch job (devflow-ctl pr watch) that runs this install's devflow-ctl
+# would fail on every pass once it is gone: stop it first. A job that runs
+# another editor's install is left alone.
+_ctl="$SKILLS_DIR/shared/bin/devflow-ctl"
+if [ -x "$_ctl" ] && "$_ctl" pr watch status 2>/dev/null | grep -q "^PR watch: on"; then
+  _job_ctl="$("$_ctl" memory path 2>/dev/null)/registry/watch.state"
+  if [ -f "$_job_ctl" ] && grep -qxF "ctl=$(cd "$(dirname "$_ctl")" && pwd)/devflow-ctl" "$_job_ctl"; then
+    "$_ctl" pr watch stop >/dev/null 2>&1 && echo "  ✓ Stopped the PR watch job (it ran this install's devflow-ctl)"
+  fi
+fi
+
 if [ -d "$SKILLS_DIR/shared" ]; then
   rm -rf "$SKILLS_DIR/shared"
   echo "  ✓ Removed shared rules: shared/"

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Fake crontab for the pr watch tests: the table is $CRONTAB_FILE.
+echo "crontab $*" >> "${SCHED_LOG:-/dev/null}"
+case "${1:-}" in
+  -l) [[ -s "$CRONTAB_FILE" ]] || { echo "no crontab for user" >&2; exit 1; }; cat "$CRONTAB_FILE" ;;
+  -r) rm -f "$CRONTAB_FILE" ;;
+  -)  cat > "$CRONTAB_FILE" ;;
+esac
