@@ -285,13 +285,25 @@ Turns the collector into a job the user switches on and off: `devflow-ctl pr pol
 ### Step 1 — Fetch the Review (read-only)
 
 - **Standard/CI:** collect the comments with `devflow-ctl pr poll --repo {owner/repo} --pr {n}`, then read them with `devflow-ctl pr show {n} --repo {owner/repo}`. `pr poll` reads all three kinds, read-only — inline threads with their replies (`gh api …/pulls/{n}/comments`), review bodies (`…/pulls/{n}/reviews`) and general comments (`…/issues/{n}/comments`) — into the local inbox, and `pr show` prints each inline finding followed by its replies. `gh pr view --comments` is not enough: it omits inline threads, which is where reviewers put findings and where the author's replies — the decision about each one ("we accept the risk", "fixed in …") — live. For an artifact-hosted review, use the `Artifact` tool's `comments` action.
-- **`intake --pending`:** run `devflow-ctl pr inbox` instead — every PR whose comments are waiting, as the watch job or a manual `pr poll` collected them — and take the PRs one at a time.
+- **`intake --pending`:** run `devflow-ctl pr inbox` instead — every PR whose comments are waiting, as the watch job or a manual `pr poll` collected them — and **triage them first** (below), then take the ready PRs one at a time.
 - **Pair:** ask the user to paste the comments, replies included.
 - **Never write back** — no reply, no resolve, no reaction on the external thread (escape-analysis.md → Anti-Patterns).
 
 **Resolve the cycle**, since there may be no session: `pr show` prints the cycle `pr register` or `init` recorded for the PR's branch; otherwise its slug from the PR's branch name, or from the review document of the same change in `docs/devflow/reviews/`; ask the user when neither settles it. Read that internal review, if it exists — Step 2 compares each external finding with it. Every `escape add` and `memory add|seen` below carries `--slug {slug}`: without it the escape is recorded against no cycle, and neither the cycle's metrics nor `metrics aggregate` ever count it.
 
 Ignore comments that are questions, praise or bookkeeping.
+
+### Triage — `intake --pending`
+
+`intake --pending` handles every waiting PR in one run without stopping at the first one that is not ready. Sort each PR into exactly one case before classifying anything, then report the three lists:
+
+| Case | How to tell | What to do |
+|------|-------------|------------|
+| **Nothing to learn** | No new finding: only bookkeeping (a command to a bot, a summary of what was done), an incremental re-review that reports no new observation, or replies to findings already classified in an earlier intake | Mark everything done (`devflow-ctl pr done {n} --repo {owner/repo} --all`) and report one line — *"PR #{n}: nothing new to learn, closed"*. **No question to the user**: there is nothing to classify |
+| **Ready** | It has findings, and **every** one has an outcome in its thread or in the PR: fixed (a reply saying so, the thread resolved, or a later commit — including an amend and force-push — that changed the lines, confirmed by a later review), the author accepted the risk, or the author showed the reviewer wrong | Steps 2–5 for this PR. Present the proposed class of every finding together and let the user confirm them **as a block** — *"Record these {N}? yes / one by one"* — correcting any one they pick |
+| **Blocked** | At least one finding still asks for a change with no outcome yet: no fix, no decision, no reply | **Skip it**: classify nothing, mark nothing done. Report *"PR #{n}: {k} finding(s) still waiting for changes — run `/devflow-review intake {n}` once they are addressed"*. The comments stay in the inbox, and `pr poll` reads the PR again only when something changes on it |
+
+When unsure whether a finding has an outcome, treat the PR as **Blocked**: waiting costs nothing — an escape is recorded the same later, since whether the review saw it does not depend on the fix — while classifying without the outcome may need to be redone. A Blocked PR is never closed by `--pending`; it is processed when the user runs the intake for it by number.
 
 ### Step 2 — Classify Each Comment
 
@@ -321,7 +333,7 @@ Once the user has confirmed the classification:
 
 ### Step 5 — Save the Intake Report
 
-Save `docs/devflow/reviews/YYYY-MM-DD-{slug}-intake.md`: one row per comment (ref, summary, class, action taken, escape / backlog / memory id), the rule proposals and what the user decided about each. Then mark what was classified — ignored bookkeeping comments included — with `devflow-ctl pr done {n} --repo {owner/repo} {kind:id}…` (or `--all`), so `status` stops listing it. Tell the user what was recorded.
+Save `docs/devflow/reviews/YYYY-MM-DD-{slug}-intake.md`: one row per comment (ref, summary, class, action taken, escape / backlog / memory id), the rule proposals and what the user decided about each. Then mark what was classified — ignored bookkeeping comments included — with `devflow-ctl pr done {n} --repo {owner/repo} {kind:id}…` (or `--all`), so `status` stops listing it. A **Blocked** PR is never marked: its comments wait for its own intake. With `--pending`, the report closes with the three triage lists. Tell the user what was recorded.
 
 ---
 

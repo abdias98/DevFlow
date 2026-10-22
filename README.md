@@ -143,7 +143,7 @@ When a PR from a DevFlow cycle gets reviewed — by a person or another review a
 ```
 /devflow-review intake 1065                                 One PR, open or already merged
 /devflow-review intake watch start owner/repo 30m           Collect review comments every 30 min
-/devflow-review intake --pending                            Classify what was collected, with you
+/devflow-review intake --pending                            Close PRs with nothing to learn, classify the ready ones with you, skip the blocked
 /devflow-review intake watch status | stop
 ```
 
