@@ -2099,3 +2099,97 @@ setup_store() {
   LC_ALL=es_ES.UTF-8 run "$CTL" knowledge sync
   [[ "$output" == *"up to date"* ]]
 }
+
+
+# ── Project store: escapes, backlog and standards profile are views too ──────
+
+setup_ps() {
+  setup_store
+  export DEVFLOW_ESCAPE_FILE="$BATS_TEST_TMPDIR/escapes.md"
+  export DEVFLOW_BACKLOG_FILE="$BATS_TEST_TMPDIR/deferred.md"
+  FILES="$STORE/files"
+}
+
+@test "project store: an escape and a backlog entry survive losing their files" {
+  setup_ps
+  "$CTL" escape add --class logic --layer implementer --ref "PR#1" --note "inverted guard" --slug c1 >/dev/null
+  "$CTL" backlog add src/a.ts "accepted risk" --slug c1 >/dev/null
+  grep -q "inverted guard" "$FILES/escapes.md"
+  grep -q "accepted risk" "$FILES/deferred.md"
+  grep -q "^<!-- devflow:store-view store=" "$DEVFLOW_ESCAPE_FILE"
+  rm "$DEVFLOW_ESCAPE_FILE" "$DEVFLOW_BACKLOG_FILE"
+  run "$CTL" escape report
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Total escapes: 1"* ]]
+  run "$CTL" backlog list
+  [[ "$output" == *"accepted risk"* ]]
+  run "$CTL" escape add --class logic --layer implementer --ref "PR#2" --note "second" --slug c1
+  [[ "$output" == *"escape entry E2 recorded"* ]]
+}
+
+@test "project store: a ledger from another branch adds only its missing rows, renumbered when the id is taken" {
+  setup_ps
+  "$CTL" escape add --class logic --layer implementer --ref "PR#1" --note "on main" --slug c1 >/dev/null
+  cat > "$DEVFLOW_ESCAPE_FILE" << 'EOF'
+# Escape Analysis
+
+| ID | Class | Layer | Ref | Note | Cycle | Date |
+|----|-------|-------|-----|------|-------|------|
+| E1 | partial-failure | reviewer:correctness-behavior | PR#9 | on the old branch | c0 | 2026-09-01T00:00:00Z |
+EOF
+  run "$CTL" escape list
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"| E1 | logic |"*"on main"* ]]
+  [[ "$output" == *"| E2 | partial-failure |"*"on the old branch"* ]]
+  run "$CTL" escape list
+  [ "$(grep -c '^| E[0-9]' <<< "$output")" -eq 2 ]
+}
+
+@test "project store: the first sync imports an existing ledger as is, ids kept" {
+  setup_ps
+  cat > "$DEVFLOW_ESCAPE_FILE" << 'EOF'
+# Escape Analysis
+
+| ID | Class | Layer | Ref | Note | Cycle | Date |
+|----|-------|-------|-----|------|-------|------|
+| E1 | logic | implementer | PR#1 | one | c1 | 2026-09-01T00:00:00Z |
+| E2 | logic | implementer | PR#2 | two | c1 | 2026-09-01T00:00:00Z |
+EOF
+  run "$CTL" knowledge sync
+  [ "$status" -eq 0 ]
+  grep -q "^| E2 | logic | implementer | PR#2 | two" "$FILES/escapes.md"
+}
+
+@test "project store: the standards profile is a view; a stale copy is kept aside, never merged" {
+  setup_ps
+  printf '# Standards Profile\n\n**Last updated:** 2026-10-01\n\n| Concern | Lives in |\n|---|---|\n| auth | middleware |\n' > "$DEVFLOW_STANDARDS_PROFILE"
+  run "$CTL" knowledge sync
+  [ "$status" -eq 0 ]
+  grep -q "| auth | middleware |" "$FILES/standards-profile.md"
+  cp "$DEVFLOW_STANDARDS_PROFILE" "$BATS_TEST_TMPDIR/old.md"
+  echo "| errors | handler |" >> "$DEVFLOW_STANDARDS_PROFILE"
+  run "$CTL" knowledge sync
+  grep -q "| errors | handler |" "$FILES/standards-profile.md"
+  cp "$BATS_TEST_TMPDIR/old.md" "$DEVFLOW_STANDARDS_PROFILE"
+  echo "| cache | repo |" >> "$DEVFLOW_STANDARDS_PROFILE"
+  run "$CTL" knowledge sync
+  [[ "$output" == *"unsynced"* ]]
+  grep -q "| errors | handler |" "$FILES/standards-profile.md"
+  ! grep -q "| cache | repo |" "$FILES/standards-profile.md"
+  grep -q "| cache | repo |" "$DEVFLOW_STANDARDS_PROFILE.unsynced"
+  rm "$DEVFLOW_STANDARDS_PROFILE"
+  run "$CTL" knowledge list
+  [[ "$output" == *"Standards profile: $DEVFLOW_STANDARDS_PROFILE"* ]]
+}
+
+@test "project store: escape rate in metrics aggregate reads the store when escapes.md is gone" {
+  setup_ps
+  setup_metrics
+  export DEVFLOW_ESCAPE_FILE="$BATS_TEST_TMPDIR/escapes.md"
+  write_full_metrics
+  "$CTL" escape add --class logic --layer implementer --ref "PR#1" --note "x" --slug demo-full >/dev/null
+  rm "$DEVFLOW_ESCAPE_FILE"
+  run "$CTL" metrics aggregate "$BATS_TEST_TMPDIR/full-metrics.md"
+  [ "$status" -eq 0 ]
+  grep -q "Escape rate.*100% (1/1 cycles)" "$DEVFLOW_AGGREGATE_FILE"
+}

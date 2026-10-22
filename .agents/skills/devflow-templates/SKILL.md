@@ -163,7 +163,7 @@ A row you cannot back with a real file is left out — never filled from the ref
 
 ### Step P4 — Persist
 
-Save to `docs/devflow/knowledge-base/standards-profile.md` following the template. If it exists, **update rows in place** and set *Last updated* — do not append a second copy of a table.
+Save to `docs/devflow/knowledge-base/standards-profile.md` following the template. If it exists, **update rows in place** and set *Last updated* — do not append a second copy of a table. Then run `devflow-ctl knowledge sync`: the file is a view of the project store, and the sync is what keeps the profile when `docs/devflow/` is not committed (memory-conventions.md → Persistent Artifacts).
 
 ### Step P5 — Review and Release
 

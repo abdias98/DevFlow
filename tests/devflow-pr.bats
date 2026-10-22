@@ -320,3 +320,60 @@ setup_watch() {
   [ "$status" -eq 2 ]
   [ ! -f "$CRONTAB_FILE" ]
 }
+
+
+# ── pr poll skips PRs with nothing new since the last read ───────────────────
+
+write_timed_pulls() { # write_timed_pulls <updated_at> <sha>
+  fixture "repos/acme/shop/pulls?state=open&per_page=100" << EOF
+[ {"number": 12, "head": {"ref": "feat/quote-pdf/stack-1", "sha": "$2"}, "state": "open", "updated_at": "$1"} ]
+EOF
+}
+
+reads_of_12() { grep -c 'repos/acme/shop/pulls/12/comments' "$GH_LOG" || true; }
+
+@test "pr poll: a PR unchanged since the last complete read is skipped; any change reads it again" {
+  write_pr_fixtures
+  write_timed_pulls 2026-10-20T10:00:00Z aaa111
+  "$CTL" pr register --slug quote-pdf --branch feat/quote-pdf/stack-1 >/dev/null
+  "$CTL" pr poll --repo acme/shop >/dev/null
+  [ "$(reads_of_12)" -eq 1 ]
+  run "$CTL" pr poll --repo acme/shop
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"0 PR(s) read, 0 new comment(s), 1 unchanged since the last read"* ]]
+  [ "$(reads_of_12)" -eq 1 ]
+  write_timed_pulls 2026-10-20T11:00:00Z aaa111        # a new comment or reply
+  "$CTL" pr poll --repo acme/shop >/dev/null
+  [ "$(reads_of_12)" -eq 2 ]
+  write_timed_pulls 2026-10-20T11:00:00Z bbb222        # a push
+  "$CTL" pr poll --repo acme/shop >/dev/null
+  [ "$(reads_of_12)" -eq 3 ]
+}
+
+@test "pr poll: a read that failed is not recorded, so the next pass reads the PR again" {
+  write_pr_fixtures
+  write_timed_pulls 2026-10-20T10:00:00Z aaa111
+  "$CTL" pr register --slug quote-pdf --branch feat/quote-pdf/stack-1 >/dev/null
+  mv "$GH_FIXTURES/repos_acme_shop_issues_12_comments.json" "$BATS_TEST_TMPDIR/saved.json"
+  run "$CTL" pr poll --repo acme/shop
+  [[ "$output" == *"could not read its comments"* ]]
+  mv "$BATS_TEST_TMPDIR/saved.json" "$GH_FIXTURES/repos_acme_shop_issues_12_comments.json"
+  run "$CTL" pr poll --repo acme/shop
+  [[ "$output" == *"1 PR(s) read, 5 new comment(s)"* ]]
+}
+
+@test "pr poll: --pr always reads; a PR without updated_at is never skipped" {
+  write_pr_fixtures
+  write_timed_pulls 2026-10-20T10:00:00Z aaa111
+  fixture "repos/acme/shop/pulls/12" << 'EOF'
+{"number": 12, "head": {"ref": "feat/quote-pdf/stack-1", "sha": "aaa111"}, "state": "open", "merged_at": null, "updated_at": "2026-10-20T10:00:00Z"}
+EOF
+  "$CTL" pr register --slug quote-pdf --branch feat/quote-pdf/stack-1 >/dev/null
+  "$CTL" pr poll --repo acme/shop >/dev/null
+  "$CTL" pr poll --repo acme/shop --pr 12 >/dev/null
+  [ "$(reads_of_12)" -eq 2 ]
+  write_pr_fixtures                                      # the list again, without updated_at
+  "$CTL" pr poll --repo acme/shop >/dev/null
+  "$CTL" pr poll --repo acme/shop >/dev/null
+  [ "$(reads_of_12)" -eq 4 ]
+}

@@ -1339,6 +1339,7 @@ _kn_sync() { # _kn_sync [--quiet]
     echo "[devflow-ctl] WARN: knowledge store unavailable at $d — learnings.md left as is" >&2
     return 0
   fi
+  _ps_sync_all "$quiet"
   sid="$(_kn_store_id)"; rev="$(cat "$d/rev" 2>/dev/null || echo 0)"
   if [[ -f "$view" ]]; then
     msid="$(grep -m1 -oE 'devflow:knowledge-view store=[^ ]+' "$view" | sed 's/.*store=//' || true)"
@@ -1422,6 +1423,106 @@ _knowledge_check() { # _knowledge_check <file> <slug>
   fi
   FRICTION_EVENT=""
   ok "learnings entry '$slug' is complete and every lesson is classified"
+}
+
+# The other files DevFlow keeps about a project live in the same store, for
+# the same reason: docs/devflow/ often lives uncommitted on one branch.
+# escapes.md and backlog/deferred.md are ledgers devflow-ctl itself appends
+# to; standards-profile.md is a document agents edit. Each file in the project
+# is a view of its copy in the store, marked like learnings.md: a view
+# rendered from the current revision is taken back as an edit; any other view
+# only adds what the store lacks -- ledger rows the store does not hold (with
+# a new id when theirs is taken), or, for a document, nothing: it is kept as
+# <file>.unsynced for the user to reconcile.
+
+_ps_marker() { echo "<!-- devflow:store-view store=$1 rev=$2 -->"; }
+
+_ps_render() { # _ps_render <store-file> <sid> <rev> — store copy with the marker after its title
+  LC_ALL=C awk -v m="$(_ps_marker "$2" "$3")" '
+    NR == 1 && /^# / { print; print ""; print m; done = 1; next }
+    NR == 1 { print m; print ""; done = 1 }
+    { print }
+    END { if (!done) print m }
+  ' "$1"
+}
+
+_ps_body() { # the view without its marker (and the blank line the marker adds)
+  LC_ALL=C awk '
+    /^<!-- devflow:store-view / { skip = 1; next }
+    skip && /^[ \t]*$/ { skip = 0; next }
+    { skip = 0; print }
+  ' "$1"
+}
+
+# Rows of <new> whose content (everything after the id cell) <store> lacks,
+# appended to <store> with the next free id of their prefix. Prints the ids.
+_ps_merge_rows() { # _ps_merge_rows <store> <new>
+  local tmp="$1.tmp.$$"
+  LC_ALL=C awk -v storef="$1" '
+    function key(l) { sub(/^\| *[A-Z][0-9]+ *\|/, "", l); return l }
+    BEGIN {
+      while ((getline l < storef) > 0) {
+        print l
+        if (l ~ /^\| *[A-Z][0-9]+ *\|/) {
+          have[key(l)] = 1
+          match(l, /[A-Z][0-9]+/); p = substr(l, RSTART, 1); n = substr(l, RSTART + 1, RLENGTH - 1) + 0
+          if (n > max[p]) max[p] = n
+        }
+      }
+    }
+    /^\| *[A-Z][0-9]+ *\|/ {
+      k = key($0); if (k in have) next
+      match($0, /[A-Z][0-9]+/); p = substr($0, RSTART, 1)
+      id = p (++max[p]); have[k] = 1
+      print "| " id " |" k
+      print id > "/dev/stderr"
+    }
+  ' "$2" > "$tmp" 2> "$tmp.ids" && mv "$tmp" "$1"
+  cat "$tmp.ids" 2>/dev/null; rm -f "$tmp.ids"
+}
+
+_ps_sync() { # _ps_sync <name> <view> <ledger|doc> [--quiet]
+  local name="$1" view="$2" kind="$3" quiet="${4:-}" d f sid rev msid mrev body added
+  d="$(_kn_dir)/files"
+  mkdir -p "$d" 2>/dev/null || { echo "[devflow-ctl] WARN: project store unavailable at $d — $view left as is" >&2; return 0; }
+  f="$d/$name"; sid="$(_kn_store_id)"; rev="$(cat "$f.rev" 2>/dev/null || echo 0)"
+  if [[ -f "$view" ]]; then
+    msid="$(grep -m1 -oE 'devflow:store-view store=[^ ]+' "$view" | sed 's/.*store=//' || true)"
+    mrev="$(grep -m1 -oE 'devflow:store-view store=[^ ]+ rev=[0-9]+' "$view" | sed 's/.*rev=//' || true)"
+    body="$(mktemp "${TMPDIR:-/tmp}/devflow-ps.XXXXXX")"
+    _ps_body "$view" > "$body"
+    if [[ ! -s "$f" ]]; then
+      [[ -s "$body" ]] && { cp "$body" "$f"; rev=$((rev + 1)); }
+    elif ! cmp -s "$body" "$f"; then
+      if [[ "$msid" == "$sid" && "$mrev" == "$rev" ]]; then
+        cp "$body" "$f"; rev=$((rev + 1))
+      elif [[ "$kind" == "ledger" ]]; then
+        added="$(_ps_merge_rows "$f" "$body" | tr '\n' ' ')"
+        if [[ -n "${added// /}" ]]; then
+          rev=$((rev + 1))
+          echo "[devflow-ctl] NOTE: $view was not rendered from the current store; its rows the store lacked were added as ${added% }" >&2
+        fi
+      else
+        cp "$view" "$view.unsynced"
+        echo "[devflow-ctl] WARN: $view was not rendered from the current store and differs from it — the store was kept; your file is saved as $view.unsynced to reconcile by hand" >&2
+      fi
+    fi
+    rm -f "$body"
+    printf '%s\n' "$rev" > "$f.rev"
+  fi
+  [[ -s "$f" ]] || return 0
+  local content; content="$(_ps_render "$f" "$sid" "$rev")"
+  [[ -f "$view" && "$(cat "$view")" == "$content" ]] && return 0
+  mkdir -p "$(dirname "$view")" 2>/dev/null || return 0
+  printf '%s\n' "$content" > "$view.tmp.$$" && mv "$view.tmp.$$" "$view"
+  [[ -n "$quiet" ]] || echo "[devflow-ctl] NOTE: $view rendered from the project store"
+}
+
+# Every project file the store keeps, in one call (knowledge sync, init).
+_ps_sync_all() { # _ps_sync_all [--quiet]
+  _ps_sync escapes.md "$ESCAPE_FILE" ledger "${1:-}"
+  _ps_sync deferred.md "$BACKLOG_FILE" ledger "${1:-}"
+  _ps_sync standards-profile.md "$STANDARDS_PROFILE_FILE" doc "${1:-}"
 }
 
 cmd_knowledge() {
@@ -1514,6 +1615,7 @@ cmd_knowledge() {
 BACKLOG_FILE="${DEVFLOW_BACKLOG_FILE:-docs/devflow/backlog/deferred.md}"
 
 cmd_backlog() {
+  _ps_sync deferred.md "$BACKLOG_FILE" ledger --quiet
   case "${1:-}" in
     add)
       local file="${2:-}" reason="${3:-}" severity="incomplete" i
@@ -1547,6 +1649,7 @@ cmd_backlog() {
       # Pipes in free text would break the table -- neutralize them.
       file="${file//|/-}"; reason="${reason//|/-}"
       echo "| $id | $file | $reason | $sev_label | ${SLUG:-unknown} | $(now_iso) | open |" >> "$BACKLOG_FILE"
+      _ps_sync deferred.md "$BACKLOG_FILE" ledger --quiet
       ok "backlog entry $id recorded for '$file' ($severity)"
       ;;
     list)
@@ -1608,6 +1711,7 @@ _escape_framework_layer() {
 }
 
 cmd_escape() {
+  _ps_sync escapes.md "$ESCAPE_FILE" ledger --quiet
   case "${1:-}" in
     add)
       shift
@@ -1642,6 +1746,7 @@ cmd_escape() {
       # Pipes in free text would break the table -- neutralize them.
       ref="${ref//|/-}"; note="${note//|/-}"
       echo "| $id | $class | $layer | $ref | $note | ${slug:-${SLUG:-unknown}} | $(now_iso) |" >> "$ESCAPE_FILE"
+      _ps_sync escapes.md "$ESCAPE_FILE" ledger --quiet
       ok "escape entry $id recorded ($class / $layer)"
       # Every escape also counts in the framework memory, with no text: the
       # note and ref name the project's code, the class and layer do not.
@@ -1828,6 +1933,7 @@ _metrics_recalculate_averages() {
   # slug. This is the only aggregate metric about outcome rather than
   # process -- optional, since escapes.md may not exist yet.
   local escape_rate="n/a — no escapes recorded yet"
+  _ps_sync escapes.md "$ESCAPE_FILE" ledger --quiet
   if [[ -f "$ESCAPE_FILE" && "$total_cycles" -gt 0 ]]; then
     local slugs_with_escape
     slugs_with_escape="$(awk -F'|' '/^\| E[0-9]/{s=$7; gsub(/^ +| +$/,"",s); print s}' "$ESCAPE_FILE" | sort -u)"
@@ -3623,7 +3729,7 @@ cmd_memory() {
 # comments name the project's code, so nothing here ever reaches an entry,
 # INDEX.md, a project view or a PR.
 
-PR_REGISTRY="$MEM_REGISTRY/prs.tsv"     # repo, pr, project id, slug, branch, state, updated
+PR_REGISTRY="$MEM_REGISTRY/prs.tsv"     # repo, pr, project id, slug, branch, state, updated, read-at (PR updated_at + head sha)
 PR_CYCLES="$MEM_REGISTRY/cycles.tsv"    # project id, slug, branch, date
 PR_WATCH="$MEM_REGISTRY/watch.tsv"      # repo (one per line; `pr watch` manages it)
 PR_INBOX="$MEM_REGISTRY/inbox"          # inbox/{owner}__{repo}/{pr}.tsv + {pr}.done
@@ -3665,17 +3771,24 @@ _pr_record_cycle() { # _pr_record_cycle <slug>
 }
 
 # Upsert a PR row, keyed by repo + branch (or repo + number); "-" keeps a value.
-_pr_upsert() { # _pr_upsert <repo> <pr> <pid> <slug> <branch> <state>
+# The 8th column records what the last complete read saw (the PR's updated_at
+# and head sha): a pass that finds the same value has nothing new to read.
+_pr_upsert() { # _pr_upsert <repo> <pr> <pid> <slug> <branch> <state> [read-at]
   mkdir -p "$MEM_REGISTRY" 2>/dev/null && touch "$PR_REGISTRY" 2>/dev/null || return 0
   local tmp="$PR_REGISTRY.tmp.$$"
-  LC_ALL=C awk -F'\t' -v OFS='\t' -v r="$1" -v n="$2" -v p="$3" -v s="$4" -v b="$5" -v st="$6" -v d="$(now_iso)" '
+  LC_ALL=C awk -F'\t' -v OFS='\t' -v r="$1" -v n="$2" -v p="$3" -v s="$4" -v b="$5" -v st="$6" -v ra="${7:--}" -v d="$(now_iso)" '
     function keep(new, old) { return (new == "-" || new == "") ? old : new }
     !f && $1 == r && (($5 == b && b != "-") || ($2 == n && n != "-")) {
-      print r, keep(n, $2), keep(p, $3), keep(s, $4), keep(b, $5), keep(st, $6), d; f = 1; next
+      print r, keep(n, $2), keep(p, $3), keep(s, $4), keep(b, $5), keep(st, $6), d, keep(ra, ($8 == "" ? "-" : $8)); f = 1; next
     }
-    { print }
-    END { if (!f) print r, n, p, s, b, st, d }
+    { if (NF < 8) $8 = "-"; print }
+    END { if (!f) print r, n, p, s, b, st, d, ra }
   ' "$PR_REGISTRY" > "$tmp" && mv "$tmp" "$PR_REGISTRY"
+}
+
+_pr_read_at() { # _pr_read_at <repo> <pr> — what the last complete read saw, or nothing
+  [[ -f "$PR_REGISTRY" ]] || return 0
+  LC_ALL=C awk -F'\t' -v r="$1" -v n="$2" '$1 == r && $2 == n && $8 != "" && $8 != "-" { print $8; exit }' "$PR_REGISTRY"
 }
 
 # The project ids whose checkout has this repo as its origin.
@@ -3745,15 +3858,15 @@ _pr_pending() { # _pr_pending <repo> <pr> — rows of the inbox not marked done
 # PR named with --pr (whatever its state: the only way to read a merged or
 # closed one). Network and auth failures warn and leave the next pass to retry.
 _pr_poll_repo() { # _pr_poll_repo <repo> [pr]
-  local repo="$1" only="${2:-}" prs num ref state merged m pid slug new total=0 count=0 detail=""
+  local repo="$1" only="${2:-}" prs num ref state merged seen m pid slug new total=0 count=0 skipped=0 detail=""
   if [[ -n "$only" ]]; then
-    prs="$(gh api "repos/$repo/pulls/$only" --jq '[.number, .head.ref, .state, (.merged_at // "-")] | map(tostring) | @tsv' 2>/dev/null)" \
+    prs="$(gh api "repos/$repo/pulls/$only" --jq '[.number, .head.ref, .state, (.merged_at // "-"), ((.updated_at // "-") + "@" + (.head.sha // "-"))] | map(tostring) | @tsv' 2>/dev/null)" \
       || { echo "[devflow-ctl] WARN: $repo: could not read PR #$only (network, auth, or no such PR)" >&2; return 0; }
   else
-    prs="$(gh api "repos/$repo/pulls?state=open&per_page=100" --paginate --jq '.[] | [.number, .head.ref, .state, "-"] | map(tostring) | @tsv' 2>/dev/null)" \
+    prs="$(gh api "repos/$repo/pulls?state=open&per_page=100" --paginate --jq '.[] | [.number, .head.ref, .state, "-", ((.updated_at // "-") + "@" + (.head.sha // "-"))] | map(tostring) | @tsv' 2>/dev/null)" \
       || { echo "[devflow-ctl] WARN: $repo: could not list open PRs (network or auth) — the next pass retries" >&2; return 0; }
   fi
-  while IFS=$'\t' read -r num ref state merged; do
+  while IFS=$'\t' read -r num ref state merged seen; do
     [[ -n "$num" ]] || continue
     m="$(_pr_match "$repo" "$ref")"
     if [[ -z "$m" && -z "$only" ]]; then continue; fi
@@ -3761,14 +3874,24 @@ _pr_poll_repo() { # _pr_poll_repo <repo> [pr]
     [[ -n "$m" ]] || { pid="-"; slug="-"; }
     [[ "$merged" != "-" ]] && state="merged"
     _pr_upsert "$repo" "$num" "$pid" "$slug" "$ref" "$state"
+    # Nothing happened on the PR since the last complete read -- no comment,
+    # reply, review or push changes neither updated_at nor the head: skip its
+    # three reads. A PR named with --pr is always read.
+    if [[ -z "$only" && -n "${seen:-}" && "$seen" != *"-@"* && "$seen" != *"@-" && "$seen" == "$(_pr_read_at "$repo" "$num")" ]]; then
+      skipped=$((skipped + 1)); continue
+    fi
     if ! new="$(_pr_fetch "$repo" "$num" 2>/dev/null)"; then
       echo "[devflow-ctl] WARN: $repo#$num: could not read its comments — the next pass retries" >&2
       continue
     fi
+    # Only a complete read records what it saw: a failed one is retried.
+    _pr_upsert "$repo" "$num" "-" "-" "-" "-" "${seen:--}"
     count=$((count + 1)); total=$((total + new))
     detail+=" #$num:$new"
   done <<< "$prs"
-  echo "$repo: $count PR(s) read, $total new comment(s)${detail:+ —$detail}"
+  local unchanged=""
+  [[ $skipped -eq 0 ]] || unchanged=", $skipped unchanged since the last read"
+  echo "$repo: $count PR(s) read, $total new comment(s)$unchanged${detail:+ —$detail}"
 }
 
 _pr_watched() { [[ -f "$PR_WATCH" ]] && cut -f1 "$PR_WATCH" | grep -v '^$' || true; }
