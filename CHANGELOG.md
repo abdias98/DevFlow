@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.22.0] — 2026-10-21
+
+> **The intake-triage release.** On a real run, `intake --pending` met three PRs with new comments: two had nothing in them — bookkeeping and a re-review with no new observation — and one still had changes to make. The intake treated all three alike. It now sorts them first, closes what has nothing to teach, classifies what is ready in one confirmation, and leaves what is still waiting for changes to its own intake.
+
+### 🔧 Changed
+
+- **`intake --pending` triages the waiting PRs before classifying anything.** Each PR is one of three cases. *Nothing to learn* — only bookkeeping, a re-review with no new finding, or replies to findings classified before — is marked done with one report line and no question. *Ready* — every finding has an outcome: fixed (a reply, a resolved thread, or a later commit or amend that changed the lines, confirmed by a later review), risk accepted, or the reviewer shown wrong — is classified with the proposals confirmed as a block. *Blocked* — a finding still asks for a change with no outcome — is skipped untouched, and the report says to run `/devflow-review intake {n}` once it is addressed. When unsure, a PR is Blocked: waiting loses no lesson, since the escape is recorded the same later. Proposed by the user.
+
 ## [4.21.0] — 2026-10-21
 
 > **The project-store release.** 4.20.0 moved a project's lessons out of `docs/devflow/`, which in practice is often never committed. Three other files that carry what DevFlow knows about a project — the standards profile, the escape log and the deferred backlog — were still lost with the branch; they now live in the same store. And the PR review job stops re-reading PRs nobody has touched since its last read.
