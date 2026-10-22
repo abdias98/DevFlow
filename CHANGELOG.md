@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.21.0] — 2026-10-21
+
+> **The project-store release.** 4.20.0 moved a project's lessons out of `docs/devflow/`, which in practice is often never committed. Three other files that carry what DevFlow knows about a project — the standards profile, the escape log and the deferred backlog — were still lost with the branch; they now live in the same store. And the PR review job stops re-reading PRs nobody has touched since its last read.
+
+### ✨ Added
+
+- **Standards profile, escapes and backlog live in the project store.** `standards-profile.md`, `escapes.md` and `backlog/deferred.md` are now views of their copies in `$DEVFLOW_HOME/memory/registry/projects/{project id}/knowledge/files/`, marked with the store and revision they were rendered from, and written again when missing. `escape add` and `backlog add` write through the store; `escape list|report`, `backlog list` and the escape rate of `metrics aggregate` read it; `knowledge sync` — and so `init` — syncs all four project files. A view not rendered from the current revision never overwrites the store: a ledger adds the rows the store lacks (with a new id when its id is taken), and the standards profile is kept aside as `.unsynced`. 5 bats tests. Refs: F128.
+
+### 🔧 Changed
+
+- **`pr poll` skips PRs with nothing new.** A PR whose `updated_at` and head commit are the same as at its last complete read — no comment, reply, review or push since — is skipped, saving its three API reads on every pass; any activity reads it again. A failed read is not recorded, so it is retried; `--pr` always reads. Proposed by the user. 3 bats tests. Refs: F129.
+
 ## [4.20.0] — 2026-10-21
 
 > **The review-intake release (Wave 25).** An external review of a real DevFlow PR found that the internal Reviewer had excused the exposure of a sensitive field as INFO "deliberate", on a premise nobody checked. Tracing what happened next showed the whole learning loop leaking: the intake could not read the review (`gh pr view --comments` misses inline threads), recorded escapes against no cycle, and dropped any finding the user chose not to fix; the Finalizer only sent stack patterns to the framework memory; and `learnings.md`, never committed in that project, had lost 10 of 11 cycles. This release closes each leak: a deliberate decision needs a premise that holds, an underrated finding is an escape, the intake works after the cycle closed and writes back everywhere, every lesson is classified at close, the project's lessons live in a local store with `learnings.md` as its view, and a job the user switches on and off collects PR review comments for the intake.
