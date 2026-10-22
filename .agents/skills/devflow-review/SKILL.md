@@ -280,7 +280,7 @@ Turns the collector into a job the user switches on and off: `devflow-ctl pr pol
 - **`watch stop`** — `devflow-ctl pr watch stop`: removes the job; the watched repositories and the collected comments are kept.
 - **`watch status`** — `devflow-ctl pr watch status`: on/off, scheduler, interval, repositories, last pass, comments pending.
 - **Pair mode:** give the user the commands of steps 3–4 to run themselves. **CI / Autonomous mode:** never start or stop a job (`devflow-ctl` refuses too).
-- Only **open** PRs of DevFlow cycles are polled. A merged or closed PR is read only when the user names it: `/devflow-review intake {PR#}`.
+- Only **open** PRs of DevFlow cycles are polled, and a PR with no activity since the last complete read (same `updated_at` and head commit) is skipped until someone comments, replies, reviews or pushes. A merged or closed PR is read only when the user names it: `/devflow-review intake {PR#}`.
 
 ### Step 1 — Fetch the Review (read-only)
 

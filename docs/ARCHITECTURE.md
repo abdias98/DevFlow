@@ -271,7 +271,7 @@ See [Memory Conventions](../.agents/skills/shared/memory-conventions.md) for can
 
 Accumulated learnings from all cycles:
 - `learnings.md` — Patterns discovered, anti-patterns to avoid, key architectural decisions, each lesson marked with where it went (`→ M…` framework memory, `→ E…` escape, `(project)`). Read by all mid-cycle agents (Brainstormer, Architect, Planner, Implementer, Reviewer, Debugger). Updated by the Finalizer at cycle end. Can be bootstrapped from historical artifacts via `/devflow-templates bootstrap-knowledge`.
-- **The file is a view.** `docs/devflow/` often lives uncommitted on one branch, so the lessons themselves live in the project's **knowledge store** in the local registry (`$DEVFLOW_HOME/memory/registry/projects/{id}/knowledge/`, the same on every branch, clone and worktree). Agents edit `learnings.md` as usual and run `devflow-ctl knowledge sync`; `init` renders it at the start of every cycle; a stale or foreign copy only adds what the store lacks.
+- **The file is a view.** `docs/devflow/` often lives uncommitted on one branch, so the lessons themselves live in the project's **knowledge store** in the local registry (`$DEVFLOW_HOME/memory/registry/projects/{id}/knowledge/`, the same on every branch, clone and worktree). Agents edit `learnings.md` as usual and run `devflow-ctl knowledge sync`; `init` renders it at the start of every cycle; a stale or foreign copy only adds what the store lacks. `standards-profile.md`, `escapes.md` and `backlog/deferred.md` are views of the same store.
 
 ### Framework Memory (`$DEVFLOW_HOME/memory/`)
 
