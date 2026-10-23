@@ -58,6 +58,7 @@
 #   pr poll [--repo o/r] [--pr N]                     Collect review comments of DevFlow PRs (read-only) into the local inbox
 #   pr list | show <N> | inbox | done <N> <ids>       Read the registry and the inbox; mark comments classified
 #   pr watch start [--repo o/r]… [--every 30m] | stop | status   Run pr poll on a schedule (systemd --user, launchd or cron)
+#   pr watch add|remove --repo o/r | list            Change or list the watched repositories (the job keeps running)
 #   memory promote-list | promote <id> --ref <r>       Confirmed lessons to turn into framework PRs; mark one merged
 #   traceability check <file>                         Count Source/TOTAL coverage in a traceability matrix; exit 1 if <100%
 #   sessions                                         List all active DevFlow sessions with phase and state
@@ -4149,6 +4150,9 @@ _pr_watch() { # _pr_watch <start|stop|status|add|remove|list|candidates> — rep
       ;;
     add)
       [[ ${#PR_ARG_REPOS[@]} -gt 0 ]] || die "usage: devflow-ctl pr watch add --repo owner/repo"
+      for r in "${PR_ARG_REPOS[@]}"; do
+        _pr_valid_repo "$r" || die "pr watch add: '$r' is not owner/repo"
+      done
       mkdir -p "$MEM_REGISTRY"
       { _pr_watched; printf '%s\n' "${PR_ARG_REPOS[@]}"; } | grep -v '^$' | awk '!seen[$0]++' > "$PR_WATCH.tmp.$$" && mv "$PR_WATCH.tmp.$$" "$PR_WATCH"
       ok "watching: $(tr '\n' ' ' < "$PR_WATCH")"
@@ -4156,9 +4160,16 @@ _pr_watch() { # _pr_watch <start|stop|status|add|remove|list|candidates> — rep
     remove)
       [[ ${#PR_ARG_REPOS[@]} -gt 0 ]] || die "usage: devflow-ctl pr watch remove --repo owner/repo"
       [[ -f "$PR_WATCH" ]] || { echo "No repository is watched."; return 0; }
+      for r in "${PR_ARG_REPOS[@]}"; do
+        grep -qxF -- "$r" "$PR_WATCH" || echo "[devflow-ctl] WARN: $r was not watched"
+      done
       grep -vxF -f <(printf '%s\n' "${PR_ARG_REPOS[@]}") "$PR_WATCH" > "$PR_WATCH.tmp.$$" || true
       mv "$PR_WATCH.tmp.$$" "$PR_WATCH"
       ok "watching: $( [[ -s "$PR_WATCH" ]] && tr '\n' ' ' < "$PR_WATCH" || echo '(none)')"
+      # The job stays installed with nothing to read; stopping it is the user's call.
+      if [[ ! -s "$PR_WATCH" && -n "$(_pr_state_get scheduler)" ]]; then
+        echo "No repository left — the job still runs with nothing to read; stop it with 'devflow-ctl pr watch stop'"
+      fi
       ;;
     list)
       [[ -s "$PR_WATCH" ]] && cat "$PR_WATCH" || echo "No repository is watched."
