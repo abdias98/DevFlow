@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.23.0] — 2026-10-23
+
+> **The watch-commands release.** A user wanted to stop collecting comments from one repository and reached for `intake watch stop redmotos/motocicletas` — which would have removed the whole job and stopped every repository. `devflow-ctl` could already change the watched list, but the skill never offered it. Now it does, and `intake help` lists every intake command.
+
+### ✨ Added
+
+- **`/devflow-review intake watch add|remove|list` — change the watched repositories without touching the job.** `watch remove owner/repo` stops collecting that repository only; the job keeps running for the others, and its comments already in the inbox stay for `intake --pending`. `watch add` adds one to the running job; `watch list` shows them. `watch stop` still removes the whole job, and `watch stop owner/repo` makes the agent ask which of the two was meant. Proposed by the user.
+- **`/devflow-review intake help`** (or `intake` with no argument) prints every intake and watch command with what it does. Proposed by the user.
+
+### 🔧 Changed
+
+- **`devflow-ctl pr watch add` rejects a name that is not `owner/repo`; `remove` warns on a repository that was not watched**, and when the list ends empty while the job is installed it says the job has nothing to read and points to `pr watch stop` — stopping it stays the user's call. 1 bats test.
+
 ## [4.22.0] — 2026-10-21
 
 > **The intake-triage release.** On a real run, `intake --pending` met three PRs with new comments: two had nothing in them — bookkeeping and a re-review with no new observation — and one still had changes to make. The intake treated all three alike. It now sorts them first, closes what has nothing to teach, classifies what is ready in one confirmation, and leaves what is still waiting for changes to its own intake.
