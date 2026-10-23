@@ -11,7 +11,7 @@ set -e
 # Allow overriding the source repository (security: configurable, not hardcoded)
 DEVFLOW_REPO="${DEVFLOW_REPO:-https://github.com/abdias98/DevFlow.git}"
 # Pin what gets installed: a tag, branch, or commit SHA (default: main).
-# For a verifiable install, set DEVFLOW_REF to a signed tag (e.g. v4.22.0);
+# For a verifiable install, set DEVFLOW_REF to a signed tag (e.g. v4.23.0);
 # when gpg is available the tag signature is verified before installing.
 DEVFLOW_REF="${DEVFLOW_REF:-main}"
 
