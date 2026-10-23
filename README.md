@@ -144,7 +144,11 @@ When a PR from a DevFlow cycle gets reviewed — by a person or another review a
 /devflow-review intake 1065                                 One PR, open or already merged
 /devflow-review intake watch start owner/repo 30m           Collect review comments every 30 min
 /devflow-review intake --pending                            Close PRs with nothing to learn, classify the ready ones with you, skip the blocked
-/devflow-review intake watch status | stop
+/devflow-review intake watch add owner/repo                 Watch one more repository with the running job
+/devflow-review intake watch remove owner/repo              Stop watching one repository; the job keeps running for the others
+/devflow-review intake watch list | status
+/devflow-review intake watch stop                           Remove the job — every repository stops being collected
+/devflow-review intake help                                 List every intake command
 ```
 
 - **No repository is watched by default.** Name it, or run `watch start` with no repository and pick from the list of yours (★ = has DevFlow cycles on this machine).

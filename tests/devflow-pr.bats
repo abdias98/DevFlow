@@ -309,6 +309,23 @@ setup_watch() {
   [ "$output" = "  other/lib" ]
 }
 
+@test "pr watch remove warns on a repo not watched and points to stop when none is left" {
+  setup_watch
+  export DEVFLOW_PR_SCHEDULER=cron
+  run "$CTL" pr watch add --repo not-a-repo
+  [ "$status" -eq 2 ]
+  "$CTL" pr watch start --repo acme/shop --every 30m >/dev/null
+  run "$CTL" pr watch remove --repo acme/nope
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WARN: acme/nope was not watched"* ]]
+  [[ "$output" == *"watching: acme/shop"* ]]
+  run "$CTL" pr watch remove --repo acme/shop
+  [[ "$output" == *"watching: (none)"* ]]
+  [[ "$output" == *"pr watch stop"* ]]
+  run "$CTL" pr watch status
+  [[ "$output" == *"PR watch: on"*"Repositories: (none)"* ]]
+}
+
 
 @test "pr watch start/stop must start the command line, so a prefix permission rule sees them" {
   setup_watch
