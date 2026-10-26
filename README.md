@@ -248,8 +248,8 @@ pin the ref and verify it out-of-band before running:
 ```bash
 git clone https://github.com/abdias98/DevFlow.git
 cd DevFlow
-git verify-tag v4.23.0        # needs the maintainer's public key; fails closed on bad signature
-git checkout v4.23.0
+git verify-tag v4.23.1        # needs the maintainer's public key; fails closed on bad signature
+git checkout v4.23.1
 bash install.sh
 ```
 
@@ -257,7 +257,7 @@ Or let the installer fetch the ref for you (it prints the installed commit SHA
 and verifies signed tags when `gpg` is available):
 
 ```bash
-DEVFLOW_REF=v4.23.0 bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/install.sh)
+DEVFLOW_REF=v4.23.1 bash <(curl -fsSL https://raw.githubusercontent.com/abdias98/DevFlow/main/install.sh)
 ```
 
 ### Method 4: Uninstall
