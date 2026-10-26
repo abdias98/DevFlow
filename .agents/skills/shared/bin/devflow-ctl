@@ -56,7 +56,7 @@
 #   memory sync | projects                            Write this project's memory view; list registered projects (local)
 #   pr register --slug <s> [--branch b]             Record which branch (and so which PR) a cycle produced
 #   pr poll [--repo o/r] [--pr N]                     Collect review comments of DevFlow PRs (read-only) into the local inbox
-#   pr list | show <N> | inbox | done <N> <ids>       Read the registry and the inbox; mark comments classified
+#   pr list | show <N> | inbox [--repo o/r] | done <N> <ids>   Read the registry and the inbox (every repo unless --repo); mark comments classified
 #   pr watch start [--repo o/r]… [--every 30m] | stop | status   Run pr poll on a schedule (systemd --user, launchd or cron)
 #   pr watch add|remove --repo o/r | list            Change or list the watched repositories (the job keeps running)
 #   memory promote-list | promote <id> --ref <r>       Confirmed lessons to turn into framework PRs; mark one merged
@@ -4243,7 +4243,9 @@ cmd_pr() {
       ;;
     show|inbox)
       local targets r n rest
-      [[ -n "$repo" ]] || repo="$(_pr_current_repo 2>/dev/null || true)"
+      # inbox with no --repo covers every registered repo, as `status` does:
+      # the intake is often run from a checkout of another repository.
+      [[ -n "$repo" || "$action" == "inbox" ]] || repo="$(_pr_current_repo 2>/dev/null || true)"
       [[ "$action" == "show" ]] && { pr="${pr:-${args[0]:-}}"; [[ "$pr" =~ ^[0-9]+$ && -n "$repo" ]] || die "usage: devflow-ctl pr show <N> [--repo owner/repo]"; }
       if [[ -n "$pr" ]]; then targets="$repo"$'\t'"$pr"
       else targets="$( [[ -f "$PR_REGISTRY" ]] && LC_ALL=C awk -F'\t' -v OFS='\t' -v r="$repo" '(r == "" || $1 == r) && $2 != "-" { print $1, $2 }' "$PR_REGISTRY" || true)"; fi
