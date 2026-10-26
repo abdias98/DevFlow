@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.23.1] — 2026-10-26
+
+> **Patch.** `/devflow-review intake --pending`, run from a checkout of another repository, found nothing to triage while `devflow-ctl status` listed two PRs with six comments waiting.
+
+### 🐛 Fixed
+
+- **`devflow-ctl pr inbox` with no `--repo` lists every repository's pending PRs.** It defaulted to the origin of the current directory, so `intake --pending` — which `status` recommends from any checkout — missed every PR of another repository and answered *"No review comment is pending intake."* It now covers every registered repository, as `status` does; `--repo` still narrows it, and `pr show` / `pr done`, which name one PR, keep defaulting to the current checkout. 1 bats test.
+
 ## [4.23.0] — 2026-10-23
 
 > **The watch-commands release.** A user wanted to stop collecting comments from one repository and reached for `intake watch stop redmotos/motocicletas` — which would have removed the whole job and stopped every repository. `devflow-ctl` could already change the watched list, but the skill never offered it. Now it does, and `intake help` lists every intake command.
