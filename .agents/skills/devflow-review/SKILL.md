@@ -306,7 +306,7 @@ Turns the collector into a job the user switches on and off: `devflow-ctl pr pol
 ### Step 1 — Fetch the Review (read-only)
 
 - **Standard/CI:** collect the comments with `devflow-ctl pr poll --repo {owner/repo} --pr {n}`, then read them with `devflow-ctl pr show {n} --repo {owner/repo}`. `pr poll` reads all three kinds, read-only — inline threads with their replies (`gh api …/pulls/{n}/comments`), review bodies (`…/pulls/{n}/reviews`) and general comments (`…/issues/{n}/comments`) — into the local inbox, and `pr show` prints each inline finding followed by its replies. `gh pr view --comments` is not enough: it omits inline threads, which is where reviewers put findings and where the author's replies — the decision about each one ("we accept the risk", "fixed in …") — live. For an artifact-hosted review, use the `Artifact` tool's `comments` action.
-- **`intake --pending`:** run `devflow-ctl pr inbox` instead — every PR whose comments are waiting, as the watch job or a manual `pr poll` collected them — and **triage them first** (below), then take the ready PRs one at a time.
+- **`intake --pending`:** run `devflow-ctl pr inbox` instead — every PR whose comments are waiting, in every repository whatever checkout you run from, as the watch job or a manual `pr poll` collected them — and **triage them first** (below), then take the ready PRs one at a time.
 - **Pair:** ask the user to paste the comments, replies included.
 - **Never write back** — no reply, no resolve, no reaction on the external thread (escape-analysis.md → Anti-Patterns).
 

@@ -156,6 +156,21 @@ EOF
   [[ "$output" == *"No review comment is pending intake."* ]]
 }
 
+@test "pr inbox: with no --repo, lists every repo's pending PRs, whatever checkout it runs from" {
+  write_pr_fixtures
+  "$CTL" pr register --slug quote-pdf --branch feat/quote-pdf/stack-1
+  "$CTL" pr poll --repo acme/shop >/dev/null
+  git remote set-url origin git@github.com:acme/other.git
+  run "$CTL" pr inbox
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PR #12 (acme/shop)"*"5 pending"* ]]
+  cd "$BATS_TEST_TMPDIR"
+  run "$CTL" pr inbox
+  [[ "$output" == *"PR #12 (acme/shop)"* ]]
+  run "$CTL" pr inbox --repo acme/other
+  [[ "$output" == *"No review comment is pending intake."* ]]
+}
+
 @test "status and capabilities name the PRs with comments pending intake" {
   write_pr_fixtures
   "$CTL" init --mode lifecycle --slug quote-pdf >/dev/null
